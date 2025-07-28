@@ -1,1 +1,1 @@
-cd amb-w-tds
+amb-w-tds
