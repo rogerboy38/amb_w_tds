@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:country_name",
+ "creation": "2025-06-07 10:31:09.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "country_name",
+  "published",
+  "route",
+  "regulatory_authority",
+  "authority_website",
+  "column_break_4",
+  "region",
+  "currency",
+  "language",
+  "regulatory_framework_section",
+  "aloe_classification",
+  "key_requirements",
+  "column_break_9",
+  "import_requirements",
+  "export_requirements",
+  "labeling_requirements",
+  "certification_section",
+  "required_certifications",
+  "testing_requirements",
+  "column_break_15",
+  "approval_process",
+  "typical_timeline",
+  "fees_and_costs",
+  "contacts_section",
+  "primary_contact_name",
+  "primary_contact_email",
+  "secondary_contact_name",
+  "column_break_21",
+  "secondary_contact_email",
+  "phone",
+  "address",
+  "system_section",
+  "last_updated",
+  "next_review_date",
+  "column_break_27",
+  "data_source",
+  "verification_status",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "country_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Country Name",
+   "options": "Country",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "read_only": 1
+  },
+  {
+   "fieldname": "regulatory_authority",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Regulatory Authority",
+   "reqd": 1
+  },
+  {
+   "fieldname": "authority_website",
+   "fieldtype": "Data",
+   "label": "Authority Website"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Select",
+   "label": "Region",
+   "options": "North America\nSouth America\nEurope\nAsia Pacific\nMiddle East\nAfrica\nOceania"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Primary Language",
+   "options": "Language"
+  },
+  {
+   "fieldname": "regulatory_framework_section",
+   "fieldtype": "Section Break",
+   "label": "Regulatory Framework"
+  },
+  {
+   "fieldname": "aloe_classification",
+   "fieldtype": "Select",
+   "label": "Aloe Product Classification",
+   "options": "Food/Beverage\nDietary Supplement\nCosmetic\nPharmaceutical\nNatural Health Product\nOther"
+  },
+  {
+   "fieldname": "key_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Key Requirements"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "import_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Import Requirements"
+  },
+  {
+   "fieldname": "export_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Export Requirements"
+  },
+  {
+   "fieldname": "labeling_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Labeling Requirements"
+  },
+  {
+   "fieldname": "certification_section",
+   "fieldtype": "Section Break",
+   "label": "Certification & Testing"
+  },
+  {
+   "fieldname": "required_certifications",
+   "fieldtype": "Text Editor",
+   "label": "Required Certifications"
+  },
+  {
+   "fieldname": "testing_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Testing Requirements"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approval_process",
+   "fieldtype": "Text Editor",
+   "label": "Approval Process"
+  },
+  {
+   "fieldname": "typical_timeline",
+   "fieldtype": "Data",
+   "label": "Typical Timeline"
+  },
+  {
+   "fieldname": "fees_and_costs",
+   "fieldtype": "Text Editor",
+   "label": "Fees and Costs"
+  },
+  {
+   "fieldname": "contacts_section",
+   "fieldtype": "Section Break",
+   "label": "Regulatory Contacts"
+  },
+  {
+   "fieldname": "primary_contact_name",
+   "fieldtype": "Data",
+   "label": "Primary Contact Name"
+  },
+  {
+   "fieldname": "primary_contact_email",
+   "fieldtype": "Data",
+   "label": "Primary Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "secondary_contact_name",
+   "fieldtype": "Data",
+   "label": "Secondary Contact Name"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "secondary_contact_email",
+   "fieldtype": "Data",
+   "label": "Secondary Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "system_section",
+   "fieldtype": "Section Break",
+   "label": "System Information"
+  },
+  {
+   "fieldname": "last_updated",
+   "fieldtype": "Date",
+   "label": "Last Updated",
+   "reqd": 1
+  },
+  {
+   "fieldname": "next_review_date",
+   "fieldtype": "Date",
+   "label": "Next Review Date"
+  },
+  {
+   "fieldname": "column_break_27",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "data_source",
+   "fieldtype": "Data",
+   "label": "Data Source"
+  },
+  {
+   "fieldname": "verification_status",
+   "fieldtype": "Select",
+   "label": "Verification Status",
+   "options": "Verified\nPending Verification\nUnverified\nExpired"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "has_web_view": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-06-07 10:31:09.000000",
+ "modified_by": "Administrator",
+ "module": "amb_w_tds",
+ "name": "Country Regulation",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Compliance Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Data Entry Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Distribution Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "R&D Manager"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "country_name",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1,
+ "website": {
+  "condition_field": "published",
+  "page_title_field": "country_name"
+ }
+}

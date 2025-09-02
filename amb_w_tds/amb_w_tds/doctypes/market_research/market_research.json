@@ -1,0 +1,536 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-06-07 10:31:09.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_information_section",
+  "naming_series",
+  "research_title",
+  "research_type",
+  "research_status",
+  "column_break_4",
+  "country",
+  "region",
+  "product_category",
+  "research_date",
+  "column_break_8",
+  "research_lead",
+  "priority",
+  "completion_percentage",
+  "section_break_12",
+  "market_overview_section",
+  "market_size",
+  "market_growth_rate",
+  "market_value",
+  "column_break_16",
+  "target_segments",
+  "key_drivers",
+  "market_barriers",
+  "section_break_20",
+  "competitive_analysis_section",
+  "main_competitors",
+  "competitive_landscape",
+  "market_share_analysis",
+  "competitive_advantages",
+  "competitive_threats",
+  "section_break_26",
+  "customer_insights_section",
+  "target_demographics",
+  "customer_behavior",
+  "buying_patterns",
+  "customer_preferences",
+  "price_sensitivity",
+  "section_break_32",
+  "swot_analysis_section",
+  "strengths",
+  "weaknesses",
+  "opportunities",
+  "threats",
+  "section_break_37",
+  "regulatory_landscape_section",
+  "regulatory_environment",
+  "compliance_requirements",
+  "regulatory_challenges",
+  "regulatory_opportunities",
+  "section_break_42",
+  "trends_and_forecasts_section",
+  "market_trends",
+  "future_projections",
+  "growth_opportunities",
+  "risk_factors",
+  "section_break_47",
+  "research_methodology_section",
+  "research_methods",
+  "data_sources",
+  "sample_size",
+  "research_duration",
+  "column_break_52",
+  "research_budget",
+  "external_consultants",
+  "reliability_score",
+  "section_break_56",
+  "conclusions_and_recommendations_section",
+  "key_findings",
+  "strategic_recommendations",
+  "next_steps",
+  "action_items",
+  "section_break_61",
+  "attachments_section",
+  "research_documents",
+  "additional_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_information_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "default": "MR-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "MR-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "research_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Research Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "research_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Research Type",
+   "options": "Market Analysis\\nCompetitive Intelligence\\nCustomer Research\\nProduct Research\\nIndustry Analysis\\nTrend Analysis\\nRegional Study\\nFeasibility Study\\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "research_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Research Status",
+   "options": "Planning\\nIn Progress\\nData Collection\\nAnalysis\\nReporting\\nCompleted\\nOn Hold\\nCancelled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Data",
+   "label": "Region/Market"
+  },
+  {
+   "fieldname": "product_category",
+   "fieldtype": "Select",
+   "label": "Product Category",
+   "options": "Aloe Juice\\nAloe Powder\\nCosmetic Formulation\\nPharmaceutical\\nDietary Supplement\\nRaw Materials\\nAll Categories\\nOther"
+  },
+  {
+   "fieldname": "research_date",
+   "fieldtype": "Date",
+   "label": "Research Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "research_lead",
+   "fieldtype": "Link",
+   "label": "Research Lead",
+   "options": "User"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "Low\\nMedium\\nHigh\\nCritical"
+  },
+  {
+   "fieldname": "completion_percentage",
+   "fieldtype": "Percent",
+   "label": "Completion %"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "market_overview_section",
+   "fieldtype": "Section Break",
+   "label": "Market Overview"
+  },
+  {
+   "fieldname": "market_size",
+   "fieldtype": "Data",
+   "label": "Market Size"
+  },
+  {
+   "fieldname": "market_growth_rate",
+   "fieldtype": "Percent",
+   "label": "Market Growth Rate (%)"
+  },
+  {
+   "fieldname": "market_value",
+   "fieldtype": "Currency",
+   "label": "Market Value"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "target_segments",
+   "fieldtype": "Text",
+   "label": "Target Segments"
+  },
+  {
+   "fieldname": "key_drivers",
+   "fieldtype": "Text",
+   "label": "Key Market Drivers"
+  },
+  {
+   "fieldname": "market_barriers",
+   "fieldtype": "Text",
+   "label": "Market Barriers"
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "competitive_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "Competitive Analysis"
+  },
+  {
+   "fieldname": "main_competitors",
+   "fieldtype": "Text",
+   "label": "Main Competitors"
+  },
+  {
+   "fieldname": "competitive_landscape",
+   "fieldtype": "Text Editor",
+   "label": "Competitive Landscape"
+  },
+  {
+   "fieldname": "market_share_analysis",
+   "fieldtype": "Text",
+   "label": "Market Share Analysis"
+  },
+  {
+   "fieldname": "competitive_advantages",
+   "fieldtype": "Text",
+   "label": "Our Competitive Advantages"
+  },
+  {
+   "fieldname": "competitive_threats",
+   "fieldtype": "Text",
+   "label": "Competitive Threats"
+  },
+  {
+   "fieldname": "section_break_26",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "customer_insights_section",
+   "fieldtype": "Section Break",
+   "label": "Customer Insights"
+  },
+  {
+   "fieldname": "target_demographics",
+   "fieldtype": "Text",
+   "label": "Target Demographics"
+  },
+  {
+   "fieldname": "customer_behavior",
+   "fieldtype": "Text Editor",
+   "label": "Customer Behavior"
+  },
+  {
+   "fieldname": "buying_patterns",
+   "fieldtype": "Text",
+   "label": "Buying Patterns"
+  },
+  {
+   "fieldname": "customer_preferences",
+   "fieldtype": "Text",
+   "label": "Customer Preferences"
+  },
+  {
+   "fieldname": "price_sensitivity",
+   "fieldtype": "Text",
+   "label": "Price Sensitivity"
+  },
+  {
+   "fieldname": "section_break_32",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "swot_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "SWOT Analysis"
+  },
+  {
+   "fieldname": "strengths",
+   "fieldtype": "Text",
+   "label": "Strengths"
+  },
+  {
+   "fieldname": "weaknesses",
+   "fieldtype": "Text",
+   "label": "Weaknesses"
+  },
+  {
+   "fieldname": "opportunities",
+   "fieldtype": "Text",
+   "label": "Opportunities"
+  },
+  {
+   "fieldname": "threats",
+   "fieldtype": "Text",
+   "label": "Threats"
+  },
+  {
+   "fieldname": "section_break_37",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "regulatory_landscape_section",
+   "fieldtype": "Section Break",
+   "label": "Regulatory Landscape"
+  },
+  {
+   "fieldname": "regulatory_environment",
+   "fieldtype": "Text Editor",
+   "label": "Regulatory Environment"
+  },
+  {
+   "fieldname": "compliance_requirements",
+   "fieldtype": "Text",
+   "label": "Compliance Requirements"
+  },
+  {
+   "fieldname": "regulatory_challenges",
+   "fieldtype": "Text",
+   "label": "Regulatory Challenges"
+  },
+  {
+   "fieldname": "regulatory_opportunities",
+   "fieldtype": "Text",
+   "label": "Regulatory Opportunities"
+  },
+  {
+   "fieldname": "section_break_42",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "trends_and_forecasts_section",
+   "fieldtype": "Section Break",
+   "label": "Trends and Forecasts"
+  },
+  {
+   "fieldname": "market_trends",
+   "fieldtype": "Text Editor",
+   "label": "Market Trends"
+  },
+  {
+   "fieldname": "future_projections",
+   "fieldtype": "Text",
+   "label": "Future Projections"
+  },
+  {
+   "fieldname": "growth_opportunities",
+   "fieldtype": "Text",
+   "label": "Growth Opportunities"
+  },
+  {
+   "fieldname": "risk_factors",
+   "fieldtype": "Text",
+   "label": "Risk Factors"
+  },
+  {
+   "fieldname": "section_break_47",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "research_methodology_section",
+   "fieldtype": "Section Break",
+   "label": "Research Methodology"
+  },
+  {
+   "fieldname": "research_methods",
+   "fieldtype": "Text",
+   "label": "Research Methods"
+  },
+  {
+   "fieldname": "data_sources",
+   "fieldtype": "Text",
+   "label": "Data Sources"
+  },
+  {
+   "fieldname": "sample_size",
+   "fieldtype": "Int",
+   "label": "Sample Size"
+  },
+  {
+   "fieldname": "research_duration",
+   "fieldtype": "Data",
+   "label": "Research Duration"
+  },
+  {
+   "fieldname": "column_break_52",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "research_budget",
+   "fieldtype": "Currency",
+   "label": "Research Budget"
+  },
+  {
+   "fieldname": "external_consultants",
+   "fieldtype": "Text",
+   "label": "External Consultants"
+  },
+  {
+   "fieldname": "reliability_score",
+   "fieldtype": "Select",
+   "label": "Reliability Score",
+   "options": "High\\nMedium\\nLow"
+  },
+  {
+   "fieldname": "section_break_56",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "conclusions_and_recommendations_section",
+   "fieldtype": "Section Break",
+   "label": "Conclusions and Recommendations"
+  },
+  {
+   "fieldname": "key_findings",
+   "fieldtype": "Text Editor",
+   "label": "Key Findings"
+  },
+  {
+   "fieldname": "strategic_recommendations",
+   "fieldtype": "Text Editor",
+   "label": "Strategic Recommendations"
+  },
+  {
+   "fieldname": "next_steps",
+   "fieldtype": "Text",
+   "label": "Next Steps"
+  },
+  {
+   "fieldname": "action_items",
+   "fieldtype": "Text",
+   "label": "Action Items"
+  },
+  {
+   "fieldname": "section_break_61",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "attachments_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "research_documents",
+   "fieldtype": "Attach",
+   "label": "Research Documents"
+  },
+  {
+   "fieldname": "additional_notes",
+   "fieldtype": "Text Editor",
+   "label": "Additional Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-06-07 10:31:09.000000",
+ "modified_by": "Administrator",
+ "module": "amb_w_tds",
+ "name": "Market Research",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "R&D Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Distribution Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Market Analyst",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Compliance Officer",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
