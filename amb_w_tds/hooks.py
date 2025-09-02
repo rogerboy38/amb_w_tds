@@ -1,5 +1,5 @@
 app_name = "amb_w_tds"
-app_title = "amb-w-tds"
+app_title = "amb_w_tds"
 app_publisher = "AMB-Wellness"
 app_description = "AMB-WELLNESS TDS Management"
 app_email = "fcrm@amb-wellness.com"
