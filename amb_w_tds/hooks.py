@@ -242,3 +242,41 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# In your app's hooks.py, add this:
+config = {
+    "module_icons": {
+        "amb_w_tds": "icon-book"  # or your preferred icon
+    }
+}
+
+# Add desktop icons for your doctypes
+desktop_icons = [
+    {
+        "module": "AMB Wellness TDS",
+        "label": "Test",
+        "icon": "icon-list",
+        "type": "link",
+        "link": "List/Test",
+        "color": "#FF0000",
+        "icon": "icon-book",
+        "condition": "eval:1;"
+    },
+    {
+        "module": "AMB Wellness TDS", 
+        "label": "Market Research",
+        "icon": "icon-list",
+        "type": "link",
+        "link": "List/Market Research",
+        "color": "#00FF00",
+        "icon": "icon-bar-chart",
+        "condition": "eval:1;"
+    }
+]
+# In hooks.py
+app_include_js = [
+    "/assets/amb_w_tds/js/amb_w_tds.js"
+]
+
+app_include_css = [
+    "/assets/amb_w_tds/css/amb_w_tds.css"
+]
