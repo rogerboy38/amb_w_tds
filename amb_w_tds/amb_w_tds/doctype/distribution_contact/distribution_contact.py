@@ -18,6 +18,12 @@ class DistributionContact(Document):
     communication preferences, and regulatory role tracking.
     """
     
+    # Website attributes to fix the AttributeError
+    website = frappe._dict(
+        condition_field="disabled",  # Uses the 'disabled' field to determine if web view should be shown
+        page_title_field="full_name"  # Uses 'full_name' as the page title in web view
+    )
+    
     def validate(self):
         """Validate the distribution contact before saving."""
         self.validate_email()
