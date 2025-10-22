@@ -13,17 +13,17 @@ from frappe.utils import nowdate, add_days, date_diff, cstr
 from frappe import _
 
 class CertificationDocument(Document):
+    website = frappe._dict(
+        condition_field="disabled",
+        page_title_field="certification_name"
+    )
     """
     Certification Document DocType controller.
     
     Manages regulatory certificates, compliance documents, and their
     lifecycle including renewals, verification, and notifications.
     """
-	website = frappe._dict(
-        condition_field="disabled",
-        page_title_field="certification_name"
-    )
-    
+   
     def validate(self):
         """Validate certification document before saving."""
         self.validate_dates()
