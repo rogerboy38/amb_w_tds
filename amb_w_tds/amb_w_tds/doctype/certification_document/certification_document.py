@@ -19,6 +19,10 @@ class CertificationDocument(Document):
     Manages regulatory certificates, compliance documents, and their
     lifecycle including renewals, verification, and notifications.
     """
+	website = frappe._dict(
+        condition_field="disabled",
+        page_title_field="certification_name"
+    )
     
     def validate(self):
         """Validate certification document before saving."""
