@@ -13,17 +13,18 @@ from frappe.utils import nowdate, add_days, date_diff, cstr
 from frappe import _
 
 class CertificationDocument(Document):
-    website = frappe._dict(
-        condition_field="disabled",
-        page_title_field="certification_name"
-    )
     """
     Certification Document DocType controller.
     
     Manages regulatory certificates, compliance documents, and their
     lifecycle including renewals, verification, and notifications.
     """
-   
+    
+    website = frappe._dict(
+        condition_field="disabled",
+        page_title_field="certification_name"
+    )
+    
     def validate(self):
         """Validate certification document before saving."""
         self.validate_dates()
@@ -198,9 +199,9 @@ class CertificationDocument(Document):
         if self.review_frequency == "Annual":
             self.next_renewal_due = add_days(new_expiry_date, -90)  # 3 months before
         elif self.review_frequency == "Bi-annual":
-            self.next_renewal_due = add_days(new_expiry_date, -60)   # 2 months before
+            self.next_renewal_due = add_days(new_expiry_date, -60)  # 2 months before
         else:
-            self.next_renewal_due = add_days(new_expiry_date, -30)   # 1 month before
+            self.next_renewal_due = add_days(new_expiry_date, -30)  # 1 month before
             
         self.status = "Valid"
         self.save()
@@ -242,6 +243,7 @@ class CertificationDocument(Document):
             
         return sorted(timeline, key=lambda x: x["date"])
 
+
 # Utility functions
 
 @frappe.whitelist()
@@ -259,6 +261,7 @@ def get_expiring_certificates(days_ahead=90):
     """, (days_ahead,), as_dict=True)
     
     return expiring_certs
+
 
 @frappe.whitelist()
 def get_certificate_dashboard_data():
@@ -309,6 +312,7 @@ def get_certificate_dashboard_data():
         "cost_analysis": cost_analysis[0] if cost_analysis else {}
     }
 
+
 @frappe.whitelist()
 def bulk_verify_documents(document_names):
     """Bulk verify multiple documents."""
@@ -335,6 +339,7 @@ def bulk_verify_documents(document_names):
             })
             
     return results
+
 
 @frappe.whitelist()
 def generate_certificate_report(filters=None):
