@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# push_to_git_plus.sh - Enhanced Git Push Script for App Migrator v6.0.0
+# push_to_git_plus.sh - Enhanced Git Push Script for App AMB W TDS v6.0.0
 #
 # Purpose: Easy automated Git push with smart defaults and enhanced features
 # Version: 4.1.2
@@ -58,11 +58,11 @@ print_warning() {
 show_header() {
     echo -e "${BLUE}"
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                   App Migrator Git Helper                    ║"
+    echo "║                   App AMB W TDS Git Helper                    ║"
     echo "║                        Version $SCRIPT_VERSION                         ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    echo "Repository: https://github.com/rogerboy38/app_migrator"
+    echo "Repository: https://github.com/rogerboy38/app_amb_w_tds"
     echo "Authentication: SSH (git@github.com)"
     echo "Current Version: $APP_VERSION"
     echo "Current Branch: $BRANCH"
@@ -448,7 +448,7 @@ simple_push() {
     print_success "Commit: $(git log -1 --pretty=format:'%h') - $(git log -1 --pretty=format:'%s')"
     [ -n "$tag_name" ] && print_success "Tag: $tag_name"
     print_success "Remote: $REMOTE (SSH)"
-    echo -e "View repo: ${BLUE}https://github.com/rogerboy38/app_migrator${NC}"
+    echo -e "View repo: ${BLUE}https://github.com/rogerboy38/app_amb_w_tds${NC}"
     echo "----------------------------------------"
 }
 
