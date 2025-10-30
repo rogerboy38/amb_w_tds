@@ -1,6 +1,6 @@
 # AMB W TDS - Technical Data Sheet Management System
 
-[![Version](https://img.shields.io/badge/version-v2.5.0-blue.svg)](https://github.com/rogerboy38/amb_w_tds/releases/tag/v2.5.0)
+[![Version](https://img.shields.io/badge/version-v7.0.0-blue.svg)](https://github.com/rogerboy38/amb_w_tds/releases/tag/v7.0.0)
 [![Frappe](https://img.shields.io/badge/frappe-v15-orange.svg)](https://github.com/frappe/frappe)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Golden Rule](https://img.shields.io/badge/naming-100%25%20compliant-success.svg)](GOLDEN_RULE.md)
@@ -9,7 +9,7 @@
 
 ## 🎯 Version 2.5.0 - Controller Migration Release
 
-### What's New in v2.5.0
+### What's New in v7.0.0
 
 ✨ **Major Updates:**
 - ✅ **Complete Controller Migration**: All client/server scripts migrated to Python controllers
@@ -61,7 +61,7 @@
 
 ```bash
 # Get the app
-bench get-app https://github.com/rogerboy38/amb_w_tds.git --branch v2.5.0
+bench get-app https://github.com/rogerboy38/amb_w_tds.git --branch v7.0.0
 
 # Install on site
 bench --site your-site.com install-app amb_w_tds
@@ -83,7 +83,7 @@ Go to your Frappe Cloud dashboard
 Navigate to your site
 Click on "Apps" → "Add App"
 Select amb_w_tds from available apps
-Choose version: v2.5.0
+Choose version: v7.0.0
 Click "Install"
 
 🏗️ Architecture
