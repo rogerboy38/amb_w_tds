@@ -77,3 +77,13 @@ bench --site your-site.com clear-cache
 
 # Restart
 bench restart
+Frappe Cloud Installation
+
+Go to your Frappe Cloud dashboard
+Navigate to your site
+Click on "Apps" → "Add App"
+Select amb_w_tds from available apps
+Choose version: v2.5.0
+Click "Install"
+
+🏗️ Architecture
