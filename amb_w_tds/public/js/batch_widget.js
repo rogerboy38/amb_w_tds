@@ -268,7 +268,7 @@ function display_grouped_batch_announcements(groupedData, stats = {}) {
                         companyBatches++;
                         
                         const priorityColor = getPriorityColor(batch.priority);
-                        const statusIcon = getStatusIcon(batch.status);
+                        const statusIcon = getStatusIcon(batch.quality_status);
                         
                         announcement_html += create_batch_item_html(batch, priorityColor, statusIcon);
                     });
@@ -734,7 +734,7 @@ function display_batch_announcements(announcements, stats) {
     
     announcements.forEach(function(batch) {
         const priorityColor = getPriorityColor(batch.priority);
-        const statusIcon = getStatusIcon(batch.status);
+        const statusIcon = getStatusIcon(batch.quality_status);
         html += create_batch_item_html(batch, priorityColor, statusIcon);
     });
     
