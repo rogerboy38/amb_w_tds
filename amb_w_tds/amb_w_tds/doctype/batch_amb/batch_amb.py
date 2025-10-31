@@ -451,57 +451,46 @@ def calculate_batch_cost(batch_name):
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
     """
-    Get available container barrels from all submitted batches
+    Get available container barrels from all batches
     
     Returns container barrels that are marked as 'Available' for reuse.
+    Includes both draft and submitted batches (docstatus >= 0).
     
     Args:
-        warehouse: Optional warehouse filter (not yet implemented)
+        warehouse: Optional warehouse filter
     
     Returns:
         list: Available container barrels with parent batch details
     """
     try:
-        # Get all submitted batches with container barrels
-        batches = frappe.get_all(
-            'Batch AMB',
-            filters={'docstatus': 1},  # Only submitted batches
-            fields=['name', 'title', 'item_code', 'work_order_reference']
-        )
+        # Build warehouse condition
+        warehouse_condition = ""
+        if warehouse:
+            warehouse_condition = f"AND ba.warehouse = '{frappe.db.escape(warehouse)}'"
         
-        if not batches:
-            return []
-        
-        available_containers = []
-        
-        # For each batch, get available container barrels
-        for batch in batches:
-            # Query the child table directly
-            containers = frappe.db.sql("""
-                SELECT 
-                    cb.name,
-                    cb.barrel_serial_number,
-                    cb.packaging_type,
-                    cb.gross_weight,
-                    cb.tara_weight,
-                    cb.net_weight,
-                    cb.status,
-                    cb.parent as batch_id,
-                    ba.title as batch_title,
-                    ba.item_code,
-                    ba.work_order_reference
-                FROM `tabContainer Barrels` cb
-                INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
-                WHERE cb.status = 'Available'
-                AND ba.docstatus = 1
-                AND cb.parenttype = 'Batch AMB'
-                {warehouse_condition}
-                ORDER BY cb.modified DESC
-            """.format(
-                warehouse_condition=f"AND ba.warehouse = '{warehouse}'" if warehouse else ""
-            ), as_dict=True)
-            
-            available_containers.extend(containers)
+        # Query all available containers (include draft batches)
+        available_containers = frappe.db.sql("""
+            SELECT 
+                cb.name,
+                cb.barrel_serial_number,
+                cb.packaging_type,
+                cb.gross_weight,
+                cb.tara_weight,
+                cb.net_weight,
+                cb.status,
+                cb.parent as batch_id,
+                ba.title as batch_title,
+                ba.item_code,
+                ba.work_order_reference,
+                ba.docstatus
+            FROM `tabContainer Barrels` cb
+            INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
+            WHERE cb.status = 'Available'
+            AND ba.docstatus >= 0
+            AND cb.parenttype = 'Batch AMB'
+            {warehouse_condition}
+            ORDER BY cb.modified DESC
+        """.format(warehouse_condition=warehouse_condition), as_dict=True)
         
         frappe.logger().info(f"Found {len(available_containers)} available container barrels")
         return available_containers
