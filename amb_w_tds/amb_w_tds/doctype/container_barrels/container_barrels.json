@@ -77,13 +77,16 @@
    "default": "Available",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Available\nIn Use\nRetired\nMaintenance"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-10-30 19:35:15.435337",
+ "modified": "2025-10-30 21:45:19.730210",
  "modified_by": "Administrator",
  "module": "amb_w_tds",
  "name": "Container Barrels",

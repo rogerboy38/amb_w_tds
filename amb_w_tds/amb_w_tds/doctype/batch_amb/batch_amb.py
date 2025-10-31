@@ -451,61 +451,65 @@ def calculate_batch_cost(batch_name):
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
     """
-    Get available empty containers from Container Barrels across all batches
+    Get available container barrels from all submitted batches
     
     Returns container barrels that are marked as 'Available' for reuse.
-    Container Barrels now have a 'status' field to track availability.
     
     Args:
         warehouse: Optional warehouse filter (not yet implemented)
     
     Returns:
-        list: Available container barrels with details
+        list: Available container barrels with parent batch details
     """
     try:
-        # Get all submitted batches
+        # Get all submitted batches with container barrels
         batches = frappe.get_all(
             'Batch AMB',
             filters={'docstatus': 1},  # Only submitted batches
-            fields=['name', 'title']
+            fields=['name', 'title', 'item_code', 'work_order_reference']
         )
+        
+        if not batches:
+            return []
         
         available_containers = []
         
+        # For each batch, get available container barrels
         for batch in batches:
-            # Get available container barrels from this batch
-            containers = frappe.get_all(
-                'Container Barrels',
-                filters={
-                    'parent': batch.name,
-                    'parenttype': 'Batch AMB',
-                    'status': 'Available'
-                },
-                fields=[
-                    'name', 
-                    'barrel_serial_number', 
-                    'packaging_type',
-                    'gross_weight',
-                    'tara_weight',
-                    'net_weight',
-                    'status',
-                    'parent as batch_name'
-                ],
-                order_by='barrel_serial_number'
-            )
-            
-            # Add batch title to each container
-            for container in containers:
-                container['batch_title'] = batch.title
+            # Query the child table directly
+            containers = frappe.db.sql("""
+                SELECT 
+                    cb.name,
+                    cb.barrel_serial_number,
+                    cb.packaging_type,
+                    cb.gross_weight,
+                    cb.tara_weight,
+                    cb.net_weight,
+                    cb.status,
+                    cb.parent as batch_id,
+                    ba.title as batch_title,
+                    ba.item_code,
+                    ba.work_order_reference
+                FROM `tabContainer Barrels` cb
+                INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
+                WHERE cb.status = 'Available'
+                AND ba.docstatus = 1
+                AND cb.parenttype = 'Batch AMB'
+                {warehouse_condition}
+                ORDER BY cb.modified DESC
+            """.format(
+                warehouse_condition=f"AND ba.warehouse = '{warehouse}'" if warehouse else ""
+            ), as_dict=True)
             
             available_containers.extend(containers)
         
+        frappe.logger().info(f"Found {len(available_containers)} available container barrels")
         return available_containers
         
     except Exception as e:
         frappe.log_error(
-            f"Error in get_available_containers: {str(e)}", 
-            "Batch AMB - Get Available Containers"
+            title="Error in get_available_containers",
+            message=f"Error: {str(e)}\n{frappe.get_traceback()}"
         )
         return []
 
