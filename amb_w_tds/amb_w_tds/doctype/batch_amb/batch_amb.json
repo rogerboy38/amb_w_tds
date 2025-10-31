@@ -1475,7 +1475,7 @@
    "non_negative": 0,
    "oldfieldname": null,
    "oldfieldtype": null,
-   "options": "Pending\nPassed\nFailed\nHold",
+   "options": "Pending\nIn Progress\nOn Hold\nQuality Check\nPassed\nFailed\nCancelled",
    "parent": "Batch AMB",
    "parentfield": "fields",
    "parenttype": "DocType",
