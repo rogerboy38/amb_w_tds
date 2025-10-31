@@ -448,21 +448,66 @@ def calculate_batch_cost(batch_name):
         'cost_per_unit': batch.cost_per_unit
     }
 
-
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
-    """Get available empty containers"""
-    filters = {'status': 'Available'}
-    if warehouse:
-        filters['warehouse'] = warehouse
+    """
+    Get available empty containers from Container Barrels across all batches
     
-    containers = frappe.get_all('Container', 
-        filters=filters,
-        fields=['name', 'container_type', 'capacity', 'warehouse']
-    )
+    Returns container barrels that are marked as 'Available' for reuse.
+    Container Barrels now have a 'status' field to track availability.
     
-    return containers
-
+    Args:
+        warehouse: Optional warehouse filter (not yet implemented)
+    
+    Returns:
+        list: Available container barrels with details
+    """
+    try:
+        # Get all submitted batches
+        batches = frappe.get_all(
+            'Batch AMB',
+            filters={'docstatus': 1},  # Only submitted batches
+            fields=['name', 'title']
+        )
+        
+        available_containers = []
+        
+        for batch in batches:
+            # Get available container barrels from this batch
+            containers = frappe.get_all(
+                'Container Barrels',
+                filters={
+                    'parent': batch.name,
+                    'parenttype': 'Batch AMB',
+                    'status': 'Available'
+                },
+                fields=[
+                    'name', 
+                    'barrel_serial_number', 
+                    'packaging_type',
+                    'gross_weight',
+                    'tara_weight',
+                    'net_weight',
+                    'status',
+                    'parent as batch_name'
+                ],
+                order_by='barrel_serial_number'
+            )
+            
+            # Add batch title to each container
+            for container in containers:
+                container['batch_title'] = batch.title
+            
+            available_containers.extend(containers)
+        
+        return available_containers
+        
+    except Exception as e:
+        frappe.log_error(
+            f"Error in get_available_containers: {str(e)}", 
+            "Batch AMB - Get Available Containers"
+        )
+        return []
 
 @frappe.whitelist()
 def duplicate_batch(source_name):
