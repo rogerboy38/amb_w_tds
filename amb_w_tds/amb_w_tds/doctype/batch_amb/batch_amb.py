@@ -481,7 +481,7 @@ def get_available_containers(warehouse=None):
                 cb.parent as batch_id,
                 ba.title as batch_title,
                 ba.item_code,
-                ba.work_order_reference,
+                ba.work_order_ref,
                 ba.docstatus
             FROM `tabContainer Barrels` cb
             INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
