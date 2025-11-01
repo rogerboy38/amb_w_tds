@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-01 22:56:03.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "target_concentration",
+  "min_brix",
+  "max_brix",
+  "column_break_1",
+  "conversion_factor",
+  "yield_percentage",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "target_concentration",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Target Concentration",
+   "options": "1X\n30X\n60X\nCustom",
+   "reqd": 1
+  },
+  {
+   "fieldname": "min_brix",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Min Brix Level",
+   "precision": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "max_brix",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Max Brix Level",
+   "precision": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "Conversion Factor",
+   "precision": 2,
+   "reqd": 1
+  },
+  {
+   "fieldname": "yield_percentage",
+   "fieldtype": "Float",
+   "label": "Expected Yield %",
+   "precision": 1,
+   "default": 85.0
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-11-01 22:56:03.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Juice Conversion Config",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

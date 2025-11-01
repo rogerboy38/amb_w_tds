@@ -1,334 +1,288 @@
+"""
+Enhanced Container Selection Controller for amb_w_tds
+Integrates with Batch AMB Container Barrels bidirectional sync
+"""
+
 import frappe
-import json
-from datetime import datetime
+from frappe import _
 from frappe.model.document import Document
+from frappe.utils import now, flt, get_datetime
+import json
+import time
 
 class ContainerSelection(Document):
-    def validate(self):
-        """Validate container data and enforce business rules"""
-        self.validate_container_capacity()
-        self.validate_container_status()
-        self.validate_assignment_rules()
-        self.validate_unique_container_id()
-        
+    """Enhanced Container Selection with weight tracking and sync"""
+    
     def before_save(self):
-        """Track changes and assignment history"""
-        self.track_assignment_history()
-        self.update_container_activity()
+        """Execute before saving the document"""
+        # Calculate weights if gross weight is provided
+        if self.gross_weight:
+            self.calculate_weights()
         
-    def after_insert(self):
-        """Initialize container after creation"""
-        self.initialize_container_log()
+        # Set tara weight from Item master if not set
+        if not self.tara_weight and self.container_type:
+            self.set_tara_weight_from_item()
         
-    def on_update(self):
-        """Handle container status changes"""
-        self.handle_status_change()
+        # Validate partial fill if applicable
+        if self.gross_weight and self.tara_weight:
+            self.validate_partial_fill()
+    
+    def after_save(self):
+        """Execute after saving the document"""
+        # Trigger sync to Batch AMB if linked
+        if self.batch_amb_link and self.sync_status != 'Synced':
+            self.trigger_sync()
+    
+    def validate(self):
+        """Validate container data before save"""
+        # Validate weight data
+        if self.gross_weight and self.tara_weight:
+            if self.gross_weight < self.tara_weight:
+                frappe.throw(_("Gross weight cannot be less than tara weight"))
         
-    def on_cancel(self):
-        """Handle container cancellation"""
-        self.cleanup_container_assignment()
-        
-    def validate_container_capacity(self):
-        """Validate container capacity constraints"""
-        if self.capacity_liters and self.capacity_liters <= 0:
-            frappe.throw("Container capacity must be a positive value")
+        # Validate lifecycle status transitions
+        self.validate_lifecycle_transition()
+    
+    def calculate_weights(self):
+        """Calculate net weight and variance"""
+        if self.gross_weight and self.tara_weight:
+            self.net_weight = flt(self.gross_weight - self.tara_weight, 3)
             
-        # Validate capacity against container type
-        capacity_limits = {
-            "Sample Container": 10,
-            "Production Container": 5000,
-            "QC Container": 50,
-            "Storage Container": 10000
-        }
-        
-        if self.container_type in capacity_limits:
-            max_capacity = capacity_limits[self.container_type]
-            if self.capacity_liters > max_capacity:
-                frappe.throw(f"Capacity cannot exceed {max_capacity} liters for {self.container_type}")
+            # Calculate variance percentage if expected weight exists
+            if self.expected_weight:
+                variance = abs(self.net_weight - self.expected_weight) / self.expected_weight
+                self.weight_variance_percentage = flt(variance * 100, 2)
                 
-    def validate_container_status(self):
-        """Validate container status transitions"""
-        if self.container_status == "Retired":
-            if not self.is_active:
-                pass  # Retired containers should be inactive
-            else:
-                self.is_active = 0
-                
-        if self.container_status == "In Use" and not self.current_batch:
-            frappe.throw("Containers marked as 'In Use' must have a current batch assigned")
-            
-    def validate_assignment_rules(self):
-        """Validate container assignment business rules"""
-        # Check if assigning to batch when status is changing to "In Use"
-        if self.container_status == "In Use" and self.current_batch:
-            if not self.assignment_date:
-                self.assignment_date = datetime.now()
-            if not self.assigned_by:
-                self.assigned_by = frappe.session.user
-                
-        # Validate that available containers don't have batch assignments
-        if self.container_status == "Available" and self.current_batch:
-            frappe.throw("Available containers cannot have current batch assignments")
-            
-    def validate_unique_container_id(self):
-        """Ensure container ID uniqueness across all containers"""
-        if self.container_id and not self.is_new():
-            existing_container = frappe.get_value(
-                "Container Selection",
-                filters={
-                    "container_id": self.container_id,
-                    "name": ["!=", self.name]
+                # Check if within 1% tolerance
+                self.is_within_tolerance = 1 if variance <= 0.01 else 0
+    
+    def set_tara_weight_from_item(self):
+        """Get tara weight from Item master based on container type"""
+        if self.container_type:
+            try:
+                # Try to get item document
+                item = frappe.get_doc('Item', self.container_type)
+                # Get weight from Item master (assuming weight_per_unit field)
+                if hasattr(item, 'weight_per_unit') and item.weight_per_unit:
+                    self.tara_weight = flt(item.weight_per_unit, 3)
+                elif hasattr(item, 'net_weight') and item.net_weight:
+                    self.tara_weight = flt(item.net_weight, 3)
+            except:
+                # If item not found, use defaults based on container type
+                default_weights = {
+                    '220L Barrel': 15.0,
+                    '1000L IBC': 45.0,
+                    '20L Pail': 2.5,
+                    'Industrial Bag': 0.5
                 }
-            )
-            if existing_container:
-                frappe.throw(f"Container ID '{self.container_id}' already exists")
-                
-    def track_assignment_history(self):
-        """Track container assignment changes"""
-        if self.is_new():
-            self.create_assignment_log("Created")
+                self.tara_weight = default_weights.get(self.container_type, 0.0)
+    
+    def validate_partial_fill(self):
+        """Validate and handle partial fill scenarios"""
+        if not self.net_weight:
+            return
+        
+        # Get expected capacity from container type
+        expected_capacity = self.get_container_capacity()
+        if not expected_capacity:
+            return
+        
+        # Calculate fill percentage
+        fill_percentage = (self.net_weight / expected_capacity) * 100
+        self.fill_percentage = flt(fill_percentage, 2)
+        
+        # Determine if it's a partial fill
+        if fill_percentage < 10:
+            # Below minimum threshold - reject
+            frappe.throw(_("Fill percentage ({0}%) is below minimum threshold (10%). Container rejected.").format(fill_percentage))
+        elif fill_percentage < 95:
+            # Partial fill
+            self.is_partial_fill = 1
+            self.lifecycle_status = "Partial_Fill"
         else:
-            # Check for status changes
-            old_doc = self.get_doc_before_save()
-            if old_doc and old_doc.container_status != self.container_status:
-                status_change = f"Status changed from {old_doc.container_status} to {self.container_status}"
-                self.create_assignment_log(status_change)
-                
-            # Check for batch assignment changes
-            if old_doc and old_doc.current_batch != self.current_batch:
-                if old_doc.current_batch and not self.current_batch:
-                    self.create_assignment_log(f"Batch {old_doc.current_batch} removed")
-                elif self.current_batch:
-                    batch_change = f"Batch {old_doc.current_batch or 'None'} to {self.current_batch}"
-                    self.create_assignment_log(f"Batch assignment: {batch_change}")
-                    
-    def create_assignment_log(self, action):
-        """Create an assignment history log entry"""
-        assignment_log = {
-            "doctype": "Container Assignment Log",
-            "container_id": self.name,
-            "action": action,
-            "timestamp": datetime.now(),
-            "user": frappe.session.user,
-            "container_status": self.container_status,
-            "batch": self.current_batch
+            # Normal fill
+            self.is_partial_fill = 0
+            if self.lifecycle_status == "Partial_Fill":
+                self.lifecycle_status = "Completed"
+    
+    def get_container_capacity(self):
+        """Get container capacity based on type"""
+        capacities = {
+            '220L Barrel': 220.0,
+            '1000L IBC': 1000.0,
+            '20L Pail': 20.0,
+            'Industrial Bag': 25.0  # kg capacity
+        }
+        return capacities.get(self.container_type, 0.0)
+    
+    def validate_lifecycle_transition(self):
+        """Validate container lifecycle status transitions"""
+        if self.is_new():
+            return
+        
+        old_doc = self.get_doc_before_save()
+        if not old_doc or not old_doc.lifecycle_status:
+            return
+        
+        old_status = old_doc.lifecycle_status
+        new_status = self.lifecycle_status
+        
+        # Define valid transitions
+        valid_transitions = {
+            'Planned': ['Reserved', 'Available'],
+            'Reserved': ['In_Use', 'Available'],
+            'In_Use': ['Completed', 'Partial_Fill', 'Available'],
+            'Completed': ['Available', 'Retired'],
+            'Partial_Fill': ['Completed', 'Available'],
+            'Available': ['Reserved', 'Retired'],
+            'Retired': []  # Final state
         }
         
-        frappe.get_doc(assignment_log).insert()
-        
-    def update_container_activity(self):
-        """Update container activity timestamp"""
-        if self.is_active:
-            self.last_activity = datetime.now()
+        if old_status != new_status:
+            allowed_states = valid_transitions.get(old_status, [])
+            if new_status not in allowed_states:
+                frappe.throw(_("Invalid lifecycle transition from {0} to {1}").format(old_status, new_status))
+    
+    def trigger_sync(self):
+        """Trigger synchronization with Batch AMB"""
+        try:
+            # Create sync log entry
+            sync_log = frappe.get_doc({
+                'doctype': 'Container Sync Log',
+                'container_selection': self.name,
+                'batch_amb': self.batch_amb_link,
+                'sync_direction': 'CS_to_Batch',
+                'sync_status': 'Success',
+                'sync_timestamp': now(),
+                'synced_fields': json.dumps({
+                    'gross_weight': self.gross_weight,
+                    'tara_weight': self.tara_weight,
+                    'net_weight': self.net_weight,
+                    'lifecycle_status': self.lifecycle_status,
+                    'is_partial_fill': self.is_partial_fill
+                })
+            })
+            sync_log.insert(ignore_permissions=True)
             
-    def initialize_container_log(self):
-        """Initialize container with default activity log"""
-        if self.is_active:
-            self.create_assignment_log("Container activated")
+            # Update sync status
+            self.sync_status = 'Synced'
+            self.last_synced = now()
             
-    def handle_status_change(self):
-        """Handle specific status change requirements"""
-        if self.container_status == "Maintenance":
-            # Release any current batch assignment
-            if self.current_batch:
-                self.current_batch = None
-                self.assignment_date = None
-                self.assigned_by = None
-                frappe.msgprint("Current batch assignment released due to maintenance status")
-                
-        elif self.container_status == "Available":
-            # Release assignment when marked available
-            if self.current_batch:
-                self.current_batch = None
-                self.assignment_date = None
-                self.assigned_by = None
-                frappe.msgprint("Current batch assignment released - container is now available")
-                
-    def cleanup_container_assignment(self):
-        """Clean up container assignment when cancelled"""
-        if self.container_status == "In Use" and self.current_batch:
-            frappe.msgprint(f"Warning: Cancelled container '{self.container_id}' is still assigned to batch '{self.current_batch}'")
-            
-    def get_available_containers(self, container_type=None, min_capacity=None):
-        """Get list of available containers with optional filtering"""
-        filters = {
-            "container_status": "Available",
-            "is_active": 1
-        }
-        
-        if container_type:
-            filters["container_type"] = container_type
-            
-        if min_capacity:
-            filters["capacity_liters"] = [">=", min_capacity]
-            
-        available_containers = frappe.get_all(
-            "Container Selection",
-            filters=filters,
-            fields=["name", "container_id", "container_type", "capacity_liters"],
-            order_by="capacity_liters asc"
+        except Exception as e:
+            frappe.log_error(f"Container sync failed: {str(e)}", "Container Sync Error")
+            self.sync_status = 'Error'
+            self.sync_error = str(e)
+
+# API Methods for mobile scanning and integration
+@frappe.whitelist()
+def scan_barcode(barcode, plant=None):
+    """Handle barcode scanning for containers"""
+    try:
+        # Find container by barcode/serial number
+        containers = frappe.get_all(
+            'Container Selection',
+            filters={'serial_number': barcode},
+            fields=['name', 'container_type', 'lifecycle_status', 'gross_weight', 'net_weight']
         )
         
-        return available_containers
-        
-    def assign_container_to_batch(self, batch_id, assign_container=None):
-        """Assign container to a batch with validation"""
-        available_containers = self.get_available_containers()
-        
-        if not available_containers:
-            frappe.throw("No available containers found for assignment")
+        if containers:
+            container = containers[0]
+            # Update scan timestamp
+            frappe.db.set_value('Container Selection', container.name, {
+                'barcode_scanned_at': now(),
+                'scanned_by': frappe.session.user
+            })
             
-        container_to_assign = assign_container
-        if not container_to_assign and available_containers:
-            # Auto-assign first available container
-            container_to_assign = available_containers[0]
-            
-        if isinstance(container_to_assign, dict):
-            container_name = container_to_assign["name"]
+            return {
+                'success': True,
+                'container': container,
+                'message': 'Container found and scan recorded'
+            }
         else:
-            container_name = container_to_assign
+            return {
+                'success': False,
+                'message': 'Container not found with barcode: ' + barcode
+            }
             
-        container_doc = frappe.get_doc("Container Selection", container_name)
-        
-        if container_doc.container_status != "Available":
-            frappe.throw(f"Container {container_doc.container_id} is not available for assignment")
-            
-        # Update container assignment
-        container_doc.container_status = "In Use"
-        container_doc.current_batch = batch_id
-        container_doc.assignment_date = datetime.now()
-        container_doc.assigned_by = frappe.session.user
-        container_doc.save()
-        
-        frappe.db.commit()
-        
-        frappe.msgprint(f"Container {container_doc.container_id} successfully assigned to batch {batch_id}")
-        return container_doc
-
-# ================================================
-# HOOKS.PY CONTAINER SELECTION FUNCTIONS
-# ================================================
+    except Exception as e:
+        frappe.log_error(f"Barcode scan error: {str(e)}", "Barcode Scan Error")
+        return {'success': False, 'error': str(e)}
 
 @frappe.whitelist()
-def get_container_status_summary():
-    """Get summary of container statuses for dashboard"""
-    status_summary = frappe.db.sql("""
-        SELECT 
-            container_status,
-            COUNT(*) as count,
-            SUM(capacity_liters) as total_capacity
-        FROM `tabContainer Selection`
-        WHERE is_active = 1
-        GROUP BY container_status
-    """, as_dict=True)
-    
-    return status_summary
+def calculate_weights(container_name, gross_weight):
+    """Calculate weights for a container"""
+    try:
+        container = frappe.get_doc('Container Selection', container_name)
+        container.gross_weight = flt(gross_weight, 3)
+        container.calculate_weights()
+        container.save()
+        
+        return {
+            'success': True,
+            'net_weight': container.net_weight,
+            'tara_weight': container.tara_weight,
+            'variance_percentage': container.weight_variance_percentage,
+            'is_within_tolerance': container.is_within_tolerance
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 @frappe.whitelist()
-def get_available_containers_by_type():
-    """Get available containers grouped by type"""
-    available_containers = frappe.db.sql("""
-        SELECT 
-            container_type,
-            container_id,
-            name,
-            capacity_liters
-        FROM `tabContainer Selection`
-        WHERE container_status = 'Available' 
-        AND is_active = 1
-        ORDER BY container_type, capacity_liters
-    """, as_dict=True)
-    
-    return available_containers
+def assign_to_batch(container_name, batch_amb_name):
+    """Assign container to a Batch AMB"""
+    try:
+        container = frappe.get_doc('Container Selection', container_name)
+        container.batch_amb_link = batch_amb_name
+        container.lifecycle_status = 'Reserved'
+        container.reserved_date = now()
+        container.save()
+        
+        return {
+            'success': True,
+            'message': f'Container assigned to batch {batch_amb_name}'
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 @frappe.whitelist()
-def release_container_assignment(container_name):
-    """Release container from current batch assignment"""
-    container_doc = frappe.get_doc("Container Selection", container_name)
+def get_available_containers(plant=None, container_type=None):
+    """Get available containers for assignment"""
+    filters = {'lifecycle_status': 'Available'}
     
-    if container_doc.container_status != "In Use":
-        frappe.throw("Container is not currently assigned to a batch")
-        
-    # Update container status
-    old_batch = container_doc.current_batch
-    container_doc.container_status = "Available"
-    container_doc.current_batch = None
-    container_doc.assignment_date = None
-    container_doc.assigned_by = None
+    if plant:
+        filters['plant'] = plant
+    if container_type:
+        filters['container_type'] = container_type
     
-    container_doc.save()
-    frappe.db.commit()
-    
-    frappe.msgprint(f"Container {container_doc.container_id} released from batch {old_batch}")
-    
-@frappe.whitelist()
-def validate_container_for_batch(container_name, batch_id):
-    """Validate if container can be assigned to specific batch"""
-    container_doc = frappe.get_doc("Container Selection", container_name)
-    batch_doc = frappe.get_doc("Batch", batch_id)
-    
-    validation_result = {
-        "can_assign": True,
-        "errors": []
-    }
-    
-    # Check container availability
-    if container_doc.container_status != "Available":
-        validation_result["can_assign"] = False
-        validation_result["errors"].append(f"Container is {container_doc.container_status}")
-        
-    # Check capacity requirements (assume batch has quantity requirement)
-    if hasattr(batch_doc, 'quantity') and container_doc.capacity_liters < batch_doc.quantity:
-        validation_result["can_assign"] = False
-        validation_result["errors"].append("Container capacity insufficient for batch quantity")
-        
-    # Check container type compatibility
-    if container_doc.container_type == "Sample Container" and batch_doc.batch_type != "Sample":
-        validation_result["errors"].append("Container type mismatch with batch type")
-        
-    return validation_result
-
-# Frappe hooks integration
-def container_selection_on_app_ready():
-    """Initialize container selection system on app ready"""
-    frappe.db.set_single_value("System Settings", "container_selection_initialized", 1)
-
-def container_selection_on_db_setup():
-    """Setup container selection database tables"""
-    # This would create additional tables for assignment logs, etc.
-    pass
-
-# Quality Gates Integration Functions
-def validate_container_selection_quality():
-    """Run quality validation on container selection system"""
-    quality_results = {
-        "syntax_validation": True,
-        "naming_conventions": True,
-        "security_checks": True,
-        "integration_tests": True,
-        "completeness_score": 100
-    }
-    
-    # Check naming conventions
-    naming_issues = []
-    if not all(hasattr(doc, 'container_id') for doc in frappe.get_all("Container Selection")):
-        naming_issues.append("Missing container_id fields")
-        
-    if naming_issues:
-        quality_results["naming_conventions"] = False
-        quality_results["naming_issues"] = naming_issues
-        
-    # Security checks
-    security_issues = []
-    docs_with_hardcoded_creds = frappe.get_all(
-        "Container Selection", 
-        filters={"notes": ["like", "%password%"]}
+    containers = frappe.get_all(
+        'Container Selection',
+        filters=filters,
+        fields=['name', 'serial_number', 'container_type', 'net_weight', 'last_synced'],
+        order_by='creation desc'
     )
-    if docs_with_hardcoded_creds:
-        security_issues.append("Potential hardcoded credentials found")
+    
+    return {'success': True, 'containers': containers}
+
+@frappe.whitelist()
+def update_status(container_name, new_status):
+    """Update container lifecycle status"""
+    try:
+        container = frappe.get_doc('Container Selection', container_name)
+        old_status = container.lifecycle_status
+        container.lifecycle_status = new_status
         
-    if security_issues:
-        quality_results["security_checks"] = False
-        quality_results["security_issues"] = security_issues
+        # Set completion date if moving to completed
+        if new_status == 'Completed':
+            container.completed_date = now()
         
-    return quality_results
+        container.save()
+        
+        return {
+            'success': True,
+            'message': f'Status updated from {old_status} to {new_status}'
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
