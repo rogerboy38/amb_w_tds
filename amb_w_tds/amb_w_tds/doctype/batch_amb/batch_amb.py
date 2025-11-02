@@ -1,4 +1,3 @@
-
 # Copyright (c) 2024, AMB and contributors
 # For license information, please see license.txt
 
@@ -557,214 +556,6 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
             limit=50
         )
         
-<<<<<<< Updated upstream
-        existing_serial_set = {serial[0] for serial in existing_serials}
-        
-        # Generate new serial number
-        serial_number = self._create_unique_serial(batch_name, existing_serial_set)
-        
-        return serial_number
-    
-    def _create_unique_serial(self, batch_name, existing_serials):
-        """Create a unique serial number"""
-        # Serial format: BATCH_PREFIX + Random alphanumeric + Check digit
-        batch_prefix = batch_name.replace("BATCH-", "").replace("-", "")
-        
-        # Generate random component
-        while True:
-            random_component = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            check_digit = self._calculate_check_digit(batch_prefix + random_component)
-            
-            serial = f"AMB-{batch_prefix}-{random_component}{check_digit}"
-            
-            # Check if this serial already exists in system
-            if serial not in existing_serials:
-                # Also check other batches to ensure global uniqueness
-                duplicate = frappe.get_all(
-                    "Container Barrels",
-                    filters={"barrel_serial_number": serial},
-                    limit=1
-                )
-                if not duplicate:
-                    return serial
-    
-    def _calculate_check_digit(self, base_number):
-        """Calculate check digit for serial validation"""
-        total = 0
-        for i, char in enumerate(base_number):
-            if char.isdigit():
-                total += int(char) * (i + 1)
-            else:
-                total += ord(char) * (i + 1)
-        return str(total % 10)  # Return last digit as check digit
-    
-    def generate_multiple_serials(self, count):
-        """Generate multiple unique serial numbers"""
-        serials = []
-        batch_name = self.name
-        
-        if not batch_name:
-            frappe.throw(_("Batch name is required to generate serial numbers"))
-        
-        for i in range(count):
-            serial = self.generate_container_serial(batch_name)
-            serials.append(serial)
-        
-        return serials
-
-# ==================== WHITELISTED METHODS ====================
-@frappe.whitelist()
-def get_work_order_details(work_order):
-    """Get work order details for batch creation"""
-    wo = frappe.get_doc('Work Order', work_order)
-    return {
-        'item_to_manufacture': wo.production_item,
-        'item_name': frappe.db.get_value('Item', wo.production_item, 'item_name'),
-        'planned_qty': wo.qty,
-        'company': wo.company,
-        'bom_no': wo.bom_no,
-        'source_warehouse': wo.source_warehouse,
-        'target_warehouse': wo.fg_warehouse,
-        'uom': frappe.db.get_value('Item', wo.production_item, 'stock_uom')
-    }
-
-@frappe.whitelist()
-def calculate_batch_cost(batch_name):
-    """Calculate total cost for a batch"""
-    batch = frappe.get_doc('Batch AMB', batch_name)
-    batch.calculate_costs()
-    return {
-        'total_batch_cost': batch.total_batch_cost,
-        'cost_per_unit': batch.cost_per_unit
-    }
-
-@frappe.whitelist()
-def generate_container_serials(batch_name, container_count):
-    """Generate serial numbers for containers"""
-    from frappe.utils import cint
-    batch = frappe.get_doc("Batch AMB", batch_name)
-    serials = batch.generate_multiple_serials(cint(container_count))
-    
-    return {
-        "serials": serials,
-        "count": len(serials)
-    }
-
-@frappe.whitelist()
-def generate_single_container_serial(batch_name):
-    """Generate a single container serial number"""
-    batch = frappe.get_doc("Batch AMB", batch_name)
-    serial = batch.generate_container_serial(batch_name)
-    
-    return {
-        "serial": serial
-    }
-
-@frappe.whitelist()
-def get_available_containers(warehouse=None):
-    """
-    Get available container barrels from all batches
-    Returns container barrels that are marked as 'Available' for reuse.
-    Includes both draft and submitted batches (docstatus >= 0).
-    Args:
-        warehouse: Optional warehouse filter
-    Returns:
-        list: Available container barrels with parent batch details
-    """
-    try:
-        # Build warehouse condition
-        warehouse_condition = ""
-        if warehouse:
-            warehouse_condition = f"AND ba.warehouse = '{frappe.db.escape(warehouse)}'"
-        
-        # Query all available containers (include draft batches)
-        available_containers = frappe.db.sql("""
-            SELECT
-                cb.name,
-                cb.barrel_serial_number,
-                cb.packaging_type,
-                cb.gross_weight,
-                cb.tara_weight,
-                cb.net_weight,
-                cb.status,
-                cb.parent as batch_id,
-                ba.title as batch_title,
-                ba.item_code,
-                ba.work_order_ref,
-                ba.docstatus
-            FROM `tabContainer Barrels` cb
-            INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
-            WHERE cb.status = 'Available'
-            AND ba.docstatus >= 0
-            AND cb.parenttype = 'Batch AMB'
-            {warehouse_condition}
-            ORDER BY cb.modified DESC
-        """.format(warehouse_condition=warehouse_condition), as_dict=True)
-        
-        frappe.logger().info(f"Found {len(available_containers)} available container barrels")
-        return available_containers
-    
-    except Exception as e:
-        frappe.log_error(
-            title="Error in get_available_containers",
-            message=f"Error: {str(e)}\n{frappe.get_traceback()}"
-        )
-        return []
-
-@frappe.whitelist()
-def duplicate_batch(source_name):
-    """Duplicate a batch for new production run"""
-    source = frappe.get_doc('Batch AMB', source_name)
-    new_batch = frappe.copy_doc(source)
-    new_batch.batch_status = 'Draft'
-    new_batch.docstatus = 0
-    new_batch.produced_qty = 0
-    new_batch.production_start_date = None
-    new_batch.production_end_date = None
-    new_batch.stock_entry_reference = None
-    new_batch.lote_amb_reference = None
-    
-    # Clear container data
-    new_batch.container_barrels = []
-    new_batch.insert()
-    return new_batch.name
-
-@frappe.whitelist()
-def get_running_batch_announcements(include_companies=True, include_plants=True, include_quality=True):
-    """
-    Get running batch announcements for widget display
-    Uses actual Batch AMB fields
-    """
-    try:
-        # Get running batches with CORRECT field names
-        batches = frappe.get_all(
-            'Batch AMB',
-            filters={
-                'docstatus': ['!=', 2],  # Not cancelled
-            },
-            fields=[
-                'name',
-                'title',
-                'item_to_manufacture',
-                'item_code',
-                'wo_item_name',
-                'quality_status',
-                'target_plant',
-                'production_plant_name',
-                'custom_plant_code',
-                'custom_batch_level',
-                'barrel_count',
-                'total_net_weight',
-                'wo_start_date',
-                'modified',
-                'creation'
-            ],
-            order_by='modified desc',
-            limit=50
-        )
-        
-=======
->>>>>>> Stashed changes
         if not batches:
             return {
                 'success': True,
@@ -812,10 +603,7 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
                 'modified': str(batch.modified) if batch.modified else '',
                 'creation': str(batch.creation) if batch.creation else ''
             }
-<<<<<<< Updated upstream
-=======
             
->>>>>>> Stashed changes
             announcements.append(announcement)
             
             # Update stats
@@ -829,12 +617,6 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
             # Group by company and plant
             if include_companies:
                 plant = batch.custom_plant_code or '1'
-<<<<<<< Updated upstream
-                if company not in grouped:
-                    grouped[company] = {}
-                if plant not in grouped[company]:
-                    grouped[company][plant] = []
-=======
                 
                 if company not in grouped:
                     grouped[company] = {}
@@ -842,7 +624,6 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
                 if plant not in grouped[company]:
                     grouped[company][plant] = []
                 
->>>>>>> Stashed changes
                 grouped[company][plant].append(announcement)
         
         return {
@@ -851,19 +632,12 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
             'grouped_announcements': grouped,
             'stats': stats
         }
-<<<<<<< Updated upstream
-    
-=======
         
->>>>>>> Stashed changes
     except Exception as e:
         import traceback
         error_msg = f"Error in get_running_batch_announcements: {str(e)}\n{traceback.format_exc()}"
         frappe.log_error(error_msg, "Batch Widget API Error")
-<<<<<<< Updated upstream
-=======
         
->>>>>>> Stashed changes
         return {
             'success': False,
             'error': str(e),
