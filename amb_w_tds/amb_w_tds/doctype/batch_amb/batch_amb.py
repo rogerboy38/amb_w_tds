@@ -471,236 +471,237 @@ Batch **{self.name}** has been completed.
         
         return serials
 
-    # ==================== WHITELISTED METHODS ====================
-    @frappe.whitelist()
-    def get_work_order_details(work_order):
-        """Get work order details for batch creation"""
-        wo = frappe.get_doc('Work Order', work_order)
-        return {
-            'item_to_manufacture': wo.production_item,
-            'item_name': frappe.db.get_value('Item', wo.production_item, 'item_name'),
-            'planned_qty': wo.qty,
-            'company': wo.company,
-            'bom_no': wo.bom_no,
-            'source_warehouse': wo.source_warehouse,
-            'target_warehouse': wo.fg_warehouse,
-            'uom': frappe.db.get_value('Item', wo.production_item, 'stock_uom')
-        }
+# ==================== WHITELISTED METHODS ====================
+@frappe.whitelist()
+def get_work_order_details(work_order):
+    """Get work order details for batch creation"""
+    wo = frappe.get_doc('Work Order', work_order)
+    return {
+        'item_to_manufacture': wo.production_item,
+        'item_name': frappe.db.get_value('Item', wo.production_item, 'item_name'),
+        'planned_qty': wo.qty,
+        'company': wo.company,
+        'bom_no': wo.bom_no,
+        'source_warehouse': wo.source_warehouse,
+        'target_warehouse': wo.fg_warehouse,
+        'uom': frappe.db.get_value('Item', wo.production_item, 'stock_uom')
+    }
 
-    @frappe.whitelist()
-    def calculate_batch_cost(batch_name):
-        """Calculate total cost for a batch"""
-        batch = frappe.get_doc('Batch AMB', batch_name)
-        batch.calculate_costs()
-        return {
-            'total_batch_cost': batch.total_batch_cost,
-            'cost_per_unit': batch.cost_per_unit
-        }
+@frappe.whitelist()
+def calculate_batch_cost(batch_name):
+    """Calculate total cost for a batch"""
+    batch = frappe.get_doc('Batch AMB', batch_name)
+    batch.calculate_costs()
+    return {
+        'total_batch_cost': batch.total_batch_cost,
+        'cost_per_unit': batch.cost_per_unit
+    }
 
-    @frappe.whitelist()
-    def generate_container_serials(batch_name, container_count):
-        """Generate serial numbers for containers"""
-        batch = frappe.get_doc("Batch AMB", batch_name)
-        serials = batch.generate_multiple_serials(cint(container_count))
+@frappe.whitelist()
+def generate_container_serials(batch_name, container_count):
+    """Generate serial numbers for containers"""
+    from frappe.utils import cint
+    batch = frappe.get_doc("Batch AMB", batch_name)
+    serials = batch.generate_multiple_serials(cint(container_count))
+    
+    return {
+        "serials": serials,
+        "count": len(serials)
+    }
+
+@frappe.whitelist()
+def generate_single_container_serial(batch_name):
+    """Generate a single container serial number"""
+    batch = frappe.get_doc("Batch AMB", batch_name)
+    serial = batch.generate_container_serial(batch_name)
+    
+    return {
+        "serial": serial
+    }
+
+@frappe.whitelist()
+def get_available_containers(warehouse=None):
+    """
+    Get available container barrels from all batches
+    Returns container barrels that are marked as 'Available' for reuse.
+    Includes both draft and submitted batches (docstatus >= 0).
+    Args:
+        warehouse: Optional warehouse filter
+    Returns:
+        list: Available container barrels with parent batch details
+    """
+    try:
+        # Build warehouse condition
+        warehouse_condition = ""
+        if warehouse:
+            warehouse_condition = f"AND ba.warehouse = '{frappe.db.escape(warehouse)}'"
         
-        return {
-            "serials": serials,
-            "count": len(serials)
-        }
-
-    @frappe.whitelist()
-    def generate_single_container_serial(batch_name):
-        """Generate a single container serial number"""
-        batch = frappe.get_doc("Batch AMB", batch_name)
-        serial = batch.generate_container_serial(batch_name)
+        # Query all available containers (include draft batches)
+        available_containers = frappe.db.sql("""
+            SELECT
+                cb.name,
+                cb.barrel_serial_number,
+                cb.packaging_type,
+                cb.gross_weight,
+                cb.tara_weight,
+                cb.net_weight,
+                cb.status,
+                cb.parent as batch_id,
+                ba.title as batch_title,
+                ba.item_code,
+                ba.work_order_ref,
+                ba.docstatus
+            FROM `tabContainer Barrels` cb
+            INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
+            WHERE cb.status = 'Available'
+            AND ba.docstatus >= 0
+            AND cb.parenttype = 'Batch AMB'
+            {warehouse_condition}
+            ORDER BY cb.modified DESC
+        """.format(warehouse_condition=warehouse_condition), as_dict=True)
         
-        return {
-            "serial": serial
-        }
+        frappe.logger().info(f"Found {len(available_containers)} available container barrels")
+        return available_containers
+    
+    except Exception as e:
+        frappe.log_error(
+            title="Error in get_available_containers",
+            message=f"Error: {str(e)}\n{frappe.get_traceback()}"
+        )
+        return []
 
-    @frappe.whitelist()
-    def get_available_containers(warehouse=None):
-        """
-        Get available container barrels from all batches
-        Returns container barrels that are marked as 'Available' for reuse.
-        Includes both draft and submitted batches (docstatus >= 0).
-        Args:
-            warehouse: Optional warehouse filter
-        Returns:
-            list: Available container barrels with parent batch details
-        """
-        try:
-            # Build warehouse condition
-            warehouse_condition = ""
-            if warehouse:
-                warehouse_condition = f"AND ba.warehouse = '{frappe.db.escape(warehouse)}'"
-            
-            # Query all available containers (include draft batches)
-            available_containers = frappe.db.sql("""
-                SELECT
-                    cb.name,
-                    cb.barrel_serial_number,
-                    cb.packaging_type,
-                    cb.gross_weight,
-                    cb.tara_weight,
-                    cb.net_weight,
-                    cb.status,
-                    cb.parent as batch_id,
-                    ba.title as batch_title,
-                    ba.item_code,
-                    ba.work_order_ref,
-                    ba.docstatus
-                FROM `tabContainer Barrels` cb
-                INNER JOIN `tabBatch AMB` ba ON cb.parent = ba.name
-                WHERE cb.status = 'Available'
-                AND ba.docstatus >= 0
-                AND cb.parenttype = 'Batch AMB'
-                {warehouse_condition}
-                ORDER BY cb.modified DESC
-            """.format(warehouse_condition=warehouse_condition), as_dict=True)
-            
-            frappe.logger().info(f"Found {len(available_containers)} available container barrels")
-            return available_containers
+@frappe.whitelist()
+def duplicate_batch(source_name):
+    """Duplicate a batch for new production run"""
+    source = frappe.get_doc('Batch AMB', source_name)
+    new_batch = frappe.copy_doc(source)
+    new_batch.batch_status = 'Draft'
+    new_batch.docstatus = 0
+    new_batch.produced_qty = 0
+    new_batch.production_start_date = None
+    new_batch.production_end_date = None
+    new_batch.stock_entry_reference = None
+    new_batch.lote_amb_reference = None
+    
+    # Clear container data
+    new_batch.container_barrels = []
+    new_batch.insert()
+    return new_batch.name
+
+@frappe.whitelist()
+def get_running_batch_announcements(include_companies=True, include_plants=True, include_quality=True):
+    """
+    Get running batch announcements for widget display
+    Uses actual Batch AMB fields
+    """
+    try:
+        # Get running batches with CORRECT field names
+        batches = frappe.get_all(
+            'Batch AMB',
+            filters={
+                'docstatus': ['!=', 2],  # Not cancelled
+            },
+            fields=[
+                'name',
+                'title',
+                'item_to_manufacture',
+                'item_code',
+                'wo_item_name',
+                'quality_status',
+                'target_plant',
+                'production_plant_name',
+                'custom_plant_code',
+                'custom_batch_level',
+                'barrel_count',
+                'total_net_weight',
+                'wo_start_date',
+                'modified',
+                'creation'
+            ],
+            order_by='modified desc',
+            limit=50
+        )
         
-        except Exception as e:
-            frappe.log_error(
-                "title=\"Error in get_available_containers\"",
-                "message=f\"Error: {str(e)}\\n{frappe.get_traceback()}\""
-            )
-            return []
-
-    @frappe.whitelist()
-    def duplicate_batch(source_name):
-        """Duplicate a batch for new production run"""
-        source = frappe.get_doc('Batch AMB', source_name)
-        new_batch = frappe.copy_doc(source)
-        new_batch.batch_status = 'Draft'
-        new_batch.docstatus = 0
-        new_batch.produced_qty = 0
-        new_batch.production_start_date = None
-        new_batch.production_end_date = None
-        new_batch.stock_entry_reference = None
-        new_batch.lote_amb_reference = None
-        
-        # Clear container data
-        new_batch.container_barrels = []
-        new_batch.insert()
-        return new_batch.name
-
-    @frappe.whitelist()
-    def get_running_batch_announcements(include_companies=True, include_plants=True, include_quality=True):
-        """
-        Get running batch announcements for widget display
-        Uses actual Batch AMB fields
-        """
-        try:
-            # Get running batches with CORRECT field names
-            batches = frappe.get_all(
-                'Batch AMB',
-                filters={
-                    'docstatus': ['!=', 2],  # Not cancelled
-                },
-                fields=[
-                    'name',
-                    'title',
-                    'item_to_manufacture',
-                    'item_code',
-                    'wo_item_name',
-                    'quality_status',
-                    'target_plant',
-                    'production_plant_name',
-                    'custom_plant_code',
-                    'custom_batch_level',
-                    'barrel_count',
-                    'total_net_weight',
-                    'wo_start_date',
-                    'modified',
-                    'creation'
-                ],
-                order_by='modified desc',
-                limit=50
-            )
-            
-            if not batches:
-                return {
-                    'success': True,
-                    'message': 'No active batches found',
-                    'announcements': [],
-                    'grouped_announcements': {},
-                    'stats': {'total': 0}
-                }
-            
-            announcements = []
-            grouped = {}
-            stats = {
-                'total': len(batches),
-                'high_priority': 0,
-                'quality_check': 0,
-                'container_level': 0
-            }
-            
-            for batch in batches:
-                # Determine company from plant
-                company = 'Unknown'
-                if batch.production_plant_name:
-                    company = batch.production_plant_name
-                elif batch.target_plant:
-                    company = batch.target_plant
-                
-                # Create announcement object
-                announcement = {
-                    'name': batch.name,
-                    'title': batch.title or batch.name,
-                    'batch_code': batch.name,
-                    'item_code': batch.item_to_manufacture or batch.item_code or 'N/A',
-                    'status': 'Active',  # No batch_status field, using default
-                    'company': company,
-                    'level': batch.custom_batch_level or 'Batch',
-                    'priority': 'high' if batch.quality_status == 'Failed' else 'medium',
-                    'quality_status': batch.quality_status or 'Pending',
-                    'content': (
-                        f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\\n"
-                        f"Plant: {batch.custom_plant_code or 'N/A'}\\n"
-                        f"Weight: {batch.total_net_weight or 0}\\n"
-                        f"Barrels: {batch.barrel_count or 0}"
-                    ),
-                    'message': f"Level {batch.custom_batch_level or '?'} batch in production",
-                    'modified': str(batch.modified) if batch.modified else '',
-                    'creation': str(batch.creation) if batch.creation else ''
-                }
-                announcements.append(announcement)
-                
-                # Update stats
-                if batch.quality_status == 'Failed':
-                    stats['high_priority'] += 1
-                if batch.quality_status in ['Pending', 'In Testing']:
-                    stats['quality_check'] += 1
-                if batch.custom_batch_level == '3':
-                    stats['container_level'] += 1
-                
-                # Group by company and plant
-                if include_companies:
-                    plant = batch.custom_plant_code or '1'
-                    if company not in grouped:
-                        grouped[company] = {}
-                    if plant not in grouped[company]:
-                        grouped[company][plant] = []
-                    grouped[company][plant].append(announcement)
-            
+        if not batches:
             return {
                 'success': True,
-                'announcements': announcements,
-                'grouped_announcements': grouped,
-                'stats': stats
+                'message': 'No active batches found',
+                'announcements': [],
+                'grouped_announcements': {},
+                'stats': {'total': 0}
             }
         
-        except Exception as e:
-            import traceback
-            error_msg = f"Error in get_running_batch_announcements: {str(e)}\\n{traceback.format_exc()}"
-            frappe.log_error(error_msg, "Batch Widget API Error")
-            return {
-                'success': False,
-                'error': str(e),
-                'message': 'Failed to load batch data',
-                'traceback': traceback.format_exc()
+        announcements = []
+        grouped = {}
+        stats = {
+            'total': len(batches),
+            'high_priority': 0,
+            'quality_check': 0,
+            'container_level': 0
+        }
+        
+        for batch in batches:
+            # Determine company from plant
+            company = 'Unknown'
+            if batch.production_plant_name:
+                company = batch.production_plant_name
+            elif batch.target_plant:
+                company = batch.target_plant
+            
+            # Create announcement object
+            announcement = {
+                'name': batch.name,
+                'title': batch.title or batch.name,
+                'batch_code': batch.name,
+                'item_code': batch.item_to_manufacture or batch.item_code or 'N/A',
+                'status': 'Active',  # No batch_status field, using default
+                'company': company,
+                'level': batch.custom_batch_level or 'Batch',
+                'priority': 'high' if batch.quality_status == 'Failed' else 'medium',
+                'quality_status': batch.quality_status or 'Pending',
+                'content': (
+                    f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\n"
+                    f"Plant: {batch.custom_plant_code or 'N/A'}\n"
+                    f"Weight: {batch.total_net_weight or 0}\n"
+                    f"Barrels: {batch.barrel_count or 0}"
+                ),
+                'message': f"Level {batch.custom_batch_level or '?'} batch in production",
+                'modified': str(batch.modified) if batch.modified else '',
+                'creation': str(batch.creation) if batch.creation else ''
             }
+            announcements.append(announcement)
+            
+            # Update stats
+            if batch.quality_status == 'Failed':
+                stats['high_priority'] += 1
+            if batch.quality_status in ['Pending', 'In Testing']:
+                stats['quality_check'] += 1
+            if batch.custom_batch_level == '3':
+                stats['container_level'] += 1
+            
+            # Group by company and plant
+            if include_companies:
+                plant = batch.custom_plant_code or '1'
+                if company not in grouped:
+                    grouped[company] = {}
+                if plant not in grouped[company]:
+                    grouped[company][plant] = []
+                grouped[company][plant].append(announcement)
+        
+        return {
+            'success': True,
+            'announcements': announcements,
+            'grouped_announcements': grouped,
+            'stats': stats
+        }
+    
+    except Exception as e:
+        import traceback
+        error_msg = f"Error in get_running_batch_announcements: {str(e)}\n{traceback.format_exc()}"
+        frappe.log_error(error_msg, "Batch Widget API Error")
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load batch data',
+            'traceback': traceback.format_exc()
+        }
