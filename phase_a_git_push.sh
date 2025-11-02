@@ -37,7 +37,7 @@ echo ""
 
 # Commit with detailed message
 echo "💾 Creating commit..."
-git commit -m "Phase A: Container Selection DocType implementation
+git commit -m "Phase B: Container Selection DocType implementation
 
 Features:
 - Container Selection DocType with 9 fields
