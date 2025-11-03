@@ -381,3 +381,59 @@ def create_container_boms(batch_id):
     
 
     return created_boms
+
+
+# ==================== BATCH ANNOUNCEMENT METHODS ====================
+
+@frappe.whitelist()
+def get_running_batch_announcements():
+    """
+    Get running batch announcements for the dashboard
+    This method is called from the client side
+    """
+    try:
+        announcements = frappe.get_all(
+            'Batch Announcement',
+            filters={
+                'status': 'Running',
+                'start_date': ['<=', frappe.utils.nowdate()],
+                'end_date': ['>=', frappe.utils.nowdate()]
+            },
+            fields=['title', 'message', 'batch_reference', 'priority'],
+            order_by='priority desc, creation desc'
+        )
+        return announcements
+    except Exception as e:
+        frappe.log_error(f"Error getting batch announcements: {str(e)}")
+        return []
+
+@frappe.whitelist() 
+def get_batch_statistics():
+    """
+    Get batch statistics for dashboard widgets
+    """
+    try:
+        # Count batches by level
+        levels_count = frappe.db.sql('''
+            SELECT custom_batch_level, COUNT(*) as count
+            FROM `tabBatch AMB` 
+            WHERE docstatus < 2
+            GROUP BY custom_batch_level
+        ''', as_dict=1)
+        
+        # Count batches by status
+        status_count = frappe.db.sql('''
+            SELECT quality_status, COUNT(*) as count
+            FROM `tabBatch AMB`
+            WHERE docstatus < 2
+            GROUP BY quality_status
+        ''', as_dict=1)
+        
+        return {
+            'levels_count': levels_count,
+            'status_count': status_count,
+            'total_batches': frappe.db.count('Batch AMB', {'docstatus': ['<', 2]})
+        }
+    except Exception as e:
+        frappe.log_error(f"Error getting batch statistics: {str(e)}")
+        return {}
