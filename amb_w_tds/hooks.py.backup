@@ -245,9 +245,3 @@ app_include_js = [
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-# Barrel Lifecycle Hooks
-doc_events = {
-    "Stock Entry": {
-        "on_submit": "amb_w_tds.amb_w_tds.amb_w_tds.stock_entry_hooks.on_stock_entry_submit"
-    }
-}
