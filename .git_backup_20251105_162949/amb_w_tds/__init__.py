@@ -1,4 +1,4 @@
-__version__ = "8.0.0"
+__version__ = "8.1.0"
 #from . import __version__ as version
 
 app_name = "amb_w_tds"
