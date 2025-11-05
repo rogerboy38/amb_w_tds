@@ -1,4 +1,4 @@
-frappe.pages['barrel_dashboard'].on_page_load = function(wrapper) {
+frappe.pages['container_dashboard'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: 'None',
