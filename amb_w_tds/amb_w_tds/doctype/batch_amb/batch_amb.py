@@ -569,3 +569,140 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
             'error': str(e),
             'message': 'Failed to load batch data'
         }
+@frappe.whitelist()
+def get_packaging_from_sales_order(batch_name):
+    """Get packaging info from Sales Order and map to Item Codes"""
+    try:
+        batch = frappe.get_doc('Batch AMB', batch_name)
+        
+        if not batch.sales_order_related:
+            return {
+                'success': False,
+                'message': 'No Sales Order linked to this batch',
+                'primary': None,
+                'secondary': None,
+                'net_weight': 0,
+                'packages_count': 1
+            }
+        
+        so = frappe.get_doc('Sales Order', batch.sales_order_related)
+        
+        # Smart mapping from text to Item Code
+        primary_item = map_packaging_text_to_item(so.custom_tipo_empaque)
+        secondary_item = map_packaging_text_to_item(so.empaque_secundario) if so.empaque_secundario else None
+        
+        # Extract net weight (handle different formats: "5 Kg", "220", etc.)
+        net_weight = parse_weight_from_text(so.custom_peso_neto) if so.custom_peso_neto else 220
+        
+        # Calculate package count
+        total_weight = batch.total_net_weight or batch.total_quantity or 1000
+        packages_count = int(total_weight / net_weight) if net_weight > 0 else 1
+        
+        return {
+            'success': True,
+            'primary': primary_item,
+            'primary_name': frappe.db.get_value('Item', primary_item, 'item_name') if primary_item else None,
+            'primary_text': so.custom_tipo_empaque,
+            'secondary': secondary_item,
+            'secondary_name': frappe.db.get_value('Item', secondary_item, 'item_name') if secondary_item else None,
+            'secondary_text': so.empaque_secundario,
+            'net_weight': net_weight,
+            'packages_count': packages_count,
+            'sales_order': so.name
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error getting packaging: {str(e)}", "Packaging Fetch Error")
+        return {
+            'success': False,
+            'error': str(e),
+            'message': f'Failed to fetch packaging: {str(e)}'
+        }
+
+
+def map_packaging_text_to_item(packaging_text):
+    """Smart mapping from free text to Item Code"""
+    if not packaging_text:
+        return None
+    
+    text_lower = packaging_text.lower()
+    
+    # Dictionary of keywords → Item Codes
+    PACKAGING_MAP = {
+        # Barrels
+        '220l': 'E001',
+        '220 l': 'E001',
+        'barrel blue': 'E001',
+        'barrel 220': 'E001',
+        'polyethylene barrel': 'E002',
+        'reused barrel': 'E002',
+        
+        # Drums
+        '25kg': 'E003',
+        '25 kg': 'E003',
+        '25kg drum': 'E003',
+        'drum 25': 'E003',
+        '10kg': 'E004',
+        '10 kg': 'E004',
+        '10kg drum': 'E004',
+        'drum 10': 'E004',
+        
+        # Jugs
+        '20l': 'E005',
+        '20 l': 'E005',
+        'jug': 'E005',
+        'white jug': 'E005',
+        
+        # Pallets
+        'tarima': 'E006',
+        'pallet 44': 'E006',
+        'pino real': 'E006',
+        'euro pallet': 'E007',
+        'euro': 'E007',
+        'reused pallet': 'E008',
+        '44x44': 'E008',
+        
+        # Bags
+        'bolsa': 'E009',
+        'poly bag': 'E009',
+        'polietileno': 'E009',
+        '30x60': 'E009',
+        'bag': 'E009'
+    }
+    
+    # Try exact keyword matching
+    for keyword, item_code in PACKAGING_MAP.items():
+        if keyword in text_lower:
+            return item_code
+    
+    # Fuzzy search in Item master
+    items = frappe.get_all('Item',
+        filters={
+            'item_group': ['in', ['FG Packaging Materials', 'SFG Packaging Materials', 'Raw Materials']],
+            'disabled': 0,
+            'item_name': ['like', f'%{packaging_text.split()[0]}%']
+        },
+        fields=['name', 'item_name'],
+        limit=1
+    )
+    
+    if items:
+        return items[0].name
+    
+    # Default fallback
+    return 'E001'  # 220L Barrel as default
+
+
+def parse_weight_from_text(weight_text):
+    """Parse weight from text like '5 Kg', '220', '10.5 kg'"""
+    if not weight_text:
+        return 0
+    
+    import re
+    # Extract numbers from text
+    numbers = re.findall(r'\d+\.?\d*', str(weight_text))
+    
+    if numbers:
+        return float(numbers[0])
+    
+    return 0
