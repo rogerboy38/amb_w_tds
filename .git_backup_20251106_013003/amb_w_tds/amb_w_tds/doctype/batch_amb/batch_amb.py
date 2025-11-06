@@ -226,6 +226,7 @@ def check_bom_exists(batch_name):
     return {'exists': False}
 
 
+
 @frappe.whitelist()
 def create_bom_with_wizard(batch_name, options):
     """Create BOM Creator with wizard options"""
@@ -246,7 +247,14 @@ def create_bom_with_wizard(batch_name, options):
     bom.item_code = item_code
     bom.item_name = item_code
     bom.qty = batch.total_net_weight or batch.total_quantity or 1000
-    bom.uom = batch.uom or 'Kg'
+    
+    # ✅ FIX: Get UOM from item master instead of batch
+    if batch.item_to_manufacture:
+        item_uom = frappe.db.get_value('Item', batch.item_to_manufacture, 'stock_uom')
+        bom.uom = item_uom or 'Kg'
+    else:
+        bom.uom = 'Kg'
+    
     bom.project = batch_name
     bom.company = batch.company or frappe.defaults.get_user_default('Company')
     
@@ -280,7 +288,6 @@ def create_bom_with_wizard(batch_name, options):
         'item_count': len(bom.items),
         'batch_reference': batch_name
     }
-
 
 def add_container_items_to_bom(bom, batch, start_idx, options):
     """Add container items"""
