@@ -486,3 +486,86 @@ def get_work_order_details(work_order):
 def get_available_containers(warehouse=None):
     """Get available containers"""
     return []
+
+@frappe.whitelist()
+def get_running_batch_announcements(include_companies=True, include_plants=True, include_quality=True):
+    """Get running batch announcements for widget"""
+    try:
+        batches = frappe.get_all(
+            'Batch AMB',
+            filters={'docstatus': ['!=', 2]},
+            fields=[
+                'name', 'title', 'item_to_manufacture', 'item_code',
+                'wo_item_name', 'quality_status', 'target_plant',
+                'production_plant_name', 'custom_plant_code',
+                'custom_batch_level', 'barrel_count', 'total_net_weight',
+                'wo_start_date', 'modified', 'creation'
+            ],
+            order_by='modified desc',
+            limit=50
+        )
+        
+        if not batches:
+            return {
+                'success': True,
+                'message': 'No active batches',
+                'announcements': [],
+                'grouped_announcements': {},
+                'stats': {'total': 0}
+            }
+        
+        announcements = []
+        grouped = {}
+        stats = {'total': len(batches), 'high_priority': 0, 'quality_check': 0, 'container_level': 0}
+        
+        for batch in batches:
+            company = batch.production_plant_name or batch.target_plant or 'Unknown'
+            
+            announcement = {
+                'name': batch.name,
+                'title': batch.title or batch.name,
+                'batch_code': batch.name,
+                'item_code': batch.item_to_manufacture or batch.item_code or 'N/A',
+                'status': 'Active',
+                'company': company,
+                'level': batch.custom_batch_level or 'Batch',
+                'priority': 'high' if batch.quality_status == 'Failed' else 'medium',
+                'quality_status': batch.quality_status or 'Pending',
+                'content': f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\nPlant: {batch.custom_plant_code or 'N/A'}\nWeight: {batch.total_net_weight or 0}\nBarrels: {batch.barrel_count or 0}",
+                'message': f"Level {batch.custom_batch_level or '?'} batch in production",
+                'modified': str(batch.modified) if batch.modified else '',
+                'creation': str(batch.creation) if batch.creation else ''
+            }
+            
+            announcements.append(announcement)
+            
+            if batch.quality_status == 'Failed':
+                stats['high_priority'] += 1
+            if batch.quality_status in ['Pending', 'In Testing']:
+                stats['quality_check'] += 1
+            if batch.custom_batch_level == '3':
+                stats['container_level'] += 1
+            
+            if include_companies:
+                plant = batch.custom_plant_code or '1'
+                if company not in grouped:
+                    grouped[company] = {}
+                if plant not in grouped[company]:
+                    grouped[company][plant] = []
+                grouped[company][plant].append(announcement)
+        
+        return {
+            'success': True,
+            'announcements': announcements,
+            'grouped_announcements': grouped,
+            'stats': stats
+        }
+        
+    except Exception as e:
+        import traceback
+        frappe.log_error(f"Widget error: {str(e)}\n{traceback.format_exc()}", "Batch Widget Error")
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to load batch data'
+        }
