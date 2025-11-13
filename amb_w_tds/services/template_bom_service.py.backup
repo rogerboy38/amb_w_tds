@@ -1,0 +1,556 @@
+"""
+Template-Based BOM Service
+Uses Standard BOM with custom_is_template=1 as templates
+Generates production BOMs with golden number integration
+"""
+
+import frappe
+from frappe import _
+from frappe.utils import flt, cstr
+import json
+
+
+class TemplateBOMService:
+    """Service for template-based BOM generation"""
+    
+    PRODUCT_TEMPLATES = {
+        '0227': 'BOM-TEMPLATE-0227-CONCENTRATE',
+        '0303': 'BOM-TEMPLATE-0303-POWDER',
+        '0334': 'BOM-TEMPLATE-0334-FORMULATED',
+        '0705': 'BOM-TEMPLATE-0705-SHIPPING'
+    }
+    """Service for managing template BOMs and generation"""
+    
+    def __init__(self):
+        self.utility_items = {
+            'water': 'WATER-UTILITY',
+            'electricity': 'ELECTRICITY-UTILITY',
+            'gas': 'GAS-UTILITY',
+            'labor': 'LABOR-COST'
+        }
+    
+    def create_from_template(self, template_name, item_code, **kwargs):
+        """Create BOM from predefined template"""
+        pass
+    
+    def get_template_by_product_family(self, product_code):
+        """Retrieve template based on product code prefix"""
+        pass
+    
+    @staticmethod
+    def create_bom_from_template(batch, template_name=None):
+        """
+        Create production BOM from template
+        Args:
+            batch: Batch AMB document
+            template_name: Optional specific template to use
+        """
+        try:
+            if not batch.golden_number:
+                frappe.throw(_("Golden number is required"))
+            
+            # Get template
+            if not template_name:
+                product_code = batch.golden_number[:4]
+                template_name = TemplateBOMService.PRODUCT_TEMPLATES.get(product_code)
+            
+            if not template_name or not frappe.db.exists("BOM", template_name):
+                frappe.throw(_("Template BOM not found for product code {0}").format(
+                    batch.golden_number[:4]))
+            
+            template = frappe.get_doc("BOM", template_name)
+            
+            # Create main BOM (Level 0)
+            main_bom = TemplateBOMService._create_main_bom(batch, template)
+            
+            # Create sub-lot BOMs (Level 1) if batch level > 1
+            if hasattr(batch, 'custom_batch_level') and int(batch.custom_batch_level or 1) > 1:
+                TemplateBOMService._create_sublot_boms(batch, main_bom, template)
+            
+            return main_bom.name
+            
+        except Exception as e:
+            frappe.log_error(f"Template BOM Creation Error: {str(e)}", "Template BOM Service")
+            frappe.throw(_("Failed to create BOM from template: {0}").format(str(e)))
+    
+    @staticmethod
+    def _create_main_bom(batch, template):
+        """Create main product BOM (Level 0)"""
+        # Item code = golden number
+        item_code = batch.golden_number
+        
+        # Ensure item exists
+        if not frappe.db.exists("Item", item_code):
+            item = TemplateBOMService._create_item_from_template(
+                item_code, 
+                f"Main Product {item_code}",
+                template.item
+            )
+        
+        # Create BOM
+        bom = frappe.new_doc("BOM")
+        bom.item = item_code
+        bom.quantity = template.quantity
+        bom.is_active = 1
+        bom.is_default = 1
+        bom.project = batch.golden_number  # Use golden number as project
+        
+        # Set custom fields
+        bom.custom_golden_number = batch.golden_number
+        bom.custom_product_code = batch.golden_number[:4]
+        bom.custom_batch_level = "1"
+        bom.custom_component_type = "Main Product"
+        
+        # Copy operations from template if any
+        if hasattr(template, 'operations'):
+            for op in template.operations:
+                bom.append("operations", {
+                    "operation": op.operation,
+                    "workstation": op.workstation,
+                    "time_in_mins": op.time_in_mins,
+                    "operating_cost": op.operating_cost
+                })
+        
+        bom.insert(ignore_permissions=True)
+        frappe.db.commit()
+        
+        # Update batch
+        batch.db_set('bom_reference', bom.name)
+        
+        frappe.msgprint(_("Main BOM {0} created").format(bom.name))
+        return bom
+    
+    @staticmethod
+    def _create_sublot_boms(batch, main_bom, template):
+        """Create sub-lot BOMs (Level 1)"""
+        # Determine number of sub-lots
+        sub_lot_count = TemplateBOMService._calculate_sublot_count(batch)
+        
+        for i in range(1, sub_lot_count + 1):
+            sublot_code = f"{batch.golden_number}-{i}"
+            
+            # Ensure sub-lot item exists
+            if not frappe.db.exists("Item", sublot_code):
+                TemplateBOMService._create_item_from_template(
+                    sublot_code,
+                    f"Sub-lot {sublot_code}",
+                    template.item
+                )
+            
+            # Create sub-lot BOM
+            sublot_bom = frappe.new_doc("BOM")
+            sublot_bom.item = sublot_code
+            sublot_bom.quantity = flt(main_bom.quantity) / sub_lot_count
+            sublot_bom.is_active = 1
+            sublot_bom.project = batch.golden_number
+            
+            # Set custom fields
+            sublot_bom.custom_golden_number = batch.golden_number
+            sublot_bom.custom_product_code = batch.golden_number[:4]
+            sublot_bom.custom_batch_level = "2"
+            sublot_bom.custom_component_type = "Sub-Lot"
+            sublot_bom.custom_parent_bom = main_bom.name
+            
+            # Add component BOMs (Utility, Supplies, Raw Material, Packing)
+            TemplateBOMService._add_component_boms(
+                batch, sublot_bom, sublot_code, template
+            )
+            
+            sublot_bom.insert(ignore_permissions=True)
+            
+            # Add to main BOM
+            main_bom.append("items", {
+                "item_code": sublot_code,
+                "qty": sublot_bom.quantity,
+                "uom": frappe.db.get_value("Item", sublot_code, "stock_uom"),
+                "rate": 0,  # Will be calculated
+                "bom_no": sublot_bom.name
+            })
+        
+        main_bom.save(ignore_permissions=True)
+        frappe.db.commit()
+    
+    @staticmethod
+    def _add_component_boms(batch, sublot_bom, sublot_code, template):
+        """Add component BOMs (Utility, Supplies, Raw Material, Packing)"""
+        product_code = batch.golden_number[:4]
+        
+        # Component types to create
+        component_types = [
+            ("Utility", f"{product_code}-Utility-{sublot_code}"),
+            ("Supplies", f"{product_code}-Supplies-{sublot_code}"),
+            ("Raw Material", f"{product_code}-RawMaterial-{sublot_code}"),
+            ("Packing", f"{product_code}-Packing-{sublot_code}")
+        ]
+        
+        for comp_type, comp_code in component_types:
+            # Get template items for this component type
+            template_items = TemplateBOMService._get_template_component_items(
+                template, comp_type
+            )
+            
+            if not template_items:
+                continue
+            
+            # Create component item if not exists
+            if not frappe.db.exists("Item", comp_code):
+                TemplateBOMService._create_item_from_template(
+                    comp_code,
+                    f"{comp_type} for {sublot_code}",
+                    template.item,
+                    item_group=f"{product_code}-Services" if comp_type == "Utility" else "RAW M Liquids"
+                )
+            
+            # Create component BOM
+            comp_bom = frappe.new_doc("BOM")
+            comp_bom.item = comp_code
+            comp_bom.quantity = 1
+            comp_bom.is_active = 1
+            comp_bom.project = batch.golden_number
+            
+            comp_bom.custom_golden_number = batch.golden_number
+            comp_bom.custom_product_code = product_code
+            comp_bom.custom_batch_level = "3"
+            comp_bom.custom_component_type = comp_type
+            comp_bom.custom_parent_bom = sublot_bom.name
+            
+            # Add items from template
+            for item in template_items:
+                comp_bom.append("items", {
+                    "item_code": item.item_code,
+                    "qty": item.qty,
+                    "uom": item.uom,
+                    "rate": item.rate or frappe.db.get_value("Item", item.item_code, "valuation_rate") or 0
+                })
+            
+            comp_bom.insert(ignore_permissions=True)
+            
+            # Add to sub-lot BOM
+            sublot_bom.append("items", {
+                "item_code": comp_code,
+                "qty": 1,
+                "uom": frappe.db.get_value("Item", comp_code, "stock_uom"),
+                "rate": 0,  # Will be calculated
+                "bom_no": comp_bom.name
+            })
+    
+    @staticmethod
+    def _get_template_component_items(template, component_type):
+        """Get items from template BOM for specific component type"""
+        # This is where we filter template items by component type
+        # For now, return items that match naming pattern
+        items = []
+        for item in template.items:
+            item_code_lower = item.item_code.lower()
+            
+            if component_type == "Utility":
+                if any(util in item_code_lower for util in ['electric', 'gas', 'water', 'transp', 'maniobras']):
+                    items.append(item)
+            elif component_type == "Supplies":
+                if any(sup in item_code_lower for sup in ['m0', 'q0', 'filter', 'carbon', 'celite']):
+                    items.append(item)
+            elif component_type == "Raw Material":
+                if 'm033' in item_code_lower or 'aloe' in item_code_lower:
+                    items.append(item)
+            elif component_type == "Packing":
+                if any(pack in item_code_lower for pack in ['e001', 'barrel', 'ibc', 'pail']):
+                    items.append(item)
+        
+        return items
+    
+    @staticmethod
+    def _calculate_sublot_count(batch):
+        """Calculate number of sub-lots needed"""
+        if hasattr(batch, 'barrel_count') and batch.barrel_count:
+            # One sub-lot per 3 barrels
+            return max(1, int(flt(batch.barrel_count) / 3))
+        return 1
+    
+    @staticmethod
+    def _create_item_from_template(item_code, item_name, template_item, item_group=None):
+        """Create item from template"""
+        template_doc = frappe.get_doc("Item", template_item)
+        
+        item = frappe.new_doc("Item")
+        item.item_code = item_code
+        item.item_name = item_name
+        item.item_group = item_group or template_doc.item_group
+        item.stock_uom = template_doc.stock_uom
+        item.is_stock_item = 1
+        
+        # Set golden number if custom field exists
+        if hasattr(item, 'custom_golden_number'):
+            item.custom_golden_number = item_code.split('-')[0] if '-' in item_code else item_code[:10]
+        
+        item.insert(ignore_permissions=True)
+        frappe.db.commit()
+        
+        return item.name
+    
+    @staticmethod
+    def create_template_from_existing_bom(bom_name, product_code):
+        """Convert existing BOM to template"""
+        try:
+            existing_bom = frappe.get_doc("BOM", bom_name)
+            
+            # Create template name
+            template_name = f"BOM-TEMPLATE-{product_code}-{existing_bom.item}"
+            
+            # Copy BOM
+            template = frappe.copy_doc(existing_bom)
+            template.name = template_name
+            template.custom_is_template = 1
+            template.custom_product_code = product_code
+            template.is_default = 0
+            
+            template.insert(ignore_permissions=True)
+            frappe.db.commit()
+            
+            return template.name
+            
+        except Exception as e:
+            frappe.log_error(f"Template Creation Error: {str(e)}", "Template BOM Service")
+            frappe.throw(_("Failed to create template: {0}").format(str(e)))
+
+
+    @frappe.whitelist()
+    def create_bom_from_batch(batch_name):
+        """API endpoint to create BOM from batch"""
+        try:
+            batch = frappe.get_doc("Batch AMB", batch_name)
+            bom_name = TemplateBOMService.create_bom_from_template(batch)
+        
+            return {
+                "success": True,
+                "message": _("BOM created successfully"),
+                "bom_name": bom_name
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": str(e)
+            }
+    # ==== ADDED METHODS WEB PRODUCT CODES ====
+    
+    def get_web_product_codes(self):
+        """Return list of 29 web product codes"""
+        return [
+            # Spray Dried Powder (2)
+            '0307', '0323',
+            # Acetypol (5)
+            '0401', '0417', '0433', '0449', '0465',
+            # Highpol (6)
+            '0501', '0517', '0533', '0549', '0565', '0581',
+            # QX Blends (11)
+            '0601', '0602', '0603', '0604', '0605', '0606',
+            '0607', '0608', '0609', '0610', '0611',
+            # Liquids Non-Organic (4)
+            '0701', '0702', '0703', '0704',
+            # Liquids Organic (4)
+            '0705', '0706', '0707', '0708'
+        ]
+    
+    def create_bom_from_product_code(self, product_code):
+        """
+        Create BOM directly from product code (for testing)
+        This is different from create_bom_from_template which needs a Batch
+        """
+        try:
+            # Check if item exists
+            if not frappe.db.exists("Item", product_code):
+                frappe.throw(_("Item {0} does not exist").format(product_code))
+            
+            # Get item details
+            item = frappe.get_doc("Item", product_code)
+            
+            # Check if template BOM exists in PRODUCT_TEMPLATES
+            template_name = self.PRODUCT_TEMPLATES.get(product_code)
+            
+            if not template_name:
+                # No template defined, create a basic BOM
+                return self.create_basic_bom(product_code, item)
+            
+            # Template exists, use it
+            if not frappe.db.exists("BOM", template_name):
+                frappe.throw(_("Template BOM {0} not found").format(template_name))
+            
+            template = frappe.get_doc("BOM", template_name)
+            
+            # Create new BOM from template
+            new_bom = frappe.copy_doc(template)
+            new_bom.item = product_code
+            new_bom.is_default = 1
+            new_bom.is_active = 1
+            
+            # Add custom fields if they exist
+            if hasattr(new_bom, 'auto_generated'):
+                new_bom.auto_generated = 1
+            if hasattr(new_bom, 'generation_method'):
+                new_bom.generation_method = 'Template'
+            
+            new_bom.insert(ignore_permissions=True)
+            new_bom.submit()
+            
+            return new_bom.name
+            
+        except Exception as e:
+            frappe.log_error(
+                message=str(e),
+                title=f"BOM Creation Failed: {product_code}"
+            )
+            raise
+    
+    def create_basic_bom(self, product_code, item):
+        """
+        Create a basic BOM when no template exists
+        Uses utility items only
+        """
+        bom = frappe.get_doc({
+            "doctype": "BOM",
+            "item": product_code,
+            "company": "AMB Wellness & Co. S.A.",
+            "quantity": 100 if item.stock_uom == "Kg" else 1000,
+            "uom": item.stock_uom,
+            "is_active": 1,
+            "is_default": 1,
+            "with_operations": 0,
+            "items": [
+                {
+                    "item_code": self.utility_items['water'],
+                    "qty": 100,
+                    "uom": "Litre",
+                    "rate": 0.001
+                },
+                {
+                    "item_code": self.utility_items['electricity'],
+                    "qty": 50,
+                    "uom": "Nos",
+                    "rate": 0.15
+                },
+                {
+                    "item_code": self.utility_items['labor'],
+                    "qty": 5,
+                    "uom": "Nos",
+                    "rate": 15.00
+                }
+            ]
+        })
+        
+        # Add custom fields if they exist
+        if hasattr(bom, 'auto_generated'):
+            bom.auto_generated = 1
+        if hasattr(bom, 'generation_method'):
+            bom.generation_method = 'Basic Template'
+        
+        bom.insert(ignore_permissions=True)
+        bom.submit()
+        
+        return bom.name
+    
+    def generate_test_boms_for_web_codes(self):
+        """
+        Main entry point: Generate all 29 test BOMs for web product codes
+        Returns: dict with generation results
+        """
+        web_codes = self.get_web_product_codes()  # Changed: no underscore
+        results = {
+            'success': [],
+            'failed': [],
+            'skipped': []
+        }
+        
+        for product_code in web_codes:
+            try:
+                # Check if item exists
+                if not frappe.db.exists("Item", product_code):
+                    results['skipped'].append({
+                        'code': product_code,
+                        'reason': 'Item does not exist'
+                    })
+                    continue
+                
+                # Check if BOM already exists
+                existing_bom = frappe.db.get_value("BOM", 
+                    {"item": product_code, "is_active": 1, "docstatus": 1}, 
+                    "name"
+                )
+                
+                if existing_bom:
+                    results['skipped'].append({
+                        'code': product_code,
+                        'reason': f'Active BOM exists: {existing_bom}'
+                    })
+                    continue
+                
+                # Generate BOM from product code
+                bom_name = self.create_bom_from_product_code(product_code)
+                
+                results['success'].append({
+                    'code': product_code,
+                    'bom': bom_name
+                })
+                
+                frappe.db.commit()
+                
+            except Exception as e:
+                frappe.log_error(
+                    message=str(e),
+                    title=f"BOM Generation Failed: {product_code}"
+                )
+                results['failed'].append({
+                    'code': product_code,
+                    'error': str(e)
+                })
+        
+        return results
+    
+    def validate_generated_bom(self, bom_name):
+        """
+        Validate generated BOM structure and costing
+        Returns: dict with validation results
+        """
+        bom = frappe.get_doc("BOM", bom_name)
+        issues = []
+        
+        # Check 1: Has items
+        if not bom.items:
+            issues.append("BOM has no items")
+        
+        # Check 2: Cost calculation
+        try:
+            bom.update_cost()
+            frappe.db.commit()
+        except Exception as e:
+            issues.append(f"Cost calculation failed: {str(e)}")
+        
+        # Check 3: At least one utility item present
+        item_codes = [item.item_code for item in bom.items]
+        has_utility = any(utility_code in item_codes 
+                         for utility_code in self.utility_items.values())
+        if not has_utility:
+            issues.append("No utility items found")
+        
+        return {
+            "bom": bom_name,
+            "valid": len(issues) == 0,
+            "issues": issues,
+            "total_cost": bom.total_cost if hasattr(bom, 'total_cost') else 0
+        }
+    
+
+    @frappe.whitelist()
+    def create_template_from_bom(bom_name, product_code):
+        """API endpoint to convert BOM to template"""
+        try:
+            template_name = TemplateBOMService.create_template_from_existing_bom(bom_name, product_code)
+        
+            return {
+                "success": True,
+                "message": _("Template created successfully"),
+                "template_name": template_name
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": str(e)
+            }

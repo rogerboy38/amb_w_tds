@@ -41,10 +41,26 @@ frappe.ui.form.on('Batch AMB', {
                 frm.add_custom_button(__('Create Work Order'), function() {
                     create_work_order(frm);
                 }).addClass('btn-success');
+            // Add custom buttons for BOM generation
+            if (frm.doc.item_to_manufacture && !frm.doc.bom_reference) {
+                frm.add_custom_button(__('Generate BOM'), function() {
+                    // Trigger BOM generation wizard
+                });
+
             }
+        },
+        
+        work_order_ref: function(frm) {
+          // Auto-populate batch data from work order
+        },
+        
+        item_to_manufacture: function(frm) {
+            // Fetch TDS and standard BOM for item
         }
+        });
         
         // Always show refresh button
+
         frm.add_custom_button(__('Refresh Status'), function() {
             frm.reload_doc();
         });

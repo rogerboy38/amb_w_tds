@@ -36,7 +36,24 @@ amb.batch_widget.state = {
     refreshTimer: null,
     isOnline: true
 };
-
+amb_w_tds/public/js/batch_widget.js`
+```javascript
+// Widget for batch overview and quick actions
+class BatchWidget {
+    constructor(parent) {
+        this.parent = parent;
+        this.init();
+    }
+    
+    init() {
+        this.render();
+        this.bind_events();
+    }
+    
+    render() {
+        // Render batch statistics and actions
+    }
+}
 function initializeBatchWidget() {
     if (frappe.session && frappe.session.user !== 'Guest') {
         console.log('🚀 Initializing Enhanced Batch Navbar Widget...');

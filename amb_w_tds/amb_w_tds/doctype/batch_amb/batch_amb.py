@@ -4,18 +4,68 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, nowdate, get_datetime, cstr
+from frappe.utils import flt, nowdate, get_datetime, cstr, today
 import json
+from amb_w_tds.services.golden_number_service import GoldenNumberService
 
 class BatchAMB(Document):
     """
-    Batch AMB - Production Batch Management
+    Batch AMB - Production Batch Management with Golden Number Integration
     """
     
     def validate(self):
         """Validation before saving"""
-        # Your existing validations
-        self.validate_batch_items()  # Add this line
+        # Generate golden number if Work Order is linked
+        if self.work_order_ref and not self.golden_number:
+            self.set_golden_number_from_work_order()
+        
+        # Validate golden number if present
+        if self.golden_number:
+            is_valid, message = GoldenNumberService.validate_golden_number(self.golden_number)
+            if not is_valid:
+                frappe.throw(_(f"Invalid golden number: {message}"))
+        
+        # Set title and custom_generated_batch_name from golden number
+        if self.golden_number:
+            self.title = self.golden_number
+            self.custom_generated_batch_name = self.golden_number
+        
+        # Existing validations
+        self.validate_batch_items()
+        self.validate_production_dates()
+        self.validate_quantities()
+        self.validate_work_order()
+        self.validate_containers()
+        self.validate_batch_level_hierarchy()
+        self.validate_barrel_weights()
+        self.set_item_details()
+    
+    def set_golden_number_from_work_order(self):
+        """Generate and set golden number from linked Work Order"""
+        if not self.work_order_ref:
+            return
+        
+        try:
+            # Generate golden number
+            result = GoldenNumberService.generate_from_work_order(self.work_order_ref)
+            
+            if result:
+                self.golden_number = result['golden_number']
+                self.product_code = result['product_code']
+                self.consecutive_number = result['consecutive_number']
+                self.year_code = result['year_code']
+                self.plant_code = result['plant_code']
+                
+                # Set title and custom_generated_batch_name
+                self.title = self.golden_number
+                self.custom_generated_batch_name = self.golden_number
+                
+                frappe.msgprint(_(f"Golden Number generated: {self.golden_number}"), 
+                               indicator='green', alert=True)
+                
+        except Exception as e:
+            frappe.log_error(f"Error setting golden number: {str(e)}", "Batch AMB Golden Number")
+            frappe.throw(_("Failed to generate golden number. Please check Work Order details."))
     
     def validate_batch_items(self):
         """Validate batch items for BOM generation"""
@@ -24,11 +74,242 @@ class BatchAMB(Document):
                 if not item.item_code or flt(item.quantity) <= 0:
                     frappe.throw(_("Invalid item or quantity in batch items"))
     
+    def validate_production_dates(self):
+        """Validate production start and end dates"""
+        if hasattr(self, 'production_start_date') and hasattr(self, 'production_end_date'):
+            if self.production_start_date and self.production_end_date:
+                if get_datetime(self.production_end_date) < get_datetime(self.production_start_date):
+                    frappe.throw(_("Production End Date cannot be before Start Date"))
+    
+    def validate_quantities(self):
+        """Validate batch quantities"""
+        if hasattr(self, 'target_quantity') and self.target_quantity:
+            if flt(self.target_quantity) <= 0:
+                frappe.throw(_("Target Quantity must be greater than zero"))
+    
+    def validate_work_order(self):
+        """Validate linked Work Order"""
+        if self.work_order_ref:
+            if not frappe.db.exists("Work Order", self.work_order_ref):
+                frappe.throw(_("Work Order {0} does not exist").format(self.work_order_ref))
+    
+    def validate_containers(self):
+        """Validate container-related fields"""
+        if hasattr(self, 'barrel_count') and self.barrel_count:
+            if flt(self.barrel_count) < 0:
+                frappe.throw(_("Barrel Count cannot be negative"))
+    
+    def validate_batch_level_hierarchy(self):
+        """Validate batch level hierarchy"""
+        if hasattr(self, 'custom_batch_level') and self.custom_batch_level:
+            valid_levels = ['1', '2', '3']
+            if str(self.custom_batch_level) not in valid_levels:
+                frappe.throw(_("Batch Level must be 1, 2, or 3"))
+    
+    def validate_barrel_weights(self):
+        """Validate barrel weights"""
+        if hasattr(self, 'total_net_weight') and self.total_net_weight:
+            if flt(self.total_net_weight) < 0:
+                frappe.throw(_("Total Net Weight cannot be negative"))
+    
+    def set_item_details(self):
+        """Auto-populate item details from linked items"""
+        for item in self.batch_items:
+            if item.item_code and not item.item_name:
+                item.item_name = frappe.db.get_value("Item", item.item_code, "item_name")
+            
+            if item.item_code and not item.uom:
+                item.uom = frappe.db.get_value("Item", item.item_code, "stock_uom")
+            
+            if item.item_code and not item.rate:
+                item.rate = frappe.db.get_value("Item", item.item_code, "valuation_rate") or 0
+            
+            # Calculate amount
+            item.amount = flt(item.quantity) * flt(item.rate)
+    
+    def before_save(self):
+        """Before save hook"""
+        self.calculate_totals()
+        self.set_batch_naming()
+        self.update_container_sequence()
+        self.calculate_costs()
+    
+    def calculate_totals(self):
+        """Calculate total quantities and amounts"""
+        total_qty = 0
+        total_amount = 0
+        
+        for item in self.batch_items:
+            total_qty += flt(item.quantity)
+            total_amount += flt(item.amount)
+        
+        if hasattr(self, 'total_quantity'):
+            self.total_quantity = total_qty
+        if hasattr(self, 'total_amount'):
+            self.total_amount = total_amount
+    
+    def set_batch_naming(self):
+        """Set batch naming based on golden number"""
+        if self.golden_number and not self.name:
+            # Name will be auto-generated by Frappe
+            pass
+    
+    def update_container_sequence(self):
+        """Update container sequence numbers"""
+        if hasattr(self, 'containers'):
+            for idx, container in enumerate(self.containers, start=1):
+                container.sequence = idx
+    
+    def calculate_costs(self):
+        """Calculate batch costs"""
+        material_cost = sum(flt(item.amount) for item in self.batch_items)
+        
+        if hasattr(self, 'material_cost'):
+            self.material_cost = material_cost
+        
+        # Add overhead if configured
+        if hasattr(self, 'overhead_percentage') and self.overhead_percentage:
+            overhead = material_cost * flt(self.overhead_percentage) / 100
+            if hasattr(self, 'overhead_cost'):
+                self.overhead_cost = overhead
+            if hasattr(self, 'total_cost'):
+                self.total_cost = material_cost + overhead
+    
+    def on_update(self):
+        """After save hook"""
+        self.sync_with_lote_amb()
+        self.update_work_order_status()
+        self.log_batch_history()
+    
+    def sync_with_lote_amb(self):
+        """Sync with Lote AMB if linked"""
+        if hasattr(self, 'lote_amb_reference') and self.lote_amb_reference:
+            try:
+                lote = frappe.get_doc("Lote AMB", self.lote_amb_reference)
+                lote.batch_status = self.status if hasattr(self, 'status') else None
+                lote.save(ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Error syncing with Lote AMB: {str(e)}", "Batch AMB Sync")
+    
+    def update_work_order_status(self):
+        """Update Work Order status based on batch progress"""
+        if self.work_order_ref:
+            try:
+                wo = frappe.get_doc("Work Order", self.work_order_ref)
+                # Update custom fields if they exist
+                if hasattr(wo, 'custom_batch_status'):
+                    wo.custom_batch_status = self.status if hasattr(self, 'status') else None
+                    wo.save(ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Error updating Work Order: {str(e)}", "Batch AMB WO Update")
+    
+    def log_batch_history(self):
+        """Log batch status changes"""
+        if self.has_value_changed('status'):
+            try:
+                frappe.get_doc({
+                    "doctype": "Comment",
+                    "comment_type": "Info",
+                    "reference_doctype": self.doctype,
+                    "reference_name": self.name,
+                    "content": f"Status changed to: {self.status}"
+                }).insert(ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Error logging batch history: {str(e)}", "Batch AMB History")
+    
+    def on_submit(self):
+        """On submit actions"""
+        self.create_stock_entry()
+        self.create_lote_amb_if_needed()
+        self.update_batch_status("Submitted")
+        self.notify_stakeholders()
+    
+    def create_stock_entry(self):
+        """Create stock entry for batch production"""
+        if not self.batch_items:
+            return
+        
+        try:
+            stock_entry = frappe.new_doc("Stock Entry")
+            stock_entry.stock_entry_type = "Manufacture"
+            stock_entry.company = self.company if hasattr(self, 'company') else frappe.defaults.get_user_default("Company")
+            stock_entry.posting_date = today()
+            stock_entry.batch_amb_reference = self.name
+            
+            # Add items from batch
+            for item in self.batch_items:
+                stock_entry.append("items", {
+                    "item_code": item.item_code,
+                    "qty": item.quantity,
+                    "uom": item.uom,
+                    "basic_rate": item.rate,
+                    "s_warehouse": item.source_warehouse if hasattr(item, 'source_warehouse') else None,
+                    "batch_no": item.batch_no if hasattr(item, 'batch_no') else None
+                })
+            
+            stock_entry.insert(ignore_permissions=True)
+            frappe.msgprint(_("Stock Entry {0} created").format(stock_entry.name))
+            
+        except Exception as e:
+            frappe.log_error(f"Error creating Stock Entry: {str(e)}", "Batch AMB Stock Entry")
+    
+    def create_lote_amb_if_needed(self):
+        """Create Lote AMB if configured"""
+        if hasattr(self, 'auto_create_lote') and self.auto_create_lote:
+            if not self.lote_amb_reference:
+                try:
+                    lote = frappe.new_doc("Lote AMB")
+                    lote.batch_amb_reference = self.name
+                    lote.golden_number = self.golden_number
+                    lote.title = self.title
+                    lote.insert(ignore_permissions=True)
+                    
+                    self.db_set('lote_amb_reference', lote.name)
+                    frappe.msgprint(_("Lote AMB {0} created").format(lote.name))
+                    
+                except Exception as e:
+                    frappe.log_error(f"Error creating Lote AMB: {str(e)}", "Batch AMB Lote Creation")
+    
+    def update_batch_status(self, status):
+        """Update batch status"""
+        self.db_set('status', status)
+    
+    def notify_stakeholders(self):
+        """Send notifications to stakeholders"""
+        if hasattr(self, 'notify_on_submit') and self.notify_on_submit:
+            # Implement notification logic
+            pass
+    
+    def on_cancel(self):
+        """On cancel actions"""
+        self.cancel_stock_entries()
+        self.update_batch_status("Cancelled")
+    
+    def cancel_stock_entries(self):
+        """Cancel related stock entries"""
+        stock_entries = frappe.get_all("Stock Entry", 
+            filters={"batch_amb_reference": self.name, "docstatus": 1},
+            pluck="name"
+        )
+        
+        for entry in stock_entries:
+            try:
+                se = frappe.get_doc("Stock Entry", entry)
+                se.cancel()
+                frappe.msgprint(_("Stock Entry {0} cancelled").format(entry))
+            except Exception as e:
+                frappe.log_error(f"Error cancelling Stock Entry {entry}: {str(e)}", "Batch AMB Cancel")
+    
+    # ==================== BOM GENERATION METHODS ====================
+    
     def generate_mrp_bom(self):
-        """Generate MRP BOM from batch items"""
+        """Generate MRP BOM from batch items with golden number integration"""
         try:
             if not self.batch_items:
                 frappe.throw(_("No items in batch to generate BOM"))
+            
+            if not self.golden_number:
+                frappe.throw(_("Golden number is required to generate BOM"))
             
             # Get main product item
             main_item = self.get_main_product_item()
@@ -43,6 +324,12 @@ class BatchAMB(Document):
             bom.is_default = 1
             bom.batch_amb_reference = self.name
             bom.with_operations = 0
+            
+            # Set golden number and project
+            if frappe.db.exists("Custom Field", "BOM-golden_number"):
+                bom.golden_number = self.golden_number
+            
+            bom.project = self.golden_number
             
             # Add items from batch
             for item in self.batch_items:
@@ -70,7 +357,7 @@ class BatchAMB(Document):
             
         except Exception as e:
             frappe.db.rollback()
-            frappe.log_error(f"BOM Creation Error: {str(e)}")
+            frappe.log_error(f"BOM Creation Error: {str(e)}", "Batch AMB BOM")
             frappe.throw(_("Failed to create BOM: {0}").format(str(e)))
     
     def get_main_product_item(self):
@@ -82,102 +369,13 @@ class BatchAMB(Document):
             return self.batch_items[0].item_code
         elif hasattr(self, 'current_item_code') and self.current_item_code:
             return self.current_item_code
+        elif hasattr(self, 'item_to_manufacture') and self.item_to_manufacture:
+            return self.item_to_manufacture
         return None
 
-    # KEEP ALL YOUR EXISTING METHODS - they should remain as-is
-    def validate_production_dates(self):
-        """Keep your existing method"""
-        pass
-    
-    def validate_quantities(self):
-        """Keep your existing method"""
-        pass
-    
-    def validate_work_order(self):
-        """Keep your existing method"""
-        pass
-    
-    def validate_containers(self):
-        """Keep your existing method"""
-        pass
-    
-    def validate_batch_level_hierarchy(self):
-        """Keep your existing method"""
-        pass
-    
-    def validate_barrel_weights(self):
-        """Keep your existing method"""
-        pass
-    
-    def set_item_details(self):
-        """Keep your existing method"""
-        pass
-    
-    def before_save(self):
-        """Keep your existing method"""
-        pass
-    
-    def calculate_totals(self):
-        """Keep your existing method"""
-        pass
-    
-    def set_batch_naming(self):
-        """Keep your existing method"""
-        pass
-    
-    def update_container_sequence(self):
-        """Keep your existing method"""
-        pass
-    
-    def calculate_costs(self):
-        """Keep your existing method"""
-        pass
-    
-    def on_update(self):
-        """Keep your existing method"""
-        pass
-    
-    def sync_with_lote_amb(self):
-        """Keep your existing method"""
-        pass
-    
-    def update_work_order_status(self):
-        """Keep your existing method"""
-        pass
-    
-    def log_batch_history(self):
-        """Keep your existing method"""
-        pass
-    
-    def on_submit(self):
-        """Keep your existing method"""
-        pass
-    
-    def create_stock_entry(self):
-        """Keep your existing method"""
-        pass
-    
-    def create_lote_amb_if_needed(self):
-        """Keep your existing method"""
-        pass
-    
-    def update_batch_status(self, status):
-        """Keep your existing method"""
-        pass
-    
-    def notify_stakeholders(self):
-        """Keep your existing method"""
-        pass
-    
-    def on_cancel(self):
-        """Keep your existing method"""
-        pass
-    
-    def cancel_stock_entries(self):
-        """Keep your existing method"""
-        pass
 
-# API METHODS - ADD THESE AT THE BOTTOM
+# ==================== API METHODS ====================
+
 @frappe.whitelist()
 def generate_mrp_bom(batch_name):
     """API endpoint to generate MRP BOM"""
@@ -214,6 +412,10 @@ def generate_standard_bom(batch_name):
         standard_bom.batch_amb_reference = batch_name
         standard_bom.is_default = 1
         
+        # Copy golden number
+        if frappe.db.exists("Custom Field", "BOM-golden_number") and batch.golden_number:
+            standard_bom.golden_number = batch.golden_number
+        
         # Finalize rates for standard BOM
         for item in standard_bom.items:
             standard_rate = frappe.db.get_value("Item", item.item_code, "standard_rate")
@@ -248,7 +450,7 @@ def get_bom_cost_breakdown(bom_name):
         bom = frappe.get_doc("BOM", bom_name)
         
         total_material_cost = sum(flt(item.amount) for item in bom.items)
-        operation_cost = bom.operation_cost or 0
+        operation_cost = bom.operation_cost if hasattr(bom, 'operation_cost') else 0
         total_cost = total_material_cost + operation_cost
         cost_per_unit = total_cost / flt(bom.quantity) if bom.quantity else 0
         
@@ -286,6 +488,10 @@ def create_work_order(batch_name):
         wo.batch_amb_reference = batch_name
         wo.planned_start_date = nowdate()
         
+        # Set golden number if custom field exists
+        if frappe.db.exists("Custom Field", "Work Order-golden_number") and batch.golden_number:
+            wo.golden_number = batch.golden_number
+        
         wo.insert(ignore_permissions=True)
         frappe.db.commit()
         
@@ -300,8 +506,6 @@ def create_work_order(batch_name):
         frappe.log_error(f"Work Order Creation Error: {str(e)}")
         return {"success": False, "message": str(e)}
 
-
-
 @frappe.whitelist()
 def get_running_batch_announcements(include_companies=True, include_plants=True, include_quality=True):
     """Get running batch announcements for widget"""
@@ -310,7 +514,7 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
             'Batch AMB',
             filters={'docstatus': ['!=', 2]},
             fields=[
-                'name', 'title', 'item_to_manufacture', 'item_code',
+                'name', 'title', 'golden_number', 'item_to_manufacture', 'item_code',
                 'wo_item_name', 'quality_status', 'target_plant',
                 'production_plant_name', 'custom_plant_code',
                 'custom_batch_level', 'barrel_count', 'total_net_weight',
@@ -336,17 +540,24 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
         for batch in batches:
             company = batch.production_plant_name or batch.target_plant or 'Unknown'
             
+            content_text = f"Golden Number: {batch.golden_number or 'N/A'}\n"
+            content_text += f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\n"
+            content_text += f"Plant: {batch.custom_plant_code or 'N/A'}\n"
+            content_text += f"Weight: {batch.total_net_weight or 0}\n"
+            content_text += f"Barrels: {batch.barrel_count or 0}"
+            
             announcement = {
                 'name': batch.name,
-                'title': batch.title or batch.name,
+                'title': batch.title or batch.golden_number or batch.name,
                 'batch_code': batch.name,
+                'golden_number': batch.golden_number,
                 'item_code': batch.item_to_manufacture or batch.item_code or 'N/A',
                 'status': 'Active',
                 'company': company,
                 'level': batch.custom_batch_level or 'Batch',
                 'priority': 'high' if batch.quality_status == 'Failed' else 'medium',
                 'quality_status': batch.quality_status or 'Pending',
-                'content': f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\nPlant: {batch.custom_plant_code or 'N/A'}\nWeight: {batch.total_net_weight or 0}\nBarrels: {batch.barrel_count or 0}",
+                'content': content_text,
                 'message': f"Level {batch.custom_batch_level or '?'} batch in production",
                 'modified': str(batch.modified) if batch.modified else '',
                 'creation': str(batch.creation) if batch.creation else ''
@@ -378,107 +589,45 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
         
     except Exception as e:
         import traceback
-        frappe.log_error(f"Widget error: {str(e)}\n{traceback.format_exc()}", "Batch Widget Error")
+        frappe.log_error("Widget error: " + str(e) + "\n" + traceback.format_exc(), "Batch Widget Error")
         return {
             'success': False,
             'error': str(e),
             'message': 'Failed to load batch data'
         }
-    
-    # ==================== GOLDEN NUMBER DEBUG FUNCTIONS ====================
 
 @frappe.whitelist()
-def debug_golden_number_step1(batch_name):
-    """STEP 1: Basic batch inspection"""
-    print("🔔 DEBUG STEP 1: Basic Batch Inspection")
-    
+def generate_golden_number_from_wo(work_order_name):
+    """Generate golden number from Work Order - API endpoint"""
     try:
-        batch = frappe.get_doc("Batch AMB", batch_name)
-        debug_info = {
-            "batch_name": batch_name,
-            "work_order_ref": getattr(batch, 'work_order_ref', 'NOT FOUND'),
-            "item_code": getattr(batch, 'item_code', 'NOT FOUND'),
-            "has_work_order": hasattr(batch, 'work_order_ref') and bool(batch.work_order_ref)
-        }
-        
-        print("🔔 BATCH DEBUG INFO:", debug_info)
-        return debug_info
-        
-    except Exception as e:
-        print("❌ STEP 1 ERROR:", e)
-        return {"error": str(e), "step": 1}
-
-@frappe.whitelist() 
-def debug_golden_number_step2(batch_name):
-    """STEP 2: Work Order inspection"""
-    print("🔔 DEBUG STEP 2: Work Order Inspection")
-    
-    try:
-        batch = frappe.get_doc("Batch AMB", batch_name)
-        
-        if not hasattr(batch, 'work_order_ref') or not batch.work_order_ref:
-            return {"error": "No work_order_ref", "step": 2}
-        
-        wo = frappe.get_doc("Work Order", batch.work_order_ref)
-        debug_info = {
-            "work_order_name": batch.work_order_ref,
-            "production_item": getattr(wo, 'production_item', 'NOT FOUND'),
-            "qty": getattr(wo, 'qty', 'NOT FOUND'),
-            "plant_code": getattr(wo, 'custom_plant_code', 'NOT FOUND'),
-            "wo_fields": [field for field in wo.as_dict().keys()]
-        }
-        
-        print("🔔 WORK ORDER DEBUG INFO:", debug_info)
-        return debug_info
-        
-    except Exception as e:
-        print("❌ STEP 2 ERROR:", e)
-        return {"error": str(e), "step": 2}
-
-@frappe.whitelist()
-def debug_golden_number_step3(batch_name):
-    """STEP 3: Golden Number component extraction"""
-    print("🔔 DEBUG STEP 3: Golden Number Components")
-    
-    try:
-        batch = frappe.get_doc("Batch AMB", batch_name)
-        
-        if not hasattr(batch, 'work_order_ref') or not batch.work_order_ref:
-            return {"error": "No work_order_ref", "step": 3}
-        
-        wo_number = batch.work_order_ref.replace('MFG-WO-', '')
-        wo = frappe.get_doc("Work Order", batch.work_order_ref)
-        
-        # Extract components
-        components = {
-            "wo_number_raw": batch.work_order_ref,
-            "wo_number_clean": wo_number,
-            "consecutive": wo_number[:3] if len(wo_number) >= 3 else "TOO_SHORT",
-            "year": wo_number[3:5] if len(wo_number) >= 5 else "TOO_SHORT",
-            "production_item": wo.production_item,
-            "plant_code_raw": getattr(wo, 'custom_plant_code', 'NOT_FOUND'),
-            "plant_code_clean": "NOT_CLEANED"
-        }
-        
-        # Clean plant code
-        plant_code = getattr(wo, 'custom_plant_code', '3')
-        if isinstance(plant_code, str):
-            if '(' in plant_code:
-                plant_code = plant_code.split('(')[0].strip()
-            
-            # Map to numeric code
-            plant_mapping = {
-                'Mix': '1', '1': '1',
-                'Dry': '2', '2': '2', 
-                'Juice': '3', '3': '3',
-                'Laboratory': '4', '4': '4',
-                'Formulated': '5', '5': '5'
+        result = GoldenNumberService.generate_from_work_order(work_order_name)
+        if result:
+            return {
+                'success': True,
+                'data': result
             }
-            components["plant_code_clean"] = plant_mapping.get(plant_code, '3')
-        
-        print("🔔 GOLDEN NUMBER COMPONENTS:", components)
-        return components
-        
+        else:
+            return {
+                'success': False,
+                'message': 'Failed to generate golden number'
+            }
     except Exception as e:
-        print("❌ STEP 3 ERROR:", e)
-        return {"error": str(e), "step": 3}
+        return {
+            'success': False,
+            'message': str(e)
+        }
+
+    def generate_bom_from_template(self):
+        """Generate BOM from template using golden number"""
+        from amb_w_tds.services.template_bom_service import TemplateBOMService
+        
+        try:
+            bom_name = TemplateBOMService.create_bom_from_template(self)
+            self.db_set('bom_reference', bom_name)
+            
+            frappe.msgprint(_("BOM {0} created from template").format(bom_name))
+            return bom_name
+            
+        except Exception as e:
+            frappe.log_error(f"BOM Template Generation Error: {str(e)}", "Batch AMB")
+            frappe.throw(_("Failed to generate BOM from template: {0}").format(str(e)))
