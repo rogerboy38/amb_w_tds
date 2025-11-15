@@ -92,7 +92,14 @@ class TemplateBOMService:
                                        "price_list_rate") or 0.82
         
         # Quantities for 100kg output
-        juice_quantity = 20000
+        # Calculate liquid quantity based on powder concentration
+        powder_qty = 100  # kg output
+        powder_concentration = 200  # 200:1 concentration
+        liquid_concentration = 1  # 1:1 juice = 1% solids
+        
+        # Calculate: need 0.5kg aloe solids (100/200), from 1% juice = 50kg liquid
+        aloe_solids_needed = powder_qty / powder_concentration
+        juice_quantity = aloe_solids_needed / (liquid_concentration / 100)
         water_quantity = 500
         electricity_quantity = 150
         gas_quantity = 50
@@ -152,13 +159,13 @@ class TemplateBOMService:
             "operations": [
                 {
                     "operation": "Secado Spray",
-                    "workstation": "WS-Secado",
+                    "workstation": "P-3-OP-420-Secado Spray Dry",
                     "time_in_mins": 240,
                     "description": "Spray drying of liquid concentrate to powder (200:1 ratio)"
                 },
                 {
                     "operation": "P-3-OP-030-MOLIENDA",
-                    "workstation": "WS-Molienda",
+                    "workstation": "P-3-OP-030-MOLIENDA",
                     "time_in_mins": 60,
                     "description": "Milling and particle size reduction"
                 }
@@ -235,13 +242,13 @@ class TemplateBOMService:
             "operations": [
                 {
                     "operation": "P-3-OP-130-Decolorado de Jugo",
-                    "workstation": "WS-Decoloracion",
+                    "workstation": "P-3-OP-130-Decolorado de Jugo",
                     "time_in_mins": 120,
                     "description": "Activated carbon decolorization process"
                 },
                 {
                     "operation": "P-3-OP-140-Filtrado de Jugo",
-                    "workstation": "WS-Filtrado",
+                    "workstation": "P-3-OP-140-Filtrado de Jugo",
                     "time_in_mins": 90,
                     "description": "Carbon filtration and clarification"
                 }
@@ -318,19 +325,19 @@ class TemplateBOMService:
             "operations": [
                 {
                     "operation": "P-3-OP-140-Filtrado de Jugo",
-                    "workstation": "WS-Filtrado",
+                    "workstation": "P-3-OP-140-Filtrado de Jugo",
                     "time_in_mins": 120,
                     "description": "Membrane ultrafiltration"
                 },
                 {
                     "operation": "Op 500-Evaporation",
-                    "workstation": "WS-Concentrado",
+                    "workstation": "P-3-OP-500-Evaporacion",
                     "time_in_mins": 300,
                     "description": "Vacuum concentration (5% to 10%)"
                 },
                 {
                     "operation": "Op 830 Almacenaje en cuarto frio",
-                    "workstation": "WS-Concentrado",
+                    "workstation": "P-3-OP-500-Evaporacion",
                     "time_in_mins": 60,
                     "description": "Cold storage preparation (0-2°C)"
                 }
@@ -512,25 +519,25 @@ class TemplateBOMService:
             "operations": [
                 {
                     "operation": "P-3-OP-020- Lavado de hoja entera",
-                    "workstation": "WS-Limpieza",
+                    "workstation": "P-3-OP-020- Lavado de hoja entera",
                     "time_in_mins": 120,
                     "description": "Washing and cleaning of whole aloe leaves"
                 },
                 {
                     "operation": "P-3-OP-030-MOLIENDA",
-                    "workstation": "WS-Molienda",
+                    "workstation": "P-3-OP-030-MOLIENDA",
                     "time_in_mins": extraction_time,
                     "description": "Extraction and pulping"
                 },
                 {
                     "operation": "Op 500-Evaporation",
-                    "workstation": "WS-Concentrado",
+                    "workstation": "P-3-OP-500-Evaporacion",
                     "time_in_mins": concentration_time,
                     "description": f"Concentration to {concentration_factor}:1 ratio"
                 },
                 {
                     "operation": "Op 700 Pasteurizacion",
-                    "workstation": "WS-Concentrado",
+                    "workstation": "P-3-OP-500-Evaporacion",
                     "time_in_mins": 60,
                     "description": "Pasteurization and preservation"
                 }
