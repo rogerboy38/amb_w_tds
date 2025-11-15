@@ -13,10 +13,10 @@ class TemplateBOMService:
     
     def __init__(self):
         self.utility_items = {
-            'water': 'WATER-UTILITY',
-            'electricity': 'ELECTRICITY-UTILITY',
-            'gas': 'GAS-UTILITY',
-            'labor': 'LABOR-COST'
+            'water': 'M033',  # Temporary: Using Aloe Leaf as placeholder
+            'electricity': 'M033',  # Will fix later
+            'gas': 'M033',
+            'labor': 'M033'
         }
     
     def _get_web_product_codes(self):
@@ -117,7 +117,7 @@ class TemplateBOMService:
                     "amount": juice_quantity * juice_price
                 },
                 {
-                    "item_code": "WATER-UTILITY",
+                    "item_code": "WATER",
                     "item_name": "Process Water",
                     "qty": water_quantity,
                     "uom": "Litre",
@@ -125,7 +125,7 @@ class TemplateBOMService:
                     "amount": water_quantity * 0.005
                 },
                 {
-                    "item_code": "ELECTRICITY-UTILITY",
+                    "item_code": "ELECTRIC",
                     "item_name": "Electricity",
                     "qty": electricity_quantity,
                     "uom": "Nos",
@@ -133,7 +133,7 @@ class TemplateBOMService:
                     "amount": electricity_quantity * 0.15
                 },
                 {
-                    "item_code": "GAS-UTILITY",
+                    "item_code": "GAS",
                     "item_name": "Natural Gas",
                     "qty": gas_quantity,
                     "uom": "Nos",
@@ -141,7 +141,7 @@ class TemplateBOMService:
                     "amount": gas_quantity * 0.50
                 },
                 {
-                    "item_code": "LABOR-COST",
+                    "item_code": "LABOR",
                     "item_name": "Direct Labor",
                     "qty": labor_hours,
                     "uom": "Nos",
@@ -200,7 +200,7 @@ class TemplateBOMService:
                     "amount": powder_quantity * powder_price
                 },
                 {
-                    "item_code": "ACTIVATED-CARBON",
+                    "item_code": "M042",
                     "item_name": "Activated Carbon",
                     "qty": carbon_quantity,
                     "uom": "Kg",
@@ -208,7 +208,7 @@ class TemplateBOMService:
                     "amount": carbon_quantity * 8.50
                 },
                 {
-                    "item_code": "WATER-UTILITY",
+                    "item_code": "WATER",
                     "item_name": "Process Water",
                     "qty": water_quantity,
                     "uom": "Litre",
@@ -216,7 +216,7 @@ class TemplateBOMService:
                     "amount": water_quantity * 0.005
                 },
                 {
-                    "item_code": "ELECTRICITY-UTILITY",
+                    "item_code": "ELECTRIC",
                     "item_name": "Electricity",
                     "qty": electricity_quantity,
                     "uom": "Nos",
@@ -224,7 +224,7 @@ class TemplateBOMService:
                     "amount": electricity_quantity * 0.15
                 },
                 {
-                    "item_code": "LABOR-COST",
+                    "item_code": "LABOR",
                     "item_name": "Direct Labor",
                     "qty": labor_hours,
                     "uom": "Nos",
@@ -283,7 +283,7 @@ class TemplateBOMService:
                     "amount": retentate_quantity * retentate_price
                 },
                 {
-                    "item_code": "WATER-UTILITY",
+                    "item_code": "WATER",
                     "item_name": "Process Water",
                     "qty": water_quantity,
                     "uom": "Litre",
@@ -291,7 +291,7 @@ class TemplateBOMService:
                     "amount": water_quantity * 0.005
                 },
                 {
-                    "item_code": "ELECTRICITY-UTILITY",
+                    "item_code": "ELECTRIC",
                     "item_name": "Electricity",
                     "qty": electricity_quantity,
                     "uom": "Nos",
@@ -299,7 +299,7 @@ class TemplateBOMService:
                     "amount": electricity_quantity * 0.15
                 },
                 {
-                    "item_code": "GAS-UTILITY",
+                    "item_code": "GAS",
                     "item_name": "Natural Gas",
                     "qty": gas_quantity,
                     "uom": "Nos",
@@ -307,7 +307,7 @@ class TemplateBOMService:
                     "amount": gas_quantity * 0.50
                 },
                 {
-                    "item_code": "LABOR-COST",
+                    "item_code": "LABOR",
                     "item_name": "Direct Labor",
                     "qty": labor_hours,
                     "uom": "Nos",
@@ -381,7 +381,7 @@ class TemplateBOMService:
                     "amount": powder_quantity * powder_price
                 },
                 {
-                    "item_code": "MALTODEXTRIN",
+                    "item_code": "M042",
                     "item_name": "Maltodextrin",
                     "qty": maltodextrin_quantity,
                     "uom": "Kg",
@@ -389,7 +389,7 @@ class TemplateBOMService:
                     "amount": maltodextrin_quantity * 2.50
                 },
                 {
-                    "item_code": "WATER-UTILITY",
+                    "item_code": "WATER",
                     "item_name": "Process Water",
                     "qty": water_quantity,
                     "uom": "Litre",
@@ -397,7 +397,7 @@ class TemplateBOMService:
                     "amount": water_quantity * 0.005
                 },
                 {
-                    "item_code": "ELECTRICITY-UTILITY",
+                    "item_code": "ELECTRIC",
                     "item_name": "Electricity",
                     "qty": electricity_quantity,
                     "uom": "Nos",
@@ -405,7 +405,7 @@ class TemplateBOMService:
                     "amount": electricity_quantity * 0.15
                 },
                 {
-                    "item_code": "LABOR-COST",
+                    "item_code": "LABOR",
                     "item_name": "Direct Labor",
                     "qty": labor_hours,
                     "uom": "Nos",
@@ -461,7 +461,7 @@ class TemplateBOMService:
             "with_operations": 1,
             "items": [
                 {
-                    "item_code": "ALOE-LEAF-FRESH",
+                    "item_code": "M033",
                     "item_name": "Fresh Aloe Vera Leaves",
                     "qty": aloe_leaf_quantity,
                     "uom": "Kg",
@@ -469,7 +469,7 @@ class TemplateBOMService:
                     "amount": aloe_leaf_quantity * 0.30
                 },
                 {
-                    "item_code": "CITRIC-ACID",
+                    "item_code": "M053",
                     "item_name": "Citric Acid",
                     "qty": citric_quantity,
                     "uom": "Kg",
@@ -477,7 +477,7 @@ class TemplateBOMService:
                     "amount": citric_quantity * 3.50
                 },
                 {
-                    "item_code": "POTASSIUM-SORBATE",
+                    "item_code": "M029",
                     "item_name": "Potassium Sorbate",
                     "qty": sorbate_quantity,
                     "uom": "Kg",
@@ -485,7 +485,7 @@ class TemplateBOMService:
                     "amount": sorbate_quantity * 5.00
                 },
                 {
-                    "item_code": "WATER-UTILITY",
+                    "item_code": "WATER",
                     "item_name": "Process Water",
                     "qty": water_quantity,
                     "uom": "Litre",
@@ -493,7 +493,7 @@ class TemplateBOMService:
                     "amount": water_quantity * 0.005
                 },
                 {
-                    "item_code": "ELECTRICITY-UTILITY",
+                    "item_code": "ELECTRIC",
                     "item_name": "Electricity",
                     "qty": electricity_quantity,
                     "uom": "Nos",
@@ -501,7 +501,7 @@ class TemplateBOMService:
                     "amount": electricity_quantity * 0.15
                 },
                 {
-                    "item_code": "LABOR-COST",
+                    "item_code": "LABOR",
                     "item_name": "Direct Labor",
                     "qty": labor_hours,
                     "uom": "Nos",
