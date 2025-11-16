@@ -7,13 +7,22 @@
  "engine": "InnoDB",
  "field_order": [
   "product_item_section",
+  "amino_acid_specifications",
   "product_item",
+  "vitamin_specifications",
   "column_break_3",
+  "specifications_section",
   "approval_date",
   "manufacturing_parameters_section",
   "target_brix",
   "total_solids",
-  "ph_range"
+  "ph_range",
+  "ai_analysis_section",
+  "ai_quality_score",
+  "ai_confidence",
+  "column_break_ai",
+  "ai_risk_factors",
+  "ai_recommendations"
  ],
  "fields": [
   {
@@ -24,6 +33,7 @@
   {
    "fieldname": "product_item",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Product Item",
    "options": "Item",
    "reqd": 1
@@ -56,12 +66,69 @@
    "fieldname": "ph_range",
    "fieldtype": "Data",
    "label": "pH Range"
+  },
+  {
+   "fieldname": "amino_acid_specifications",
+   "fieldtype": "Table",
+   "label": "Amino Acid Specifications",
+   "options": "BOM Formula Amino Acid"
+  },
+  {
+   "fieldname": "vitamin_specifications",
+   "fieldtype": "Table",
+   "label": "Vitamin Specifications",
+   "options": "BOM Formula Amino Acid"
+  },
+  {
+   "fieldname": "specifications_section",
+   "fieldtype": "Section Break",
+   "label": "Biochemical Specifications"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "ai_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "AI Analysis"
+  },
+  {
+   "description": "AI-predicted quality score (0-1)",
+   "fieldname": "ai_quality_score",
+   "fieldtype": "Float",
+   "label": "AI Quality Score",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "AI prediction confidence level",
+   "fieldname": "ai_confidence",
+   "fieldtype": "Float",
+   "label": "AI Confidence",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "AI-detected risk factors",
+   "fieldname": "ai_risk_factors",
+   "fieldtype": "Small Text",
+   "label": "AI Risk Factors",
+   "read_only": 1
+  },
+  {
+   "description": "AI optimization recommendations",
+   "fieldname": "ai_recommendations",
+   "fieldtype": "Small Text",
+   "label": "AI Recommendations",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-16 15:37:23.331394",
+ "modified": "2025-11-16 17:06:17.305809",
  "modified_by": "Administrator",
  "module": "amb_w_tds",
  "name": "TDS Product Specification v2",
