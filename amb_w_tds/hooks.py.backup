@@ -45,14 +45,6 @@ app_include_js = [
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
-#fixtures = [
-#    {
-#        "doctype": "DocType",
-#        "filters": [
-#            ["name", "in", ["AMB KPI FACTORS"]]
-#        ]
-#    }
-#]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -253,17 +245,3 @@ app_include_js = [
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-# Barrel Lifecycle Hooks
-doc_events = {
-    "Stock Entry": {
-        "on_submit": "amb_w_tds.amb_w_tds.amb_w_tds.stock_entry_hooks.on_stock_entry_submit"
-    }
-}
-# In hooks.py, ensure you have:
-#get_website_user_home_page = "amb_w_tds.pages.barrel_dashboard.barrel_dashboard"
-
-# Add pages to this list
-standard_portal_menu = [
-    {"title": "Barrel Dashboard", "route": "/barrel_dashboard", "reference_doctype": "Barrel"},
-    {"title": "Container Barrels Dashboard", "route": "/container_barrels_dashboard", "reference_doctype": "Container Selection"}
-]

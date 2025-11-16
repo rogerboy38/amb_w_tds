@@ -29,7 +29,7 @@ NC='\033[0m' # No Color
 # Configuration - Configurable via environment variables
 REMOTE="${GIT_REMOTE:-origin}"
 REPO_URL="${GIT_REMOTE_URL:-git@github.com:rogerboy38/amb_w_tds.git}"
-APP_VERSION="v6.0.0"
+APP_VERSION="v8.1.0"
 SCRIPT_VERSION="4.1.2"
 
 # Auto-detect current branch

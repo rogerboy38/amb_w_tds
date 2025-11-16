@@ -1,0 +1,137 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:BARREL-{#####}",
+ "creation": "2024-11-01 10:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "barrel_code",
+  "barrel_type",
+  "barrel_volume_gallons",
+  "current_status",
+  "current_location",
+  "column_break_basic",
+  "current_fill_level_gallons",
+  "available_volume_gallons",
+  "fill_percentage",
+  "section_break_details",
+  "owner"
+ ],
+ "fields": [
+  {
+   "fieldname": "barrel_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Barrel Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "barrel_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Barrel Type",
+   "options": "Wine\nWhiskey\nBourbon\nRum\nTequila\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "barrel_volume_gallons",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Barrel Volume (Gallons)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "current_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Current Status",
+   "options": "Active\nAvailable\nIn Use\nMaintenance\nReserved\nIn Transit\nRetired",
+   "reqd": 1
+  },
+  {
+   "fieldname": "current_location",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Current Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "current_fill_level_gallons",
+   "fieldtype": "Float",
+   "label": "Current Fill Level (Gallons)"
+  },
+  {
+   "fieldname": "available_volume_gallons",
+   "fieldtype": "Float",
+   "label": "Available Volume (Gallons)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fill_percentage",
+   "fieldtype": "Percent",
+   "label": "Fill Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Additional Details"
+  },
+  {
+   "fieldname": "owner",
+   "fieldtype": "Link",
+   "label": "Owner",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-11-03 20:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "AMB W TDS",
+ "name": "Barrel",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Barrel Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "barrel_code",
+ "track_changes": 1
+}
