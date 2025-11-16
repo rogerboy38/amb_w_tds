@@ -1,0 +1,317 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-11-01 22:56:03.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "container_id",
+  "serial_number",
+  "container_type",
+  "plant",
+  "column_break_1",
+  "lifecycle_status",
+  "batch_amb_link",
+  "reserved_date",
+  "completed_date",
+  "section_break_weights",
+  "gross_weight",
+  "tara_weight",
+  "net_weight",
+  "expected_weight",
+  "column_break_weights",
+  "weight_variance_percentage",
+  "is_within_tolerance",
+  "fill_percentage",
+  "is_partial_fill",
+  "section_break_sync",
+  "sync_status",
+  "last_synced",
+  "sync_error",
+  "column_break_sync",
+  "barcode_scanned_at",
+  "scanned_by",
+  "manual_sync_required",
+  "section_break_tracking",
+  "created_by_user",
+  "assigned_operator",
+  "quality_check_status",
+  "column_break_tracking",
+  "notes",
+  "partial_fill_reason",
+  "maintenance_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "CS-.YYYY.-.#####",
+   "reqd": 1
+  },
+  {
+   "fieldname": "container_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Container ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "serial_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Serial Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "container_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Container Type",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "plant",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Plant",
+   "options": "Juice\nDry\nMix\nLab",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lifecycle_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Lifecycle Status",
+   "options": "Planned\nReserved\nIn_Use\nCompleted\nAvailable\nPartial_Fill\nMaintenance\nRetired",
+   "reqd": 1,
+   "default": "Available"
+  },
+  {
+   "fieldname": "batch_amb_link",
+   "fieldtype": "Link",
+   "label": "Batch AMB",
+   "options": "Batch AMB"
+  },
+  {
+   "fieldname": "reserved_date",
+   "fieldtype": "Datetime",
+   "label": "Reserved Date"
+  },
+  {
+   "fieldname": "completed_date",
+   "fieldtype": "Datetime",
+   "label": "Completed Date"
+  },
+  {
+   "fieldname": "section_break_weights",
+   "fieldtype": "Section Break",
+   "label": "Weight Tracking"
+  },
+  {
+   "fieldname": "gross_weight",
+   "fieldtype": "Float",
+   "label": "Gross Weight (Kg)",
+   "precision": 3
+  },
+  {
+   "fieldname": "tara_weight",
+   "fieldtype": "Float",
+   "label": "Tara Weight (Kg)",
+   "precision": 3
+  },
+  {
+   "fieldname": "net_weight",
+   "fieldtype": "Float",
+   "label": "Net Weight (Kg)",
+   "precision": 3,
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected_weight",
+   "fieldtype": "Float",
+   "label": "Expected Weight (Kg)",
+   "precision": 3
+  },
+  {
+   "fieldname": "column_break_weights",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "weight_variance_percentage",
+   "fieldtype": "Float",
+   "label": "Weight Variance %",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_within_tolerance",
+   "fieldtype": "Check",
+   "label": "Within 1% Tolerance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fill_percentage",
+   "fieldtype": "Float",
+   "label": "Fill Percentage %",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_partial_fill",
+   "fieldtype": "Check",
+   "label": "Partial Fill",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_sync",
+   "fieldtype": "Section Break",
+   "label": "Synchronization"
+  },
+  {
+   "fieldname": "sync_status",
+   "fieldtype": "Select",
+   "label": "Sync Status",
+   "options": "Not_Synced\nPending\nSynced\nError",
+   "default": "Not_Synced"
+  },
+  {
+   "fieldname": "last_synced",
+   "fieldtype": "Datetime",
+   "label": "Last Synced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sync_error",
+   "fieldtype": "Text",
+   "label": "Sync Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_sync",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "barcode_scanned_at",
+   "fieldtype": "Datetime",
+   "label": "Barcode Scanned At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scanned_by",
+   "fieldtype": "Link",
+   "label": "Scanned By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "manual_sync_required",
+   "fieldtype": "Check",
+   "label": "Manual Sync Required"
+  },
+  {
+   "fieldname": "section_break_tracking",
+   "fieldtype": "Section Break",
+   "label": "Additional Tracking"
+  },
+  {
+   "fieldname": "created_by_user",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User",
+   "default": "user"
+  },
+  {
+   "fieldname": "assigned_operator",
+   "fieldtype": "Link",
+   "label": "Assigned Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "quality_check_status",
+   "fieldtype": "Select",
+   "label": "Quality Check Status",
+   "options": "Pending\nPassed\nFailed\nN/A",
+   "default": "Pending"
+  },
+  {
+   "fieldname": "column_break_tracking",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "partial_fill_reason",
+   "fieldtype": "Data",
+   "label": "Partial Fill Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "maintenance_notes",
+   "fieldtype": "Text",
+   "label": "Maintenance Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-11-01 22:56:03.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Container Selection",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

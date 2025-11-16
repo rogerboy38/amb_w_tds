@@ -1,0 +1,169 @@
+{
+ "doctype": "DocType",
+ "module": "amb_w_tds",
+ "name": "BOM Enhancement",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "show_name_in_global_search": 1,
+ "fields": [
+  {
+   "fieldname": "bom_reference",
+   "fieldtype": "Link",
+   "label": "BOM Reference",
+   "options": "BOM",
+   "reqd": 1
+  },
+  {
+   "fieldname": "enhancement_type",
+   "fieldtype": "Select",
+   "label": "Enhancement Type",
+   "options": "Cost Optimization\nQuality Improvement\nProcess Efficiency\nMaterial Substitution\nNew Feature\nCompliance Update",
+   "reqd": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Data",
+   "label": "Version",
+   "description": "Version number for this enhancement (e.g., 1.1, 2.0)"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "Low\nMedium\nHigh\nCritical",
+   "default": "Medium"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nUnder Review\nApproved\nImplemented\nRejected",
+   "default": "Draft"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Detailed Notes"
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Valid From"
+  },
+  {
+   "fieldname": "valid_to",
+   "fieldtype": "Date",
+   "label": "Valid To"
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "default": 1
+  },
+  {
+   "fieldname": "total_estimated_cost",
+   "fieldtype": "Currency",
+   "label": "Total Estimated Cost",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cost_savings_target",
+   "fieldtype": "Currency",
+   "label": "Cost Savings Target",
+   "depends_on": "eval:doc.enhancement_type === 'Cost Optimization'"
+  },
+  {
+   "fieldname": "optimization_notes",
+   "fieldtype": "Text",
+   "label": "Optimization Notes",
+   "depends_on": "eval:doc.enhancement_type === 'Cost Optimization'"
+  },
+  {
+   "fieldname": "quality_standards",
+   "fieldtype": "Text",
+   "label": "Quality Standards",
+   "depends_on": "eval:doc.enhancement_type === 'Quality Improvement'"
+  },
+  {
+   "fieldname": "compliance_notes",
+   "fieldtype": "Text",
+   "label": "Compliance Notes",
+   "depends_on": "eval:doc.enhancement_type === 'Quality Improvement'"
+  },
+  {
+   "fieldname": "create_version_on_submit",
+   "fieldtype": "Check",
+   "label": "Create Version on Submit",
+   "default": 1,
+   "description": "Automatically create BOM Version when this enhancement is submitted"
+  },
+  {
+   "fieldname": "attachments_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "BOM Enhancement",
+   "read_only": 1,
+   "print_hide": 1,
+   "no_copy": 1
+  }
+ ],
+ "links": [
+  {
+   "link_doctype": "BOM Version",
+   "link_fieldname": "bom_enhancement"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "import": 1,
+   "set_user_permissions": 1
+  },
+  {
+   "role": "Manufacturing User",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 1,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 0,
+   "set_user_permissions": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "description",
+ "search_fields": "bom_reference,enhancement_type,description"
+}

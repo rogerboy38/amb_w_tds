@@ -1,4 +1,3 @@
-
 // =============================================================================
 // ENHANCED BATCH NAVBAR WIDGET - Optimized API Calls
 // =============================================================================
@@ -564,7 +563,7 @@ function update_last_refresh_time() {
 }
 
 // =============================================================================
-// UTILITY FUNCTIONS (Optimized)
+// UTILITY FUNCTIONS
 // =============================================================================
 
 function getPriorityColor(priority) {
@@ -575,50 +574,6 @@ function getPriorityColor(priority) {
     };
     return colors[priority] || '#95a5a6';
 }
-
-function openBatchRecord(batchName) {
-    if (batchName) {
-        frappe.set_route('Form', 'Batch AMB', batchName);
-    }
-}
-
-// ... (Keep your existing utility functions: getPlantName, getPlantIcon, getStatusIcon, formatTime, etc.)
-
-// =============================================================================
-// GLOBAL EXPORTS
-// =============================================================================
-
-// Make functions available globally with enhanced error handling
-window.refresh_batch_announcements = function() {
-    console.log('🔄 Manual refresh triggered');
-    update_batch_announcements();
-};
-
-window.hide_batch_widget = function() {
-    $('.batch-announcement-widget').fadeOut(300, function() {
-        $(this).remove();
-    });
-};
-
-window.show_batch_widget = function() {
-    if ($('.batch-announcement-widget').length === 0) {
-        update_batch_announcements();
-    } else {
-        $('.batch-announcement-widget').fadeIn();
-    }
-};
-
-// Cleanup on page unload
-$(window).on('beforeunload', function() {
-    if (amb.batch_widget.state.refreshTimer) {
-        clearInterval(amb.batch_widget.state.refreshTimer);
-    }
-});
-
-console.log('✅ Enhanced Batch Widget API Manager loaded');
-// =============================================================================
-// UTILITY FUNCTIONS
-// =============================================================================
 
 function getPlantName(plantCode) {
     const plantNames = {
@@ -642,16 +597,19 @@ function getPlantIcon(plantCode) {
     return icons[plantCode] || '🏭';
 }
 
-function getStatusIcon(status) {
+function getStatusIcon(quality_status) {
     const icons = {
-        'Draft': '📝',
+        'Pending': '📝',
         'In Progress': '⏳',
         'Running': '▶️',
         'Completed': '✅',
         'On Hold': '⏸️',
-        'Cancelled': '❌'
+        'Cancelled': '❌',
+        'Quality Check': '🔬',
+        'Passed': '✅',
+        'Failed': '❌'
     };
-    return icons[status] || '📋';
+    return icons[quality_status] || '📋';
 }
 
 function formatTime(timestamp) {
@@ -665,6 +623,12 @@ function formatTime(timestamp) {
     if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
     if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
     return Math.floor(diff / 86400) + 'd ago';
+}
+
+function openBatchRecord(batchName) {
+    if (batchName) {
+        frappe.set_route('Form', 'Batch AMB', batchName);
+    }
 }
 
 function setup_widget_events(widget) {
@@ -742,3 +706,36 @@ function display_batch_announcements(announcements, stats) {
         show_navbar_widget(html, announcements.length, stats);
     }
 }
+
+// =============================================================================
+// GLOBAL EXPORTS
+// =============================================================================
+
+// Make functions available globally with enhanced error handling
+window.refresh_batch_announcements = function() {
+    console.log('🔄 Manual refresh triggered');
+    update_batch_announcements();
+};
+
+window.hide_batch_widget = function() {
+    $('.batch-announcement-widget').fadeOut(300, function() {
+        $(this).remove();
+    });
+};
+
+window.show_batch_widget = function() {
+    if ($('.batch-announcement-widget').length === 0) {
+        update_batch_announcements();
+    } else {
+        $('.batch-announcement-widget').fadeIn();
+    }
+};
+
+// Cleanup on page unload
+$(window).on('beforeunload', function() {
+    if (amb.batch_widget.state.refreshTimer) {
+        clearInterval(amb.batch_widget.state.refreshTimer);
+    }
+});
+
+console.log('✅ Enhanced Batch Widget API Manager loaded');

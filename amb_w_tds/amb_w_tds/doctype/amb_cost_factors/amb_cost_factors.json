@@ -1,0 +1,80 @@
+[
+  {
+    "docstatus": 0,
+    "doctype": "DocType",
+    "name": "AMB Cost Factors",
+    "app": "amb_w_tds",
+    "module": "amb_w_tds",
+    "custom": 1,
+    "istable": 1,
+    "issingle": 0,
+    "track_changes": 0,
+    "fields": [
+      {
+        "fieldname": "factors_section",
+        "fieldtype": "Section Break",
+        "label": "Factors",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      },
+      {
+        "fieldname": "amb_factor_column",
+        "fieldtype": "Column Break",
+        "label": "AMB Factor ",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      },
+      {
+        "fieldname": "factor_name",
+        "fieldtype": "Data",
+        "label": "Factor Name",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      },
+      {
+        "fieldname": "factor_value",
+        "fieldtype": "Float",
+        "label": "Factor Value",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      },
+      {
+        "fieldname": "factor_data_year",
+        "fieldtype": "Int",
+        "label": "Factor Data Year ",
+        "reqd": 0,
+        "unique": 0,
+        "options": "2024\n2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033"
+      },
+      {
+        "fieldname": "base_of_calculation_method",
+        "fieldtype": "Select",
+        "label": "Base of Calculation Method",
+        "reqd": 0,
+        "unique": 0,
+        "options": "Automatic\nManual"
+      },
+      {
+        "fieldname": "calculated_factor_value",
+        "fieldtype": "Float",
+        "label": "Calculated Factor Value",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      },
+      {
+        "fieldname": "text_editor_iexb",
+        "fieldtype": "Text Editor",
+        "label": "Creiterio / Actualizacion de Criterios",
+        "reqd": 0,
+        "unique": 0,
+        "options": ""
+      }
+    ],
+    "permissions": []
+  }
+]

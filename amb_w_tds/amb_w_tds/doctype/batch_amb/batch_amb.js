@@ -1,31 +1,190 @@
+// Enhanced Batch AMB Client Script - Complete Integration
+// Combines original functionality with BatchL2 enhancements
 // Copyright (c) 2024, AMB and contributors
-// For license information, please see license.txt
 
 frappe.ui.form.on('Batch AMB', {
     // ==================== FORM EVENTS ====================
     
     refresh: function(frm) {
-        // Set custom buttons and actions
+        // Original functionality
         setup_custom_buttons(frm);
-        
-        // Apply field filters
         apply_field_filters(frm);
-        
-        // Set field dependencies
         setup_field_dependencies(frm);
-        
-        // Show indicators
         show_status_indicators(frm);
+        
+        // BatchL2 enhancements
+        if (should_auto_generate(frm)) {
+            generate_batch_code(frm);
+        }
+        add_level_specific_buttons(frm);
+        if (frm.doc.custom_batch_level == '3') {
+            update_weight_totals(frm);
+        }
     },
     
     onload: function(frm) {
-        // Set default values
+        // Original functionality
         set_default_values(frm);
-        
-        // Load saved preferences
         load_user_preferences(frm);
+        
+        // BatchL2 enhancements
+        if (frm.is_new()) {
+            frm.set_value('custom_batch_level', '1');
+            frm.set_value('is_group', 1);
+        }
+        if (frm.doc.custom_batch_level == '3') {
+            initialize_barrel_management(frm);
+        }
     },
+
+frappe.ui.form.on('Batch AMB', {
+    refresh: function(frm) {
+        // Add BOM Creation button
+        if (frm.doc.docstatus === 0) { // Only for draft documents
+            frm.add_custom_button(__('Create BOM'), function() {
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.show_bom_creation_button',
+                    args: {
+                        batch_name: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message.show_button) {
+                            // Show BOM creation wizard
+                            show_bom_wizard(frm);
+                        } else {
+                            frappe.msgprint(__('Cannot create BOM: {0}', [r.message.reason]));
+                        }
+                    }
+                });
+            }).addClass('btn-primary');
+        }
+        
+        // Check BOM status and add View BOM button if exists
+        check_bom_status(frm);
+    }
+});
+
+function show_bom_wizard(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create BOM Wizard'),
+        fields: [
+            {
+                fieldname: 'include_containers',
+                label: __('Include Containers'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_packaging', 
+                label: __('Include Packaging'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_utilities',
+                label: __('Include Utilities'),
+                fieldtype: 'Check', 
+                default: 1
+            },
+            {
+                fieldname: 'include_labor',
+                label: __('Include Labor'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'product_type',
+                label: __('Product Type'),
+                fieldtype: 'Select',
+                options: ['Juice', 'Mix'],
+                default: 'Juice'
+            },
+            {
+                fieldname: 'primary_packaging',
+                label: __('Primary Packaging'),
+                fieldtype: 'Link',
+                options: 'Item',
+                get_query: function() {
+                    return {
+                        filters: {
+                            'item_group': ['in', ['Packaging', 'Raw Material', 'Consumable']],
+                            'disabled': 0
+                        }
+                    };
+                }
+            }
+        ],
+        primary_action_label: __('Create BOM'),
+        primary_action: function(values) {
+            create_bom(frm, values);
+            dialog.hide();
+        }
+    });
     
+    dialog.show();
+}
+
+function create_bom(frm, options) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
+        args: {
+            batch_name: frm.doc.name,
+            options: options
+        },
+        freeze: true,
+        freeze_message: __('Creating BOM...'),
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                frappe.msgprint({
+                    title: __('Success'),
+                    indicator: 'green',
+                    message: __('BOM {0} created successfully with {1} items', 
+                        [r.message.bom_name, r.message.item_count])
+                });
+                
+                // Redirect to the created BOM
+                frappe.set_route('Form', 'BOM', r.message.bom_name);
+                
+                frm.reload_doc();
+            } else {
+                frappe.msgprint({
+                    title: __('Error'),
+                    indicator: 'red',
+                    message: __('BOM creation failed: {0}', [r.message ? r.message.message : 'Unknown error'])
+                });
+            }
+        },
+        error: function(r) {
+            let error_msg = r.message || (r.exc ? r.exc.join('\n') : 'Unknown error');
+            frappe.msgprint({
+                title: __('Error'),
+                indicator: 'red',
+                message: __('BOM creation failed: {0}', [error_msg])
+            });
+        }
+    });
+}}
+
+function check_bom_status(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_bom_creation_status',
+        args: {
+            batch_name: frm.doc.name
+        },
+        callback: function(r) {
+            if (r.message.has_bom) {
+                // ✅ FIX: Redirect to STANDARD BOM
+                frm.add_custom_button(__('View BOM'), function() {
+                    frappe.set_route('Form', 'BOM', r.message.bom_name);
+                }).addClass('btn-info');
+                
+                // Also show BOM reference in form
+                frm.dashboard.add_indicator(__('BOM: {0}', [r.message.bom_name]), 'blue');
+            }
+        }
+    });
+}
+
     // ==================== FIELD EVENTS ====================
     
     work_order: function(frm) {
@@ -54,86 +213,251 @@ frappe.ui.form.on('Batch AMB', {
             });
         }
     },
-    
-    item_to_manufacture: function(frm) {
-        if (frm.doc.item_to_manufacture) {
-            // Get item details
-            frappe.db.get_value('Item', frm.doc.item_to_manufacture, 
-                ['item_name', 'stock_uom', 'description'], 
-                function(r) {
-                    if (r) {
-                        frm.set_value('item_name', r.item_name);
-                        if (!frm.doc.uom) {
-                            frm.set_value('uom', r.stock_uom);
-                        }
-                    }
-                }
-            );
+
+    work_order_ref: function(frm) {
+        if (frm.doc.work_order_ref) {
+            fetch_work_order_data(frm);
         }
     },
-    
-    produced_qty: function(frm) {
-        // Recalculate costs when quantity changes
-        calculate_costs(frm);
-        
-        // Validate against container totals
-        validate_container_quantities(frm);
-    },
-    
-    production_start_date: function(frm) {
-        validate_production_dates(frm);
-    },
-    
-    production_end_date: function(frm) {
-        validate_production_dates(frm);
-        
-        // Calculate production duration
-        if (frm.doc.production_start_date && frm.doc.production_end_date) {
-            let start = frappe.datetime.str_to_obj(frm.doc.production_start_date);
-            let end = frappe.datetime.str_to_obj(frm.doc.production_end_date);
-            let duration = frappe.datetime.get_day_diff(end, start);
-            
-            frm.set_value('production_duration_days', duration);
+
+    custom_batch_level: function(frm) {
+        if (!frm.is_new()) {
+            frappe.msgprint('Cannot change batch level of existing documents. Create a new document for different levels.');
+            frm.set_value('custom_batch_level', frm.doc.__original_level || '1');
+            return;
+        }
+        configure_level_settings(frm);
+        if (should_auto_generate(frm)) {
+            generate_batch_code(frm);
         }
     },
-    
+
+    parent_batch_amb: function(frm) {
+        if (frm.doc.parent_batch_amb === frm.doc.name) {
+            frappe.msgprint('A batch cannot be its own parent');
+            frm.set_value('parent_batch_amb', '');
+            return;
+        }
+        if (frm.doc.parent_batch_amb && should_auto_generate(frm)) {
+            generate_batch_code(frm);
+        }
+    },
+
+    quick_barcode_scan: function(frm) {
+        if (frm.doc.quick_barcode_scan && frm.doc.custom_batch_level == '3') {
+            process_quick_barcode_scan(frm);
+        }
+    },
+
+    default_packaging_type: function(frm) {
+        if (frm.doc.default_packaging_type) {
+            fetch_default_tara_weight(frm);
+        }
+    },
+
     calculate_cost: function(frm) {
         if (frm.doc.calculate_cost) {
             calculate_costs(frm);
         }
     },
-    
-    // ==================== BEFORE SAVE ====================
-    
+
     before_save: function(frm) {
-        // Calculate totals before saving
+        // Original validation + BatchL2 enhancements
+        if (frm.doc.parent_batch_amb === frm.doc.name) {
+            frappe.throw('A batch cannot be its own parent');
+            return false;
+        }
+        if (parseInt(frm.doc.custom_batch_level || '0', 10) > 1 && !frm.doc.parent_batch_amb) {
+            frappe.throw('Parent Batch AMB is required for level ' + frm.doc.custom_batch_level);
+            return false;
+        }
+        if (!frm.doc.__original_level) {
+            frm.doc.__original_level = frm.doc.custom_batch_level;
+        }
+        if (frm.doc.custom_batch_level == '3') {
+            validate_barrel_data(frm);
+        }
+        
+        // Original calculation
         calculate_container_totals(frm);
+        
+        return true;
+    },
+
+    after_save: function(frm) {
+        // Refresh the form to get the latest values from the server
+        frm.refresh();
     }
 });
 
 // ==================== CHILD TABLE: Container Barrels ====================
 
 frappe.ui.form.on('Container Barrels', {
+    // Original functionality
     quantity: function(frm, cdt, cdn) {
         // Recalculate totals when container quantity changes
         calculate_container_totals(frm);
     },
     
     container_barrels_add: function(frm, cdt, cdn) {
-        // Set default values for new container row
+        // Original default values
         let row = locals[cdt][cdn];
         row.status = 'Active';
+        
+        // BatchL2 enhancements
+        if (frm.doc.default_packaging_type) {
+            frappe.model.set_value(cdt, cdn, 'packaging_type', frm.doc.default_packaging_type);
+        }
+        generate_barrel_serial_number(frm, row);
+        
         frm.refresh_field('container_barrels');
     },
     
     container_barrels_remove: function(frm) {
         // Recalculate totals when container is removed
         calculate_container_totals(frm);
+    },
+
+    // BatchL2 enhancements
+    barcode_scan_input: function(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.barcode_scan_input) {
+            process_barcode_scan(frm, cdt, cdn, row.barcode_scan_input);
+        }
+    },
+
+    gross_weight: function(frm, cdt, cdn) {
+        calculate_net_weight(frm, cdt, cdn);
+        update_weight_totals(frm);
+    },
+
+    tara_weight: function(frm, cdt, cdn) {
+        calculate_net_weight(frm, cdt, cdn);
+        update_weight_totals(frm);
+    },
+
+    packaging_type: function(frm, cdt, cdn) {
+        fetch_tara_weight_for_row(frm, cdt, cdn);
     }
 });
 
 // ==================== HELPER FUNCTIONS ====================
+frappe.ui.form.on('Batch AMB', {
+    refresh: function(frm) {
+        // Add BOM Creation button
+        if (frm.doc.docstatus === 0) { // Only for draft documents
+            frm.add_custom_button(__('Create BOM'), function() {
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.show_bom_creation_button',
+                    args: {
+                        batch_name: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message.show_button) {
+                            // Show BOM creation wizard
+                            show_bom_wizard(frm);
+                        } else {
+                            frappe.msgprint(__('Cannot create BOM: {0}', [r.message.reason]));
+                        }
+                    }
+                });
+            }).addClass('btn-primary');
+        }
+        
+        // Check BOM status
+        check_bom_status(frm);
+    }
+});
 
+function show_bom_wizard(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create BOM Wizard'),
+        fields: [
+            {
+                fieldname: 'include_containers',
+                label: __('Include Containers'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_packaging', 
+                label: __('Include Packaging'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_utilities',
+                label: __('Include Utilities'),
+                fieldtype: 'Check', 
+                default: 1
+            },
+            {
+                fieldname: 'include_labor',
+                label: __('Include Labor'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'product_type',
+                label: __('Product Type'),
+                fieldtype: 'Select',
+                options: ['Juice', 'Mix'],
+                default: 'Juice'
+            },
+            {
+                fieldname: 'primary_packaging',
+                label: __('Primary Packaging'),
+                fieldtype: 'Link',
+                options: 'Item'
+            }
+        ],
+        primary_action_label: __('Create BOM'),
+        primary_action: function(values) {
+            create_bom(frm, values);
+            dialog.hide();
+        }
+    });
+    
+    dialog.show();
+}
+
+function create_bom(frm, options) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
+        args: {
+            batch_name: frm.doc.name,
+            options: options
+        },
+        freeze: true,
+        freeze_message: __('Creating BOM...'),
+        callback: function(r) {
+            if (r.message) {
+                frappe.msgprint(__('BOM {0} created successfully with {1} items', 
+                    [r.message.bom_name, r.message.item_count]));
+                frm.reload_doc();
+            }
+        },
+        error: function(r) {
+            frappe.msgprint(__('BOM creation failed: {0}', [r.exc_type || r.message]));
+        }
+    });
+}
+
+function check_bom_status(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_bom_creation_status',
+        args: {
+            batch_name: frm.doc.name
+        },
+        callback: function(r) {
+            if (r.message.has_bom) {
+                frm.add_custom_button(__('View BOM'), function() {
+                    frappe.set_route('Form', 'BOM Creator', r.message.bom_name);
+                }).addClass('btn-info');
+            }
+        }
+    });
+}
 function setup_custom_buttons(frm) {
     if (!frm.doc.__islocal) {
         // Calculate Cost button
@@ -317,20 +641,36 @@ function load_user_preferences(frm) {
 }
 
 function calculate_container_totals(frm) {
+    // Merge original and BatchL2 functionality
     if (!frm.doc.container_barrels) return;
     
     let total_qty = 0;
     let total_containers = 0;
+    let total_gross = 0, total_tara = 0, total_net = 0, barrel_count = 0;
     
     frm.doc.container_barrels.forEach(function(row) {
+        // Original quantity calculation
         if (row.quantity) {
             total_qty += flt(row.quantity);
         }
         total_containers++;
+        
+        // BatchL2 weight calculations
+        if (row.gross_weight) total_gross += row.gross_weight;
+        if (row.tara_weight) total_tara += row.tara_weight;
+        if (row.net_weight) total_net += row.net_weight;
+        if (row.barrel_serial_number) barrel_count += 1;
     });
     
+    // Update original fields
     frm.set_value('total_container_qty', total_qty);
     frm.set_value('total_containers', total_containers);
+    
+    // Update BatchL2 fields
+    frm.set_value('total_gross_weight', total_gross);
+    frm.set_value('total_tara_weight', total_tara);
+    frm.set_value('total_net_weight', total_net);
+    frm.set_value('barrel_count', barrel_count);
 }
 
 function calculate_costs(frm) {
@@ -385,4 +725,286 @@ function validate_production_dates(frm) {
             frm.set_value('production_end_date', '');
         }
     }
+}
+
+function fetch_work_order_data(frm) {
+    // Work order reference functionality for BatchL2
+    if (frm.doc.work_order_ref) {
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_data',
+            args: { work_order: frm.doc.work_order_ref },
+            callback: function(r) {
+                if (r.message) {
+                    // Process work order data for batch generation
+                    console.log('Work order data loaded:', r.message);
+                }
+            }
+        });
+    }
+}
+
+// ==================== BATCHL2 ENHANCED FUNCTIONS ====================
+
+// Barrel Management Functions
+function initialize_barrel_management(frm) {
+    // Initialize barrel management for Level 3 batches
+    if (!frm.doc.container_barrels) {
+        frm.doc.container_barrels = [];
+    }
+}
+
+function add_level_specific_buttons(frm) {
+    // Add buttons based on batch level
+    if (frm.doc.custom_batch_level == '3') {
+        // Add original custom buttons if not already present
+        if (!frm.custom_buttons || !frm.custom_buttons['Barrel Scanner']) {
+            frm.add_custom_button(__('Barrel Scanner'), function() {
+                frm.set_value('quick_barcode_scan', '');
+            });
+        }
+        
+        if (!frm.custom_buttons || !frm.custom_buttons['Validate Barrels']) {
+            frm.add_custom_button(__('Validate Barrels'), function() {
+                validate_all_barrels(frm);
+            });
+        }
+        
+        if (!frm.custom_buttons || !frm.custom_buttons['Calculate Totals']) {
+            frm.add_custom_button(__('Calculate Totals'), function() {
+                update_weight_totals(frm);
+            });
+        }
+    }
+}
+
+function should_auto_generate(frm) {
+    return frm.is_new() && (
+        (frm.doc.custom_batch_level == '1' && !frm.doc.title) ||
+        (frm.doc.custom_batch_level == '2' && frm.doc.parent_batch_amb) ||
+        (frm.doc.custom_batch_level == '3' && frm.doc.parent_batch_amb && !frm.doc.custom_generated_batch_name)
+    );
+}
+
+function generate_batch_code(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.generate_batch_code',
+        args: {
+            parent_batch: frm.doc.parent_batch_amb,
+            batch_level: frm.doc.custom_batch_level,
+            work_order: frm.doc.work_order_ref
+        },
+        callback: function(r) {
+            if (r.message) {
+                frm.set_value('custom_generated_batch_name', r.message.code);
+                if (!frm.doc.title) {
+                    frm.set_value('title', r.message.code);
+                }
+            }
+        }
+    });
+}
+
+function configure_level_settings(frm) {
+    // Configure form settings based on batch level
+    const level = parseInt(frm.doc.custom_batch_level || '1', 10);
+    
+    switch(level) {
+        case 1:
+            // Level 1 - Root level
+            frm.set_df_property('parent_batch_amb', 'hidden', 1);
+            frm.set_df_property('container_barrels_section', 'hidden', 1);
+            break;
+        case 2:
+            // Level 2 - Intermediate level
+            frm.set_df_property('parent_batch_amb', 'hidden', 0);
+            frm.set_df_property('container_barrels_section', 'hidden', 1);
+            break;
+        case 3:
+            // Level 3 - Container level
+            frm.set_df_property('parent_batch_amb', 'hidden', 0);
+            frm.set_df_property('container_barrels_section', 'hidden', 0);
+            break;
+    }
+}
+
+function process_quick_barcode_scan(frm) {
+    const barcode = frm.doc.quick_barcode_scan;
+    if (!barcode) return;
+    
+    if (!validate_code39_format(barcode)) {
+        frappe.msgprint('Invalid CODE-39 barcode format');
+        frm.set_value('quick_barcode_scan', '');
+        return;
+    }
+    
+    const row = frm.add_child('container_barrels');
+    row.barrel_serial_number = barcode;
+    row.packaging_type = frm.doc.default_packaging_type;
+    row.scan_timestamp = frappe.datetime.now_datetime();
+    if (row.packaging_type) {
+        fetch_tara_weight_for_row(frm, row.doctype, row.name);
+    }
+    frm.refresh_field('container_barrels');
+    frm.set_value('quick_barcode_scan', '');
+    setTimeout(function() { frm.scroll_to_field('container_barrels'); }, 300);
+}
+
+function process_barcode_scan(frm, cdt, cdn, barcode) {
+    const row = locals[cdt][cdn];
+    if (!validate_code39_format(barcode)) {
+        frappe.msgprint('Invalid CODE-39 barcode format');
+        frappe.model.set_value(cdt, cdn, 'barcode_scan_input', '');
+        return;
+    }
+    frappe.model.set_value(cdt, cdn, 'barrel_serial_number', barcode);
+    frappe.model.set_value(cdt, cdn, 'scan_timestamp', frappe.datetime.now_datetime());
+    frappe.model.set_value(cdt, cdn, 'barcode_scan_input', '');
+    if (row.packaging_type) {
+        fetch_tara_weight_for_row(frm, cdt, cdn);
+    }
+}
+
+function generate_barrel_serial_number(frm, row) {
+    const container_code = frm.doc.title || frm.doc.custom_generated_batch_name;
+    if (!container_code) return;
+
+    let max_seq = 0;
+    (frm.doc.container_barrels || []).forEach(barrel => {
+        if (barrel.barrel_serial_number && barrel.barrel_serial_number.startsWith(container_code)) {
+            const match = barrel.barrel_serial_number.match(/-([0-9]+)$/);
+            if (match) {
+                max_seq = Math.max(max_seq, parseInt(match[1], 10));
+            }
+        }
+    });
+
+    const next_seq = (max_seq + 1).toString().padStart(3, '0');
+    row.barrel_serial_number = `${container_code}-${next_seq}`;
+}
+
+function fetch_tara_weight_for_row(frm, cdt, cdn) {
+    const row = locals[cdt][cdn];
+    if (!row.packaging_type) return;
+
+    frappe.call({
+        method: 'frappe.client.get',
+        args: {
+            doctype: 'Item',
+            name: row.packaging_type
+        },
+        callback: function(r) {
+            if (r.message && r.message.weight_per_unit) {
+                frappe.model.set_value(cdt, cdn, 'tara_weight', r.message.weight_per_unit);
+                calculate_net_weight(frm, cdt, cdn);
+            }
+        }
+    });
+}
+
+function fetch_default_tara_weight(frm) {
+    if (!frm.doc.default_packaging_type) return;
+
+    frappe.call({
+        method: 'frappe.client.get',
+        args: {
+            doctype: 'Item',
+            name: frm.doc.default_packaging_type
+        },
+        callback: function(r) {
+            if (r.message && r.message.weight_per_unit) {
+                // Update all existing barrels with new default
+                (frm.doc.container_barrels || []).forEach(row => {
+                    if (!row.tara_weight) {
+                        frappe.model.set_value(row.doctype, row.name, 'tara_weight', r.message.weight_per_unit);
+                        calculate_net_weight(frm, row.doctype, row.name);
+                    }
+                });
+            }
+        }
+    });
+}
+
+function calculate_net_weight(frm, cdt, cdn) {
+    const row = locals[cdt][cdn];
+    if (row.gross_weight && row.tara_weight) {
+        const net_weight = row.gross_weight - row.tara_weight;
+        frappe.model.set_value(cdt, cdn, 'net_weight', net_weight);
+        frappe.model.set_value(cdt, cdn, 'weight_validated', net_weight > 0 && net_weight < row.gross_weight ? 1 : 0);
+    }
+}
+
+function update_weight_totals(frm) {
+    if (frm.doc.custom_batch_level != '3' || !frm.doc.container_barrels) return;
+
+    let total_gross = 0, total_tara = 0, total_net = 0, barrel_count = 0;
+    frm.doc.container_barrels.forEach(row => {
+        if (row.gross_weight) total_gross += row.gross_weight;
+        if (row.tara_weight) total_tara += row.tara_weight;
+        if (row.net_weight) total_net += row.net_weight;
+        if (row.barrel_serial_number) barrel_count += 1;
+    });
+    frm.set_value('total_gross_weight', total_gross);
+    frm.set_value('total_tara_weight', total_tara);
+    frm.set_value('total_net_weight', total_net);
+    frm.set_value('barrel_count', barrel_count);
+}
+
+function validate_barrel_data(frm) {
+    // Validate barrel data before save
+    if (!frm.doc.container_barrels || frm.doc.container_barrels.length === 0) {
+        frappe.msgprint('Container barrels are required for Level 3 batches');
+        return false;
+    }
+
+    // Check for duplicate serials
+    const serials = [];
+    const duplicates = [];
+    frm.doc.container_barrels.forEach(row => {
+        if (row.barrel_serial_number) {
+            if (serials.includes(row.barrel_serial_number)) {
+                duplicates.push(row.barrel_serial_number);
+            } else {
+                serials.push(row.barrel_serial_number);
+            }
+        }
+    });
+
+    if (duplicates.length > 0) {
+        frappe.throw('Duplicate barrel serial numbers found: ' + duplicates.join(', '));
+        return false;
+    }
+
+    return true;
+}
+
+function validate_all_barrels(frm) {
+    // Validate all barrels and show results
+    let valid = 0;
+    let invalid = 0;
+    const issues = [];
+
+    (frm.doc.container_barrels || []).forEach((row, index) => {
+        if (!row.barrel_serial_number) {
+            invalid++;
+            issues.push(`Row ${index + 1}: Missing serial number`);
+        } else if (!validate_code39_format(row.barrel_serial_number)) {
+            invalid++;
+            issues.push(`Row ${index + 1}: Invalid format (${row.barrel_serial_number})`);
+        } else {
+            valid++;
+        }
+    });
+
+    if (issues.length > 0) {
+        frappe.msgprint('Validation Issues:<br>' + issues.join('<br>'), 'Invalid');
+    } else {
+        frappe.msgprint(`All barrels validated successfully! Valid: ${valid}, Total: ${valid + invalid}`, 'Valid');
+    }
+}
+
+// Validation helpers
+function validate_code39_format(barcode) {
+    const s = String(barcode || '').toUpperCase();
+    // Allowed: A-Z 0-9 and - . space $ / + % *
+    return /^[A-Z0-9\-\.\s$\/+%*]+$/.test(s);
 }
