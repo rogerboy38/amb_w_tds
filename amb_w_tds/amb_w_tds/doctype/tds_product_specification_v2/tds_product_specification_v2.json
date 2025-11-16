@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-16 15:37:23.331394",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "product_item_section",
+  "product_item",
+  "column_break_3",
+  "approval_date",
+  "manufacturing_parameters_section",
+  "target_brix",
+  "total_solids",
+  "ph_range"
+ ],
+ "fields": [
+  {
+   "fieldname": "product_item_section",
+   "fieldtype": "Section Break",
+   "label": "Product Information"
+  },
+  {
+   "fieldname": "product_item",
+   "fieldtype": "Link",
+   "label": "Product Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approval_date",
+   "fieldtype": "Date",
+   "label": "Approval Date"
+  },
+  {
+   "fieldname": "manufacturing_parameters_section",
+   "fieldtype": "Section Break",
+   "label": "Manufacturing Parameters"
+  },
+  {
+   "fieldname": "target_brix",
+   "fieldtype": "Float",
+   "label": "Target Brix"
+  },
+  {
+   "fieldname": "total_solids",
+   "fieldtype": "Float",
+   "label": "Total Solids"
+  },
+  {
+   "fieldname": "ph_range",
+   "fieldtype": "Data",
+   "label": "pH Range"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-11-16 15:37:23.331394",
+ "modified_by": "Administrator",
+ "module": "amb_w_tds",
+ "name": "TDS Product Specification v2",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
