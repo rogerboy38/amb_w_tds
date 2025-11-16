@@ -44,15 +44,15 @@ app_include_js = [
 
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
-
-#fixtures = [
-#    {
-#        "doctype": "DocType",
-#        "filters": [
-#            ["name", "in", ["AMB KPI FACTORS"]]
-#        ]
-#    }
-#]
+# Find the fixtures section (or add it if missing)
+fixtures = [
+    {
+        "doctype": "DocType",
+        "filters": [
+            ["name", "in", ["AMB KPI FACTORS"]]
+        ]
+    }
+]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}

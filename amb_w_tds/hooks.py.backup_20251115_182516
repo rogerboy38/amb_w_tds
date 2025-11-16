@@ -45,14 +45,6 @@ app_include_js = [
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
-#fixtures = [
-#    {
-#        "doctype": "DocType",
-#        "filters": [
-#            ["name", "in", ["AMB KPI FACTORS"]]
-#        ]
-#    }
-#]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -260,7 +252,7 @@ doc_events = {
     }
 }
 # In hooks.py, ensure you have:
-#get_website_user_home_page = "amb_w_tds.pages.barrel_dashboard.barrel_dashboard"
+get_website_user_home_page = "amb_w_tds.pages.barrel_dashboard.barrel_dashboard"
 
 # Add pages to this list
 standard_portal_menu = [

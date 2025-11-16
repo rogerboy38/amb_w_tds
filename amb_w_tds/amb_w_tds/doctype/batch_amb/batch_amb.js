@@ -37,6 +37,154 @@ frappe.ui.form.on('Batch AMB', {
         }
     },
 
+frappe.ui.form.on('Batch AMB', {
+    refresh: function(frm) {
+        // Add BOM Creation button
+        if (frm.doc.docstatus === 0) { // Only for draft documents
+            frm.add_custom_button(__('Create BOM'), function() {
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.show_bom_creation_button',
+                    args: {
+                        batch_name: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message.show_button) {
+                            // Show BOM creation wizard
+                            show_bom_wizard(frm);
+                        } else {
+                            frappe.msgprint(__('Cannot create BOM: {0}', [r.message.reason]));
+                        }
+                    }
+                });
+            }).addClass('btn-primary');
+        }
+        
+        // Check BOM status and add View BOM button if exists
+        check_bom_status(frm);
+    }
+});
+
+function show_bom_wizard(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create BOM Wizard'),
+        fields: [
+            {
+                fieldname: 'include_containers',
+                label: __('Include Containers'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_packaging', 
+                label: __('Include Packaging'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_utilities',
+                label: __('Include Utilities'),
+                fieldtype: 'Check', 
+                default: 1
+            },
+            {
+                fieldname: 'include_labor',
+                label: __('Include Labor'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'product_type',
+                label: __('Product Type'),
+                fieldtype: 'Select',
+                options: ['Juice', 'Mix'],
+                default: 'Juice'
+            },
+            {
+                fieldname: 'primary_packaging',
+                label: __('Primary Packaging'),
+                fieldtype: 'Link',
+                options: 'Item',
+                get_query: function() {
+                    return {
+                        filters: {
+                            'item_group': ['in', ['Packaging', 'Raw Material', 'Consumable']],
+                            'disabled': 0
+                        }
+                    };
+                }
+            }
+        ],
+        primary_action_label: __('Create BOM'),
+        primary_action: function(values) {
+            create_bom(frm, values);
+            dialog.hide();
+        }
+    });
+    
+    dialog.show();
+}
+
+function create_bom(frm, options) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
+        args: {
+            batch_name: frm.doc.name,
+            options: options
+        },
+        freeze: true,
+        freeze_message: __('Creating BOM...'),
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                frappe.msgprint({
+                    title: __('Success'),
+                    indicator: 'green',
+                    message: __('BOM {0} created successfully with {1} items', 
+                        [r.message.bom_name, r.message.item_count])
+                });
+                
+                // Redirect to the created BOM
+                frappe.set_route('Form', 'BOM', r.message.bom_name);
+                
+                frm.reload_doc();
+            } else {
+                frappe.msgprint({
+                    title: __('Error'),
+                    indicator: 'red',
+                    message: __('BOM creation failed: {0}', [r.message ? r.message.message : 'Unknown error'])
+                });
+            }
+        },
+        error: function(r) {
+            let error_msg = r.message || (r.exc ? r.exc.join('\n') : 'Unknown error');
+            frappe.msgprint({
+                title: __('Error'),
+                indicator: 'red',
+                message: __('BOM creation failed: {0}', [error_msg])
+            });
+        }
+    });
+}}
+
+function check_bom_status(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_bom_creation_status',
+        args: {
+            batch_name: frm.doc.name
+        },
+        callback: function(r) {
+            if (r.message.has_bom) {
+                // ✅ FIX: Redirect to STANDARD BOM
+                frm.add_custom_button(__('View BOM'), function() {
+                    frappe.set_route('Form', 'BOM', r.message.bom_name);
+                }).addClass('btn-info');
+                
+                // Also show BOM reference in form
+                frm.dashboard.add_indicator(__('BOM: {0}', [r.message.bom_name]), 'blue');
+            }
+        }
+    });
+}
+
     // ==================== FIELD EVENTS ====================
     
     work_order: function(frm) {
@@ -194,7 +342,122 @@ frappe.ui.form.on('Container Barrels', {
 });
 
 // ==================== HELPER FUNCTIONS ====================
+frappe.ui.form.on('Batch AMB', {
+    refresh: function(frm) {
+        // Add BOM Creation button
+        if (frm.doc.docstatus === 0) { // Only for draft documents
+            frm.add_custom_button(__('Create BOM'), function() {
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.show_bom_creation_button',
+                    args: {
+                        batch_name: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message.show_button) {
+                            // Show BOM creation wizard
+                            show_bom_wizard(frm);
+                        } else {
+                            frappe.msgprint(__('Cannot create BOM: {0}', [r.message.reason]));
+                        }
+                    }
+                });
+            }).addClass('btn-primary');
+        }
+        
+        // Check BOM status
+        check_bom_status(frm);
+    }
+});
 
+function show_bom_wizard(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create BOM Wizard'),
+        fields: [
+            {
+                fieldname: 'include_containers',
+                label: __('Include Containers'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_packaging', 
+                label: __('Include Packaging'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'include_utilities',
+                label: __('Include Utilities'),
+                fieldtype: 'Check', 
+                default: 1
+            },
+            {
+                fieldname: 'include_labor',
+                label: __('Include Labor'),
+                fieldtype: 'Check',
+                default: 1
+            },
+            {
+                fieldname: 'product_type',
+                label: __('Product Type'),
+                fieldtype: 'Select',
+                options: ['Juice', 'Mix'],
+                default: 'Juice'
+            },
+            {
+                fieldname: 'primary_packaging',
+                label: __('Primary Packaging'),
+                fieldtype: 'Link',
+                options: 'Item'
+            }
+        ],
+        primary_action_label: __('Create BOM'),
+        primary_action: function(values) {
+            create_bom(frm, values);
+            dialog.hide();
+        }
+    });
+    
+    dialog.show();
+}
+
+function create_bom(frm, options) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
+        args: {
+            batch_name: frm.doc.name,
+            options: options
+        },
+        freeze: true,
+        freeze_message: __('Creating BOM...'),
+        callback: function(r) {
+            if (r.message) {
+                frappe.msgprint(__('BOM {0} created successfully with {1} items', 
+                    [r.message.bom_name, r.message.item_count]));
+                frm.reload_doc();
+            }
+        },
+        error: function(r) {
+            frappe.msgprint(__('BOM creation failed: {0}', [r.exc_type || r.message]));
+        }
+    });
+}
+
+function check_bom_status(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_bom_creation_status',
+        args: {
+            batch_name: frm.doc.name
+        },
+        callback: function(r) {
+            if (r.message.has_bom) {
+                frm.add_custom_button(__('View BOM'), function() {
+                    frappe.set_route('Form', 'BOM Creator', r.message.bom_name);
+                }).addClass('btn-info');
+            }
+        }
+    });
+}
 function setup_custom_buttons(frm) {
     if (!frm.doc.__islocal) {
         // Calculate Cost button

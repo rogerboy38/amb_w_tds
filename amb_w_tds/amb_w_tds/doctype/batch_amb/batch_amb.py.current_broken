@@ -2,13 +2,10 @@
 # For license information, please see license.txt
 
 import frappe
-import json
-import re
-import hashlib
-import random
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, cint, now_datetime
+from frappe.utils import flt, nowdate, get_datetime, cstr
+import json
 
 class BatchAMB(Document):
     """
@@ -53,7 +50,6 @@ class BatchAMB(Document):
     def validate_production_dates(self):
         """Validate production dates"""
         if self.production_start_date and self.production_end_date:
-            from frappe.utils import get_datetime
             start = get_datetime(self.production_start_date)
             end = get_datetime(self.production_end_date)
             
@@ -208,254 +204,191 @@ class BatchAMB(Document):
         """Notify stakeholders"""
         pass
 
-# ==================== BOM CREATION WITH DUPLICATE PROTECTION ====================
 
-@frappe.whitelist()
-def create_bom_with_wizard(batch_name, options):
-    """Create STANDARD BOM with wizard options - DUPLICATE PROTECTED"""
-    try:
-        import json
-        
-        if isinstance(options, str):
-            options = json.loads(options)
-        
-        batch = frappe.get_doc('Batch AMB', batch_name)
-        
-        item_code = batch.item_to_manufacture or batch.current_item_code
-        if not item_code:
-            frappe.throw(_('Item Code not found in batch'))
-        
-        # Check if BOM already exists for this batch
-        existing = check_bom_exists(batch_name)
-        if existing.get('exists'):
-            frappe.throw(_('BOM already exists for this batch: {0}').format(existing['bom_name']))
-        
-        # Use STANDARD BOM
-        bom = frappe.new_doc("BOM")
-        
-        # Set standard BOM fields
-        bom.item = item_code
-        bom.item_name = frappe.db.get_value('Item', item_code, 'item_name') or item_code
-        bom.quantity = get_batch_quantity(batch)
-        bom.uom = get_item_uom(item_code)
-        bom.company = get_company(batch)
-        bom.batch_amb = batch_name
-        bom.is_active = 1
-        bom.with_operations = 0
-        
-        # Set BOM type
-        bom.bom_type = "Product BOM"
-        bom.bom_level = 0
-        
-        # Generate guaranteed unique BOM name
-        bom_name = generate_guaranteed_unique_bom_name(batch)
-        bom.name = bom_name
-        
-        # Add items based on options
-        add_bom_items_based_on_options(bom, batch, options)
-        
-        # Save BOM
-        bom.insert(ignore_permissions=True)
-        frappe.db.commit()
-        
-        frappe.logger().info(f"✅ BOM {bom.name} created successfully for batch {batch_name}")
-        
-        return {
-            'success': True,
-            'bom_name': bom.name,
-            'item_code': bom.item,
-            'qty': bom.quantity,
-            'uom': bom.uom,
-            'item_count': len(bom.items),
-            'batch_reference': batch_name,
-            'doctype': 'BOM',
-            'message': 'BOM created successfully'
-        }
-        
-    except Exception as e:
-        frappe.db.rollback()
-        error_msg = f"BOM creation failed for batch {batch_name}: {str(e)}"
-        frappe.log_error(error_msg, "BOM Creation")
-        frappe.throw(_("Failed to create BOM: {0}").format(str(e)))
-
-def generate_guaranteed_unique_bom_name(batch):
-    """Generate guaranteed unique BOM name"""
-    base_identifier = batch.title or batch.custom_generated_batch_name or batch.name
-    
-    # Clean the base identifier
-    base_identifier_clean = re.sub(r'[^a-zA-Z0-9-]', '-', base_identifier)
-    
-    # Create base name
-    base_name = f"BOM-{base_identifier_clean}"
-    
-    # Add timestamp for uniqueness
-    timestamp = now_datetime().strftime("%Y%m%d-%H%M%S")
-    candidate_name = f"{base_name}-{timestamp}"
-    
-    # Ensure name length is within limits
-    max_length = 140
-    if len(candidate_name) > max_length:
-        # Truncate and add hash
-        name_hash = hashlib.md5(candidate_name.encode()).hexdigest()[:8]
-        candidate_name = candidate_name[:max_length-9] + "-" + name_hash
-    
-    # Final uniqueness check with retry
-    final_name = candidate_name
-    counter = 1
-    while frappe.db.exists("BOM", final_name) and counter <= 10:
-        final_name = f"{candidate_name}-{counter}"
-        counter += 1
-    
-    if counter > 10:
-        # Last resort: use random number
-        final_name = f"{candidate_name}-{random.randint(10000, 99999)}"
-    
-    return final_name
-
-def add_bom_items_based_on_options(bom, batch, options):
-    """Add items to BOM based on wizard options"""
-    # Add containers if requested
-    if options.get('include_containers') and hasattr(batch, 'container_barrels') and batch.container_barrels:
-        for barrel in batch.container_barrels:
-            if barrel.net_weight and barrel.net_weight > 0:
-                bom.append('items', {
-                    'item_code': determine_container_item_code(barrel),
-                    'qty': barrel.net_weight,
-                    'uom': 'Kg',
-                    'rate': 0
-                })
-    
-    # Add packaging if requested
-    if options.get('include_packaging'):
-        primary_pkg = options.get('primary_packaging')
-        if primary_pkg:
-            bom.append('items', {
-                'item_code': primary_pkg,
-                'qty': cint(options.get('packages_count', 1)),
-                'uom': 'Nos',
-                'rate': 0
-            })
-    
-    # Add utilities if requested
-    if options.get('include_utilities'):
-        kpi_factors = get_latest_kpi_factors_helper()
-        if kpi_factors:
-            qty_kg = bom.quantity or 1000
-            
-            water_cost = kpi_factors.get('Water Cost per Kg Concentrate', 0)
-            if water_cost:
-                bom.append('items', {
-                    'item_code': 'WATER',
-                    'qty': qty_kg,
-                    'uom': 'Kg',
-                    'rate': water_cost
-                })
-            
-            energy_cost = kpi_factors.get('Energy Cost per kg Concentrate', 0)
-            if energy_cost:
-                bom.append('items', {
-                    'item_code': 'ELECTRIC',
-                    'qty': qty_kg * 0.5,
-                    'uom': 'kWh',
-                    'rate': energy_cost
-                })
-    
-    # Add labor if requested
-    if options.get('include_labor'):
-        kpi_factors = get_latest_kpi_factors_helper()
-        mo_cost = kpi_factors.get('MO Cost per kg concentrate', 0)
-        if mo_cost:
-            qty_kg = bom.quantity or 1000
-            bom.append('items', {
-                'item_code': 'MO-LABOR',
-                'qty': qty_kg,
-                'uom': 'Kg',
-                'rate': mo_cost
-            })
-    
-    # Add product-specific items
-    product_type = options.get('product_type', 'Juice')
-    if product_type == 'Juice':
-        bom.append('items', {
-            'item_code': 'M033',
-            'qty': (bom.quantity or 1000) * 10.76,
-            'uom': 'Kg',
-            'rate': 1.4
-        })
-    elif product_type == 'Mix':
-        bom.append('items', {
-            'item_code': 'MIX-BASE-FORMULA',
-            'qty': 1,
-            'uom': 'Kg',
-            'rate': 0
-        })
+# ==================== BOM CREATION METHODS - NEW ====================
 
 @frappe.whitelist()
 def check_bom_exists(batch_name):
     """Check if BOM already exists for this batch"""
-    try:
-        # Check in standard BOM
-        bom_exists = frappe.db.exists("BOM", {"batch_amb": batch_name})
-        if bom_exists:
-            bom = frappe.get_doc("BOM", bom_exists)
-            return {
-                "exists": True, 
-                "bom_name": bom.name,
-                "item_code": bom.item,
-                "created_date": bom.creation
-            }
-        
-        return {"exists": False, "bom_name": None}
-    except Exception as e:
-        frappe.log_error(f"Error in check_bom_exists: {str(e)}")
-        return {"exists": False, "bom_name": None}
+    batch = frappe.get_doc('Batch AMB', batch_name)
+    
+    existing_bom = frappe.db.get_value('BOM Creator', 
+        {'project': batch_name}, 
+        ['name', 'item_code'])
+    
+    if existing_bom:
+        return {
+            'exists': True,
+            'bom_name': existing_bom[0],
+            'item_code': existing_bom[1]
+        }
+    
+    return {'exists': False}
 
+
+
+@frappe.whitelist()
 def get_batch_quantity(batch):
-    """Get batch quantity for BOM"""
-    try:
-        if hasattr(batch, 'total_net_weight') and batch.total_net_weight:
-            return batch.total_net_weight
-        elif hasattr(batch, 'batch_quantity') and batch.batch_quantity:
-            return batch.batch_quantity
-        elif hasattr(batch, 'produced_qty') and batch.produced_qty:
-            return batch.produced_qty
-        else:
-            return 1000
-    except:
-        return 1000
+    """Get the correct quantity for BOM creation - prioritizes work order planned quantity"""
+    # 1. First priority: Work Order planned quantity
+    if batch.work_order_ref:
+        try:
+            wo = frappe.get_doc("Work Order", batch.work_order_ref)
+            if wo.qty and wo.qty > 0:
+                return wo.qty
+        except:
+            pass
+    
+    # 2. Second priority: Any work order quantity stored in batch
+    wo_quantity_fields = ['wo_planned_qty', 'wo_qty', 'planned_quantity']
+    for field in wo_quantity_fields:
+        value = getattr(batch, field, None)
+        if value and value > 0:
+            return value
+    
+    bom.qty = get_batch_quantity(batch)
+    if batch.total_net_weight and batch.total_net_weight > 0:
+        return batch.total_net_weight
+    
+    if batch.calculated_total_weight and batch.calculated_total_weight > 0:
+        return batch.calculated_total_weight
+    
+    # 4. Fallback
+    return 1000
 
-def get_item_uom(item_code):
-    """Get UOM from item"""
-    if item_code:
-        uom = frappe.db.get_value('Item', item_code, 'stock_uom')
-        if uom:
-            return uom
-    return 'Kg'
+@frappe.whitelist()
+def create_bom_with_wizard(batch_name, options):
+    """Create BOM Creator with wizard options"""
+    if isinstance(options, str):
+        options = json.loads(options)
+    
+    batch = frappe.get_doc('Batch AMB', batch_name)
+    
+    item_code = batch.item_to_manufacture or batch.current_item_code
+    if not item_code:
+        frappe.throw(_('Item Code not found in batch'))
+    
+    existing = check_bom_exists(batch_name)
+    if existing.get('exists'):
+        frappe.throw(_('BOM already exists: {0}').format(existing['bom_name']))
+    
+    bom = frappe.new_doc('BOM Creator')
+    bom.item_code = item_code
+    bom.item_name = item_code
+    bom.qty = batch.total_net_weight  or 1000
+    
+    # ✅ FIX: Get UOM from item master instead of batch
+    if batch.item_to_manufacture:
+        item_uom = frappe.db.get_value('Item', batch.item_to_manufacture, 'stock_uom')
+        bom.uom = item_uom or 'Kg'
+    else:
+        bom.uom = 'Kg'
+    
+    bom.project = batch_name
+    #bom.company = batch.company or frappe.defaults.get_user_default('Company')
+    # Get company from Work Order, then defaults
+    # Get company from Work Order, then defaults
+    company = None
+    if batch.work_order_ref:
+        try:
+            wo = frappe.get_doc("Work Order", batch.work_order_ref)
+            company = wo.company if hasattr(wo, 'company') else None
+        except Exception:
+            pass
+    
+    if not company:
+        company = frappe.defaults.get_user_default('Company')
+    
+    if not company:
+        company = frappe.db.get_single_value('Global Defaults', 'default_company')
+    
+    
+    
+    product_type = options.get('product_type', 'Juice')
+    idx = 1
+    
+    if options.get('include_containers') and batch.container_barrels:
+        idx = add_container_items_to_bom(bom, batch, idx, options)
+    
+    if options.get('include_packaging'):
+        idx = add_packaging_items_to_bom(bom, batch, options, idx)
+    
+    if options.get('include_utilities'):
+        idx = add_utilities_to_bom(bom, batch, options, idx)
+    
+    if options.get('include_labor'):
+        idx = add_labor_to_bom(bom, batch, idx)
+    
+    if product_type == 'Mix':
+        idx = add_mix_placeholder_to_bom(bom, batch, idx)
+    elif product_type == 'Juice':
+        idx = add_juice_items_to_bom(bom, batch, idx)
+    
+    bom.insert(ignore_permissions=True)
+    
+    return {
+        'bom_name': bom.name,
+        'item_code': bom.item_code,
+        'qty': bom.qty,
+        'uom': bom.uom,
+        'item_count': len(bom.items),
+        'batch_reference': batch_name
+    }
 
-def get_company(batch):
-    """Get company"""
-    if hasattr(batch, 'company') and batch.company:
-        return batch.company
-    return frappe.defaults.get_user_default("Company")
+def add_container_items_to_bom(bom, batch, start_idx, options):
+    """Add container items"""
+    idx = start_idx
+    for barrel in batch.container_barrels:
+        if barrel.net_weight and barrel.net_weight > 0:
+            bom.append('items', {
+                'idx': idx,
+                'item_code': barrel.packaging_type or 'Container-Generic',
+                'item_name': f'Container: {barrel.barrel_serial_number}',
+                'qty': barrel.net_weight,
+                'uom': 'Kg',
+                'rate': 0,
+                'do_not_explode': 1
+            })
+            idx += 1
+    return idx
 
-def determine_container_item_code(barrel):
-    """Determine container item code"""
-    if hasattr(barrel, 'packaging_type') and barrel.packaging_type:
-        if frappe.db.exists('Item', barrel.packaging_type):
-            return barrel.packaging_type
-    return 'CONTAINER-GENERIC'
+
+def add_packaging_items_to_bom(bom, batch, options, start_idx):
+    """Add packaging items"""
+    
+    idx = start_idx
+    primary_pkg = options.get('primary_packaging')
+    pkg_count = frappe.utils.cint(options.get('packages_count', 1))
+    
+    if primary_pkg:
+        pkg_item_code = get_packaging_item_code_helper(primary_pkg)
+        qty_kg = get_batch_quantity(batch)
+        
+        bom.append('items', {
+            'idx': idx,
+            'item_code': pkg_item_code,
+            'item_name': primary_pkg,
+            'qty': pkg_count,
+            'uom': 'Nos',
+        })
+        idx += 1
+    
+    return idx
 
 def get_latest_kpi_factors_helper():
-    """Get KPI factors"""
-    kpi_docs = frappe.get_all('AMB KPI FACTORS',
-        fields=['name'],
-        order_by='creation desc',
-        limit=1)
-    
-    if not kpi_docs:
-        return {}
-    
+    """Get KPI factors - FIXED VERSION"""
     try:
+        # Use consistent naming - all caps to match the actual table
+        kpi_docs = frappe.get_all('AMB KPI FACTORS',  # CHANGED FROM 'AMB KPI Factors'
+            fields=['name'],
+            order_by='factor_data_year desc, creation desc',
+            limit=1
+        )
+        
+        if not kpi_docs:
+            frappe.log_error("No AMB KPI FACTORS documents found", "KPI Factors Missing")
+            return {}
+        
         kpi = frappe.get_doc('AMB KPI FACTORS', kpi_docs[0].name)
         factors = {}
         
@@ -464,23 +397,165 @@ def get_latest_kpi_factors_helper():
                 factors[row.factor_name] = flt(row.calculated_factor_value or row.factor_value)
         
         return factors
-    except:
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_latest_kpi_factors_helper: {str(e)}", "KPI Factors Error")
         return {}
+
+
+def add_utilities_to_bom(bom, batch, options, start_idx):
+    """Add utilities"""
+    idx = start_idx
+    kpi_factors = get_latest_kpi_factors_helper()
+    if not kpi_factors:
+        return idx
+    
+    qty_kg = batch.total_net_weight or batch.total_quantity or 1000
+    
+    water_cost = kpi_factors.get('Water Cost per Kg Concentrate', 0)
+    if water_cost:
+        bom.append('items', {
+            'idx': idx,
+            'item_code': 'WATER',
+            'item_name': 'Process Water',
+            'qty': qty_kg,
+            'uom': 'Kg',
+            'rate': water_cost
+        })
+        idx += 1
+    
+    energy_cost = kpi_factors.get('Energy Cost per kg Concentrate', 0)
+    if energy_cost:
+        bom.append('items', {
+            'idx': idx,
+            'item_code': 'ELECTRIC',
+            'item_name': 'Process Electricity',
+            'qty': qty_kg * 0.5,
+            'uom': 'kWh',
+            'rate': energy_cost
+        })
+        idx += 1
+    
+    gas_cost = kpi_factors.get('Gas Cost per kg concentrate', 0)
+    if gas_cost:
+        bom.append('items', {
+            'idx': idx,
+            'item_code': 'GAS',
+            'item_name': 'Process Gas',
+            'qty': qty_kg * 0.3,
+            'uom': 'Kg',
+            'rate': gas_cost
+        })
+        idx += 1
+    
+    return idx
+
+
+def get_latest_kpi_factors_helper():
+    """Get KPI factors - FIXED VERSION"""
+    try:
+        # Use consistent naming - all caps to match the actual table
+        kpi_docs = frappe.get_all('AMB KPI FACTORS',  # CHANGED FROM 'AMB KPI Factors'
+            fields=['name'],
+            order_by='year desc, creation desc',  # Use existing 'year' column
+            limit=1
+        )
+        
+        if not kpi_docs:
+            frappe.log_error("No AMB KPI FACTORS documents found", "KPI Factors Missing")
+            return {}
+        
+        kpi = frappe.get_doc('AMB KPI FACTORS', kpi_docs[0].name)
+        factors = {}
+        
+        if hasattr(kpi, 'kpi_factors'):
+            for row in kpi.kpi_factors:
+                factors[row.factor_name] = flt(row.calculated_factor_value or row.factor_value)
+        
+        return factors
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_latest_kpi_factors_helper: {str(e)}", "KPI Factors Error")
+        return {}
+
+
+def add_labor_to_bom(bom, batch, start_idx):
+    """Add labor cost"""
+    idx = start_idx
+    kpi_factors = get_latest_kpi_factors_helper()
+    mo_cost = kpi_factors.get('MO Cost per kg concentrate', 0)
+    
+    if mo_cost:
+        qty_kg = batch.total_net_weight or batch.total_quantity or 1000
+        bom.append('items', {
+            'idx': idx,
+            'item_code': 'MO-LABOR',
+            'item_name': 'Manual Labor (MO)',
+            'qty': qty_kg,
+            'uom': 'Kg',
+            'rate': mo_cost
+        })
+        idx += 1
+    
+    return idx
+
+
+def add_juice_items_to_bom(bom, batch, start_idx):
+    """Add juice items"""
+    idx = start_idx
+    bom.append('items', {
+        'idx': idx,
+        'item_code': 'M033',
+        'item_name': 'Aloe Vera Gel',
+        'qty': (batch.total_net_weight or 1000) * 10.76,
+        'uom': 'Kg',
+        'rate': 1.4
+    })
+    return idx + 1
+
+
+def add_mix_placeholder_to_bom(bom, batch, start_idx):
+    """Add MIX placeholder"""
+    idx = start_idx
+    bom.append('items', {
+        'idx': idx,
+        'item_code': 'MIX-BASE-FORMULA',
+        'item_name': 'MIX Product Base Formula',
+        'qty': 1,
+        'uom': 'Kg',
+        'rate': 0,
+        'description': '⚠️ MIX PRODUCT: Manual configuration required',
+        'fg_item': bom.item_code,
+        'is_expandable': 1
+    })
+    idx += 1
+    
+    bom.append('items', {
+        'idx': idx,
+        'item_code': 'MIX-COMPONENT-A',
+        'item_name': 'MIX Component A (TBD)',
+        'qty': 0,
+        'uom': 'Kg',
+        'rate': 0,
+        'parent_row_no': str(idx - 1)
+    })
+    idx += 1
+    
+    return idx
+
 
 # ==================== OTHER WHITELISTED METHODS ====================
 
 @frappe.whitelist()
 def get_work_order_details(work_order):
     """Get work order details"""
-    try:
-        wo = frappe.get_doc('Work Order', work_order)
-        return {
-            'item_to_manufacture': wo.production_item,
-            'planned_qty': wo.qty,
-            'company': wo.company
-        }
-    except Exception as e:
-        return {'error': f'Work order not found: {str(e)}'}
+    wo = frappe.get_doc('Work Order', work_order)
+    return {
+        'item_to_manufacture': wo.production_item,
+        'planned_qty': wo.qty,
+        'company': wo.company
+    }
+
 
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
@@ -571,6 +646,46 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
         }
 
 @frappe.whitelist()
+def fetch_bom_details_for_items(batch_name):
+    """Fetch BOM details for all items in batch"""
+    try:
+        batch = frappe.get_doc("Batch AMB", batch_name)
+        updated_items = 0
+        
+        for item in batch.batch_items:
+            if item.item_code and not item.bom_no:
+                # Check if item has active BOM
+                active_bom = frappe.db.get_value("BOM", {
+                    "item": item.item_code,
+                    "is_active": 1,
+                    "is_default": 1
+                })
+                
+                if active_bom:
+                    item.bom_no = active_bom
+                    updated_items += 1
+        
+        if updated_items > 0:
+            batch.save(ignore_permissions=True)
+            frappe.db.commit()
+            
+            return {
+                "success": True,
+                "message": _("BOM details updated for {0} items").format(updated_items)
+            }
+        else:
+            return {
+                "success": True,
+                "message": _("No BOM details to update")
+            }
+            
+    except Exception as e:
+        frappe.log_error(f"BOM Details Fetch Error: {str(e)}")
+        return {
+            "success": False,         
+        }
+
+@frappe.whitelist()
 def get_packaging_from_sales_order(batch_name):
     """Get packaging info from Sales Order and map to Item Codes"""
     try:
@@ -596,7 +711,7 @@ def get_packaging_from_sales_order(batch_name):
         net_weight = parse_weight_from_text(so.custom_peso_neto) if so.custom_peso_neto else 220
         
         # Calculate package count
-        total_weight = batch.total_net_weight or batch.total_net_weight or 1000
+        total_weight = batch.total_net_weight or batch.total_quantity or 1000
         packages_count = int(total_weight / net_weight) if net_weight > 0 else 1
         
         return {
@@ -619,6 +734,7 @@ def get_packaging_from_sales_order(batch_name):
             'error': str(e),
             'message': f'Failed to fetch packaging: {str(e)}'
         }
+
 
 def map_packaging_text_to_item(packaging_text):
     """Smart mapping from free text to Item Code"""
@@ -692,11 +808,13 @@ def map_packaging_text_to_item(packaging_text):
     # Default fallback
     return 'E001'  # 220L Barrel as default
 
+
 def parse_weight_from_text(weight_text):
     """Parse weight from text like '5 Kg', '220', '10.5 kg'"""
     if not weight_text:
         return 0
     
+    import re
     # Extract numbers from text
     numbers = re.findall(r'\d+\.?\d*', str(weight_text))
     
@@ -704,50 +822,3 @@ def parse_weight_from_text(weight_text):
         return float(numbers[0])
     
     return 0
-
-# ==================== MANUFACTURING BUTTON METHODS ====================
-
-@frappe.whitelist()
-def show_bom_creation_button(batch_name):
-    """Check if BOM creation button should be shown"""
-    try:
-        if not frappe.db.exists('Batch AMB', batch_name):
-            return {'show_button': False, 'reason': 'Batch not found'}
-        
-        batch = frappe.get_doc('Batch AMB', batch_name)
-        
-        if not batch.item_to_manufacture:
-            return {'show_button': False, 'reason': 'No manufacturing item specified'}
-        
-        existing_bom = frappe.db.exists("BOM", {"batch_amb": batch_name})
-        if existing_bom:
-            return {'show_button': False, 'reason': f'BOM already exists: {existing_bom}'}
-        
-        return {'show_button': True, 'reason': 'Ready for BOM creation'}
-        
-    except Exception as e:
-        return {'show_button': False, 'reason': f'Error: {str(e)}'}
-
-@frappe.whitelist()
-def get_bom_creation_status(batch_name):
-    """Get BOM creation status for UI"""
-    try:
-        existing_bom = frappe.db.exists("BOM", {"batch_amb": batch_name})
-        
-        if existing_bom:
-            bom = frappe.get_doc("BOM", existing_bom)
-            return {
-                'has_bom': True,
-                'bom_name': bom.name,
-                'item_count': len(bom.items) if hasattr(bom, 'items') else 0,
-                'created_date': bom.creation
-            }
-        else:
-            return {
-                'has_bom': False,
-                'bom_name': None,
-                'ready_for_creation': True
-            }
-            
-    except Exception as e:
-        return {'has_bom': False, 'error': str(e)}
