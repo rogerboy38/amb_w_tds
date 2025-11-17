@@ -246,8 +246,9 @@ def create_bom_with_wizard(batch_name, options):
     bom = frappe.new_doc('BOM Creator')
     bom.item_code = item_code
     bom.item_name = item_code
-    bom.qty = batch.total_net_weight or batch.total_quantity or 1000
-    
+    # bom.qty = batch.total_net_weight or batch.total_quantity or 1000
+    bom.qty = batch.batch.total_quantity
+  
     # ✅ FIX: Get UOM from item master instead of batch
     if batch.item_to_manufacture:
         item_uom = frappe.db.get_value('Item', batch.item_to_manufacture, 'stock_uom')

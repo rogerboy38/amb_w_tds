@@ -1,0 +1,139 @@
+{
+  "doctype": "DocType",
+  "name": "AMB KPI Factors",
+  "module": "AMB_W_TDS",
+  "custom": 0,
+  "is_submittable": 0,
+  "istable": 0,
+  "editable_grid": 1,
+  "fields": [
+    {
+      "fieldname": "goal",
+      "fieldtype": "Data",
+      "label": "AMB KPI GOAL FACTOR",
+      "reqd": 1
+    },
+    {
+      "fieldname": "frequency",
+      "fieldtype": "Select",
+      "label": "Monitoring Frequency",
+      "reqd": 0,
+      "options": "None\nDaily\nWeekly\nMonthly\nQuarterly\nYearly"
+    },
+    {
+      "fieldname": "threshold_warning",
+      "fieldtype": "Percent",
+      "label": "Threshold Warning",
+      "reqd": 0
+    },
+    {
+      "fieldname": "threshold_critical",
+      "fieldtype": "Percent",
+      "label": "Threshold Critical",
+      "reqd": 0
+    },
+    {
+      "fieldname": "visualization",
+      "fieldtype": "Select",
+      "label": "Visualization",
+      "reqd": 0,
+      "options": "Gauge\nBar\nLine"
+    },
+    {
+      "fieldname": "cb_00",
+      "fieldtype": "Column Break",
+      "reqd": 0
+    },
+    {
+      "fieldname": "kpi_factor_procedure",
+      "fieldtype": "Link",
+      "label": "KPI FACTOR PROCEDURE",
+      "reqd": 0,
+      "options": "Quality Procedure"
+    },
+    {
+      "fieldname": "year",
+      "fieldtype": "Select",
+      "label": "Year",
+      "reqd": 0,
+      "options": "2020\n2021\n2022\n2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030"
+    },
+    {
+      "fieldname": "method",
+      "fieldtype": "Select",
+      "label": "Method",
+      "reqd": 0,
+      "options": "Manual\nAutomatc"
+    },
+    {
+      "fieldname": "kpi_factors_section",
+      "fieldtype": "Section Break",
+      "label": "KPI Factors",
+      "reqd": 0
+    },
+    {
+      "fieldname": "kpi_name",
+      "fieldtype": "Data",
+      "label": "KPI Name",
+      "reqd": 0
+    },
+    {
+      "fieldname": "kpi_type",
+      "fieldtype": "Select",
+      "label": "KPI Type",
+      "reqd": 0,
+      "options": "Production\nQuality\nSales\nLogistics\nPacking\nMaintenance\nMO Liquid\nMO Mix\nMO Formulated\nCertifications\nLaboratory"
+    },
+    {
+      "fieldname": "current_calculated_value",
+      "fieldtype": "Currency",
+      "label": "Current Calculated Value",
+      "reqd": 0
+    },
+    {
+      "fieldname": "column_break_jxxo",
+      "fieldtype": "Column Break",
+      "label": "",
+      "reqd": 0
+    },
+    {
+      "fieldname": "base_value",
+      "fieldtype": "Currency",
+      "label": "Base Value",
+      "reqd": 0
+    },
+    {
+      "fieldname": "target_value",
+      "fieldtype": "Currency",
+      "label": "Target Value",
+      "reqd": 0
+    },
+    {
+      "fieldname": "values_currency",
+      "fieldtype": "Link",
+      "label": "Values Currency",
+      "reqd": 0,
+      "options": "Currency"
+    },
+    {
+      "fieldname": "sb_01",
+      "fieldtype": "Section Break",
+      "label": "KPI Objectives",
+      "reqd": 0
+    },
+    {
+      "fieldname": "kpi_factors",
+      "fieldtype": "Table",
+      "label": "KPI Factors",
+      "reqd": 0,
+      "options": "AMB Cost Factors"
+    },
+    {
+      "fieldname": "kpi_cost_breakdown",
+      "fieldtype": "Table",
+      "label": "KPI Cost Breakdown",
+      "reqd": 0,
+      "options": "KPI Cost Breakdown"
+    }
+  ]
+}
