@@ -61,6 +61,22 @@
    "fieldname": "notes",
    "fieldtype": "Text",
    "label": "Notes"
+  },
+  {
+   "fieldname": "from_concentration",
+   "fieldtype": "Select",
+   "label": "From Concentration",
+   "options": "\n1X\n30X\n200X",
+   "reqd": 1,
+   "description": "Source concentration type"
+  },
+  {
+   "fieldname": "to_concentration",
+   "fieldtype": "Select",
+   "label": "To Concentration",
+   "options": "\n1X\n30X\n200X",
+   "reqd": 1,
+   "description": "Target concentration type"
   }
  ],
  "index_web_pages_for_search": 1,

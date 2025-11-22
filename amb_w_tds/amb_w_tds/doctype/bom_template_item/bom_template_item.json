@@ -59,6 +59,31 @@
    "fieldtype": "Check",
    "label": "Is Scrap Item",
    "default": 0
+  },
+  {
+   "fieldname": "raw_material_percentage",
+   "fieldtype": "Float",
+   "label": "Raw Material Percentage",
+   "insert_after": "qty",
+   "description": "Raw material percentage (equivalent to CIENTO in FoxPro)",
+   "precision": "6"
+  },
+  {
+   "fieldname": "base_quantity",
+   "fieldtype": "Float",
+   "label": "Base Quantity",
+   "insert_after": "raw_material_percentage",
+   "description": "Base quantity for calculation (equivalent to BUSCA in FoxPro)",
+   "precision": "6"
+  },
+  {
+   "fieldname": "calculated_conversion_factor",
+   "fieldtype": "Float",
+   "label": "Calculated Conversion Factor",
+   "insert_after": "base_quantity",
+   "read_only": 1,
+   "description": "Automatically calculated conversion factor (BUSCA / CIENTO)",
+   "precision": "6"
   }
  ]
 }
