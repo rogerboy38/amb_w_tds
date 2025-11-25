@@ -259,3 +259,12 @@ standard_portal_menu = [
     {"title": "Barrel Dashboard", "route": "/barrel_dashboard", "reference_doctype": "Barrel"},
     {"title": "Container Barrels Dashboard", "route": "/container_barrels_dashboard", "reference_doctype": "Container Selection"}
 ]
+
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["dt", "=", "Batch AMB"]
+        ]
+    }
+]
