@@ -248,7 +248,7 @@ app_include_js = [
 # Barrel Lifecycle Hooks
 doc_events = {
     "Stock Entry": {
-        "on_submit": "amb_w_tds.amb_w_tds.amb_w_tds.stock_entry_hooks.on_stock_entry_submit"
+        "on_submit": "amb_w_tds.stock_entry_hooks.on_stock_entry_submit"
     }
 }
 # In hooks.py, ensure you have:

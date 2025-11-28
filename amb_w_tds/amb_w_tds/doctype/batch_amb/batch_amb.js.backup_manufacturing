@@ -196,141 +196,250 @@ frappe.ui.form.on('Container Barrels', {
 // ==================== HELPER FUNCTIONS ====================
 
 function setup_custom_buttons(frm) {
-    console.log('🔧 MANUFACTURING BUTTONS DEBUG: Setting up custom buttons for', frm.doc.name);
-    console.log('📊 Document status:', frm.doc.__islocal ? 'New' : 'Saved', 'DocStatus:', frm.doc.docstatus);
+    console.log('🔧 Setting up custom buttons...');
     
-    // ALWAYS ADD MANUFACTURING BUTTONS FOR TESTING - REMOVE LATER
-    if (true) {  // Force buttons to always show for debugging
-        console.log('🎯 ADDING MANUFACTURING BUTTONS GROUP');
+    try {
+        // Clear any existing buttons first
+        frm.page.clear_custom_buttons();
         
-        // Create BOM Button - MAKE IT PRIMARY (BLUE)
-        frm.add_custom_button(__('🏭 Create BOM'), function() {
-            frappe.msgprint({
-                title: __('Create BOM'),
-                message: __('Creating BOM for batch {0}...', [frm.doc.name]),
-                indicator: 'blue'
-            });
-            
-            frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
-                args: { 
-                    batch_name: frm.doc.name,
-                    options: {
-                        include_packaging: true,
-                        include_utilities: true, 
-                        include_labor: true
+        if (!frm.doc.__islocal) {
+            // MANUFACTURING BUTTONS GROUP
+            frm.add_custom_button(__('Create BOM'), function() {
+                frappe.msgprint({
+                    title: __('Create BOM'),
+                    message: __('Creating BOM for batch {0}...', [frm.doc.name])
+                });
+                
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_bom_with_wizard',
+                    args: { 
+                        batch_name: frm.doc.name,
+                        options: {
+                            include_packaging: true,
+                            include_utilities: true, 
+                            include_labor: true
+                        }
+                    },
+                    callback: function(r) {
+                        console.log('BOM Creation Response:', r);
+                        if (r.message && r.message.success) {
+                            frappe.msgprint({
+                                title: __('BOM Created'),
+                                message: __('BOM {0} created successfully!', [r.message.bom_name]),
+                                indicator: 'green'
+                            });
+                            frm.reload_doc();
+                        } else {
+                            frappe.msgprint({
+                                title: __('Error'),
+                                message: __('Failed to create BOM: {0}', [r.message?.message || 'Unknown error']),
+                                indicator: 'red'
+                            });
+                        }
                     }
-                },
-                callback: function(r) {
-                    console.log('BOM Creation Response:', r);
-                    if (r.message && r.message.success) {
-                        frappe.msgprint({
-                            title: __('BOM Created'),
-                            message: __('BOM {0} created successfully!', [r.message.bom_name]),
-                            indicator: 'green'
-                        });
-                        frm.reload_doc();
-                    } else {
-                        frappe.msgprint({
-                            title: __('Error'),
-                            message: __('Failed to create BOM: {0}', [r.message?.message || 'Unknown error']),
-                            indicator: 'red'
-                        });
-                    }
-                }
-            });
-        }, __('🏭 MANUFACTURING ACTIONS'));
+                });
+            }, __('Manufacturing'));
 
-        // Generate MRP Button
-        frm.add_custom_button(__('📊 Generate MRP'), function() {
-            frappe.msgprint({
-                title: __('Generate MRP'),
-                message: __('Generating material requirements for batch {0}...', [frm.doc.name]),
-                indicator: 'blue'
-            });
-            
-            frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.calculate_material_requirements',
-                args: { batch_name: frm.doc.name },
-                callback: function(r) {
-                    if (r.message && r.message.success) {
-                        frappe.msgprint({
-                            title: __('MRP Generated'),
-                            message: __('Material requirements calculated for {0} units', [r.message.batch_quantity]),
-                            indicator: 'green'
-                        });
-                    } else {
-                        frappe.msgprint({
-                            title: __('Error'),
-                            message: __('Error generating MRP: {0}', [r.message.message || 'Unknown error']),
-                            indicator: 'red'
-                        });
+            // Generate MRP Button
+            frm.add_custom_button(__('Generate MRP'), function() {
+                frappe.msgprint({
+                    title: __('Generate MRP'),
+                    message: __('Generating material requirements for batch {0}...', [frm.doc.name])
+                });
+                
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.calculate_material_requirements',
+                    args: { batch_name: frm.doc.name },
+                    callback: function(r) {
+                        console.log('MRP Response:', r);
+                        if (r.message && r.message.success) {
+                            frappe.msgprint({
+                                title: __('MRP Generated'),
+                                message: __('Material requirements calculated successfully!'),
+                                indicator: 'green'
+                            });
+                        } else {
+                            frappe.msgprint({
+                                title: __('Error'),
+                                message: __('Failed to generate MRP: {0}', [r.message?.message || 'Unknown error']),
+                                indicator: 'red'
+                            });
+                        }
                     }
-                }
-            });
-        }, __('🏭 MANUFACTURING ACTIONS'));
+                });
+            }, __('Manufacturing'));
 
-        // Assign Golden Number Button
-        frm.add_custom_button(__('⭐ Assign Golden Number'), function() {
-            frappe.msgprint({
-                title: __('Assign Golden Number'),
-                message: __('Assigning Golden Number to batch {0}...', [frm.doc.name]),
-                indicator: 'blue'
-            });
-            
-            frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.assign_golden_number_to_batch',
-                args: { batch_name: frm.doc.name },
-                callback: function(r) {
-                    if (r.message && r.message.success) {
-                        frappe.msgprint({
-                            title: __('Golden Number Assigned'),
-                            message: __('Golden Number {0} assigned successfully!', [r.message.golden_number]),
-                            indicator: 'green'
-                        });
-                        frm.reload_doc();
-                    } else {
-                        frappe.msgprint({
-                            title: __('Error'),
-                            message: __('Error assigning Golden Number: {0}', [r.message.message || 'Unknown error']),
-                            indicator: 'red'
-                        });
+            // Create Work Order Button
+            frm.add_custom_button(__('Create Work Order'), function() {
+                frappe.msgprint({
+                    title: __('Create Work Order'),
+                    message: __('Creating Work Order for batch {0}...', [frm.doc.name])
+                });
+                
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_work_order_from_batch',
+                    args: { batch_name: frm.doc.name },
+                    callback: function(r) {
+                        console.log('Work Order Response:', r);
+                        if (r.message && r.message.success) {
+                            frappe.msgprint({
+                                title: __('Work Order Created'),
+                                message: __('Work Order {0} created successfully!', [r.message.work_order]),
+                                indicator: 'green'
+                            });
+                            frm.reload_doc();
+                        } else {
+                            frappe.msgprint({
+                                title: __('Error'),
+                                message: __('Failed to create Work Order: {0}', [r.message?.message || 'Unknown error']),
+                                indicator: 'red'
+                            });
+                        }
                     }
-                }
-            });
-        }, __('🏭 MANUFACTURING ACTIONS'));
+                });
+            }, __('Manufacturing'));
 
-        // Update Planned Qty Button
-        frm.add_custom_button(__('📈 Update Planned Qty'), function() {
-            frappe.msgprint({
-                title: __('Update Planned Qty'),
-                message: __('Updating planned quantity for batch {0}...', [frm.doc.name]),
-                indicator: 'blue'
-            });
-            
-            frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.update_planned_qty_from_work_order',
-                args: { batch_name: frm.doc.name },
-                callback: function(r) {
-                    if (r.message && r.message.success) {
-                        frappe.msgprint({
-                            title: __('Planned Qty Updated'),
-                            message: __('Planned quantity updated to {0}', [r.message.planned_qty]),
-                            indicator: 'green'
-                        });
-                        frm.reload_doc();
-                    } else {
-                        frappe.msgprint({
-                            title: __('Error'),
-                            message: __('Error updating planned quantity: {0}', [r.message.message || 'Unknown error']),
-                            indicator: 'red'
+            // Assign Golden Number Button
+            frm.add_custom_button(__('Assign Golden Number'), function() {
+                frappe.msgprint({
+                    title: __('Assign Golden Number'),
+                    message: __('Assigning Golden Number to batch {0}...', [frm.doc.name])
+                });
+                
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.assign_golden_number_to_batch',
+                    args: { batch_name: frm.doc.name },
+                    callback: function(r) {
+                        console.log('Golden Number Response:', r);
+                        if (r.message && r.message.success) {
+                            frappe.msgprint({
+                                title: __('Golden Number Assigned'),
+                                message: __('Golden Number {0} assigned successfully!', [r.message.golden_number]),
+                                indicator: 'green'
+                            });
+                            frm.reload_doc();
+                        } else {
+                            frappe.msgprint({
+                                title: __('Error'),
+                                message: __('Failed to assign Golden Number: {0}', [r.message?.message || 'Unknown error']),
+                                indicator: 'red'
+                            });
+                        }
+                    }
+                });
+            }, __('Manufacturing'));
+
+            // Update Planned Qty Button
+            frm.add_custom_button(__('Update Planned Qty'), function() {
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.update_planned_qty_from_work_order',
+                    args: { batch_name: frm.doc.name },
+                    callback: function(r) {
+                        console.log('Update Planned Qty Response:', r);
+                        if (r.message && r.message.success) {
+                            frappe.msgprint({
+                                title: __('Planned Quantity Updated'),
+                                message: __('Planned quantity updated to {0}', [r.message.planned_qty]),
+                                indicator: 'green'
+                            });
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            }, __('Manufacturing'));
+
+            // ACTIONS BUTTONS GROUP
+            frm.add_custom_button(__('Calculate Cost'), function() {
+                frappe.msgprint({
+                    title: __('Calculate Cost'),
+                    message: __('Calculating costs for batch {0}...', [frm.doc.name])
+                });
+                
+                frappe.call({
+                    method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.calculate_batch_cost',
+                    args: { batch_name: frm.doc.name },
+                    callback: function(r) {
+                        console.log('Cost Calculation Response:', r);
+                        if (r.message) {
+                            frm.set_value('total_batch_cost', r.message.total_batch_cost || 0);
+                            frm.set_value('cost_per_unit', r.message.cost_per_unit || 0);
+                            frappe.msgprint({
+                                title: __('Costs Calculated'),
+                                message: __('Batch costs calculated successfully!'),
+                                indicator: 'green'
+                            });
+                        } else {
+                            frappe.msgprint({
+                                title: __('Error'),
+                                message: __('Failed to calculate costs'),
+                                indicator: 'red'
+                            });
+                        }
+                    }
+                });
+            }, __('Actions'));
+
+            // Duplicate Batch Button
+            frm.add_custom_button(__('Duplicate Batch'), function() {
+                frappe.confirm(
+                    __('Duplicate this batch?'),
+                    function() {
+                        frappe.call({
+                            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.duplicate_batch',
+                            args: { source_name: frm.doc.name },
+                            callback: function(r) {
+                                console.log('Duplicate Response:', r);
+                                if (r.message) {
+                                    frappe.msgprint({
+                                        title: __('Batch Duplicated'),
+                                        message: __('New batch created: {0}', [r.message]),
+                                        indicator: 'green'
+                                    });
+                                    frappe.set_route('Form', 'Batch AMB', r.message);
+                                }
+                            }
                         });
                     }
-                }
-            });
-        }, __('🏭 MANUFACTURING ACTIONS'));
+                );
+            }, __('Actions'));
+            
+            // Create Stock Entry button (if not submitted)
+            if (frm.doc.docstatus === 1 && !frm.doc.stock_entry_reference) {
+                frm.add_custom_button(__('Create Stock Entry'), function() {
+                    frappe.confirm(
+                        __('Create Stock Entry for this batch?'),
+                        function() {
+                            frm.set_value('auto_create_stock_entry', 1);
+                            frm.save();
+                        }
+                    );
+                }, __('Create'));
+            }
+            
+            // View Stock Entry button
+            if (frm.doc.stock_entry_reference) {
+                frm.add_custom_button(__('View Stock Entry'), function() {
+                    frappe.set_route('Form', 'Stock Entry', frm.doc.stock_entry_reference);
+                }, __('View'));
+            }
+            
+            // View Lote AMB button
+            if (frm.doc.lote_amb_reference) {
+                frm.add_custom_button(__('View Lote AMB'), function() {
+                    frappe.set_route('Form', 'Lote AMB', frm.doc.lote_amb_reference);
+                }, __('View'));
+            }
+        }
         
-        console.log('✅ ALL MANUFACTURING BUTTONS ADDED - Look for 🏭 MANUFACTURING ACTIONS group');
+        console.log('✅ Custom buttons setup completed');
+        
+    } catch (error) {
+        console.error('❌ Error setting up custom buttons:', error);
+        frappe.msgprint({
+            title: __('Error'),
+            message: __('Error setting up buttons: {0}', [error.message]),
+            indicator: 'red'
+        });
     }
 }
 
