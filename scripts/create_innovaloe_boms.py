@@ -329,4 +329,4 @@ def main():
     print("\n" + "=" * 80)
     print("INNOVALOE BOM CREATION - COMPLETE")
     print("=" * 80)
-    print(f"✅ Successfully created: {len(created_boms)}
+    print(f"✅ Successfully created: {len(created_boms)"}
