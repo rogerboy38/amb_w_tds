@@ -14,6 +14,9 @@ class BatchAMB(Document):
     
     def validate(self):
         """Validation before saving"""
+        self.set_batch_naming()
+
+        self.set_batch_naming()
         self.validate_production_dates()
         self.validate_quantities()
         self.validate_work_order()
@@ -105,51 +108,58 @@ class BatchAMB(Document):
     # Add this new method after set_batch_naming:
 
     def auto_set_title(self):
-        """Auto-generate title based on batch level and parent"""
+        """Auto-generate title based on batch level and parent."""
+        # If user already set a meaningful title, keep it
         if self.title and len(self.title) > 5:
-            # Title already set manually, don't override
             return
-    
-        level = self.custom_batch_level or '1'
-    
-        if level == '1':
+
+        level = self.custom_batch_level or "1"
+
+        if level == "1":
             # Main Batch: Use golden number or item code
             if self.custom_golden_number:
                 self.title = f"{self.item_code or 'BATCH'}-{self.custom_golden_number}"
             else:
                 self.title = f"{self.item_code or 'BATCH'}-{self.name}"
-    
-        elif level == '2':
+
+        elif level == "2":
             # Sub-lot: Parent title + L2 + index
-                if self.parent_batch_amb:
-                parent = frappe.get_doc('Batch AMB', self.parent_batch_amb)
+            if self.parent_batch_amb:
+                parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
                 parent_title = parent.title or parent.name
-            
+
                 # Count existing L2 siblings
-                siblings = frappe.db.count('Batch AMB', {
-                    'parent_batch_amb': self.parent_batch_amb,
-                    'custom_batch_level': '2',
-                    'name': ['!=', self.name]
-                })
+                siblings = frappe.db.count(
+                    "Batch AMB",
+                    {
+                        "parent_batch_amb": self.parent_batch_amb,
+                        "custom_batch_level": "2",
+                        "name": ["!=", self.name],
+                    },
+                )
                 self.title = f"{parent_title[:15]} - L2-{siblings + 1:02d}"
             else:
                 self.title = f"{self.name} - L2"
-    
-        elif level == '3':
-            # Container: Parent title + L3 + container count
+
+        elif level == "3":
+            # Container: Parent title + C + container count
             if self.parent_batch_amb:
-                parent = frappe.get_doc('Batch AMB', self.parent_batch_amb)
+                parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
                 parent_title = parent.title or parent.name
-            
-                siblings = frappe.db.count('Batch AMB', {
-                    'parent_batch_amb': self.parent_batch_amb,
-                    'custom_batch_level': '3',
-                    'name': ['!=', self.name]
-                })
+
+                siblings = frappe.db.count(
+                    "Batch AMB",
+                    {
+                        "parent_batch_amb": self.parent_batch_amb,
+                        "custom_batch_level": "3",
+                        "name": ["!=", self.name],
+                    },
+                )
                 self.title = f"{parent_title[:15]} - C{siblings + 1:02d}"
             else:
                 self.title = f"{self.name} - L3"
-    
+
+
         # Ensure title doesn't exceed 40 characters
         if len(self.title) > 40:
             self.title = self.title[:40]
@@ -195,36 +205,122 @@ class BatchAMB(Document):
             return 0
         bom = frappe.get_doc('BOM', self.bom_no)
         return flt(bom.total_cost) * flt(self.produced_qty)
-    
+
     def calculate_container_weights(self):
-        """Calculate container weights"""
-        if not self.container_barrels:
+        """Calculate container weights from container_barrels child table."""
+        # If no barrels, reset totals and exit
+        if not getattr(self, "container_barrels", None):
             self.total_gross_weight = 0
             self.total_tara_weight = 0
             self.total_net_weight = 0
             self.barrel_count = 0
             return
-        
-        total_gross = total_tara = total_net = barrel_count = 0
-        
+
+        total_gross = 0
+        total_tara = 0
+        total_net = 0
+        barrel_count = 0
+
         for barrel in self.container_barrels:
-            if barrel.gross_weight:
+            if getattr(barrel, "gross_weight", None):
                 total_gross += flt(barrel.gross_weight)
-            if barrel.tara_weight:
+            if getattr(barrel, "tara_weight", None):
                 total_tara += flt(barrel.tara_weight)
-            if barrel.net_weight:
+            if getattr(barrel, "net_weight", None):
                 total_net += flt(barrel.net_weight)
-            if barrel.barrel_serial_number:
+            if getattr(barrel, "barrel_serial_number", None):
                 barrel_count += 1
-        
+
         self.total_gross_weight = total_gross
         self.total_tara_weight = total_tara
         self.total_net_weight = total_net
         self.barrel_count = barrel_count
+
     
     def set_batch_naming(self):
-        """Set batch naming"""
-        pass
+        """Generate golden number according to business rules"""
+        if not self.item_to_manufacture:
+            return
+        
+        # Get product code (first 4 characters of item code)
+        product_code = (self.item_to_manufacture or "")[:4] or "0000"
+        
+        # Get consecutive from work order
+        consecutive = "001"  # Default
+        if self.work_order_ref:
+            try:
+                # Extract consecutive from work order (last 3 digits)
+                parts = self.work_order_ref.split("-")
+                last_part = parts[-1]
+                wo_consecutive = last_part[-3:] if last_part else "001"
+                consecutive = wo_consecutive.zfill(3)
+            except Exception:
+                consecutive = "001"
+        
+        # Get manufacturing year (last 2 digits)
+        from datetime import datetime
+        year = "24"  # default
+        if self.wo_start_date:
+            try:
+                # Convert string to date object if needed
+                if isinstance(self.wo_start_date, str):
+                    from datetime import datetime as dt
+                    wo_date = dt.strptime(self.wo_start_date, '%Y-%m-%d')
+                    year = str(wo_date.year)[-2:]
+                else:
+                    year = str(self.wo_start_date.year)[-2:]
+            except Exception:
+                year = datetime.now().strftime('%y')
+        else:
+            year = datetime.now().strftime('%y')
+        
+        # Get plant code from Production Plant AMB
+        plant_code = "1"  # Default to Mix
+        if self.production_plant:
+            try:
+                # Get the Production Plant AMB document
+                plant_doc = frappe.get_doc("Production Plant AMB", self.production_plant)
+                
+                # Use the production_plant_id field
+                if hasattr(plant_doc, 'production_plant_id') and plant_doc.production_plant_id:
+                    plant_code = str(plant_doc.production_plant_id)
+                else:
+                    # Fallback: extract from name
+                    plant_mapping = {
+                        'Mix': '1',
+                        'Dry': '2', 
+                        'Juice': '3',
+                        'Laboratory': '4',
+                        'Formulated': '5'
+                    }
+                    plant_name = getattr(plant_doc, 'production_plant_name', '') or ''
+                    for plant_type, code in plant_mapping.items():
+                        if plant_type.lower() in plant_name.lower():
+                            plant_code = code
+                            break
+            except Exception:
+                # Use fallback mapping based on the plant name
+                plant_mapping = {
+                    'Mix': '1',
+                    'Dry': '2', 
+                    'Juice': '3',
+                    'Laboratory': '4',
+                    'Formulated': '5'
+                }
+                for plant_type, code in plant_mapping.items():
+                    if plant_type.lower() in (self.production_plant or "").lower():
+                        plant_code = code
+                        break
+        
+        # Generate base golden number
+        base_golden_number = f"{product_code}{consecutive}{year}{plant_code}"
+        
+        # Set the golden number and related fields
+        self.custom_golden_number = base_golden_number
+        self.custom_generated_batch_name = base_golden_number
+        self.title = base_golden_number
+        
+        print(f"✅ Generated Golden Number: {base_golden_number}")
     
     def update_container_sequence(self):
         """Update container sequence"""
