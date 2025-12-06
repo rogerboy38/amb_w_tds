@@ -1,37 +1,50 @@
 // Enhanced Batch AMB Client Script - Complete Integration
-// Combines original functionality with BatchL2 enhancements
 // Copyright (c) 2024, AMB and contributors
+
+// Initialize utility function at the top
+if (typeof flt === 'undefined') {
+    window.flt = frappe.utils.flt || function(val) { 
+        return parseFloat(val) || 0; 
+    };
+}
 
 frappe.ui.form.on('Batch AMB', {
     // ==================== FORM EVENTS ====================
     
     refresh: function(frm) {
-        // Original functionality
+        // Basic setup
         setup_custom_buttons(frm);
         apply_field_filters(frm);
         setup_field_dependencies(frm);
         show_status_indicators(frm);
         
-        // BatchL2 enhancements
+        // Batch level specific
         if (should_auto_generate(frm)) {
             generate_batch_code(frm);
         }
         add_level_specific_buttons(frm);
+        
+        // Update weight totals for level 3
         if (frm.doc.custom_batch_level == '3') {
             update_weight_totals(frm);
         }
+        
+        // Add processing buttons
+        add_processing_buttons(frm);
     },
     
     onload: function(frm) {
-        // Original functionality
+        // Set defaults
         set_default_values(frm);
         load_user_preferences(frm);
         
-        // BatchL2 enhancements
+        // Initialize batch level
         if (frm.is_new()) {
             frm.set_value('custom_batch_level', '1');
             frm.set_value('is_group', 1);
         }
+        
+        // Initialize barrel management for level 3
         if (frm.doc.custom_batch_level == '3') {
             initialize_barrel_management(frm);
         }
@@ -41,28 +54,7 @@ frappe.ui.form.on('Batch AMB', {
     
     work_order: function(frm) {
         if (frm.doc.work_order) {
-            // Fetch work order details
-            frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_details',
-                args: { work_order: frm.doc.work_order },
-                callback: function(r) {
-                    if (r.message) {
-                        frm.set_value('item_to_manufacture', r.message.item_to_manufacture);
-                        frm.set_value('item_name', r.message.item_name);
-                        frm.set_value('planned_qty', r.message.planned_qty);
-                        frm.set_value('company', r.message.company);
-                        frm.set_value('bom_no', r.message.bom_no);
-                        frm.set_value('source_warehouse', r.message.source_warehouse);
-                        frm.set_value('target_warehouse', r.message.target_warehouse);
-                        frm.set_value('uom', r.message.uom);
-                        
-                        frappe.show_alert({
-                            message: __('Work Order details loaded'),
-                            indicator: 'green'
-                        });
-                    }
-                }
-            });
+            fetch_work_order_details(frm);
         }
     },
 
@@ -73,12 +65,18 @@ frappe.ui.form.on('Batch AMB', {
     },
 
     custom_batch_level: function(frm) {
-        if (!frm.is_new()) {
-            frappe.msgprint('Cannot change batch level of existing documents. Create a new document for different levels.');
+        if (!frm.is_new() && frm.doc.custom_batch_level !== frm.doc.__original_level) {
+            frappe.msgprint(__('Cannot change batch level of existing documents. Create a new document for different levels.'));
             frm.set_value('custom_batch_level', frm.doc.__original_level || '1');
             return;
         }
+        
+        if (!frm.doc.__original_level) {
+            frm.doc.__original_level = frm.doc.custom_batch_level;
+        }
+        
         configure_level_settings(frm);
+        
         if (should_auto_generate(frm)) {
             generate_batch_code(frm);
         }
@@ -86,10 +84,11 @@ frappe.ui.form.on('Batch AMB', {
 
     parent_batch_amb: function(frm) {
         if (frm.doc.parent_batch_amb === frm.doc.name) {
-            frappe.msgprint('A batch cannot be its own parent');
+            frappe.msgprint(__('A batch cannot be its own parent'));
             frm.set_value('parent_batch_amb', '');
             return;
         }
+        
         if (frm.doc.parent_batch_amb && should_auto_generate(frm)) {
             generate_batch_code(frm);
         }
@@ -113,31 +112,67 @@ frappe.ui.form.on('Batch AMB', {
         }
     },
 
+    processing_status: function(frm) {
+        // Show/hide fields based on status
+        if (frm.doc.processing_status === "Scheduled") {
+            frm.toggle_display(['scheduled_start_date', 'scheduled_start_time'], true);
+        } else {
+            frm.toggle_display(['scheduled_start_date', 'scheduled_start_time'], false);
+        }
+        
+        if (frm.doc.processing_status === "Completed") {
+            frm.toggle_display(['actual_start', 'actual_completion', 'processed_quantity', 'yield_percentage'], true);
+        }
+    },
+
+    processed_quantity: function(frm) {
+        // Recalculate yield when processed quantity changes
+        if (frm.doc.planned_qty && frm.doc.processed_quantity) {
+            const yield_percentage = (flt(frm.doc.processed_quantity) / flt(frm.doc.planned_qty)) * 100;
+            frm.set_value('yield_percentage', yield_percentage);
+        }
+    },
+
+    planned_qty: function(frm) {
+        if (frm.doc.planned_qty && flt(frm.doc.planned_qty) <= 0) {
+            frappe.msgprint(__('Planned Quantity must be greater than 0'));
+            frm.set_value('planned_qty', '');
+        }
+    },
+
     before_save: function(frm) {
-        // Original validation + BatchL2 enhancements
+        // Validate parent-child relationship
         if (frm.doc.parent_batch_amb === frm.doc.name) {
-            frappe.throw('A batch cannot be its own parent');
+            frappe.throw(__('A batch cannot be its own parent'));
             return false;
         }
+        
+        // Validate parent is required for levels > 1
         if (parseInt(frm.doc.custom_batch_level || '0', 10) > 1 && !frm.doc.parent_batch_amb) {
-            frappe.throw('Parent Batch AMB is required for level ' + frm.doc.custom_batch_level);
+            frappe.throw(__('Parent Batch AMB is required for level {0}', [frm.doc.custom_batch_level]));
             return false;
         }
+        
+        // Store original level
         if (!frm.doc.__original_level) {
             frm.doc.__original_level = frm.doc.custom_batch_level;
         }
+        
+        // Validate barrel data for level 3
         if (frm.doc.custom_batch_level == '3') {
-            validate_barrel_data(frm);
+            if (!validate_barrel_data(frm)) {
+                return false;
+            }
         }
         
-        // Original calculation
+        // Calculate container totals
         calculate_container_totals(frm);
         
         return true;
     },
 
     after_save: function(frm) {
-        // Refresh the form to get the latest values from the server
+        // Refresh to get latest values
         frm.refresh();
     }
 });
@@ -145,32 +180,26 @@ frappe.ui.form.on('Batch AMB', {
 // ==================== CHILD TABLE: Container Barrels ====================
 
 frappe.ui.form.on('Container Barrels', {
-    // Original functionality
     quantity: function(frm, cdt, cdn) {
-        // Recalculate totals when container quantity changes
         calculate_container_totals(frm);
     },
     
     container_barrels_add: function(frm, cdt, cdn) {
-        // Original default values
         let row = locals[cdt][cdn];
         row.status = 'Active';
         
-        // BatchL2 enhancements
         if (frm.doc.default_packaging_type) {
             frappe.model.set_value(cdt, cdn, 'packaging_type', frm.doc.default_packaging_type);
         }
-        generate_barrel_serial_number(frm, row);
         
+        generate_barrel_serial_number(frm, row);
         frm.refresh_field('container_barrels');
     },
     
     container_barrels_remove: function(frm) {
-        // Recalculate totals when container is removed
         calculate_container_totals(frm);
     },
 
-    // BatchL2 enhancements
     barcode_scan_input: function(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (row.barcode_scan_input) {
@@ -196,14 +225,16 @@ frappe.ui.form.on('Container Barrels', {
 // ==================== HELPER FUNCTIONS ====================
 
 function setup_custom_buttons(frm) {
-    console.log('🔧 MANUFACTURING BUTTONS DEBUG: Setting up custom buttons for', frm.doc.name);
-    console.log('📊 Document status:', frm.doc.__islocal ? 'New' : 'Saved', 'DocStatus:', frm.doc.docstatus);
+    console.log('🔧 Setting up custom buttons for', frm.doc.name);
     
-    // ALWAYS ADD MANUFACTURING BUTTONS FOR TESTING - REMOVE LATER
-    if (true) {  // Force buttons to always show for debugging
-        console.log('🎯 ADDING MANUFACTURING BUTTONS GROUP');
-        
-        // Create BOM Button - MAKE IT PRIMARY (BLUE)
+    // Clear existing manufacturing buttons to avoid duplicates
+    if (frm.custom_buttons && frm.custom_buttons['🏭 MANUFACTURING ACTIONS']) {
+        delete frm.custom_buttons['🏭 MANUFACTURING ACTIONS'];
+    }
+    
+    // Only add manufacturing buttons if document is saved
+    if (!frm.doc.__islocal) {
+        // Create BOM Button
         frm.add_custom_button(__('🏭 Create BOM'), function() {
             frappe.msgprint({
                 title: __('Create BOM'),
@@ -330,7 +361,7 @@ function setup_custom_buttons(frm) {
             });
         }, __('🏭 MANUFACTURING ACTIONS'));
         
-        console.log('✅ ALL MANUFACTURING BUTTONS ADDED - Look for 🏭 MANUFACTURING ACTIONS group');
+        console.log('✅ Manufacturing buttons added');
     }
 }
 
@@ -379,14 +410,11 @@ function apply_field_filters(frm) {
 
 function setup_field_dependencies(frm) {
     // Show/hide fields based on conditions
-    
-    // Cost calculation fields
     frm.toggle_display('labor_cost', frm.doc.calculate_cost);
     frm.toggle_display('overhead_cost', frm.doc.calculate_cost);
     frm.toggle_display('total_batch_cost', frm.doc.calculate_cost);
     frm.toggle_display('cost_per_unit', frm.doc.calculate_cost);
     
-    // Container section
     frm.toggle_display('container_barrels', frm.doc.use_containers);
     frm.toggle_display('total_containers', frm.doc.use_containers);
     frm.toggle_display('total_container_qty', frm.doc.use_containers);
@@ -408,7 +436,6 @@ function show_status_indicators(frm) {
         );
     }
     
-    // Quality status indicator
     if (frm.doc.quality_status) {
         let indicator = {
             'Passed': 'green',
@@ -428,17 +455,14 @@ function show_status_indicators(frm) {
 
 function set_default_values(frm) {
     if (frm.doc.__islocal) {
-        // Set default company
         if (!frm.doc.company) {
             frm.set_value('company', frappe.defaults.get_default('company'));
         }
         
-        // Set default production start date
         if (!frm.doc.production_start_date) {
             frm.set_value('production_start_date', frappe.datetime.get_today());
         }
         
-        // Set default status
         if (!frm.doc.batch_status) {
             frm.set_value('batch_status', 'Draft');
         }
@@ -446,7 +470,6 @@ function set_default_values(frm) {
 }
 
 function load_user_preferences(frm) {
-    // Load user's preferred warehouses, etc.
     frappe.db.get_value('User', frappe.session.user, 'default_warehouse', function(r) {
         if (r && r.default_warehouse && !frm.doc.target_warehouse) {
             frm.set_value('target_warehouse', r.default_warehouse);
@@ -455,32 +478,27 @@ function load_user_preferences(frm) {
 }
 
 function calculate_container_totals(frm) {
-    // Merge original and BatchL2 functionality
-    if (!frm.doc.container_barrels) return;
+    if (!frm.doc.container_barrels || frm.doc.container_barrels.length === 0) return;
     
     let total_qty = 0;
     let total_containers = 0;
     let total_gross = 0, total_tara = 0, total_net = 0, barrel_count = 0;
     
     frm.doc.container_barrels.forEach(function(row) {
-        // Original quantity calculation
         if (row.quantity) {
             total_qty += flt(row.quantity);
         }
         total_containers++;
         
-        // BatchL2 weight calculations
-        if (row.gross_weight) total_gross += row.gross_weight;
-        if (row.tara_weight) total_tara += row.tara_weight;
-        if (row.net_weight) total_net += row.net_weight;
+        if (row.gross_weight) total_gross += flt(row.gross_weight);
+        if (row.tara_weight) total_tara += flt(row.tara_weight);
+        if (row.net_weight) total_net += flt(row.net_weight);
         if (row.barrel_serial_number) barrel_count += 1;
     });
     
-    // Update original fields
     frm.set_value('total_container_qty', total_qty);
     frm.set_value('total_containers', total_containers);
     
-    // Update BatchL2 fields
     frm.set_value('total_gross_weight', total_gross);
     frm.set_value('total_tara_weight', total_tara);
     frm.set_value('total_net_weight', total_net);
@@ -502,98 +520,84 @@ function calculate_costs(frm) {
     });
 }
 
-function validate_container_quantities(frm) {
-    if (!frm.doc.use_containers || !frm.doc.container_barrels) return;
-    
-    let container_total = 0;
-    frm.doc.container_barrels.forEach(function(row) {
-        if (row.quantity) {
-            container_total += flt(row.quantity);
-        }
-    });
-    
-    let produced = flt(frm.doc.produced_qty);
-    let difference = Math.abs(container_total - produced);
-    
-    if (difference > 0.001) {
-        frappe.msgprint({
-            title: __('Quantity Mismatch'),
-            message: __('Container total ({0}) does not match produced quantity ({1})', 
-                [container_total, produced]),
-            indicator: 'orange'
-        });
-    }
-}
+// ==================== BATCHL2 ENHANCED FUNCTIONS ====================
 
-function validate_production_dates(frm) {
-    if (frm.doc.production_start_date && frm.doc.production_end_date) {
-        let start = frappe.datetime.str_to_obj(frm.doc.production_start_date);
-        let end = frappe.datetime.str_to_obj(frm.doc.production_end_date);
-        
-        if (end < start) {
-            frappe.msgprint({
-                title: __('Invalid Dates'),
-                message: __('Production end date cannot be before start date'),
-                indicator: 'red'
-            });
-            frm.set_value('production_end_date', '');
-        }
-    }
-}
-
-function fetch_work_order_data(frm) {
-    // Work order reference functionality for BatchL2
-    if (frm.doc.work_order_ref) {
+function fetch_work_order_details(frm) {
+    if (frm.doc.work_order) {
         frappe.call({
-            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_data',
-            args: { work_order: frm.doc.work_order_ref },
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_details',
+            args: { work_order: frm.doc.work_order },
             callback: function(r) {
                 if (r.message) {
-                    // Auto-populate planned_qty from Work Order (CRITICAL FIX)
-                    if (r.message.qty) {
-                        frm.set_value('planned_qty', r.message.qty);
-                        console.log('✅ Populated planned_qty from Work Order:', r.message.qty);
-                    }
+                    frm.set_value('item_to_manufacture', r.message.item_to_manufacture);
+                    frm.set_value('planned_qty', r.message.planned_qty);
+                    frm.set_value('company', r.message.company);
                     
-                    // Process work order data for batch generation
-                    console.log('Work order data loaded:', r.message);
+                    frappe.show_alert({
+                        message: __('Work Order details loaded'),
+                        indicator: 'green'
+                    });
                 }
             }
         });
     }
 }
 
-// ==================== BATCHL2 ENHANCED FUNCTIONS ====================
+function fetch_work_order_data(frm) {
+    if (frm.doc.work_order_ref) {
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_data',
+            args: { work_order: frm.doc.work_order_ref },
+            callback: function(r) {
+                if (r.message) {
+                    // Try multiple possible quantity fields
+                    let quantity = null;
+                    
+                    if (r.message.qty) {
+                        quantity = r.message.qty;
+                    } else if (r.message.production_qty) {
+                        quantity = r.message.production_qty;
+                    } else if (r.message.qty_to_manufacture) {
+                        quantity = r.message.qty_to_manufacture;
+                    }
+                    
+                    if (quantity && flt(quantity) > 0) {
+                        frm.set_value('planned_qty', flt(quantity));
+                        frappe.show_alert({
+                            message: __('Planned quantity updated to {0}', [quantity]),
+                            indicator: 'green'
+                        });
+                    } else {
+                        frappe.show_alert({
+                            message: __('No valid quantity found in Work Order'),
+                            indicator: 'orange'
+                        });
+                    }
+                }
+            }
+        });
+    }
+}
 
-// Barrel Management Functions
 function initialize_barrel_management(frm) {
-    // Initialize barrel management for Level 3 batches
     if (!frm.doc.container_barrels) {
         frm.doc.container_barrels = [];
     }
 }
 
 function add_level_specific_buttons(frm) {
-    // Add buttons based on batch level
     if (frm.doc.custom_batch_level == '3') {
-        // Add original custom buttons if not already present
-        if (!frm.custom_buttons || !frm.custom_buttons['Barrel Scanner']) {
-            frm.add_custom_button(__('Barrel Scanner'), function() {
-                frm.set_value('quick_barcode_scan', '');
-            });
-        }
+        frm.add_custom_button(__('Barrel Scanner'), function() {
+            frm.set_value('quick_barcode_scan', '');
+        });
         
-        if (!frm.custom_buttons || !frm.custom_buttons['Validate Barrels']) {
-            frm.add_custom_button(__('Validate Barrels'), function() {
-                validate_all_barrels(frm);
-            });
-        }
+        frm.add_custom_button(__('Validate Barrels'), function() {
+            validate_all_barrels(frm);
+        });
         
-        if (!frm.custom_buttons || !frm.custom_buttons['Calculate Totals']) {
-            frm.add_custom_button(__('Calculate Totals'), function() {
-                update_weight_totals(frm);
-            });
-        }
+        frm.add_custom_button(__('Calculate Totals'), function() {
+            update_weight_totals(frm);
+        });
     }
 }
 
@@ -625,22 +629,18 @@ function generate_batch_code(frm) {
 }
 
 function configure_level_settings(frm) {
-    // Configure form settings based on batch level
     const level = parseInt(frm.doc.custom_batch_level || '1', 10);
     
     switch(level) {
         case 1:
-            // Level 1 - Root level
             frm.set_df_property('parent_batch_amb', 'hidden', 1);
             frm.set_df_property('container_barrels_section', 'hidden', 1);
             break;
         case 2:
-            // Level 2 - Intermediate level
             frm.set_df_property('parent_batch_amb', 'hidden', 0);
             frm.set_df_property('container_barrels_section', 'hidden', 1);
             break;
         case 3:
-            // Level 3 - Container level
             frm.set_df_property('parent_batch_amb', 'hidden', 0);
             frm.set_df_property('container_barrels_section', 'hidden', 0);
             break;
@@ -652,7 +652,7 @@ function process_quick_barcode_scan(frm) {
     if (!barcode) return;
     
     if (!validate_code39_format(barcode)) {
-        frappe.msgprint('Invalid CODE-39 barcode format');
+        frappe.msgprint(__('Invalid CODE-39 barcode format'));
         frm.set_value('quick_barcode_scan', '');
         return;
     }
@@ -661,24 +661,30 @@ function process_quick_barcode_scan(frm) {
     row.barrel_serial_number = barcode;
     row.packaging_type = frm.doc.default_packaging_type;
     row.scan_timestamp = frappe.datetime.now_datetime();
+    
     if (row.packaging_type) {
         fetch_tara_weight_for_row(frm, row.doctype, row.name);
     }
+    
     frm.refresh_field('container_barrels');
     frm.set_value('quick_barcode_scan', '');
-    setTimeout(function() { frm.scroll_to_field('container_barrels'); }, 300);
+    
+    setTimeout(function() { 
+        frm.scroll_to_field('container_barrels'); 
+    }, 300);
 }
 
 function process_barcode_scan(frm, cdt, cdn, barcode) {
     const row = locals[cdt][cdn];
     if (!validate_code39_format(barcode)) {
-        frappe.msgprint('Invalid CODE-39 barcode format');
+        frappe.msgprint(__('Invalid CODE-39 barcode format'));
         frappe.model.set_value(cdt, cdn, 'barcode_scan_input', '');
         return;
     }
     frappe.model.set_value(cdt, cdn, 'barrel_serial_number', barcode);
     frappe.model.set_value(cdt, cdn, 'scan_timestamp', frappe.datetime.now_datetime());
     frappe.model.set_value(cdt, cdn, 'barcode_scan_input', '');
+    
     if (row.packaging_type) {
         fetch_tara_weight_for_row(frm, cdt, cdn);
     }
@@ -732,7 +738,6 @@ function fetch_default_tara_weight(frm) {
         },
         callback: function(r) {
             if (r.message && r.message.weight_per_unit) {
-                // Update all existing barrels with new default
                 (frm.doc.container_barrels || []).forEach(row => {
                     if (!row.tara_weight) {
                         frappe.model.set_value(row.doctype, row.name, 'tara_weight', r.message.weight_per_unit);
@@ -747,9 +752,9 @@ function fetch_default_tara_weight(frm) {
 function calculate_net_weight(frm, cdt, cdn) {
     const row = locals[cdt][cdn];
     if (row.gross_weight && row.tara_weight) {
-        const net_weight = row.gross_weight - row.tara_weight;
+        const net_weight = flt(row.gross_weight) - flt(row.tara_weight);
         frappe.model.set_value(cdt, cdn, 'net_weight', net_weight);
-        frappe.model.set_value(cdt, cdn, 'weight_validated', net_weight > 0 && net_weight < row.gross_weight ? 1 : 0);
+        frappe.model.set_value(cdt, cdn, 'weight_validated', net_weight > 0 && net_weight < flt(row.gross_weight) ? 1 : 0);
     }
 }
 
@@ -757,12 +762,14 @@ function update_weight_totals(frm) {
     if (frm.doc.custom_batch_level != '3' || !frm.doc.container_barrels) return;
 
     let total_gross = 0, total_tara = 0, total_net = 0, barrel_count = 0;
+    
     frm.doc.container_barrels.forEach(row => {
-        if (row.gross_weight) total_gross += row.gross_weight;
-        if (row.tara_weight) total_tara += row.tara_weight;
-        if (row.net_weight) total_net += row.net_weight;
+        if (row.gross_weight) total_gross += flt(row.gross_weight);
+        if (row.tara_weight) total_tara += flt(row.tara_weight);
+        if (row.net_weight) total_net += flt(row.net_weight);
         if (row.barrel_serial_number) barrel_count += 1;
     });
+    
     frm.set_value('total_gross_weight', total_gross);
     frm.set_value('total_tara_weight', total_tara);
     frm.set_value('total_net_weight', total_net);
@@ -770,15 +777,14 @@ function update_weight_totals(frm) {
 }
 
 function validate_barrel_data(frm) {
-    // Validate barrel data before save
     if (!frm.doc.container_barrels || frm.doc.container_barrels.length === 0) {
-        frappe.msgprint('Container barrels are required for Level 3 batches');
+        frappe.msgprint(__('Container barrels are required for Level 3 batches'));
         return false;
     }
 
-    // Check for duplicate serials
     const serials = [];
     const duplicates = [];
+    
     frm.doc.container_barrels.forEach(row => {
         if (row.barrel_serial_number) {
             if (serials.includes(row.barrel_serial_number)) {
@@ -790,7 +796,7 @@ function validate_barrel_data(frm) {
     });
 
     if (duplicates.length > 0) {
-        frappe.throw('Duplicate barrel serial numbers found: ' + duplicates.join(', '));
+        frappe.throw(__('Duplicate barrel serial numbers found: {0}', [duplicates.join(', ')]));
         return false;
     }
 
@@ -798,7 +804,6 @@ function validate_barrel_data(frm) {
 }
 
 function validate_all_barrels(frm) {
-    // Validate all barrels and show results
     let valid = 0;
     let invalid = 0;
     const issues = [];
@@ -806,100 +811,163 @@ function validate_all_barrels(frm) {
     (frm.doc.container_barrels || []).forEach((row, index) => {
         if (!row.barrel_serial_number) {
             invalid++;
-            issues.push(`Row ${index + 1}: Missing serial number`);
+            issues.push(__('Row {0}: Missing serial number', [index + 1]));
         } else if (!validate_code39_format(row.barrel_serial_number)) {
             invalid++;
-            issues.push(`Row ${index + 1}: Invalid format (${row.barrel_serial_number})`);
+            issues.push(__('Row {0}: Invalid format ({1})', [index + 1, row.barrel_serial_number]));
         } else {
             valid++;
         }
     });
 
     if (issues.length > 0) {
-        frappe.msgprint('Validation Issues:<br>' + issues.join('<br>'), 'Invalid');
+        frappe.msgprint(__('Validation Issues:') + '<br>' + issues.join('<br>'), __('Invalid'));
     } else {
-        frappe.msgprint(`All barrels validated successfully! Valid: ${valid}, Total: ${valid + invalid}`, 'Valid');
+        frappe.msgprint(__('All barrels validated successfully! Valid: {0}, Total: {1}', [valid, valid + invalid]), __('Valid'));
     }
 }
 
-// Validation helpers
 function validate_code39_format(barcode) {
     const s = String(barcode || '').toUpperCase();
-    // Allowed: A-Z 0-9 and - . space $ / + %
     return /^[A-Z0-9\-\.\s$\/+%*]+$/.test(s);
 }
 
-// CRITICAL FIX: Add quantity validation for planned_qty
-frappe.ui.form.on('Batch AMB', {
-    planned_qty: function(frm) {
-        if (frm.doc.planned_qty && frm.doc.planned_qty <= 0) {
-            frappe.msgprint('Planned Quantity must be greater than 0');
-            frm.set_value('planned_qty', '');
-        }
+function add_processing_buttons(frm) {
+    // Clear existing processing buttons
+    const processingGroup = __('PROCESSING ACTIONS');
+    if (frm.custom_buttons && frm.custom_buttons[processingGroup]) {
+        delete frm.custom_buttons[processingGroup];
     }
-});
-// Enhanced Batch AMB Client Script - FINAL FIX
-// Handles both "qty" and "qty_to_manufacture" fields from Work Order
-
-// FIXED: work_order_ref callback with multiple field detection
-function fetch_work_order_data(frm) {
-    if (frm.doc.work_order_ref) {
-        frappe.call({
-            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_order_data',
-            args: { work_order: frm.doc.work_order_ref },
-            callback: function(r) {
-                if (r.message) {
-                    // CRITICAL FIX: Try multiple possible quantity field names
-                    let quantity = null;
-                    
-                    // Method 1: Check qty_to_manufacture (most common for manufacturing)
-                    if (r.message.qty_to_manufacture) {
-                        quantity = r.message.qty_to_manufacture;
-                        console.log('✅ Found qty_to_manufacture:', quantity);
+    
+    if (frm.doc.processing_status === "Draft" || frm.doc.processing_status === "Scheduled") {
+        frm.add_custom_button(__('Start Processing'), function() {
+            frm.call({
+                method: 'start_processing',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
                     }
-                    // Method 2: Check qty field (fallback)
-                    else if (r.message.qty) {
-                        quantity = r.message.qty;
-                        console.log('✅ Found qty:', quantity);
-                    }
-                    // Method 3: Check production_qty (alternative field)
-                    else if (r.message.production_qty) {
-                        quantity = r.message.production_qty;
-                        console.log('✅ Found production_qty:', quantity);
-                    }
-                    
-                    if (quantity && flt(quantity) > 0) {
-                        frm.set_value('planned_qty', flt(quantity));
-                        frm.refresh_field('planned_qty');
-                        console.log('✅ Populated planned_qty:', quantity);
-                        
-                        // Show success message
-                        frappe.show_alert({
-                            message: __('Planned quantity updated to {0}', [quantity]),
-                            indicator: 'green'
-                        });
-                    } else {
-                        console.warn('⚠️ No valid quantity found in Work Order');
-                        frappe.show_alert({
-                            message: __('No valid quantity found in Work Order'),
-                            indicator: 'orange'
-                        });
-                    }
-                    
-                    console.log('Work Order data loaded:', r.message);
-                } else {
-                    console.error('❌ No data returned from Work Order');
                 }
-            },
-            error: function(r) {
-                console.error('❌ Error fetching Work Order data:', r);
-                frappe.show_alert({
-                    message: __('Error loading Work Order data'),
-                    indicator: 'red'
-                });
-            }
-        });
+            });
+        }, __('PROCESSING ACTIONS'));
+    }
+    
+    if (frm.doc.processing_status === "In Progress") {
+        frm.add_custom_button(__('Complete Processing'), function() {
+            frm.call({
+                method: 'complete_processing',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }, __('PROCESSING ACTIONS'));
+        
+        frm.add_custom_button(__('Pause Processing'), function() {
+            frm.call({
+                method: 'pause_processing',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }, __('PROCESSING ACTIONS'));
+    }
+    
+    if (frm.doc.processing_status === "On Hold") {
+        frm.add_custom_button(__('Resume Processing'), function() {
+            frm.call({
+                method: 'resume_processing',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }, __('PROCESSING ACTIONS'));
+    }
+    
+    if (frm.doc.processing_status === "Quality Check") {
+        frm.add_custom_button(__('Approve Quality'), function() {
+            frm.call({
+                method: 'approve_quality',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }, __('PROCESSING ACTIONS'));
+        
+        frm.add_custom_button(__('Reject Quality'), function() {
+            frm.call({
+                method: 'reject_quality',
+                doc: frm.doc,
+                callback: function(r) {
+                    if (r.message) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }, __('PROCESSING ACTIONS'));
     }
 }
 
-// Add this to your existing batch_amb.js file or replace the fetch_work_order_data function
+// Add schedule processing button separately
+frappe.ui.form.on('Batch AMB', {
+    refresh: function(frm) {
+        // Add schedule button for draft status
+        if (frm.doc.processing_status === "Draft") {
+            frm.add_custom_button(__('Schedule Processing'), function() {
+                show_schedule_dialog(frm);
+            }, __('PROCESSING ACTIONS'));
+        }
+    }
+});
+
+function show_schedule_dialog(frm) {
+    const d = new frappe.ui.Dialog({
+        title: __('Schedule Processing'),
+        fields: [
+            {
+                label: __('Start Date'),
+                fieldname: 'start_date',
+                fieldtype: 'Date',
+                default: frappe.datetime.get_today(),
+                reqd: 1
+            },
+            {
+                label: __('Start Time'),
+                fieldname: 'start_time',
+                fieldtype: 'Time',
+                default: '08:00:00'
+            }
+        ],
+        primary_action_label: __('Schedule'),
+        primary_action(values) {
+            frm.call({
+                method: 'schedule_processing',
+                doc: frm.doc,
+                args: {
+                    start_date: values.start_date,
+                    start_time: values.start_time
+                },
+                callback: function(r) {
+                    if (r.message) {
+                        d.hide();
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }
+    });
+    
+    d.show();
+}

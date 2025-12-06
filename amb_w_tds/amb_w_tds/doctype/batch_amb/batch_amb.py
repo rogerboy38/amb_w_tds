@@ -4,8 +4,9 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, nowdate, get_datetime, cstr
+from frappe.utils import flt, nowdate, now_datetime, get_datetime, cstr
 import json
+from datetime import datetime
 
 class BatchAMB(Document):
     """
@@ -15,8 +16,6 @@ class BatchAMB(Document):
     def validate(self):
         """Validation before saving"""
         self.set_batch_naming()
-
-        self.set_batch_naming()
         self.validate_production_dates()
         self.validate_quantities()
         self.validate_work_order()
@@ -24,15 +23,17 @@ class BatchAMB(Document):
         self.validate_batch_level_hierarchy()
         self.validate_barrel_weights()
         self.set_item_details()
+        self.validate_processing_dates()
+        self.calculate_yield_percentage()
     
     def before_save(self):
         """Before save hook"""
         self.calculate_totals()
         self.set_batch_naming()
-        self.auto_set_title()  # ← ADD THIS
+        self.auto_set_title()
         self.update_container_sequence()
         self.calculate_costs()
-        # FIXED: Update planned_qty from work_order_ref if not set
+        self.update_processing_timestamps()
         self.update_planned_qty_from_work_order()
     
     def on_update(self):
@@ -40,6 +41,7 @@ class BatchAMB(Document):
         self.sync_with_lote_amb()
         self.update_work_order_status()
         self.log_batch_history()
+        self.update_work_order_processing_status()
     
     def on_submit(self):
         """On submit"""
@@ -67,7 +69,6 @@ class BatchAMB(Document):
         if self.produced_qty and flt(self.produced_qty) <= 0:
             frappe.throw(_("Produced quantity must be greater than 0"))
         
-        # FIXED: Add planned_qty validation
         if self.planned_qty is not None and flt(self.planned_qty) <= 0:
             frappe.throw(_("Planned quantity must be greater than 0"))
     
@@ -105,30 +106,41 @@ class BatchAMB(Document):
                         frappe.throw(f'Invalid net weight for barrel {barrel.barrel_serial_number}')
                     barrel.net_weight = net_weight
     
-    # Add this new method after set_batch_naming:
-
+    def calculate_yield_percentage(self):
+        """Calculate yield percentage based on planned and processed quantities"""
+        if hasattr(self, 'planned_qty') and self.planned_qty and flt(self.planned_qty) > 0:
+            if hasattr(self, 'processed_quantity') and self.processed_quantity is not None:
+                self.yield_percentage = (flt(self.processed_quantity) / flt(self.planned_qty)) * 100
+            else:
+                self.yield_percentage = 0
+        else:
+            self.yield_percentage = 0
+    
+    def validate_processing_dates(self):
+        """Validate processing dates"""
+        if hasattr(self, 'actual_start') and hasattr(self, 'actual_completion'):
+            if self.actual_start and self.actual_completion:
+                if self.actual_completion < self.actual_start:
+                    frappe.throw(_("Actual completion date cannot be before actual start date"))
+    
     def auto_set_title(self):
         """Auto-generate title based on batch level and parent."""
-        # If user already set a meaningful title, keep it
         if self.title and len(self.title) > 5:
             return
 
         level = self.custom_batch_level or "1"
 
         if level == "1":
-            # Main Batch: Use golden number or item code
             if self.custom_golden_number:
                 self.title = f"{self.item_code or 'BATCH'}-{self.custom_golden_number}"
             else:
                 self.title = f"{self.item_code or 'BATCH'}-{self.name}"
 
         elif level == "2":
-            # Sub-lot: Parent title + L2 + index
             if self.parent_batch_amb:
                 parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
                 parent_title = parent.title or parent.name
 
-                # Count existing L2 siblings
                 siblings = frappe.db.count(
                     "Batch AMB",
                     {
@@ -142,7 +154,6 @@ class BatchAMB(Document):
                 self.title = f"{self.name} - L2"
 
         elif level == "3":
-            # Container: Parent title + C + container count
             if self.parent_batch_amb:
                 parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
                 parent_title = parent.title or parent.name
@@ -159,18 +170,16 @@ class BatchAMB(Document):
             else:
                 self.title = f"{self.name} - L3"
 
-
-        # Ensure title doesn't exceed 40 characters
         if len(self.title) > 40:
             self.title = self.title[:40]
 
-        def set_item_details(self):
-            """Set item details"""
-            if self.item_to_manufacture:
-                item = frappe.get_doc('Item', self.item_to_manufacture)
-                self.item_name = item.item_name
-                if not self.uom:
-                    self.uom = item.stock_uom
+    def set_item_details(self):
+        """Set item details"""
+        if self.item_to_manufacture:
+            item = frappe.get_doc('Item', self.item_to_manufacture)
+            self.item_name = item.item_name
+            if not self.uom:
+                self.uom = item.stock_uom
     
     def calculate_totals(self):
         """Calculate totals"""
@@ -208,7 +217,6 @@ class BatchAMB(Document):
 
     def calculate_container_weights(self):
         """Calculate container weights from container_barrels child table."""
-        # If no barrels, reset totals and exit
         if not getattr(self, "container_barrels", None):
             self.total_gross_weight = 0
             self.total_tara_weight = 0
@@ -235,21 +243,17 @@ class BatchAMB(Document):
         self.total_tara_weight = total_tara
         self.total_net_weight = total_net
         self.barrel_count = barrel_count
-
     
     def set_batch_naming(self):
         """Generate golden number according to business rules"""
         if not self.item_to_manufacture:
             return
         
-        # Get product code (first 4 characters of item code)
         product_code = (self.item_to_manufacture or "")[:4] or "0000"
         
-        # Get consecutive from work order
-        consecutive = "001"  # Default
+        consecutive = "001"
         if self.work_order_ref:
             try:
-                # Extract consecutive from work order (last 3 digits)
                 parts = self.work_order_ref.split("-")
                 last_part = parts[-1]
                 wo_consecutive = last_part[-3:] if last_part else "001"
@@ -257,15 +261,11 @@ class BatchAMB(Document):
             except Exception:
                 consecutive = "001"
         
-        # Get manufacturing year (last 2 digits)
-        from datetime import datetime
-        year = "24"  # default
+        year = "24"
         if self.wo_start_date:
             try:
-                # Convert string to date object if needed
                 if isinstance(self.wo_start_date, str):
-                    from datetime import datetime as dt
-                    wo_date = dt.strptime(self.wo_start_date, '%Y-%m-%d')
+                    wo_date = datetime.strptime(self.wo_start_date, '%Y-%m-%d')
                     year = str(wo_date.year)[-2:]
                 else:
                     year = str(self.wo_start_date.year)[-2:]
@@ -274,18 +274,14 @@ class BatchAMB(Document):
         else:
             year = datetime.now().strftime('%y')
         
-        # Get plant code from Production Plant AMB
-        plant_code = "1"  # Default to Mix
+        plant_code = "1"
         if self.production_plant:
             try:
-                # Get the Production Plant AMB document
                 plant_doc = frappe.get_doc("Production Plant AMB", self.production_plant)
                 
-                # Use the production_plant_id field
                 if hasattr(plant_doc, 'production_plant_id') and plant_doc.production_plant_id:
                     plant_code = str(plant_doc.production_plant_id)
                 else:
-                    # Fallback: extract from name
                     plant_mapping = {
                         'Mix': '1',
                         'Dry': '2', 
@@ -299,7 +295,6 @@ class BatchAMB(Document):
                             plant_code = code
                             break
             except Exception:
-                # Use fallback mapping based on the plant name
                 plant_mapping = {
                     'Mix': '1',
                     'Dry': '2', 
@@ -312,10 +307,8 @@ class BatchAMB(Document):
                         plant_code = code
                         break
         
-        # Generate base golden number
         base_golden_number = f"{product_code}{consecutive}{year}{plant_code}"
         
-        # Set the golden number and related fields
         self.custom_golden_number = base_golden_number
         self.custom_generated_batch_name = base_golden_number
         self.title = base_golden_number
@@ -359,13 +352,11 @@ class BatchAMB(Document):
         """Notify stakeholders"""
         pass
     
-    # FIXED: Updated method to work with both work_order and work_order_ref
     def update_planned_qty_from_work_order(self):
-        """Update planned_qty from Work Order - FIXED VERSION"""
+        """Update planned_qty from Work Order"""
         try:
             work_order_name = None
             
-            # Check both possible field names
             if self.work_order_ref:
                 work_order_name = self.work_order_ref
             elif self.work_order:
@@ -380,6 +371,235 @@ class BatchAMB(Document):
             frappe.log_error(f"Error updating planned_qty from work order: {str(frappe.get_traceback())}")
             pass
         return False
+    
+    def update_processing_timestamps(self):
+        """Automatically update timestamps based on status changes"""
+        if hasattr(self, 'processing_status') and self.has_value_changed('processing_status'):
+            current_status = self.processing_status
+            
+            if current_status == "In Progress" and not self.actual_start:
+                self.actual_start = now_datetime()
+            
+            if current_status in ["Quality Check", "Completed"] and not self.actual_completion:
+                self.actual_completion = now_datetime()
+            
+            if current_status == "In Progress" and self.actual_completion:
+                self.actual_completion = None
+            
+            if current_status in ["Draft", "Cancelled"]:
+                if self.actual_start:
+                    self.actual_start = None
+                if self.actual_completion:
+                    self.actual_completion = None
+    
+    def update_work_order_processing_status(self):
+        """Sync processing status with linked Work Order"""
+        if hasattr(self, 'work_order_ref') and self.work_order_ref and hasattr(self, 'processing_status'):
+            try:
+                wo = frappe.get_doc('Work Order', self.work_order_ref)
+                status_map = {
+                    'Draft': 'Draft',
+                    'Scheduled': 'Not Started',
+                    'In Progress': 'In Process',
+                    'Quality Check': 'In Process',
+                    'Completed': 'Completed',
+                    'On Hold': 'On Hold',
+                    'Cancelled': 'Cancelled'
+                }
+                
+                wo_status = status_map.get(self.processing_status, wo.status)
+                if wo.status != wo_status:
+                    wo.db_set('status', wo_status)
+                    frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(f"Error updating Work Order status: {str(e)}")
+    
+    @frappe.whitelist()
+    def start_processing(self):
+        """Method to start processing"""
+        if self.processing_status in ["Draft", "Scheduled"]:
+            self.processing_status = "In Progress"
+            self.actual_start = now_datetime()
+            self.save()
+            frappe.msgprint(_("Processing started successfully"))
+            return True
+        frappe.msgprint(_("Cannot start processing from current status: {0}").format(self.processing_status))
+        return False
+    
+    @frappe.whitelist()
+    def pause_processing(self):
+        """Method to pause processing"""
+        if self.processing_status == "In Progress":
+            self.processing_status = "On Hold"
+            self.save()
+            frappe.msgprint(_("Processing paused"))
+            return True
+        frappe.msgprint(_("Cannot pause processing from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def resume_processing(self):
+        """Method to resume processing"""
+        if self.processing_status == "On Hold":
+            self.processing_status = "In Progress"
+            self.save()
+            frappe.msgprint(_("Processing resumed"))
+            return True
+        frappe.msgprint(_("Cannot resume processing from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def complete_processing(self):
+        """Method to complete processing (move to Quality Check)"""
+        if self.processing_status == "In Progress":
+            self.processing_status = "Quality Check"
+            self.actual_completion = now_datetime()
+            self.save()
+            frappe.msgprint(_("Processing completed, ready for quality check"))
+            return True
+        frappe.msgprint(_("Cannot complete processing from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def approve_quality(self):
+        """Method to approve quality check"""
+        if self.processing_status == "Quality Check":
+            self.processing_status = "Completed"
+            if hasattr(self, 'quality_status'):
+                self.quality_status = "Passed"
+            self.save()
+            frappe.msgprint(_("Quality check approved, batch completed"))
+            return True
+        frappe.msgprint(_("Cannot approve quality from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def reject_quality(self):
+        """Method to reject quality check"""
+        if self.processing_status == "Quality Check":
+            self.processing_status = "On Hold"
+            if hasattr(self, 'quality_status'):
+                self.quality_status = "Failed"
+            self.save()
+            frappe.msgprint(_("Quality check rejected, batch on hold"))
+            return True
+        frappe.msgprint(_("Cannot reject quality from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def cancel_processing(self):
+        """Method to cancel processing"""
+        if self.processing_status not in ["Completed", "Cancelled"]:
+            self.processing_status = "Cancelled"
+            self.save()
+            frappe.msgprint(_("Processing cancelled"))
+            return True
+        frappe.msgprint(_("Cannot cancel processing from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def schedule_processing(self, start_date, start_time=None):
+        """Method to schedule processing"""
+        if self.processing_status == "Draft":
+            self.processing_status = "Scheduled"
+            self.scheduled_start_date = start_date
+            if start_time:
+                self.scheduled_start_time = start_time
+            self.save()
+            frappe.msgprint(_("Processing scheduled for {0}").format(start_date))
+            return True
+        frappe.msgprint(_("Cannot schedule processing from current status"))
+        return False
+    
+    @frappe.whitelist()
+    def get_processing_timeline(self):
+        """Get processing timeline for reporting"""
+        timeline = []
+        
+        if self.actual_start:
+            timeline.append({
+                'event': 'Processing Started',
+                'timestamp': self.actual_start,
+                'status': 'In Progress'
+            })
+        
+        if self.actual_completion:
+            timeline.append({
+                'event': 'Processing Completed',
+                'timestamp': self.actual_completion,
+                'status': 'Quality Check'
+            })
+        
+        try:
+            from frappe.desk.form.load import get_versions
+            versions = get_versions(self.doctype, self.name)
+            
+            for version in versions:
+                data = version.get('data')
+                if data and 'processing_status' in data:
+                    timeline.append({
+                        'event': f'Status changed to {data["processing_status"]}',
+                        'timestamp': version.get('creation'),
+                        'status': data['processing_status']
+                    })
+        except:
+            pass
+        
+        timeline.sort(key=lambda x: x['timestamp'] if x['timestamp'] else '')
+        
+        return timeline
+    
+    @frappe.whitelist()
+    def get_processing_metrics(self):
+        """Get processing metrics for analytics"""
+        metrics = {
+            'planned_quantity': self.planned_qty if hasattr(self, 'planned_qty') else 0,
+            'processed_quantity': self.processed_quantity if hasattr(self, 'processed_quantity') else 0,
+            'yield_percentage': self.yield_percentage if hasattr(self, 'yield_percentage') else 0,
+            'processing_status': self.processing_status if hasattr(self, 'processing_status') else 'Draft',
+            'quality_status': self.quality_status if hasattr(self, 'quality_status') else 'Pending',
+            'schedule_adherence': self.calculate_schedule_adherence(),
+            'efficiency': self.calculate_efficiency()
+        }
+        
+        return metrics
+    
+    def calculate_schedule_adherence(self):
+        """Calculate how well processing adhered to schedule"""
+        if not self.scheduled_start_date or not self.actual_start:
+            return 0
+        
+        from frappe.utils import getdate
+        
+        scheduled = getdate(self.scheduled_start_date)
+        actual = getdate(self.actual_start)
+        
+        if scheduled == actual:
+            return 100
+        elif actual > scheduled:
+            days_late = (actual - scheduled).days
+            return max(0, 100 - (days_late * 10))
+        else:
+            days_early = (scheduled - actual).days
+            return min(100 + (days_early * 5), 120)
+    
+    def calculate_efficiency(self):
+        """Calculate processing efficiency"""
+        if not self.actual_start or not self.actual_completion:
+            return 0
+        
+        from frappe.utils import get_datetime
+        
+        start = get_datetime(self.actual_start)
+        end = get_datetime(self.actual_completion)
+        
+        processing_time = (end - start).total_seconds() / 3600
+        
+        if hasattr(self, 'processed_quantity') and self.processed_quantity and processing_time > 0:
+            efficiency = (flt(self.processed_quantity) / processing_time) * 100
+            return min(efficiency, 200)
+        
+        return 0
 
 
 # ==================== MANUFACTURING BUTTON METHODS ====================
@@ -393,15 +613,12 @@ def create_bom_with_wizard(batch_name, options=None):
         if not batch.item_to_manufacture:
             return {"success": False, "message": "No item to manufacture specified"}
         
-        # Parse options
         if options and isinstance(options, str):
             options = json.loads(options)
         options = options or {}
         
-        # FIXED: Use planned_qty with fallback
         bom_quantity = batch.planned_qty or batch.batch_quantity or 1
         
-        # Create BOM
         bom_data = {
             "item": batch.item_to_manufacture,
             "quantity": 18000,
@@ -415,10 +632,8 @@ def create_bom_with_wizard(batch_name, options=None):
         bom = frappe.new_doc("BOM")
         bom.update(bom_data)
         
-        # Add items based on options
         idx = 1
         
-        # Add packaging if selected
         if options.get('include_packaging') and batch.primary_packaging:
             bom.append('items', {
                 'item_code': batch.primary_packaging,
@@ -427,7 +642,6 @@ def create_bom_with_wizard(batch_name, options=None):
             })
             idx += 1
         
-        # Add raw materials placeholder - FIXED: Use bom_quantity
         bom.append('items', {
             'item_code': 'RAW-MATERIAL-PLACEHOLDER',
             'qty': bom_quantity,
@@ -436,7 +650,6 @@ def create_bom_with_wizard(batch_name, options=None):
         
         bom.insert()
         
-        # Link BOM to batch
         batch.bom_template = bom.name
         batch.save()
         
@@ -465,7 +678,6 @@ def calculate_material_requirements(batch_name):
             "total_cost": 0
         }
         
-        # Packaging materials
         if batch.primary_packaging:
             materials["packaging"].append({
                 "item": batch.primary_packaging,
@@ -497,7 +709,6 @@ def create_work_order_from_batch(batch_name):
         
         wo.insert()
         
-        # Link back to batch
         batch.work_order_ref = wo.name
         batch.save()
         
@@ -520,7 +731,6 @@ def assign_golden_number_to_batch(batch_name):
         if not batch.custom_golden_number:
             import random
             import string
-            # Generate a golden number (you can customize this logic)
             golden_number = ''.join(random.choices(string.digits, k=10))
             batch.custom_golden_number = golden_number
             batch.save()
@@ -576,14 +786,12 @@ def calculate_batch_cost(batch_name):
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
         
-        # Simple cost calculation - you can enhance this with actual BOM costs
         material_cost = batch.material_cost or 0
         labor_cost = batch.labor_cost or 0
         overhead_cost = batch.overhead_cost or 0
         
         total_batch_cost = material_cost + labor_cost + overhead_cost
         
-        # Calculate cost per unit
         batch_quantity = batch.batch_quantity or 1
         cost_per_unit = total_batch_cost / batch_quantity if batch_quantity > 0 else 0
         
@@ -606,7 +814,6 @@ def duplicate_batch(source_name):
         source_batch = frappe.get_doc("Batch AMB", source_name)
         new_batch = frappe.copy_doc(source_batch)
         
-        # Clear references that shouldn't be duplicated
         new_batch.work_order_ref = None
         new_batch.stock_entry_reference = None
         new_batch.lote_amb_reference = None
@@ -620,9 +827,6 @@ def duplicate_batch(source_name):
     except Exception as e:
         frappe.log_error(f"Batch Duplication Error: {str(e)}")
         frappe.throw(f"Error duplicating batch: {str(e)}")
-
-
-# ==================== BOM CREATION METHODS ====================
 
 @frappe.whitelist()
 def check_bom_exists(batch_name):
@@ -642,9 +846,6 @@ def check_bom_exists(batch_name):
     
     return {'exists': False}
 
-
-# ==================== OTHER WHITELISTED METHODS ====================
-
 @frappe.whitelist()
 def get_work_order_details(work_order):
     """Get work order details"""
@@ -654,7 +855,6 @@ def get_work_order_details(work_order):
         'planned_qty': wo.qty,
         'company': wo.company
     }
-
 
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
@@ -750,14 +950,11 @@ def get_packaging_from_sales_order(batch_name):
     try:
         batch = frappe.get_doc('Batch AMB', batch_name)
         
-        # Try multiple methods to find sales order
         sales_order = None
         
-        # Method 1: Check sales_order_related field (auto-fetched from work_order_ref)
         if batch.sales_order_related:
             sales_order = batch.sales_order_related
         
-        # Method 2: Get from work_order_ref.sales_order manually
         if not sales_order and batch.work_order_ref:
             try:
                 wo = frappe.get_doc('Work Order', batch.work_order_ref)
@@ -766,7 +963,6 @@ def get_packaging_from_sales_order(batch_name):
             except Exception as e:
                 frappe.log_error(f"Error fetching WO sales order: {str(e)}")
         
-        # Method 3: Search for Work Orders linked to this batch's item
         if not sales_order and batch.item_to_manufacture:
             try:
                 wo_list = frappe.get_all('Work Order',
@@ -795,14 +991,11 @@ def get_packaging_from_sales_order(batch_name):
         
         so = frappe.get_doc('Sales Order', sales_order)
         
-        # Smart mapping from text to Item Code
         primary_item = map_packaging_text_to_item(so.custom_tipo_empaque)
         secondary_item = map_packaging_text_to_item(so.empaque_secundario) if so.empaque_secundario else None
         
-        # Extract net weight (handle different formats: "5 Kg", "220", etc.)
         net_weight = parse_weight_from_text(so.custom_peso_neto) if so.custom_peso_neto else 220
         
-        # Calculate package count
         total_weight = batch.total_net_weight or batch.total_quantity or 1000
         packages_count = int(total_weight / net_weight) if net_weight > 0 else 1
         
@@ -827,7 +1020,6 @@ def get_packaging_from_sales_order(batch_name):
             'message': f'Failed to fetch packaging: {str(e)}'
         }
 
-
 def map_packaging_text_to_item(packaging_text):
     """Smart mapping from free text to Item Code"""
     if not packaging_text:
@@ -835,17 +1027,13 @@ def map_packaging_text_to_item(packaging_text):
     
     text_lower = packaging_text.lower()
     
-    # Dictionary of keywords → Item Codes
     PACKAGING_MAP = {
-        # Barrels
         '220l': 'E001',
         '220 l': 'E001',
         'barrel blue': 'E001',
         'barrel 220': 'E001',
         'polyethylene barrel': 'E002',
         'reused barrel': 'E002',
-        
-        # Drums
         '25kg': 'E003',
         '25 kg': 'E003',
         '25kg drum': 'E003',
@@ -854,14 +1042,10 @@ def map_packaging_text_to_item(packaging_text):
         '10 kg': 'E004',
         '10kg drum': 'E004',
         'drum 10': 'E004',
-        
-        # Jugs
         '20l': 'E005',
         '20 l': 'E005',
         'jug': 'E005',
         'white jug': 'E005',
-        
-        # Pallets
         'tarima': 'E006',
         'pallet 44': 'E006',
         'pino real': 'E006',
@@ -869,8 +1053,6 @@ def map_packaging_text_to_item(packaging_text):
         'euro': 'E007',
         'reused pallet': 'E008',
         '44x44': 'E008',
-        
-        # Bags
         'bolsa': 'E009',
         'poly bag': 'E009',
         'polietileno': 'E009',
@@ -878,12 +1060,10 @@ def map_packaging_text_to_item(packaging_text):
         'bag': 'E009'
     }
     
-    # Try exact keyword matching
     for keyword, item_code in PACKAGING_MAP.items():
         if keyword in text_lower:
             return item_code
     
-    # Fuzzy search in Item master
     items = frappe.get_all('Item',
         filters={
             'item_group': ['in', ['FG Packaging Materials', 'SFG Packaging Materials', 'Raw Materials']],
@@ -897,9 +1077,7 @@ def map_packaging_text_to_item(packaging_text):
     if items:
         return items[0].name
     
-    # Default fallback
-    return 'E001'  # 220L Barrel as default
-
+    return 'E001'
 
 def parse_weight_from_text(weight_text):
     """Parse weight from text like '5 Kg', '220', '10.5 kg'"""
@@ -907,7 +1085,6 @@ def parse_weight_from_text(weight_text):
         return 0
     
     import re
-    # Extract numbers from text
     numbers = re.findall(r'\d+\.?\d*', str(weight_text))
     
     if numbers:
@@ -923,14 +1100,11 @@ def generate_batch_code(parent_batch=None, batch_level=None, work_order=None):
         import string
         
         if batch_level == '1':
-            # Level 1 - Root batch
             code = f"BATCH-{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}"
         elif batch_level == '2' and parent_batch:
-            # Level 2 - Child of level 1
             parent_code = frappe.db.get_value("Batch AMB", parent_batch, "custom_generated_batch_name") or "PARENT"
             code = f"{parent_code}-SUB"
         elif batch_level == '3' and parent_batch:
-            # Level 3 - Container level
             parent_code = frappe.db.get_value("Batch AMB", parent_batch, "custom_generated_batch_name") or "PARENT"
             code = f"{parent_code}-CONT"
         else:
