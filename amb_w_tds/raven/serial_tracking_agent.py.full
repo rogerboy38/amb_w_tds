@@ -1,0 +1,598 @@
+"""
+Raven Agent for ERPNext Serial Tracking with Hierarchy Integration
+"""
+
+import frappe
+import re
+import asyncio
+from typing import Dict, List, Any, Optional
+import json
+
+# Import the agents SDK that Raven uses
+try:
+    from agents import Agent, Runner
+    # function_tool is a decorator, import it when needed
+    HAS_AGENTS_SDK = True
+except ImportError as e:
+    HAS_AGENTS_SDK = False
+    
+    # Create simple fallback classes
+    class Agent:
+        def __init__(self, name=None, instructions=None, tools=None):
+            self.name = name
+            self.instructions = instructions
+            self.tools = tools or []
+    
+    class Runner:
+        @staticmethod
+        async def run(agent, input_text):
+            return {"output": "Agent SDK not available"}
+
+class SerialTrackingAgent:
+    """AI Agent for managing serial tracking with 2-level hierarchy"""
+    
+    def __init__(self):
+        self.name = "serial_tracking_agent"
+        self.description = "Manages ERPNext serial tracking with Batch AMB and Container Barrels hierarchy"
+        self.version = "1.0.0"
+        self.HAS_AGENTS_SDK = HAS_AGENTS_SDK
+        
+        # Define agent capabilities
+        self.capabilities = [
+            "configure_serial_tracking",
+            "generate_serial_numbers", 
+            "validate_compliance",
+            "monitor_performance",
+            "resolve_issues"
+        ]
+        
+        # Default configuration
+        self.config = {
+            "debug_mode": True,
+            "auto_fix_issues": False,
+            "compliance_strict": True,
+            "default_series_format": "{item_code}.####"
+        }
+        
+        # Create the agent if we have the SDK
+        if HAS_AGENTS_SDK:
+            try:
+                self.agent = self._create_agent()
+                frappe.logger().info("✅ Created serial tracking agent with SDK")
+            except Exception as e:
+                frappe.logger().error(f"Failed to create agent with SDK: {str(e)}")
+                self.agent = None
+        else:
+            self.agent = None
+            frappe.logger().warning("⚠️ Agents SDK not available, using manual processing")
+    
+    def _create_agent(self):
+        """Create the agents SDK agent"""
+        from agents import function_tool
+        
+        instructions = """
+        You are a Serial Tracking Agent for ERPNext pharmaceutical batch management.
+        You manage serial number generation, validation, and compliance tracking.
+        
+        Key capabilities:
+        1. Enable serial tracking for items
+        2. Generate serial numbers in format: GOLDENNUMBER-SEQUENCE (e.g., 0219074251-0001)
+        3. Validate FDA compliance and traceability
+        4. Monitor system health and performance
+        5. Fix common configuration issues
+        
+        Always validate golden numbers (must be 10 digits).
+        Always maintain complete traceability from serial to batch.
+        """
+        
+        tools = [
+            function_tool(self.enable_serial_tracking),
+            function_tool(self.generate_serial_numbers),
+            function_tool(self.validate_serial_compliance),
+            function_tool(self.check_configuration_health),
+        ]
+        
+        return Agent(
+            name=self.name,
+            instructions=instructions,
+            tools=tools
+        )
+    
+    async def process(self, message: str, **kwargs) -> Dict[str, Any]:
+        """Main processing method called by Raven"""
+        
+        # If we have the agents SDK, use it
+        if HAS_AGENTS_SDK and self.agent:
+            try:
+                result = await Runner.run(self.agent, message)
+                return {
+                    "success": True,
+                    "message": result.get("output", "Processed successfully"),
+                    "raw_result": result
+                }
+            except Exception as e:
+                frappe.log_error(f"Agent SDK processing failed: {str(e)}")
+                # Fall back to manual processing
+        
+        # Manual processing based on intent
+        intent = self._parse_intent(message)
+        
+        if intent == "configure":
+            return await self.handle_configuration(message)
+        elif intent == "generate":
+            return await self.handle_generation(message)
+        elif intent == "validate":
+            return await self.handle_validation(message)
+        elif intent == "report":
+            return await self.handle_reporting(message)
+        elif intent == "help":
+            return await self.handle_help()
+        else:
+            return {
+                "success": False,
+                "error": f"Unknown intent: {message}",
+                "suggestions": [
+                    "Try: 'Enable serial tracking for item 0219'",
+                    "Try: 'Generate serial numbers for batch 0219074251'",
+                    "Try: 'Validate compliance for serial 0219074251-0001'"
+                ]
+            }
+    
+    async def handle_configuration(self, message: str) -> Dict[str, Any]:
+        """Handle configuration requests"""
+        
+        # Extract item code from message
+        item_match = re.search(r'item\s+(\w+)', message, re.IGNORECASE)
+        
+        if "enable" in message.lower() and item_match:
+            item_code = item_match.group(1)
+            return await self.enable_serial_tracking(item_code)
+        
+        elif "check configuration" in message.lower():
+            return await self.check_configuration_health()
+        
+        else:
+            return {
+                "success": False,
+                "error": "Could not understand configuration request",
+                "examples": [
+                    "Enable serial tracking for item 0219",
+                    "Check serial tracking configuration"
+                ]
+            }
+    
+    async def handle_generation(self, message: str) -> Dict[str, Any]:
+        """Handle serial number generation requests"""
+        
+        # Extract parameters
+        batch_match = re.search(r'batch\s+(\d{10}(?:-\d{1,2})?)', message)
+        qty_match = re.search(r'(\d+)\s+serials?', message)
+        item_match = re.search(r'item\s+(\w+)', message, re.IGNORECASE)
+        
+        if batch_match:
+            batch_name = batch_match.group(1)
+            quantity = int(qty_match.group(1)) if qty_match else 10
+            item_code = item_match.group(1) if item_match else "0219"
+            
+            return await self.generate_serial_numbers(batch_name, quantity, item_code)
+        
+        elif "for stock entry" in message.lower():
+            se_match = re.search(r'STE-\d{4}-\d+', message)
+            if se_match:
+                return await self.generate_for_stock_entry(se_match.group(0))
+        
+        return {
+            "success": False,
+            "error": "Could not understand generation request",
+            "examples": [
+                "Generate 100 serial numbers for batch 0219074251-1",
+                "Create serials for stock entry STE-2025-00123"
+            ]
+        }
+    
+    async def handle_validation(self, message: str) -> Dict[str, Any]:
+        """Handle validation and compliance requests"""
+        
+        serial_match = re.search(r'serial\s+([\w\-]+)', message, re.IGNORECASE)
+        
+        if serial_match:
+            serial_number = serial_match.group(1)
+            return await self.validate_serial_compliance(serial_number)
+        
+        elif "compliance report" in message.lower():
+            return await self.generate_compliance_report()
+        
+        return {
+            "success": False,
+            "error": "Could not understand validation request",
+            "examples": [
+                "Validate serial number 0219074251-0001",
+                "Generate compliance report for last week"
+            ]
+        }
+    
+    async def handle_reporting(self, message: str) -> Dict[str, Any]:
+        """Handle reporting requests"""
+        
+        if "performance" in message.lower():
+            return await self.get_performance_metrics()
+        
+        elif "issues" in message.lower():
+            return await self.get_system_issues()
+        
+        return {
+            "success": False,
+            "error": "Could not understand reporting request",
+            "examples": [
+                "Show serial tracking performance",
+                "List current system issues"
+            ]
+        }
+    
+    async def handle_help(self) -> Dict[str, Any]:
+        """Provide help information"""
+        
+        return {
+            "success": True,
+            "response": "Serial Tracking Agent Help",
+            "capabilities": self.capabilities,
+            "examples": [
+                "Enable serial tracking for item 0219",
+                "Generate 50 serial numbers for batch 0219074251-1",
+                "Validate compliance for serial 0219074251-0001",
+                "Check system configuration health",
+                "Generate compliance report"
+            ],
+            "config": self.config
+        }
+    
+    # === Core Agent Methods ===
+    
+    async def enable_serial_tracking(self, item_code: str) -> Dict[str, Any]:
+        """Enable serial tracking for an item"""
+        
+        try:
+            if not frappe.db.exists("Item", item_code):
+                return {
+                    "success": False,
+                    "error": f"Item {item_code} does not exist"
+                }
+            
+            item = frappe.get_doc("Item", item_code)
+            item.has_serial_no = 1
+            
+            # Set default series format
+            series_format = self.config["default_series_format"].format(item_code=item_code)
+            item.serial_no_series = series_format
+            
+            item.save()
+            frappe.db.commit()
+            
+            # Add custom fields if needed
+            await self._ensure_custom_fields()
+            
+            return {
+                "success": True,
+                "message": f"✅ Enabled serial tracking for {item_code}",
+                "details": {
+                    "item_code": item_code,
+                    "serial_no_series": series_format,
+                    "has_serial_no": True
+                }
+            }
+            
+        except Exception as e:
+            frappe.log_error(f"Serial tracking enable failed: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Failed to enable serial tracking: {str(e)}"
+            }
+    
+    async def generate_serial_numbers(self, batch_name: str, quantity: int, 
+                                     item_code: str = "0219") -> Dict[str, Any]:
+        """Generate serial numbers for a batch"""
+        
+        try:
+            # Extract golden number
+            golden_number = self._extract_golden_number(batch_name)
+            if not golden_number:
+                return {
+                    "success": False,
+                    "error": f"Could not extract golden number from {batch_name}"
+                }
+            
+            # Check if Batch AMB exists
+            batch_exists = frappe.db.exists("Batch AMB", {"golden_number": golden_number})
+            if not batch_exists:
+                return {
+                    "success": False,
+                    "error": f"Batch AMB with golden number {golden_number} not found",
+                    "suggestion": "Create the Batch AMB first"
+                }
+            
+            # Generate serial numbers
+            serials = []
+            for i in range(quantity):
+                serial_no = f"{golden_number}-{str(i+1).zfill(4)}"
+                serials.append(serial_no)
+                
+                # Create Serial No record
+                await self._create_serial_record(
+                    serial_no=serial_no,
+                    item_code=item_code,
+                    batch_name=batch_name,
+                    golden_number=golden_number
+                )
+            
+            return {
+                "success": True,
+                "message": f"✅ Generated {quantity} serial numbers for {batch_name}",
+                "serials": serials[:10],  # Show first 10
+                "total": len(serials),
+                "format": f"{golden_number}-XXXX",
+                "next_steps": [
+                    "Use these serials in stock entries",
+                    "Validate compliance using: validate serial <serial_number>"
+                ]
+            }
+            
+        except Exception as e:
+            frappe.log_error(f"Serial generation failed: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Serial generation failed: {str(e)}"
+            }
+    
+    async def generate_for_stock_entry(self, stock_entry_name: str) -> Dict[str, Any]:
+        """Generate serial numbers for a stock entry"""
+        
+        try:
+            if not frappe.db.exists("Stock Entry", stock_entry_name):
+                return {
+                    "success": False,
+                    "error": f"Stock Entry {stock_entry_name} not found"
+                }
+            
+            stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+            
+            generated_serials = []
+            for item in stock_entry.items:
+                if item.get('has_serial_no') and not item.get('serial_no'):
+                    batch_no = item.get('batch_no')
+                    qty = int(item.get('qty', 0))
+                    
+                    if qty > 0 and batch_no:
+                        # Generate serials for this item
+                        result = await self.generate_serial_numbers(
+                            batch_name=batch_no,
+                            quantity=qty,
+                            item_code=item.item_code
+                        )
+                        
+                        if result.get('success'):
+                            generated_serials.extend(result.get('serials', []))
+                            
+                            # Update stock entry item
+                            item.serial_no = "\n".join(result.get('serials', []))
+            
+            if generated_serials:
+                stock_entry.save()
+                frappe.db.commit()
+            
+            return {
+                "success": True,
+                "message": f"✅ Generated {len(generated_serials)} serials for {stock_entry_name}",
+                "generated_serials": len(generated_serials),
+                "stock_entry": stock_entry_name,
+                "status": stock_entry.docstatus
+            }
+            
+        except Exception as e:
+            frappe.log_error(f"Stock entry serial generation failed: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Failed to generate serials for stock entry: {str(e)}"
+            }
+    
+    async def validate_serial_compliance(self, serial_number: str) -> Dict[str, Any]:
+        """Validate serial number compliance"""
+        
+        try:
+            if not frappe.db.exists("Serial No", serial_number):
+                return {
+                    "success": False,
+                    "error": f"Serial number {serial_number} not found"
+                }
+            
+            serial_doc = frappe.get_doc("Serial No", serial_number)
+            
+            # Check format
+            format_valid = self._validate_serial_format(serial_number)
+            
+            # Check golden number
+            golden_number = self._extract_golden_number(serial_number)
+            golden_valid = len(golden_number) == 10 if golden_number else False
+            
+            # Check links
+            has_batch_link = bool(serial_doc.batch_no)
+            has_golden_field = bool(serial_doc.get('custom_golden_number'))
+            
+            compliance = {
+                "serial_number": serial_number,
+                "format_valid": format_valid,
+                "golden_number": golden_number,
+                "golden_valid": golden_valid,
+                "has_batch_link": has_batch_link,
+                "has_golden_field": has_golden_field,
+                "item_code": serial_doc.item_code,
+                "status": serial_doc.status,
+                "compliant": all([format_valid, golden_valid, has_batch_link])
+            }
+            
+            if not compliance["compliant"]:
+                compliance["issues"] = []
+                if not format_valid:
+                    compliance["issues"].append("Invalid serial number format")
+                if not golden_valid:
+                    compliance["issues"].append("Invalid golden number format")
+                if not has_batch_link:
+                    compliance["issues"].append("Not linked to a batch")
+            
+            return {
+                "success": True,
+                "compliance_check": compliance,
+                "message": "✅ Compliant" if compliance["compliant"] else "⚠️ Non-compliant",
+                "recommendations": self._get_compliance_recommendations(compliance)
+            }
+            
+        except Exception as e:
+            frappe.log_error(f"Compliance validation failed: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Compliance validation failed: {str(e)}"
+            }
+    
+    async def check_configuration_health(self) -> Dict[str, Any]:
+        """Check system configuration health"""
+        
+        try:
+            # Check custom fields
+            custom_fields = await self._check_custom_fields()
+            
+            # Check items with serial tracking
+            items_with_serial = frappe.db.sql("""
+                SELECT COUNT(*) as count 
+                FROM `tabItem` 
+                WHERE has_serial_no = 1
+            """, as_dict=True)[0]
+            
+            # Check serial numbers created
+            serials_count = frappe.db.sql("""
+                SELECT COUNT(*) as count 
+                FROM `tabSerial No`
+            """, as_dict=True)[0]
+            
+            return {
+                "success": True,
+                "health_check": {
+                    "custom_fields_configured": custom_fields.get("configured", False),
+                    "missing_fields": custom_fields.get("missing", []),
+                    "items_with_serial_tracking": items_with_serial.get("count", 0),
+                    "total_serial_numbers": serials_count.get("count", 0),
+                    "status": "healthy" if custom_fields.get("configured", False) else "needs_configuration"
+                },
+                "recommendations": custom_fields.get("recommendations", [])
+            }
+            
+        except Exception as e:
+            frappe.log_error(f"Health check failed: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Health check failed: {str(e)}"
+            }
+    
+    # === Helper Methods ===
+    
+    def _parse_intent(self, message: str) -> str:
+        """Parse user intent from message"""
+        message_lower = message.lower()
+        
+        if any(word in message_lower for word in ["enable", "configure", "setup", "turn on"]):
+            return "configure"
+        elif any(word in message_lower for word in ["generate", "create", "make", "produce"]):
+            return "generate"
+        elif any(word in message_lower for word in ["validate", "check", "verify", "compliance"]):
+            return "validate"
+        elif any(word in message_lower for word in ["report", "show", "list", "performance", "issues"]):
+            return "report"
+        elif any(word in message_lower for word in ["help", "what can", "how to", "support"]):
+            return "help"
+        else:
+            return "unknown"
+    
+    def _extract_golden_number(self, text: str) -> Optional[str]:
+        """Extract 10-digit golden number from text"""
+        match = re.search(r'(\d{10})', text)
+        return match.group(1) if match else None
+    
+    def _validate_serial_format(self, serial: str) -> bool:
+        """Validate serial number format"""
+        # Accepts formats like: 0219074251-0001 or 0219074251-1-0001
+        pattern = r'^\d{10}(?:-\d{1,2})?-\d{4}$'
+        return bool(re.match(pattern, serial))
+    
+    async def _create_serial_record(self, serial_no: str, item_code: str, 
+                                   batch_name: str, golden_number: str):
+        """Create Serial No record"""
+        try:
+            if not frappe.db.exists("Serial No", serial_no):
+                serial_doc = frappe.new_doc("Serial No")
+                serial_doc.name = serial_no
+                serial_doc.item_code = item_code
+                serial_doc.batch_no = batch_name
+                
+                # Add custom golden number if field exists
+                if frappe.db.exists("Custom Field", {"fieldname": "custom_golden_number", "dt": "Serial No"}):
+                    serial_doc.custom_golden_number = golden_number
+                
+                serial_doc.insert(ignore_permissions=True)
+                
+        except Exception as e:
+            frappe.log_error(f"Failed to create Serial No {serial_no}: {str(e)}")
+    
+    async def _ensure_custom_fields(self):
+        """Ensure custom fields exist on Serial No"""
+        required_fields = [
+            {
+                "fieldname": "custom_golden_number",
+                "fieldtype": "Data",
+                "label": "Golden Number",
+                "description": "FDA 10-digit identifier"
+            }
+        ]
+        
+        for field in required_fields:
+            if not frappe.db.exists("Custom Field", {"fieldname": field["fieldname"], "dt": "Serial No"}):
+                try:
+                    frappe.get_doc({
+                        "doctype": "Custom Field",
+                        "dt": "Serial No",
+                        **field
+                    }).insert()
+                except:
+                    pass
+    
+    async def _check_custom_fields(self) -> Dict[str, Any]:
+        """Check if required custom fields exist"""
+        required = ["custom_golden_number"]
+        missing = []
+        
+        for fieldname in required:
+            if not frappe.db.exists("Custom Field", {"fieldname": fieldname, "dt": "Serial No"}):
+                missing.append(fieldname)
+        
+        return {
+            "configured": len(missing) == 0,
+            "missing": missing,
+            "recommendations": [
+                f"Add custom field: {field}" for field in missing
+            ] if missing else []
+        }
+    
+    def _get_compliance_recommendations(self, compliance: Dict) -> List[str]:
+        """Get recommendations for compliance issues"""
+        recs = []
+        
+        if not compliance.get("format_valid"):
+            recs.append("Serial number format should be: GOLDENNUMBER-SEQUENCE (e.g., 0219074251-0001)")
+        
+        if not compliance.get("golden_valid"):
+            recs.append("Golden number must be 10 digits")
+        
+        if not compliance.get("has_batch_link"):
+            recs.append("Link serial number to a Batch AMB")
+        
+        if not compliance.get("has_golden_field"):
+            recs.append("Add custom_golden_number field to Serial No doctype")
+        
+        return recs if recs else ["All compliance requirements met"]

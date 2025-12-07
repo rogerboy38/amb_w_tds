@@ -1,0 +1,21 @@
+"""
+Raven agent configuration for amb_w_tds
+Proper Raven integration
+"""
+
+def get_agents():
+    """Register agents with Raven"""
+    try:
+        from amb_w_tds.raven.serial_tracking_agent_raven import SerialTrackingAgent
+        
+        return {
+            "serial_tracking": {
+                "class": SerialTrackingAgent,
+                "name": SerialTrackingAgent.agent_name,
+                "description": SerialTrackingAgent.agent_description,
+                "version": SerialTrackingAgent.agent_version
+            }
+        }
+    except ImportError as e:
+        print(f"Error importing SerialTrackingAgent: {e}")
+        return {}

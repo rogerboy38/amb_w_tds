@@ -5,3 +5,9 @@
 tags
 node_modules
 __pycache__
+# Specific backup files found
+amb_w_tds/hooks.py.backup*
+amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb*.backup*
+amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb(1).js
+amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb2.py
+amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.py.backup2

@@ -8,7 +8,9 @@ from frappe.utils import flt, nowdate, now_datetime, get_datetime, cstr
 import json
 from datetime import datetime
 
-class BatchAMB(Document):
+from frappe.utils.nestedset import NestedSet
+
+class BatchAMB(NestedSet):
     """
     Batch AMB - Production Batch Management
     """
