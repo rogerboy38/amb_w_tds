@@ -1,0 +1,318 @@
+"""
+FINAL WORKING Agent API - Mystery Solved!
+3rd column = custom_batch_level field!
+"""
+
+import frappe
+from datetime import datetime
+from frappe.utils import now_datetime, getdate
+import re
+
+
+@frappe.whitelist()
+def test():
+    """Test endpoint"""
+    return {
+        "status": "success",
+        "message": "FINAL Agent - Mystery Solved: custom_batch_level",
+        "timestamp": datetime.now().isoformat(),
+        "site": frappe.local.site,
+        "version": "15.0-final-mystery-solved"
+    }
+
+
+@frappe.whitelist()
+def process(**kwargs):
+    """
+    FINAL batch creation - Uses correct custom_batch_level field
+    
+    UI Columns:
+    1. title
+    2. work_order_ref
+    3. custom_batch_level ← THIS IS IT!
+    4. custom_plant_code
+    5. production_plant
+    6. item_code
+    7. naming_series
+    8. custom_golden_number
+    9. custom_generated_batch_name
+    """
+    try:
+        # Get parameters
+        batch_id = kwargs.get('batch_id', '').strip()
+        work_order_ref = kwargs.get('work_order', kwargs.get('work_order_ref', '')).strip()
+        item_code = kwargs.get('item_code', kwargs.get('product_code', '0334009251')).strip()
+        quantity = int(kwargs.get('quantity', 0))
+        title = kwargs.get('title', '').strip()
+        
+        # THE CRITICAL FIELD: custom_batch_level (3rd column!)
+        custom_batch_level = kwargs.get('batch_level', kwargs.get('custom_batch_level', '1')).strip()
+        
+        # Generate batch ID if not provided
+        if not batch_id:
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            batch_id = f"BATCH-{timestamp}"
+        
+        # Title = batch_id if not provided
+        if not title:
+            title = batch_id
+        
+        # Validate
+        if quantity <= 0:
+            return error_response("quantity must be positive integer")
+        
+        print(f"🎯 FINAL Batch - Mystery Solved!")
+        print(f"   1. Title: {title}")
+        print(f"   2. Work Order Ref: {work_order_ref}")
+        print(f"   3. custom_batch_level: {custom_batch_level} ← 3RD COLUMN!")
+        
+        # Check if exists
+        existing = frappe.db.get_value('Batch AMB', {'batch_id': batch_id}, 'name')
+        if existing:
+            return error_response(f"Batch {batch_id} already exists")
+        
+        # ===== FINAL BATCH DATA =====
+        batch_data = {
+            'doctype': 'Batch AMB',
+            
+            # UI Column 1
+            'title': title,
+            
+            # UI Column 2
+            'work_order_ref': work_order_ref,
+            
+            # UI Column 3 - SOLVED!
+            'custom_batch_level': custom_batch_level,
+            
+            # UI Column 4
+            'custom_plant_code': kwargs.get('plant_code', '25'),
+            
+            # UI Column 5
+            'production_plant': kwargs.get('production_plant', 'Plant 25'),
+            
+            # UI Column 6
+            'item_code': item_code,
+            
+            # UI Column 7
+            'naming_series': kwargs.get('naming_series', 'LOTE-.YY.-.WW.-.####'),
+            
+            # UI Column 8
+            'custom_golden_number': kwargs.get('golden_number', ''),
+            
+            # UI Column 9
+            'custom_generated_batch_name': kwargs.get('generated_batch_name', ''),
+            
+            # Required fields
+            'batch_id': batch_id,
+            'quantity': quantity,
+            'status': 'Active',
+            'creation_source': 'FINAL Agent v15.0'
+        }
+        
+        # Auto-generate LOTE-0000X for custom_generated_batch_name
+        if not batch_data['custom_generated_batch_name'] and batch_id.startswith('LOTE-'):
+            try:
+                last_lote = frappe.db.sql("""
+                    SELECT custom_generated_batch_name 
+                    FROM `tabBatch AMB`
+                    WHERE custom_generated_batch_name LIKE 'LOTE-0%'
+                    ORDER BY CAST(SUBSTRING(custom_generated_batch_name, 6) AS UNSIGNED) DESC
+                    LIMIT 1
+                """)
+                
+                if last_lote and last_lote[0][0]:
+                    last_num = re.search(r'LOTE-0*(\d+)', last_lote[0][0])
+                    if last_num:
+                        next_num = int(last_num.group(1)) + 1
+                        batch_data['custom_generated_batch_name'] = f"LOTE-{next_num:05d}"
+                    else:
+                        batch_data['custom_generated_batch_name'] = "LOTE-00001"
+                else:
+                    batch_data['custom_generated_batch_name'] = "LOTE-00001"
+                    
+                print(f"   Generated: {batch_data['custom_generated_batch_name']}")
+            except:
+                batch_data['custom_generated_batch_name'] = batch_id
+        
+        # Set item_name
+        try:
+            item_name = frappe.db.get_value('Item', item_code, 'item_name')
+            if item_name:
+                batch_data['item_name'] = item_name
+        except:
+            pass
+        
+        print(f"📝 Using custom_batch_level for 3rd column")
+        
+        # Create the batch
+        batch_doc = frappe.get_doc(batch_data)
+        batch_doc.insert(ignore_permissions=True)
+        actual_name = batch_doc.name
+        frappe.db.commit()
+        
+        # Verify
+        saved_batch = frappe.get_doc('Batch AMB', actual_name)
+        
+        return {
+            "status": "success",
+            "message": "FINAL batch created - custom_batch_level set!",
+            "ui_columns": {
+                "column1_title": saved_batch.get('title'),
+                "column2_work_order_ref": saved_batch.get('work_order_ref'),
+                "column3_custom_batch_level": saved_batch.get('custom_batch_level'),
+                "column4_custom_plant_code": saved_batch.get('custom_plant_code'),
+                "column5_production_plant": saved_batch.get('production_plant'),
+                "column6_item_code": saved_batch.get('item_code')
+            },
+            "database": {
+                "document_name": actual_name,
+                "batch_id": batch_id
+            },
+            "mystery_solved": {
+                "field": "custom_batch_level",
+                "label": "Batch Level",
+                "column": "3rd column in UI",
+                "type": "Select field"
+            },
+            "timestamp": datetime.now().isoformat(),
+            "version": "15.0-final-mystery-solved"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"FINAL agent error: {str(e)}", "Agent API")
+        frappe.db.rollback()
+        return error_response(f"Error: {str(e)}")
+
+
+@frappe.whitelist()
+def fix_all_custom_batch_level():
+    """
+    Fix custom_batch_level for all existing batches
+    """
+    try:
+        batches = frappe.get_all('Batch AMB', 
+                               fields=['name', 'batch_id'],
+                               filters={'custom_batch_level': ['in', ['', None]]},
+                               limit=50)
+        
+        fixed = []
+        
+        for batch in batches:
+            batch_name = batch['name']
+            batch_id = batch.get('batch_id')
+            
+            doc = frappe.get_doc('Batch AMB', batch_name)
+            
+            # Determine batch level from batch_id pattern
+            batch_level = '1'  # Default
+            
+            if batch_id:
+                if 'LOTE' in batch_id:
+                    # LOTE batches: check for hierarchy indicators
+                    if '-C' in batch_id:
+                        batch_level = '2'  # Child
+                    elif re.search(r'LOTE-\d+-\d+-\d{4}$', batch_id):
+                        batch_level = '1'  # Parent
+                    else:
+                        batch_level = '1'
+                elif 'TEST' in batch_id or 'API' in batch_id:
+                    batch_level = '1'
+            
+            if not doc.custom_batch_level or doc.custom_batch_level != batch_level:
+                old_value = doc.custom_batch_level
+                doc.custom_batch_level = batch_level
+                doc.save(ignore_permissions=True)
+                fixed.append({
+                    'batch': batch_name,
+                    'batch_id': batch_id,
+                    'from': old_value,
+                    'to': batch_level
+                })
+        
+        frappe.db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Fixed custom_batch_level for {len(fixed)} batches",
+            "fixed_batches": fixed[:10],
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        frappe.db.rollback()
+        return error_response(f"Fix error: {str(e)}")
+
+
+@frappe.whitelist()
+def create_test_batches_with_levels():
+    """
+    Create test batches with different custom_batch_level values
+    """
+    test_batches = [
+        {
+            "batch_id": "TEST-LEVEL-1",
+            "title": "TEST-LEVEL-1",
+            "work_order": "TEST-WO-1",
+            "custom_batch_level": "1",
+            "quantity": 3
+        },
+        {
+            "batch_id": "TEST-LEVEL-2",
+            "title": "TEST-LEVEL-2",
+            "work_order": "TEST-WO-2",
+            "custom_batch_level": "2",
+            "quantity": 2
+        },
+        {
+            "batch_id": "TEST-LEVEL-3",
+            "title": "TEST-LEVEL-3",
+            "work_order": "TEST-WO-3",
+            "custom_batch_level": "3",
+            "quantity": 1
+        }
+    ]
+    
+    results = []
+    
+    for test in test_batches:
+        try:
+            result = process(
+                batch_id=test["batch_id"],
+                title=test["title"],
+                work_order=test["work_order"],
+                custom_batch_level=test["custom_batch_level"],
+                quantity=test["quantity"],
+                item_code="0334009251"
+            )
+            results.append({
+                "batch_id": test["batch_id"],
+                "custom_batch_level": test["custom_batch_level"],
+                "status": result.get("status", "error")
+            })
+        except Exception as e:
+            results.append({
+                "batch_id": test["batch_id"],
+                "error": str(e)
+            })
+    
+    return {
+        "status": "success",
+        "message": "Created test batches with different custom_batch_level",
+        "results": results,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+# ===== HELPER FUNCTIONS =====
+def error_response(message):
+    """Standard error response"""
+    return {
+        "status": "error",
+        "message": message,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+# Log initialization
+if __name__ != "__main__":
+    frappe.logger("agent_api").info(f"FINAL Agent v15.0 - custom_batch_level solved on {frappe.local.site}")

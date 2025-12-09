@@ -1,0 +1,64 @@
+--- agent.py
++++ agent.py.fixed
+@@ -88,21 +88,21 @@
+         
+         # Create batch data
+         batch_data = {
+             'doctype': 'Batch AMB',
+             'title': title,
+-            'batch_id': batch_id,
+-            'quantity': quantity,
+-            'status': 'Active',
++            'custom_golden_number': batch_id,
++            'processed_quantity': float(quantity),
++            'processing_status': 'Draft',
+             'work_order_ref': data.get('work_order', ''),
+             'custom_batch_level': data.get('custom_batch_level', '1'),
+             'custom_plant_code': data.get('plant_code', '25'),
+             'production_plant': data.get('production_plant', '1 (Mix)'),
+             'item_code': data.get('item_code', '0334009251')
+         }
+         
+         # Add optional fields
+         if data.get('golden_number'):
+-            batch_data['golden_number'] = data['golden_number']
++            batch_data['custom_golden_number'] = data['golden_number']
+         if data.get('parent_batch'):
+-            batch_data['parent_batch'] = data['parent_batch']
++            batch_data['parent_batch_amb'] = data['parent_batch']
+         
+         # Create document
+@@ -197,11 +197,8 @@
+                 data['work_order'] = f"MFG-WO-{consecutive}{year}"
+         
+         # If we still have errors, return them
+         if errors:
+             return {
+                 "status": "error",
+                 "message": "Migration validation failed",
+                 "errors": errors,
+                 "timestamp": datetime.now().isoformat()
+             }
+         
+-        # Add migration flag to data
+-        data['custom_is_migration'] = '1'
+-        data['custom_migration_source'] = 'FoxPro'
+-        data['custom_migration_timestamp'] = datetime.now().isoformat()
+-        
+         # Call the main process function
+         return process(**data)
+         
+@@ -274,11 +271,11 @@
+                                order_by='creation desc')
+         return {
+             "status": "success",
+             "batches": batches,
+             "count": len(batches),
+             "timestamp": datetime.now().isoformat()
+         }
+     except Exception as e:
+         return {
+             "status": "error",
+             "message": f"Error fetching batches: {str(e)}",
+             "timestamp": datetime.now().isoformat()
+         }

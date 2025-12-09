@@ -1,0 +1,100 @@
+"""
+Simple Agent API Redirector for backward compatibility
+"""
+
+import frappe
+from frappe import _
+import asyncio
+
+@frappe.whitelist()
+def process(**kwargs):
+    """
+    Redirect old API calls to new agent implementation
+    """
+    try:
+        # Try to import from new location
+        from amb_w_tds.raven.serial_tracking_agent_api import SerialTrackingAgentAPI
+        agent = SerialTrackingAgentAPI()
+        
+        # Prepare message
+        message = kwargs.get('message', '')
+        if not message:
+            if 'batch_name' in kwargs:
+                message = f"Process batch {kwargs['batch_name']}"
+            else:
+                message = "Process request"
+        
+        # Call async process
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(agent.process(message=message, **kwargs))
+            if isinstance(result, dict):
+                result['_redirected'] = True
+                result['_source'] = 'serial_tracking_agent_api'
+            return result
+        finally:
+            loop.close()
+            
+    except ImportError:
+        # Try fallback agent
+        try:
+            from amb_w_tds.raven.serial_tracking_agent import SerialTrackingAgent
+            agent = SerialTrackingAgent()
+            
+            message = kwargs.get('message', 'Process request')
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(agent.process(message=message, **kwargs))
+                if isinstance(result, dict):
+                    result['_redirected'] = True
+                    result['_source'] = 'serial_tracking_agent'
+                return result
+            finally:
+                loop.close()
+                
+        except ImportError as e:
+            frappe.log_error(
+                title="Agent API Not Found",
+                message=f"No agent implementation found. Error: {str(e)}"
+            )
+            return {
+                "status": "error",
+                "message": "Agent API implementation not found in raven module",
+                "error": str(e)
+            }
+    except Exception as e:
+        frappe.log_error(
+            title="Agent API Error",
+            message=f"Agent processing error: {str(e)}"
+        )
+        return {
+            "status": "error",
+            "message": f"Agent processing failed: {str(e)}"
+        }
+
+@frappe.whitelist()
+def generate_serial_numbers(batch_name=None, quantity=1, **kwargs):
+    """
+    Direct endpoint for serial number generation
+    """
+    kwargs['batch_name'] = batch_name
+    kwargs['quantity'] = quantity
+    kwargs['message'] = f"generate {quantity} serial numbers"
+    if batch_name:
+        kwargs['message'] += f" for batch {batch_name}"
+    
+    return process(**kwargs)
+
+@frappe.whitelist()
+def test():
+    """
+    Test endpoint for API connectivity
+    """
+    return {
+        "status": "success",
+        "message": "Agent API redirector is working",
+        "timestamp": frappe.utils.now_datetime().isoformat(),
+        "version": "1.0"
+    }

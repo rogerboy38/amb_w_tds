@@ -87,21 +87,7 @@ frappe.ui.form.on('Batch AMB', {
             fetch_work_order_data(frm);
         }
     },
-        // ADD THESE TWO EVENTS TO THE FIELD EVENTS SECTION:
-    
-    title: function(frm) {
-        // When title is set, update barrel serials
-        if (frm.doc.title && frm.doc.container_barrels) {
-            update_barrel_serials_from_title(frm);
-        }
-    },
-    
-    custom_generated_batch_name: function(frm) {
-        // When generated name is set, update barrel serials
-        if (frm.doc.custom_generated_batch_name && frm.doc.container_barrels) {
-            update_barrel_serials_from_title(frm);
-        }
-    },
+
     custom_batch_level: function(frm) {
         if (!frm.is_new()) {
             frappe.msgprint('Cannot change batch level of existing documents. Create a new document for different levels.');
@@ -177,11 +163,15 @@ frappe.ui.form.on('Batch AMB', {
         frm.refresh();
     }
 });
+
+// ==================== CHILD TABLE: Container Barrels ====================
+
 // ==================== CHILD TABLE: Container Barrels ====================
 
 frappe.ui.form.on('Container Barrels', {
     // Original functionality
     quantity: function(frm, cdt, cdn) {
+        // Recalculate totals when container quantity changes
         calculate_container_totals(frm);
     },
     
@@ -190,122 +180,95 @@ frappe.ui.form.on('Container Barrels', {
         // Set default values
         row.status = 'Active';
         
-        // BatchL2 enhancements
+        // BatchL2 enhancements - set values directly on row, not via frappe.model.set_value
         if (frm.doc.default_packaging_type) {
             row.packaging_type = frm.doc.default_packaging_type;
         }
         
-        // CRITICAL FIX: Set default weight values to 0 to avoid validation errors
-        row.gross_weight = 0;
-        row.tara_weight = 0;
-        row.net_weight = 0;
-        row.weight_validated = 0;
-        
-        // Generate serial number - use immediate generation with safety
-        if (frm.doc.title || frm.doc.custom_generated_batch_name) {
-            generate_barrel_serial_number_fixed(frm, row);
-        } else {
-            // Temporary placeholder if no title yet
-            const temp_id = frm.doc.container_barrels ? frm.doc.container_barrels.length : 1;
-            row.barrel_serial_number = `TEMP-${Date.now()}-${temp_id}`;
-        }
-        
-        frm.refresh_field('container_barrels');
+        // Generate serial number - do this AFTER adding to table
+        setTimeout(() => {
+            generate_barrel_serial_number_safe(frm, row);
+            frm.refresh_field('container_barrels');
+        }, 50);
     },
     
     container_barrels_remove: function(frm) {
+        // Recalculate totals when container is removed
         calculate_container_totals(frm);
         update_weight_totals(frm);
     },
 
-    // BatchL2 enhancements
+    // BatchL2 enhancements - handle barcode scan
     barcode_scan_input: function(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (row.barcode_scan_input) {
-            process_barcode_scan_fixed(frm, cdt, cdn, row.barcode_scan_input);
+            // Process immediately
+            process_barcode_scan_safe(frm, cdt, cdn, row.barcode_scan_input);
         }
     },
 
     gross_weight: function(frm, cdt, cdn) {
-        calculate_net_weight_fixed(frm, cdt, cdn);
-        update_weight_totals(frm);
+        // Use setTimeout to avoid validation loops
+        setTimeout(() => {
+            calculate_net_weight(frm, cdt, cdn);
+            update_weight_totals(frm);
+        }, 50);
     },
 
     tara_weight: function(frm, cdt, cdn) {
-        calculate_net_weight_fixed(frm, cdt, cdn);
-        update_weight_totals(frm);
+        setTimeout(() => {
+            calculate_net_weight(frm, cdt, cdn);
+            update_weight_totals(frm);
+        }, 50);
     },
 
     packaging_type: function(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (row.packaging_type) {
-            fetch_tara_weight_for_row_fixed(frm, cdt, cdn);
+            fetch_tara_weight_for_row_safe(frm, cdt, cdn);
         }
     }
 });
 
 // ==================== SAFER HELPER FUNCTIONS ====================
-function generate_barrel_serial_number_fixed(frm, row) {
-    // FIXED: Don't validate weight, just generate serial
+
+function generate_barrel_serial_number_safe(frm, row) {
+    // Simplified version without validation triggers
     try {
         const container_code = frm.doc.title || frm.doc.custom_generated_batch_name;
-        
         if (!container_code) {
-            // Use temporary serial if no code
-            row.barrel_serial_number = `TEMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            console.log('No container code available for serial generation');
             return;
         }
 
-        // Find highest existing sequence
+        // Find the highest existing sequence number
         let max_seq = 0;
         const barrels = frm.doc.container_barrels || [];
         
-        barrels.forEach(barrel => {
-            if (barrel.barrel_serial_number && barrel.barrel_serial_number.startsWith(container_code + '-C')) {
-                const parts = barrel.barrel_serial_number.split('-C');
-                if (parts.length > 1 && /^\d+$/.test(parts[1])) {
-                    const num = parseInt(parts[1], 10);
-                    if (num > max_seq) {
-                        max_seq = num;
+        for (const barrel of barrels) {
+            if (barrel.barrel_serial_number && barrel.barrel_serial_number.includes(container_code)) {
+                // Extract number from end of serial
+                const serial = barrel.barrel_serial_number;
+                const dash_index = serial.lastIndexOf('-');
+                if (dash_index > -1) {
+                    const num_str = serial.substring(dash_index + 1);
+                    if (/^\d+$/.test(num_str)) {
+                        const num = parseInt(num_str, 10);
+                        if (num > max_seq) {
+                            max_seq = num;
+                        }
                     }
                 }
             }
-        });
+        }
 
-        // Generate next number with C prefix (C001, C002, etc.)
+        // Generate next number
         const next_seq = max_seq + 1;
-        row.barrel_serial_number = `${container_code}-C${next_seq.toString().padStart(3, '0')}`;
+        row.barrel_serial_number = `${container_code}-${next_seq.toString().padStart(3, '0')}`;
         
     } catch (error) {
-        console.error('Error in generate_barrel_serial_number_fixed:', error);
-        // Fallback to timestamp-based serial
-        row.barrel_serial_number = `ERR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    }
-}
-
-// NEW FUNCTION: Update barrel serials when title changes
-function update_barrel_serials_from_title(frm) {
-    const prefix = frm.doc.title || frm.doc.custom_generated_batch_name;
-    if (!prefix || !frm.doc.container_barrels) return;
-    
-    let sequence = 1;
-    let updated = false;
-    
-    frm.doc.container_barrels.forEach(row => {
-        // Update only TEMP barrels or barrels without proper serials
-        if (!row.barrel_serial_number || row.barrel_serial_number.startsWith('TEMP-')) {
-            row.barrel_serial_number = `${prefix}-C${sequence.toString().padStart(3, '0')}`;
-            sequence++;
-            updated = true;
-        }
-    });
-    
-    if (updated) {
-        frm.refresh_field('container_barrels');
-        frappe.show_alert({
-            message: __('Barrel serial numbers updated from batch title'),
-            indicator: 'green'
-        });
+        console.error('Error generating barrel serial:', error);
+        // Don't throw error, just don't set serial
     }
 }
 
@@ -1107,11 +1070,11 @@ function validate_barrel_data(frm) {
         return false;
     }
 
-    // Check for duplicate serials (ignore TEMP serials)
+    // Check for duplicate serials
     const serials = [];
     const duplicates = [];
     frm.doc.container_barrels.forEach(row => {
-        if (row.barrel_serial_number && !row.barrel_serial_number.startsWith('TEMP-')) {
+        if (row.barrel_serial_number) {
             if (serials.includes(row.barrel_serial_number)) {
                 duplicates.push(row.barrel_serial_number);
             } else {
@@ -1127,6 +1090,7 @@ function validate_barrel_data(frm) {
 
     return true;
 }
+
 function validate_all_barrels(frm) {
     // Validate all barrels and show results
     let valid = 0;
@@ -1538,76 +1502,4 @@ $(document).ready(function() {
     add_announcement_styles();
     console.log('✅ Batch AMB Enhanced Script with Serial Tracking loaded');
 });
-
-// ==================== FIXED HELPER FUNCTIONS ====================
-
-function process_barcode_scan_fixed(frm, cdt, cdn, barcode) {
-    const row = locals[cdt][cdn];
-    if (!barcode || !barcode.trim()) return;
-    
-    barcode = barcode.trim().toUpperCase();
-    
-    // Validate format if not a temp code
-    if (!barcode.startsWith('TEMP-') && !validate_code39_format(barcode)) {
-        frappe.msgprint({
-            title: __('Invalid Barcode'),
-            message: __('Invalid CODE-39 format: {0}', [barcode]),
-            indicator: 'red'
-        });
-        row.barcode_scan_input = '';
-        frm.refresh_field('container_barrels');
-        return;
-    }
-    
-    // Set the barcode as serial number
-    row.barrel_serial_number = barcode;
-    row.scan_timestamp = frappe.datetime.now_datetime();
-    row.barcode_scan_input = '';
-    
-    frm.refresh_field('container_barrels');
-    
-    // Fetch tara weight if packaging type exists
-    if (row.packaging_type) {
-        fetch_tara_weight_for_row_fixed(frm, cdt, cdn);
-    }
-}
-
-function fetch_tara_weight_for_row_fixed(frm, cdt, cdn) {
-    const row = locals[cdt][cdn];
-    if (!row.packaging_type) return;
-    
-    frappe.call({
-        method: 'frappe.client.get_value',
-        args: {
-            doctype: 'Item',
-            filters: { name: row.packaging_type },
-            fieldname: 'weight_per_unit'
-        },
-        callback: function(r) {
-            if (r.message && r.message.weight_per_unit !== undefined) {
-                row.tara_weight = parseFloat(r.message.weight_per_unit) || 0;
-                calculate_net_weight_fixed(frm, cdt, cdn);
-                update_weight_totals(frm);
-                frm.refresh_field('container_barrels');
-            }
-        }
-    });
-}
-
-function calculate_net_weight_fixed(frm, cdt, cdn) {
-    const row = locals[cdt][cdn];
-    
-    const gross = parseFloat(row.gross_weight) || 0;
-    const tara = parseFloat(row.tara_weight) || 0;
-    const net_weight = gross - tara;
-    
-    row.net_weight = net_weight;
-    
-    // Only validate if gross weight > 0
-    if (gross > 0) {
-        row.weight_validated = (net_weight > 0 && net_weight < gross) ? 1 : 0;
-    } else {
-        row.weight_validated = 0;
-    }
-}
 

@@ -1171,13 +1171,9 @@ def complete_batch_processing(batch_name, processed_quantity=None):
     batch.save()
     return {"status": "success", "message": f"Batch {batch_name} completed"}
 #
-
 @frappe.whitelist()
 def generate_serial_numbers(batch_name, quantity=1, prefix=None):
     """Generate serial numbers for batch and add to container_barrels table"""
-    if isinstance(quantity, str):
-        quantity = int(quantity)
-    """Generate serial numbers for batch"""
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
         
@@ -1185,52 +1181,88 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         if isinstance(quantity, str):
             quantity = int(quantity)
         
-        # Determine prefix based on batch level
-        if batch.custom_batch_level == '4':
-            # Level 4: Use custom prefix or default "BRL"
+        # Get batch level
+        batch_level = batch.custom_batch_level or '1'
+        
+        # Determine serial format based on batch level
+        if batch_level == '4':
+            # Level 4: Use prefix-batch-001 format
             if not prefix:
                 prefix = "BRL"
-            base_name = f"{prefix}-{batch.name}"
+            # Keep serial short for level 4
+            base_name = batch.name.replace("LOTE-", "")  # Remove prefix to keep it shorter
+            serial_prefix = f"{prefix}-{base_name}"
         else:
-            # Levels 1-3: Use batch name as prefix
+            # Levels 1-3: Use simpler format
             base_name = batch.name
+            serial_prefix = base_name
         
-        # Get existing serials from text field
-        existing_text_serials = []
-        if batch.custom_serial_numbers:
-            existing_text_serials = [s.strip() for s in batch.custom_serial_numbers.split('\\n') if s.strip()]
+        # Get existing serials from container_barrels
+        existing_serials = []
+        for row in batch.container_barrels:
+            if row.barrel_serial_number and row.barrel_serial_number.strip():
+                existing_serials.append(row.barrel_serial_number.strip())
         
-        # Get existing serials from container_barrels table
-        existing_table_serials = [row.serial_number for row in batch.container_barrels if row.serial_number]
+        # Start from existing count
+        existing_count = len(existing_serials)
         
-        # Combine all existing serials
-        all_existing_serials = list(set(existing_text_serials + existing_table_serials))
-        existing_count = len(all_existing_serials)
-        
-        # Generate new serial numbers
+        # Generate new serial numbers (keep them under 50 chars)
         new_serials = []
         for i in range(quantity):
-            # Format: PREFIX-BATCH-001 (with leading zeros)
-            serial = f"{base_name}-{existing_count + i + 1:03d}"
+            seq_num = existing_count + i + 1
+            
+            # Generate different formats based on level
+            if batch_level == '4':
+                # Level 4: BRL-25-49-0148-001 (shorter format)
+                short_batch = batch.name.replace("LOTE-", "")
+                serial = f"{prefix}-{short_batch}-{seq_num:03d}"
+            elif batch_level == '3':
+                # Level 3: LOTE-25-49-0148-C001
+                serial = f"{batch.name}-C{seq_num:03d}"
+            else:
+                # Levels 1-2: LOTE-25-49-0148-001
+                serial = f"{batch.name}-{seq_num:03d}"
+            
+            # Ensure serial is not too long (max 50 chars)
+            if len(serial) > 50:
+                serial = serial[:50]
+            
             new_serials.append(serial)
             
-            # Add to container_barrels table if not already present
-            if serial not in existing_table_serials:
-                batch.append("container_barrels", {
-                    "serial_number": serial,
-                    "status": "Empty",
-                    "batch_amb": batch_name,
-                    "item_code": batch.item_to_manufacture or batch.current_item_code or "",
-                    "is_barrel": 1 if batch.custom_batch_level == '4' else 0
-                })
+            # Add to container_barrels table
+            # Make sure we include ALL mandatory fields
+            row_data = {
+                "barrel_serial_number": serial,
+                "status": "Empty",
+                "packaging_type": batch.default_packaging_type or "",
+                "batch_amb": batch_name,
+                "item_code": batch.item_to_manufacture or batch.current_item_code or "",
+                "created_date": frappe.utils.nowdate(),
+                "parent": batch.name,
+                "parentfield": "container_barrels",
+                "parenttype": "Batch AMB"
+            }
+            
+            batch.append("container_barrels", row_data)
         
-        # Update text field with ALL serials
-        all_serials = all_existing_serials + new_serials
-        batch.custom_serial_numbers = "\\n".join(sorted(all_serials))
-        
-        # Mark as integrated
-        batch.custom_serial_tracking_integrated = 1
-        batch.custom_last_api_sync = frappe.utils.now_datetime()
+        # Update text field for non-level 4 batches
+        if batch_level != '4':
+            existing_text = []
+            if batch.custom_serial_numbers:
+                existing_text = [s.strip() for s in batch.custom_serial_numbers.split('\\n') if s.strip()]
+            
+            all_text = existing_text + new_serials
+            # Keep each line under 140 chars
+            truncated_text = []
+            for text in set(all_text):
+                if len(text) > 140:
+                    truncated_text.append(text[:140])
+                else:
+                    truncated_text.append(text)
+            
+            batch.custom_serial_numbers = "\\n".join(sorted(truncated_text))
+            batch.custom_last_api_sync = frappe.utils.now_datetime()
+            batch.custom_serial_tracking_integrated = 1
         
         # Save the batch
         batch.save(ignore_permissions=True)
@@ -1239,27 +1271,51 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         return {
             "status": "success",
             "message": f"Generated {len(new_serials)} serial numbers",
-            "serial_numbers": new_serials,
             "count": len(new_serials),
-            "added_to_table": len(new_serials),
-            "total_serials": len(all_serials)
+            "serial_numbers": new_serials
         }
         
     except Exception as e:
-        frappe.log_error(f"Error in generate_serial_numbers for {batch_name}: {str(e)}", "Batch AMB")
-        frappe.throw(f"Failed to generate serial numbers: {str(e)}")
+        # Log error with shorter title to avoid truncation
+        error_msg = f"Error generating serials for {batch_name[:30]}"
+        frappe.log_error(
+            title=error_msg,  # Shorter title
+            message=f"Details: {str(e)[:100]}..."  # Truncated message
+        )
+        frappe.throw(f"Failed to generate serial numbers: {str(e)[:200]}")  # Truncated error
 
+# Also update integrate_serial_tracking to use this
 @frappe.whitelist()
 def integrate_serial_tracking(batch_name):
-    """Integrate batch with serial tracking"""
-    batch = frappe.get_doc("Batch AMB", batch_name)
-    batch.custom_serial_tracking_integrated = 1
-    batch.save()
-    
-    result = generate_serial_numbers(batch_name, 5)
-    
-    return {
-        "status": "success",
-        "message": "Serial tracking integrated",
-        "serial_count": result.get("count", 0)
-    }
+    """Fixed integrate function"""
+    try:
+        batch = frappe.get_doc("Batch AMB", batch_name)
+        
+        # Default quantity for integration
+        default_qty = batch.planned_qty or 5
+        
+        # Call the fixed function
+        result = fixed_generate_serial_numbers(
+            batch_name=batch_name,
+            quantity=default_qty,
+            prefix="BRL" if batch.custom_batch_level == '4' else None
+        )
+        
+        if result.get("status") == "success":
+            return {
+                "status": "success",
+                "message": "Serial tracking integrated successfully",
+                "serial_count": result.get("count", 0),
+                "details": result
+            }
+        else:
+            return result
+            
+    except Exception as e:
+        frappe.log_error(f"Integration error: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"Integration failed: {str(e)[:200]}"
+        }
+
+#
