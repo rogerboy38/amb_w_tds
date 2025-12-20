@@ -1,39 +1,115 @@
 # V5.7 FoxPro Migration Agent - COMPLETE MERGED VERSION
 """AGENT v5.7 - FOXPRO MIGRATION & SUPPLIER MANAGEMENT MERGED"""
 import frappe
+from frappe.utils import today
 from datetime import datetime
 import json
 import csv
 from io import StringIO
+# amb_w_tds/api/agent.py
 
-# =============================================
-# SUPPLEMENTARY FUNCTIONS
-# =============================================
-def get_request_data(kwargs):
-    """Get data from all possible sources"""
-    data = {}
+import frappe
+from frappe.utils import nowdate
+
+
+class AmbAgent:
+    """
+    Class-based migration agent, safe for:
+    - Frappe Cloud REST
+    - frappe.call
+    - bench / adapter
+    """
+
+    def _resolve_payload(self, payload=None, **kwargs) -> dict:
+        """
+        Unified resolver:
+        1) explicit payload kwarg (adapter / bench)
+        2) frappe.form_dict (REST / frappe.call)
+        3) flat kwargs (direct Python)
+        """
+        # 1) adapter or direct Python providing payload
+        if isinstance(payload, dict) and payload:
+            return payload
+
+        # 2) REST / frappe.call / Frappe Cloud
+        if frappe.form_dict:
+            fd = dict(frappe.form_dict)
+
+            # support both {"payload": {...}} and flat JSON
+            if isinstance(fd.get("payload"), dict):
+                return fd["payload"]
+            return fd
+
+        # 3) fallback: flat kwargs
+        if kwargs:
+            return kwargs
+
+        return {}
+
+    # -------------------------------------------------
+    # QUOTATION
+    # -------------------------------------------------
+
+    def create_or_get_quotation(self, payload=None, **kwargs):
+        data = self._resolve_payload(payload=payload, **kwargs)
+
+        customer = data.get("customer")
+        custom_folio = data.get("custom_folio")
+        company = data.get("company") or frappe.defaults.get_user_default("Company")
+
+        if not customer or not custom_folio:
+            frappe.throw("customer and custom_folio are required")
+
+        existing = frappe.db.get_value(
+            "Quotation",
+            {"custom_folio": custom_folio, "docstatus": 0},
+            "name",
+        )
+        if existing:
+            return existing
+
+        doc = frappe.get_doc({
+            "doctype": "Quotation",
+            "quotation_to": "Customer",
+            "customer": customer,
+            "company": company,
+            "custom_folio": custom_folio,
+            "transaction_date": nowdate(),
+            "items": [{"item_code": "DUMMY", "qty": 1}],
+        })
+        doc.insert(ignore_permissions=True)
+        return doc.name
+
     
-    # 1. Get from frappe.request (for POST with JSON)
-    try:
-        if hasattr(frappe.local, 'request') and frappe.local.request:
-            if frappe.local.request.method == 'POST':
-                # Try JSON first
-                try:
-                    json_data = frappe.local.request.get_json()
-                    if json_data:
-                        data.update(json_data)
-                except:
-                    # Try form data
-                    if frappe.local.request.form:
-                        data.update(frappe.local.request.form)
-    except:
-        pass
+    # =============================================
+    # SUPPLEMENTARY FUNCTIONS
+    # =============================================
+    #
+    def get_request_data(kwargs=None):
+        # 1?? Adapter / internal calls (explicit payload)
+        if kwargs and isinstance(kwargs, dict):
+            if isinstance(kwargs.get("payload"), dict):
+                return kwargs["payload"]
     
-    # 2. Add kwargs (from query parameters)
-    if kwargs:
-        data.update(kwargs)
+        # 2?? HTTP / frappe.call / REST
+        if frappe.form_dict:
+            return dict(frappe.form_dict)
     
-    return data
+        # 3?? Fallback
+        return {}
+
+# amb_w_tds/api/agent.py (same file)
+
+@frappe.whitelist()
+def create_or_get_quotation(**kwargs):
+    """
+    REST / frappe.call entrypoint.
+    Delegates to AmbAgent.create_or_get_quotation.
+    """
+    agent = AmbAgent()
+    # Pass kwargs as-is; resolver will handle payload/form_dict/flat.
+    return agent.create_or_get_quotation(**kwargs)
+
 
 # =============================================
 # SHARED HELPER FUNCTIONS
