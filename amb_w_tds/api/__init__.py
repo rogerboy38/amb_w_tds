@@ -6,6 +6,7 @@
 from . import agent
 from . import audit
 from . import quotation_amb
+from . import bom_tree_fix
 from . import validate  # Only if you created validate.py
 
-__all__ = ["agent", "audit", "quotation_amb", "validate"]
+__all__ = ["agent", "audit", "quotation_amb", "validate", "bom_tree_fix"]
