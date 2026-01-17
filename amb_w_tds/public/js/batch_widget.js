@@ -1,6 +1,7 @@
- 
+
 // =============================================================================
-// ENHANCED BATCH NAVBAR WIDGET - Optimized API Calls
+// ENHANCED BATCH NAVBAR WIDGET - v2.0
+// Features: Responsive, Draggable, Close Duration Options
 // =============================================================================
 
 frappe.provide('frappe.ui');
@@ -15,10 +16,11 @@ $(document).ready(function() {
 amb.batch_widget.config = {
     refreshInterval: 300000, // 5 minutes (300,000 ms)
     autoMinimizeDelay: 120000, // 2 minutes
-    widgetWidth: 500,
     maxRetries: 3,
     retryDelay: 10000, // 10 seconds
     cacheDuration: 120000, // 2 minutes cache
+    storageKey: 'amb_batch_widget_hidden_until',
+    positionKey: 'amb_batch_widget_position',
     plantColors: {
         '1': '#3498db', '2': '#e74c3c', '3': '#2ecc71', '4': '#f39c12', '5': '#9b59b6'
     },
@@ -35,28 +37,210 @@ amb.batch_widget.state = {
     cache: null,
     cacheTimestamp: null,
     refreshTimer: null,
-    isOnline: true
+    isOnline: true,
+    isDragging: false
 };
+
+// =============================================================================
+// RESPONSIVE WIDTH CALCULATION
+// =============================================================================
+
+function getResponsiveWidth() {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 576) return screenWidth - 20; // Mobile: full width with margin
+    if (screenWidth < 768) return Math.min(400, screenWidth - 40); // Small tablets
+    if (screenWidth < 992) return 450; // Tablets
+    return 500; // Desktop
+}
+
+function getResponsiveMaxHeight() {
+    const screenHeight = window.innerHeight;
+    if (screenHeight < 600) return '50vh';
+    if (screenHeight < 800) return '60vh';
+    return '70vh';
+}
+
+// =============================================================================
+// HIDE DURATION MANAGEMENT
+// =============================================================================
+
+function isWidgetHidden() {
+    const hiddenUntil = localStorage.getItem(amb.batch_widget.config.storageKey);
+    if (!hiddenUntil) return false;
+    
+    const hiddenTime = parseInt(hiddenUntil, 10);
+    if (Date.now() < hiddenTime) {
+        return true;
+    }
+    // Expired, clear storage
+    localStorage.removeItem(amb.batch_widget.config.storageKey);
+    return false;
+}
+
+function hideWidgetFor(hours) {
+    const hideUntil = Date.now() + (hours * 60 * 60 * 1000);
+    localStorage.setItem(amb.batch_widget.config.storageKey, hideUntil.toString());
+    console.log(`🔕 Widget hidden for ${hours} hour(s)`);
+}
+
+function showHideDurationDialog(widget) {
+    const dialog = new frappe.ui.Dialog({
+        title: '🔕 Hide Production Monitor',
+        fields: [
+            {
+                fieldtype: 'Select',
+                fieldname: 'duration',
+                label: 'Hide for',
+                options: [
+                    { label: '1 Hour', value: '1' },
+                    { label: '2 Hours', value: '2' },
+                    { label: '4 Hours', value: '4' },
+                    { label: '8 Hours', value: '8' },
+                    { label: '24 Hours (1 Day)', value: '24' }
+                ],
+                default: '1'
+            },
+            {
+                fieldtype: 'HTML',
+                options: '<p style="color: #666; font-size: 12px; margin-top: 10px;">The widget will automatically reappear after the selected time.</p>'
+            }
+        ],
+        primary_action_label: 'Hide',
+        primary_action: function(values) {
+            const hours = parseInt(values.duration, 10);
+            hideWidgetFor(hours);
+            widget.fadeOut(300, function() {
+                $(this).remove();
+            });
+            dialog.hide();
+            frappe.show_alert({
+                message: `Production Monitor hidden for ${hours} hour(s)`,
+                indicator: 'blue'
+            });
+        },
+        secondary_action_label: 'Cancel',
+        secondary_action: function() {
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// =============================================================================
+// DRAG FUNCTIONALITY
+// =============================================================================
+
+function getSavedPosition() {
+    const saved = localStorage.getItem(amb.batch_widget.config.positionKey);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
+function savePosition(top, right) {
+    localStorage.setItem(amb.batch_widget.config.positionKey, JSON.stringify({ top, right }));
+}
+
+function makeDraggable(widget) {
+    const header = widget.find('.widget-drag-handle');
+    let startX, startY, startTop, startRight;
+    
+    header.css('cursor', 'move');
+    
+    header.on('mousedown touchstart', function(e) {
+        if ($(e.target).is('button')) return; // Don't drag when clicking buttons
+        
+        e.preventDefault();
+        amb.batch_widget.state.isDragging = true;
+        
+        const touch = e.type === 'touchstart' ? e.originalEvent.touches[0] : e;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        
+        const rect = widget[0].getBoundingClientRect();
+        startTop = rect.top;
+        startRight = window.innerWidth - rect.right;
+        
+        widget.css('transition', 'none');
+        
+        $(document).on('mousemove.widgetdrag touchmove.widgetdrag', function(e) {
+            const touch = e.type === 'touchmove' ? e.originalEvent.touches[0] : e;
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            
+            let newTop = startTop + deltaY;
+            let newRight = startRight - deltaX;
+            
+            // Bounds checking
+            const widgetWidth = widget.outerWidth();
+            const widgetHeight = widget.outerHeight();
+            
+            newTop = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newTop));
+            newRight = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newRight));
+            
+            widget.css({
+                'top': newTop + 'px',
+                'right': newRight + 'px',
+                'left': 'auto',
+                'bottom': 'auto'
+            });
+        });
+        
+        $(document).on('mouseup.widgetdrag touchend.widgetdrag', function() {
+            amb.batch_widget.state.isDragging = false;
+            $(document).off('.widgetdrag');
+            widget.css('transition', '');
+            
+            // Save position
+            const rect = widget[0].getBoundingClientRect();
+            savePosition(rect.top, window.innerWidth - rect.right);
+        });
+    });
+}
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
 
 function initializeBatchWidget() {
     if (frappe.session && frappe.session.user !== 'Guest') {
-        console.log('🚀 Initializing Enhanced Batch Navbar Widget...');
+        // Check if widget should be hidden
+        if (isWidgetHidden()) {
+            console.log('🔕 Widget is hidden (user preference)');
+            return;
+        }
         
-        // Wait for Frappe to fully initialize
+        console.log('🚀 Initializing Enhanced Batch Navbar Widget v2.0...');
+        
         setTimeout(function() {
-            // Set up optimized refresh
             setupSmartRefresh();
-            
-            // Initial load with delay to avoid startup congestion
             setTimeout(update_batch_announcements, 2000);
-            
-            // Add global refresh button
             addGlobalRefreshButton();
-            
-            // Set up connectivity monitoring
             setupConnectivityMonitoring();
+            setupResizeHandler();
         }, 3000);
     }
+}
+
+function setupResizeHandler() {
+    let resizeTimeout;
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            const widget = $('.batch-announcement-widget');
+            if (widget.length) {
+                widget.css({
+                    'width': getResponsiveWidth() + 'px',
+                    'max-height': getResponsiveMaxHeight()
+                });
+            }
+        }, 250);
+    });
 }
 
 // =============================================================================
@@ -64,28 +248,22 @@ function initializeBatchWidget() {
 // =============================================================================
 
 function setupSmartRefresh() {
-    // Clear any existing timer
     if (amb.batch_widget.state.refreshTimer) {
         clearInterval(amb.batch_widget.state.refreshTimer);
     }
     
-    // Smart refresh based on visibility and activity
     amb.batch_widget.state.refreshTimer = setInterval(function() {
-        // Only refresh if page is visible and user is active
-        if (!document.hidden && amb.batch_widget.state.isOnline) {
+        if (!document.hidden && amb.batch_widget.state.isOnline && !isWidgetHidden()) {
             update_batch_announcements();
         }
     }, amb.batch_widget.config.refreshInterval);
     
-    // Refresh when page becomes visible
     document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && !amb.batch_widget.state.isFetching) {
-            // If cache is stale, refresh immediately
+        if (!document.hidden && !amb.batch_widget.state.isFetching && !isWidgetHidden()) {
             const cacheAge = Date.now() - (amb.batch_widget.state.cacheTimestamp || 0);
             if (!amb.batch_widget.state.cache || cacheAge > amb.batch_widget.config.cacheDuration) {
                 update_batch_announcements();
             } else {
-                // Use cached data if fresh
                 display_cached_data();
             }
         }
@@ -93,15 +271,18 @@ function setupSmartRefresh() {
 }
 
 function update_batch_announcements() {
-    // Prevent multiple simultaneous calls
+    if (isWidgetHidden()) {
+        console.log('🔕 Widget hidden, skipping update');
+        return;
+    }
+    
     if (amb.batch_widget.state.isFetching) {
         console.log('⏳ API call already in progress, skipping...');
         return;
     }
     
-    // Check cache first
     const cacheAge = Date.now() - (amb.batch_widget.state.cacheTimestamp || 0);
-    if (amb.batch_widget.state.cache && cacheAge < 30000) { // 30 seconds cache
+    if (amb.batch_widget.state.cache && cacheAge < 30000) {
         console.log('♻️ Using cached data (fresh)');
         display_cached_data();
         return;
@@ -120,15 +301,12 @@ function update_batch_announcements() {
         },
         callback: function(r) {
             amb.batch_widget.state.isFetching = false;
-            amb.batch_widget.state.retryCount = 0; // Reset retry counter on success
+            amb.batch_widget.state.retryCount = 0;
             
             if (r.message && r.message.success) {
                 console.log('✅ API call successful');
-                
-                // Cache the successful response
                 amb.batch_widget.state.cache = r.message;
                 amb.batch_widget.state.cacheTimestamp = Date.now();
-                
                 process_api_response(r.message);
             } else {
                 console.warn('⚠️ API returned unsuccessful response:', r.message);
@@ -140,8 +318,7 @@ function update_batch_announcements() {
             console.error('❌ API call failed:', r);
             handle_api_error(r);
         },
-        freeze: true,
-        freeze_message: __('Refreshing batch data...')
+        freeze: false
     });
 }
 
@@ -159,10 +336,7 @@ function process_api_response(response) {
         } else {
             show_no_batches_message(response.message);
         }
-        
-        // Update last update time in widget
         update_last_refresh_time();
-        
     } catch (error) {
         console.error('Error processing API response:', error);
         show_error_message('Error displaying batch data');
@@ -173,13 +347,10 @@ function handle_api_error(error) {
     const errorMsg = error.error || error.message || 'Connection failed';
     console.error('API Error:', errorMsg);
     
-    // Increment retry counter
     amb.batch_widget.state.retryCount++;
     
     if (amb.batch_widget.state.retryCount <= amb.batch_widget.config.maxRetries) {
         console.log(`🔄 Retrying in ${amb.batch_widget.config.retryDelay/1000} seconds... (Attempt ${amb.batch_widget.state.retryCount}/${amb.batch_widget.config.maxRetries})`);
-        
-        // Exponential backoff
         const backoffDelay = amb.batch_widget.config.retryDelay * Math.pow(1.5, amb.batch_widget.state.retryCount - 1);
         
         setTimeout(function() {
@@ -192,7 +363,7 @@ function handle_api_error(error) {
     } else {
         console.error('❌ Max retries reached, giving up');
         show_error_message(`Failed to load batches: ${errorMsg}`);
-        amb.batch_widget.state.retryCount = 0; // Reset for next attempt
+        amb.batch_widget.state.retryCount = 0;
     }
 }
 
@@ -217,7 +388,6 @@ function display_grouped_batch_announcements(groupedData, stats = {}) {
     let totalBatches = stats.total || 0;
     
     try {
-        // Process by company
         for (const [companyName, companyData] of Object.entries(groupedData)) {
             const companyColor = amb.batch_widget.config.companyColors[companyName] || '#7f8c8d';
             let companyBatches = 0;
@@ -233,13 +403,13 @@ function display_grouped_batch_announcements(groupedData, stats = {}) {
                         border-radius: 5px;
                         margin-bottom: 10px;
                         font-weight: bold;
+                        font-size: 14px;
                     ">
                         <span style="margin-right: 8px;">🏢</span>
                         ${companyName}
                     </div>
             `;
             
-            // Process by plant
             for (const [plantCode, plantBatches] of Object.entries(companyData)) {
                 const plantColor = amb.batch_widget.config.plantColors[plantCode] || '#95a5a6';
                 const plantName = getPlantName(plantCode);
@@ -254,7 +424,7 @@ function display_grouped_batch_announcements(groupedData, stats = {}) {
                             border-left: 4px solid ${plantColor};
                             border-radius: 3px;
                             margin-bottom: 8px;
-                            font-size: 13px;
+                            font-size: 12px;
                         ">
                             <span style="margin-right: 6px;">${getPlantIcon(plantCode)}</span>
                             ${plantName} (Plant ${plantCode})
@@ -262,34 +432,25 @@ function display_grouped_batch_announcements(groupedData, stats = {}) {
                         <div class="batch-list">
                 `;
                 
-                // Process batches
                 if (Array.isArray(plantBatches)) {
-                    plantBatches.forEach(function(batch, index) {
+                    plantBatches.forEach(function(batch) {
                         companyBatches++;
-                        
                         const priorityColor = getPriorityColor(batch.priority);
                         const statusIcon = getStatusIcon(batch.quality_status);
-                        
                         announcement_html += create_batch_item_html(batch, priorityColor, statusIcon);
                     });
                 }
                 
-                announcement_html += `
-                        </div>
-                    </div>
-                `;
+                announcement_html += `</div></div>`;
             }
             
-            // Update company header with count
             announcement_html = announcement_html.replace(`${companyName}`, `${companyName} <span style="font-size: 0.8em; opacity: 0.9;">(${companyBatches})</span>`);
-            
             announcement_html += `</div>`;
         }
         
         if (announcement_html) {
             show_navbar_widget(announcement_html, totalBatches, stats);
         }
-        
     } catch (error) {
         console.error('Error displaying grouped batches:', error);
         show_error_message('Error displaying batch data');
@@ -304,48 +465,41 @@ function create_batch_item_html(batch, priorityColor, statusIcon) {
             background: #f8f9fa; 
             border-radius: 5px;
             border-left: 4px solid ${priorityColor};
-            font-family: 'Courier New', monospace;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             position: relative;
             cursor: pointer;
-        " onclick="openBatchRecord('${batch.name}')">
+            transition: background 0.2s;
+        " onclick="openBatchRecord('${batch.name}')" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #2c3e50;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px; color: #2c3e50; word-wrap: break-word;">
                         ${statusIcon} ${batch.title || 'Batch'} - ${batch.batch_code || ''}
                     </div>
                     <div style="font-size: 11px; color: #34495e; margin-bottom: 5px;">
                         Item: ${batch.item_code || 'N/A'} | Level: ${batch.level || 'N/A'}
                     </div>
-                    <pre style="
+                    <div style="
                         margin: 0; 
                         font-size: 11px; 
-                        white-space: pre-line; 
                         line-height: 1.3;
-                        font-family: inherit;
                         color: #7f8c8d;
-                    ">${batch.content || batch.message || 'No details available'}</pre>
-                </div>
-                <div style="
-                    background: rgba(0,0,0,0.05);
-                    padding: 3px 6px;
-                    border-radius: 3px;
-                    font-size: 9px;
-                    white-space: nowrap;
-                    margin-left: 8px;
-                ">
-                    ${batch.quality_status || 'Pending'}
+                        word-wrap: break-word;
+                    ">${batch.content || batch.message || 'No details available'}</div>
                 </div>
             </div>
             <div style="
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                background: rgba(0,0,0,0.1);
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-size: 9px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+                font-size: 10px;
             ">
-                ${formatTime(batch.modified || batch.creation)}
+                <span style="background: ${priorityColor}22; color: ${priorityColor}; padding: 2px 6px; border-radius: 3px;">
+                    ${batch.quality_status || 'Pending'}
+                </span>
+                <span style="color: #999;">
+                    ${formatTime(batch.modified || batch.creation)}
+                </span>
             </div>
         </div>
     `;
@@ -356,104 +510,133 @@ function create_batch_item_html(batch, priorityColor, statusIcon) {
 // =============================================================================
 
 function show_navbar_widget(html_content, count, stats = {}) {
-    // Remove existing widget
     $('.batch-announcement-widget').remove();
     
+    const widgetWidth = getResponsiveWidth();
+    const maxHeight = getResponsiveMaxHeight();
+    const savedPosition = getSavedPosition();
+    
     const statsHtml = stats.total ? `
-        <div style="display: flex; justify-content: space-around; margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 5px;">
-            <div style="text-align: center;">
+        <div class="widget-stats" style="display: flex; justify-content: space-around; margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 5px; flex-wrap: wrap;">
+            <div style="text-align: center; min-width: 60px;">
                 <div style="font-weight: bold; color: #e74c3c;">${stats.high_priority || 0}</div>
-                <div style="font-size: 9px;">High Priority</div>
+                <div style="font-size: 9px;">High</div>
             </div>
-            <div style="text-align: center;">
+            <div style="text-align: center; min-width: 60px;">
                 <div style="font-weight: bold; color: #f39c12;">${stats.quality_check || 0}</div>
-                <div style="font-size: 9px;">Quality Check</div>
+                <div style="font-size: 9px;">QC</div>
             </div>
-            <div style="text-align: center;">
+            <div style="text-align: center; min-width: 60px;">
                 <div style="font-weight: bold; color: #3498db;">${stats.container_level || 0}</div>
-                <div style="font-size: 9px;">Container Level</div>
+                <div style="font-size: 9px;">Container</div>
             </div>
         </div>
     ` : '';
     
+    let positionStyles = savedPosition 
+        ? `top: ${savedPosition.top}px; right: ${savedPosition.right}px;`
+        : 'top: 70px; right: 20px;';
+    
     let widget = $(`
         <div class="batch-announcement-widget" style="
             position: fixed;
-            top: 70px;
-            right: 20px;
-            width: ${amb.batch_widget.config.widgetWidth}px;
-            max-height: 70vh;
+            ${positionStyles}
+            width: ${widgetWidth}px;
+            max-height: ${maxHeight};
             overflow-y: auto;
             z-index: 1050;
             background: white;
             border: 2px solid #28a745;
             border-radius: 8px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-            padding: 15px;
-            animation: slideInRight 0.5s ease-out;
+            animation: slideInRight 0.3s ease-out;
         ">
-            <div style="
+            <div class="widget-drag-handle" style="
                 display: flex; 
                 justify-content: space-between; 
                 align-items: center; 
-                margin-bottom: 15px;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #28a745;
+                padding: 12px 15px;
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                color: white;
+                border-radius: 6px 6px 0 0;
                 position: sticky;
                 top: 0;
-                background: white;
                 z-index: 10;
             ">
-                <div>
-                    <h4 style="margin: 0; color: #28a745; font-size: 16px;">
-                        🏭 Production Monitor
+                <div style="flex: 1;">
+                    <h4 style="margin: 0; font-size: 15px; display: flex; align-items: center;">
+                        <span style="margin-right: 8px;">🏭</span>
+                        Production Monitor
                     </h4>
-                    <small style="color: #666; font-size: 11px;">
-                        ${count} active batch${count !== 1 ? 'es' : ''}
+                    <small style="opacity: 0.9; font-size: 11px;">
+                        ${count} active batch${count !== 1 ? 'es' : ''} • Drag to move
                     </small>
                 </div>
-                <div>
-                    <button class="btn btn-xs btn-success refresh-announcements" style="margin-right: 5px;" title="Refresh Now">
+                <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                    <button class="btn btn-xs refresh-announcements" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px;" title="Refresh">
                         🔄
                     </button>
-                    <button class="btn btn-xs btn-info toggle-stats" title="Toggle Stats">
+                    <button class="btn btn-xs toggle-stats" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px;" title="Toggle Stats">
                         📊
                     </button>
-                    <button class="btn btn-xs btn-secondary minimize-announcement" title="Minimize">
-                        📌
+                    <button class="btn btn-xs minimize-announcement" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px;" title="Minimize">
+                        ➖
                     </button>
-                    <button class="btn btn-xs btn-danger close-announcement" title="Close for 1 hour">
+                    <button class="btn btn-xs close-announcement" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px;" title="Close">
                         ✕
                     </button>
                 </div>
             </div>
-            ${statsHtml}
-            <div class="announcement-content">
-                ${html_content}
+            <div class="widget-body" style="padding: 15px;">
+                ${statsHtml}
+                <div class="announcement-content">
+                    ${html_content}
+                </div>
             </div>
             <div style="
                 text-align: center; 
-                margin-top: 15px; 
-                padding-top: 10px;
+                padding: 10px 15px;
                 border-top: 1px solid #eee;
                 font-size: 10px; 
                 color: #666;
-                position: sticky;
-                bottom: 0;
-                background: white;
+                background: #fafafa;
+                border-radius: 0 0 6px 6px;
             ">
-                🔄 Auto-update every 5 min • 
+                🔄 Auto-update 5 min • 
                 <span id="last-update-time">${new Date().toLocaleTimeString()}</span>
             </div>
         </div>
     `);
     
+    // Add CSS animation
+    if (!$('#batch-widget-styles').length) {
+        $('head').append(`
+            <style id="batch-widget-styles">
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                .batch-announcement-widget::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .batch-announcement-widget::-webkit-scrollbar-thumb {
+                    background: #ccc;
+                    border-radius: 3px;
+                }
+                .batch-announcement-widget::-webkit-scrollbar-thumb:hover {
+                    background: #999;
+                }
+            </style>
+        `);
+    }
+    
     $('body').append(widget);
+    makeDraggable(widget);
     setup_widget_events(widget);
     
     // Auto-minimize after delay
     setTimeout(function() {
-        if (widget.is(':visible') && !widget.is(':hover')) {
+        if (widget.is(':visible') && !widget.is(':hover') && !amb.batch_widget.state.isDragging) {
             minimizeWidget(widget);
         }
     }, amb.batch_widget.config.autoMinimizeDelay);
@@ -464,11 +647,12 @@ function show_navbar_widget(html_content, count, stats = {}) {
 // =============================================================================
 
 function setupConnectivityMonitoring() {
-    // Online/offline detection
     window.addEventListener('online', function() {
         amb.batch_widget.state.isOnline = true;
         console.log('🌐 Connection restored');
-        update_batch_announcements(); // Refresh data when back online
+        if (!isWidgetHidden()) {
+            update_batch_announcements();
+        }
     });
     
     window.addEventListener('offline', function() {
@@ -481,13 +665,14 @@ function setupConnectivityMonitoring() {
 function show_retry_message(errorMsg, retryCount) {
     const widget = $('.batch-announcement-widget');
     if (widget.length) {
+        widget.find('.retry-notice').remove();
         const retryHtml = `
-            <div style="
+            <div class="retry-notice" style="
                 background: #fff3cd;
                 border: 1px solid #ffeaa7;
                 border-radius: 5px;
                 padding: 8px;
-                margin: 10px 0;
+                margin-bottom: 10px;
                 font-size: 11px;
                 color: #856404;
             ">
@@ -506,7 +691,6 @@ function show_error_message(message) {
             border: 1px solid #f5c6cb;
             border-radius: 5px;
             padding: 10px;
-            margin: 10px 0;
             font-size: 12px;
             color: #721c24;
         ">
@@ -568,58 +752,36 @@ function update_last_refresh_time() {
 // =============================================================================
 
 function getPriorityColor(priority) {
-    const colors = {
-        'high': '#e74c3c',
-        'medium': '#f39c12', 
-        'low': '#3498db'
-    };
+    const colors = { 'high': '#e74c3c', 'medium': '#f39c12', 'low': '#3498db' };
     return colors[priority] || '#95a5a6';
 }
 
 function getPlantName(plantCode) {
     const plantNames = {
-        '1': 'Main Production',
-        '2': 'Secondary Plant',
-        '3': 'Processing Unit',
-        '4': 'Quality Lab',
-        '5': 'Packaging Unit'
+        '1': 'Main Production', '2': 'Secondary Plant', '3': 'Processing Unit',
+        '4': 'Quality Lab', '5': 'Packaging Unit'
     };
     return plantNames[plantCode] || 'Plant ' + plantCode;
 }
 
 function getPlantIcon(plantCode) {
-    const icons = {
-        '1': '🏭',
-        '2': '🏢',
-        '3': '⚙️',
-        '4': '🔬',
-        '5': '📦'
-    };
+    const icons = { '1': '🏭', '2': '🏢', '3': '⚙️', '4': '🔬', '5': '📦' };
     return icons[plantCode] || '🏭';
 }
 
 function getStatusIcon(quality_status) {
     const icons = {
-        'Pending': '📝',
-        'In Progress': '⏳',
-        'Running': '▶️',
-        'Completed': '✅',
-        'On Hold': '⏸️',
-        'Cancelled': '❌',
-        'Quality Check': '🔬',
-        'Passed': '✅',
-        'Failed': '❌'
+        'Pending': '📝', 'In Progress': '⏳', 'Running': '▶️', 'Completed': '✅',
+        'On Hold': '⏸️', 'Cancelled': '❌', 'Quality Check': '🔬', 'Passed': '✅', 'Failed': '❌'
     };
     return icons[quality_status] || '📋';
 }
 
 function formatTime(timestamp) {
     if (!timestamp) return '';
-    
     const date = new Date(timestamp);
     const now = new Date();
-    const diff = Math.floor((now - date) / 1000); // seconds
-    
+    const diff = Math.floor((now - date) / 1000);
     if (diff < 60) return 'Just now';
     if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
     if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
@@ -633,55 +795,46 @@ function openBatchRecord(batchName) {
 }
 
 function setup_widget_events(widget) {
-    // Refresh button
-    widget.find('.refresh-announcements').on('click', function() {
+    widget.find('.refresh-announcements').on('click', function(e) {
+        e.stopPropagation();
         update_batch_announcements();
     });
     
-    // Close button
-    widget.find('.close-announcement').on('click', function() {
-        widget.fadeOut(300, function() {
-            $(this).remove();
-        });
+    widget.find('.close-announcement').on('click', function(e) {
+        e.stopPropagation();
+        showHideDurationDialog(widget);
     });
     
-    // Minimize button
-    widget.find('.minimize-announcement').on('click', function() {
+    widget.find('.minimize-announcement').on('click', function(e) {
+        e.stopPropagation();
         minimizeWidget(widget);
     });
     
-    // Toggle stats
-    widget.find('.toggle-stats').on('click', function() {
-        widget.find('.statsHtml').toggle();
+    widget.find('.toggle-stats').on('click', function(e) {
+        e.stopPropagation();
+        widget.find('.widget-stats').toggle();
     });
 }
 
 function minimizeWidget(widget) {
-    widget.css({
-        'height': '50px',
-        'overflow': 'hidden'
-    });
-    widget.find('.announcement-content').hide();
+    widget.find('.widget-body').slideUp(200);
+    widget.find('.minimize-announcement').hide();
     
-    // Add maximize button
     if (!widget.find('.maximize-btn').length) {
-        widget.find('.minimize-announcement').after(
-            '<button class="btn btn-xs btn-primary maximize-btn" title="Maximize">⬆️</button>'
+        widget.find('.toggle-stats').after(
+            '<button class="btn btn-xs maximize-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px;" title="Maximize">➕</button>'
         );
         
-        widget.find('.maximize-btn').on('click', function() {
-            widget.css({
-                'height': 'auto',
-                'overflow-y': 'auto'
-            });
-            widget.find('.announcement-content').show();
+        widget.find('.maximize-btn').on('click', function(e) {
+            e.stopPropagation();
+            widget.find('.widget-body').slideDown(200);
+            widget.find('.minimize-announcement').show();
             $(this).remove();
         });
     }
 }
 
 function addGlobalRefreshButton() {
-    // Add a small refresh button to navbar (optional)
     if ($('.navbar-batch-refresh').length === 0) {
         $('.navbar-right').prepend(`
             <li class="navbar-batch-refresh">
@@ -694,15 +847,12 @@ function addGlobalRefreshButton() {
 }
 
 function display_batch_announcements(announcements, stats) {
-    // Fallback display for non-grouped data
     let html = '';
-    
     announcements.forEach(function(batch) {
         const priorityColor = getPriorityColor(batch.priority);
         const statusIcon = getStatusIcon(batch.quality_status);
         html += create_batch_item_html(batch, priorityColor, statusIcon);
     });
-    
     if (html) {
         show_navbar_widget(html, announcements.length, stats);
     }
@@ -712,19 +862,21 @@ function display_batch_announcements(announcements, stats) {
 // GLOBAL EXPORTS
 // =============================================================================
 
-// Make functions available globally with enhanced error handling
 window.refresh_batch_announcements = function() {
     console.log('🔄 Manual refresh triggered');
+    localStorage.removeItem(amb.batch_widget.config.storageKey); // Clear hide preference
     update_batch_announcements();
 };
 
-window.hide_batch_widget = function() {
+window.hide_batch_widget = function(hours = 1) {
+    hideWidgetFor(hours);
     $('.batch-announcement-widget').fadeOut(300, function() {
         $(this).remove();
     });
 };
 
 window.show_batch_widget = function() {
+    localStorage.removeItem(amb.batch_widget.config.storageKey);
     if ($('.batch-announcement-widget').length === 0) {
         update_batch_announcements();
     } else {
@@ -732,11 +884,18 @@ window.show_batch_widget = function() {
     }
 };
 
-// Cleanup on page unload
+window.reset_batch_widget_position = function() {
+    localStorage.removeItem(amb.batch_widget.config.positionKey);
+    const widget = $('.batch-announcement-widget');
+    if (widget.length) {
+        widget.css({ 'top': '70px', 'right': '20px' });
+    }
+};
+
 $(window).on('beforeunload', function() {
     if (amb.batch_widget.state.refreshTimer) {
         clearInterval(amb.batch_widget.state.refreshTimer);
     }
 });
 
-console.log('✅ Enhanced Batch Widget API Manager loaded');
+console.log('✅ Enhanced Batch Widget v2.0 loaded (Responsive + Draggable + Hide Duration)');
