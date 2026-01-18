@@ -17,7 +17,10 @@ class DistributionOrganization(Document):
     Handles business logic for managing global distribution partners,
     regulatory compliance tracking, and integration with ERPNext modules.
     """
-    
+    website = frappe._dict(
+        condition_field="disabled",
+        page_title_field="organization_name"
+    )
     def validate(self):
         """Validate the distribution organization before saving."""
         self.validate_email()

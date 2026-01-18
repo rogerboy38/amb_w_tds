@@ -18,6 +18,12 @@ class ProductDevelopmentProject(Document):
     and regulatory compliance coordination.
     """
     
+    # Website attribute to fix the AttributeError
+    website = frappe._dict(
+        condition_field="disabled",
+        page_title_field="project_name"
+    )
+    
     def validate(self):
         """Validate the project before saving."""
         self.validate_dates()
@@ -80,6 +86,7 @@ class ProductDevelopmentProject(Document):
             "compliance_status": self.compliance_status,
             "target_countries_count": len(self.target_countries.split(',')) if self.target_countries else 0
         }
+
 
 # Utility functions
 

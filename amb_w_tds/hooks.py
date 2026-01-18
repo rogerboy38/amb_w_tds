@@ -27,7 +27,10 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/amb_w_tds/css/amb_w_tds.css"
 # app_include_js = "/assets/amb_w_tds/js/amb_w_tds.js"
-
+# Application Assets
+app_include_js = [
+    "/assets/amb_w_tds/js/batch_widget.js"
+]
 # include js, css files in header of web template
 # web_include_css = "/assets/amb_w_tds/css/amb_w_tds.css"
 # web_include_js = "/assets/amb_w_tds/js/amb_w_tds.js"
@@ -42,6 +45,14 @@ app_license = "mit"
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
+#fixtures = [
+#    {
+#        "doctype": "DocType",
+#        "filters": [
+#            ["name", "in", ["AMB KPI FACTORS"]]
+#        ]
+#    }
+#]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -242,3 +253,17 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# Barrel Lifecycle Hooks
+doc_events = {
+    "Stock Entry": {
+        "on_submit": "amb_w_tds.amb_w_tds.amb_w_tds.stock_entry_hooks.on_stock_entry_submit"
+    }
+}
+# In hooks.py, ensure you have:
+#get_website_user_home_page = "amb_w_tds.pages.barrel_dashboard.barrel_dashboard"
+
+# Add pages to this list
+standard_portal_menu = [
+    {"title": "Barrel Dashboard", "route": "/barrel_dashboard", "reference_doctype": "Barrel"},
+    {"title": "Container Barrels Dashboard", "route": "/container_barrels_dashboard", "reference_doctype": "Container Selection"}
+]

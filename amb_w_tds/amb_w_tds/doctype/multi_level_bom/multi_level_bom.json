@@ -1,0 +1,114 @@
+{
+  "doctype": "DocType",
+  "name": "Multi Level BOM",
+  "module": "AMB W TDS",
+  "is_single": 0,
+  "is_child": 0,
+  "istable": 0,
+  "custom": 1,
+  "autoname": "field:multi_level_bom_name",
+  "fields": [
+    {
+      "fieldname": "multi_level_bom_name",
+      "fieldtype": "Data",
+      "label": "Multi Level BOM Name",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "main_item",
+      "fieldtype": "Link",
+      "label": "Main Item",
+      "options": "Item",
+      "reqd": 1
+    },
+    {
+      "fieldname": "main_item_name",
+      "fieldtype": "Data",
+      "label": "Main Item Name",
+      "fetch_from": "main_item.item_name",
+      "read_only": 1
+    },
+    {
+      "fieldname": "quantity",
+      "fieldtype": "Float",
+      "label": "Quantity",
+      "default": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "uom",
+      "fieldtype": "Link",
+      "label": "UOM",
+      "options": "UOM",
+      "fetch_from": "main_item.stock_uom",
+      "reqd": 1
+    },
+    {
+      "fieldname": "bom_levels_section",
+      "fieldtype": "Section Break",
+      "label": "BOM Levels"
+    },
+    {
+      "fieldname": "bom_levels",
+      "fieldtype": "Table",
+      "label": "BOM Levels",
+      "options": "BOM Level"
+    },
+    {
+      "fieldname": "total_cost_section",
+      "fieldtype": "Section Break",
+      "label": "Cost Summary"
+    },
+    {
+      "fieldname": "total_material_cost",
+      "fieldtype": "Currency",
+      "label": "Total Material Cost",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_operation_cost",
+      "fieldtype": "Currency",
+      "label": "Total Operation Cost",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_cost",
+      "fieldtype": "Currency",
+      "label": "Total Cost",
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nActive\nCancelled",
+      "default": "Draft"
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Manufacturing User",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    }
+  ]
+}

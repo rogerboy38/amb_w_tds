@@ -1,0 +1,116 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Template",
+  "module": "AMB W TDS",
+  "is_single": 0,
+  "is_child": 0,
+  "istable": 0,
+  "custom": 1,
+  "autoname": "field:bom_template_name",
+  "fields": [
+    {
+      "fieldname": "bom_template_name",
+      "fieldtype": "Data",
+      "label": "BOM Template Name",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "item_group",
+      "fieldtype": "Link",
+      "label": "Item Group",
+      "options": "Item Group"
+    },
+    {
+      "fieldname": "product_type",
+      "fieldtype": "Select",
+      "label": "Product Type",
+      "options": "\nSpray Dried Powder\nLiquid Concentrate\nGel\nPowder Blend\nFinished Product"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "default_quantity",
+      "fieldtype": "Float",
+      "label": "Default Quantity",
+      "default": 1
+    },
+    {
+      "fieldname": "uom",
+      "fieldtype": "Link",
+      "label": "UOM",
+      "options": "UOM"
+    },
+    {
+      "fieldname": "with_operations",
+      "fieldtype": "Check",
+      "label": "With Operations",
+      "default": 1
+    },
+    {
+      "fieldname": "operations_section",
+      "fieldtype": "Section Break",
+      "label": "Standard Operations"
+    },
+    {
+      "fieldname": "standard_operations",
+      "fieldtype": "Table",
+      "label": "Operations",
+      "options": "BOM Operation"
+    },
+    {
+      "fieldname": "materials_section",
+      "fieldtype": "Section Break",
+      "label": "Standard Materials"
+    },
+    {
+      "fieldname": "bom_template_items",
+      "fieldtype": "Table",
+      "label": "Template Items",
+      "options": "BOM Template Item"
+    },
+    {
+      "fieldname": "costing_section",
+      "fieldtype": "Section Break",
+      "label": "Costing Parameters"
+    },
+    {
+      "fieldname": "overhead_percentage",
+      "fieldtype": "Percent",
+      "label": "Overhead Percentage",
+      "default": 15
+    },
+    {
+      "fieldname": "labor_cost_per_hour",
+      "fieldtype": "Currency",
+      "label": "Labor Cost Per Hour"
+    },
+    {
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Is Active",
+      "default": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Manufacturing User",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    }
+  ]
+}
