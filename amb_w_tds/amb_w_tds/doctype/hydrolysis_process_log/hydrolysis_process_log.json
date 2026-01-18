@@ -1,0 +1,327 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-18 04:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_info_section",
+  "process_stage",
+  "sub_lot_number",
+  "column_break_2",
+  "process_date",
+  "process_duration_hours",
+  "raw_material_section",
+  "penca_total_kg",
+  "bagazo_kg",
+  "column_break_6",
+  "penca_to_juice_percent",
+  "penca_to_bagazo_percent",
+  "enzyme_section",
+  "enzyme_type",
+  "enzyme_ml_per_kg",
+  "enzyme_total_ml",
+  "column_break_11",
+  "temperature_c",
+  "water_added_liters",
+  "juice_tracking_section",
+  "juice_pressed_liters",
+  "juice_pressed_solids_percent",
+  "juice_pressed_solids_kg",
+  "column_break_16",
+  "juice_decolorized_liters",
+  "juice_decolorized_solids_percent",
+  "juice_decolorized_solids_kg",
+  "column_break_19",
+  "juice_refiltrated_liters",
+  "juice_refiltrated_solids_percent",
+  "juice_refiltrated_solids_kg",
+  "final_output_section",
+  "final_volume_liters",
+  "final_solids_percent",
+  "final_solids_kg",
+  "column_break_25",
+  "kilos_envasado",
+  "rendimiento_porcentual",
+  "process_parameters_section",
+  "carbon_activated_percent",
+  "pre_filter_layers",
+  "column_break_30",
+  "solids_loss_percent",
+  "observations"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_info_section",
+   "fieldtype": "Section Break",
+   "label": "Process Information"
+  },
+  {
+   "fieldname": "process_stage",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Process Stage",
+   "options": "Pressing\nHydrolysis\nDecoloring\nFiltration\nConcentration\nDrying\nPacking",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sub_lot_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Sub Lot Number"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "process_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Process Date"
+  },
+  {
+   "fieldname": "process_duration_hours",
+   "fieldtype": "Float",
+   "label": "Duration (Hours)",
+   "precision": 2
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "raw_material_section",
+   "fieldtype": "Section Break",
+   "label": "Raw Material Input (Penca)"
+  },
+  {
+   "fieldname": "penca_total_kg",
+   "fieldtype": "Float",
+   "label": "Penca Total (Kg)",
+   "precision": 2
+  },
+  {
+   "fieldname": "bagazo_kg",
+   "fieldtype": "Float",
+   "label": "Bagazo (Kg)",
+   "precision": 2
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "penca_to_juice_percent",
+   "fieldtype": "Percent",
+   "label": "Rendimiento Penca → Jugo (%)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "penca_to_bagazo_percent",
+   "fieldtype": "Percent",
+   "label": "Rendimiento Penca → Bagazo (%)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "enzyme_section",
+   "fieldtype": "Section Break",
+   "label": "Enzyme Treatment (Hidrolisis)"
+  },
+  {
+   "fieldname": "enzyme_type",
+   "fieldtype": "Link",
+   "label": "Enzyme Type",
+   "options": "Item"
+  },
+  {
+   "fieldname": "enzyme_ml_per_kg",
+   "fieldtype": "Float",
+   "label": "Enzyme Dosing (ml/kg penca)",
+   "precision": 2
+  },
+  {
+   "fieldname": "enzyme_total_ml",
+   "fieldtype": "Float",
+   "label": "Total Enzyme (ml)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "temperature_c",
+   "fieldtype": "Float",
+   "label": "Temperature (°C)",
+   "precision": 1
+  },
+  {
+   "fieldname": "water_added_liters",
+   "fieldtype": "Float",
+   "label": "Water Added (Liters)",
+   "precision": 2
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "juice_tracking_section",
+   "fieldtype": "Section Break",
+   "label": "Juice Volume & Solids Tracking"
+  },
+  {
+   "fieldname": "juice_pressed_liters",
+   "fieldtype": "Float",
+   "label": "Jugo Prensado (L)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_pressed_solids_percent",
+   "fieldtype": "Percent",
+   "label": "Sólidos Prensado (%)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_pressed_solids_kg",
+   "fieldtype": "Float",
+   "label": "Sólidos Prensado (Kg)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "juice_decolorized_liters",
+   "fieldtype": "Float",
+   "label": "Jugo Decolorado (L)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_decolorized_solids_percent",
+   "fieldtype": "Percent",
+   "label": "Sólidos Decolorado (%)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_decolorized_solids_kg",
+   "fieldtype": "Float",
+   "label": "Sólidos Decolorado (Kg)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "juice_refiltrated_liters",
+   "fieldtype": "Float",
+   "label": "Jugo Refiltrado (L)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_refiltrated_solids_percent",
+   "fieldtype": "Percent",
+   "label": "Sólidos Refiltrado (%)",
+   "precision": 2
+  },
+  {
+   "fieldname": "juice_refiltrated_solids_kg",
+   "fieldtype": "Float",
+   "label": "Sólidos Refiltrado (Kg)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "final_output_section",
+   "fieldtype": "Section Break",
+   "label": "Final Output & Yield"
+  },
+  {
+   "fieldname": "final_volume_liters",
+   "fieldtype": "Float",
+   "label": "Volumen Final (L)",
+   "precision": 2
+  },
+  {
+   "fieldname": "final_solids_percent",
+   "fieldtype": "Percent",
+   "label": "Sólidos Totales Envasado (%)",
+   "precision": 2
+  },
+  {
+   "fieldname": "final_solids_kg",
+   "fieldtype": "Float",
+   "label": "Kilogramos Sólidos Totales Envasado",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kilos_envasado",
+   "fieldtype": "Float",
+   "label": "Kilos Envasado",
+   "precision": 2
+  },
+  {
+   "fieldname": "rendimiento_porcentual",
+   "fieldtype": "Percent",
+   "label": "Rendimiento Porcentual (%)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "process_parameters_section",
+   "fieldtype": "Section Break",
+   "label": "Process Parameters"
+  },
+  {
+   "fieldname": "carbon_activated_percent",
+   "fieldtype": "Percent",
+   "label": "Carbón Activado (%)",
+   "precision": 2
+  },
+  {
+   "fieldname": "pre_filter_layers",
+   "fieldtype": "Int",
+   "label": "Pre-filter Layers"
+  },
+  {
+   "fieldname": "column_break_30",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "solids_loss_percent",
+   "fieldtype": "Percent",
+   "label": "Disminución Sólidos (%)",
+   "precision": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "observations",
+   "fieldtype": "Small Text",
+   "label": "Observations"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-18 04:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "amb_w_tds",
+ "name": "Hydrolysis Process Log",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
