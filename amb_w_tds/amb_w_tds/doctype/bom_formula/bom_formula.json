@@ -1,10 +1,10 @@
 {
   "doctype": "DocType",
   "name": "BOM Formula",
-  "module": "amb_w_tds",
+  "module": "Amb W Tds",
   "is_submittable": 0,
   "istable": 0,
-  "custom": 1,
+  "custom": 0,
   "fields": [
     {
       "fieldname": "formula_name",

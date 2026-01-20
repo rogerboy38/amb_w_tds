@@ -1,7 +1,7 @@
 {
  "doctype": "DocType",
  "name": "BOM Version",
- "module": "amb_w_tds",
+ "module": "Amb W Tds",
  "is_submittable": 0,
  "fields": [
   {
