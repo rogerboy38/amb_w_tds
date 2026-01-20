@@ -14,6 +14,11 @@ doctype_class = {
     "Batch AMB":  "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
 }
 
+# Fix freight app's broken Lead override path
+override_doctype_class = {
+    "Lead": "freight.freight_management.customization.lead.lead.CustomLead"
+}
+
 # ========================================
 #  FRONTEND JS INJECTIONS
 # ========================================
