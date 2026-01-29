@@ -135,5 +135,6 @@
       "reqd": 0,
       "options": "KPI Cost Breakdown"
     }
-  ]
+  ],
+  "app": "amb_w_tds"
 }

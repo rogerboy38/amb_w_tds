@@ -1,312 +1,313 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2025-06-07 10:31:09.000000",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "project_name",
-  "project_type",
-  "status",
-  "workflow_state",
-  "column_break_4",
-  "start_date",
-  "expected_completion",
-  "priority",
-  "project_details_section",
-  "product_category",
-  "target_markets",
-  "project_description",
-  "column_break_11",
-  "business_case",
-  "success_criteria",
-  "estimated_investment",
-  "team_section",
-  "project_manager",
-  "r_and_d_lead",
-  "regulatory_lead",
-  "column_break_17",
-  "team_members",
-  "external_consultants",
-  "progress_section",
-  "completion_percentage",
-  "current_phase",
-  "next_milestone",
-  "column_break_22",
-  "last_update_date",
-  "issues_risks",
-  "regulatory_section",
-  "regulatory_strategy",
-  "target_countries",
-  "column_break_27",
-  "required_certifications",
-  "compliance_status",
-  "notes_section",
-  "notes"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "RND-.####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "project_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Project Name",
-   "reqd": 1
-  },
-  {
-   "fieldname": "project_type",
-   "fieldtype": "Select",
-   "label": "Project Type",
-   "options": "New Product Development\nProduct Improvement\nFormulation Research\nMarket Expansion\nRegulatory Compliance\nOther",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "Planning\nIn Progress\nTesting\nRegulatory Review\nCompleted\nOn Hold\nCancelled",
-   "reqd": 1
-  },
-  {
-   "fieldname": "workflow_state",
-   "fieldtype": "Link",
-   "label": "Workflow State",
-   "options": "Workflow State",
-   "read_only": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "expected_completion",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Expected Completion"
-  },
-  {
-   "fieldname": "priority",
-   "fieldtype": "Select",
-   "label": "Priority",
-   "options": "High\nMedium\nLow"
-  },
-  {
-   "fieldname": "project_details_section",
-   "fieldtype": "Section Break",
-   "label": "Project Details"
-  },
-  {
-   "fieldname": "product_category",
-   "fieldtype": "Select",
-   "label": "Product Category",
-   "options": "Aloe Juice\nAloe Powder\nCosmetic Formulation\nPharmaceutical\nDietary Supplement\nOther"
-  },
-  {
-   "fieldname": "target_markets",
-   "fieldtype": "Small Text",
-   "label": "Target Markets"
-  },
-  {
-   "fieldname": "project_description",
-   "fieldtype": "Text Editor",
-   "label": "Project Description"
-  },
-  {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "business_case",
-   "fieldtype": "Text Editor",
-   "label": "Business Case"
-  },
-  {
-   "fieldname": "success_criteria",
-   "fieldtype": "Small Text",
-   "label": "Success Criteria"
-  },
-  {
-   "fieldname": "estimated_investment",
-   "fieldtype": "Currency",
-   "label": "Estimated Investment"
-  },
-  {
-   "fieldname": "team_section",
-   "fieldtype": "Section Break",
-   "label": "Project Team"
-  },
-  {
-   "fieldname": "project_manager",
-   "fieldtype": "Link",
-   "label": "Project Manager",
-   "options": "User"
-  },
-  {
-   "fieldname": "r_and_d_lead",
-   "fieldtype": "Link",
-   "label": "R&D Lead",
-   "options": "User"
-  },
-  {
-   "fieldname": "regulatory_lead",
-   "fieldtype": "Link",
-   "label": "Regulatory Lead",
-   "options": "User"
-  },
-  {
-   "fieldname": "column_break_17",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "team_members",
-   "fieldtype": "Small Text",
-   "label": "Team Members"
-  },
-  {
-   "fieldname": "external_consultants",
-   "fieldtype": "Small Text",
-   "label": "External Consultants"
-  },
-  {
-   "fieldname": "progress_section",
-   "fieldtype": "Section Break",
-   "label": "Progress Tracking"
-  },
-  {
-   "fieldname": "completion_percentage",
-   "fieldtype": "Percent",
-   "label": "Completion Percentage"
-  },
-  {
-   "fieldname": "current_phase",
-   "fieldtype": "Data",
-   "label": "Current Phase"
-  },
-  {
-   "fieldname": "next_milestone",
-   "fieldtype": "Data",
-   "label": "Next Milestone"
-  },
-  {
-   "fieldname": "column_break_22",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "last_update_date",
-   "fieldtype": "Date",
-   "label": "Last Update Date"
-  },
-  {
-   "fieldname": "issues_risks",
-   "fieldtype": "Text Editor",
-   "label": "Issues & Risks"
-  },
-  {
-   "fieldname": "regulatory_section",
-   "fieldtype": "Section Break",
-   "label": "Regulatory Information"
-  },
-  {
-   "fieldname": "regulatory_strategy",
-   "fieldtype": "Text Editor",
-   "label": "Regulatory Strategy"
-  },
-  {
-   "fieldname": "target_countries",
-   "fieldtype": "Small Text",
-   "label": "Target Countries"
-  },
-  {
-   "fieldname": "column_break_27",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "required_certifications",
-   "fieldtype": "Small Text",
-   "label": "Required Certifications"
-  },
-  {
-   "fieldname": "compliance_status",
-   "fieldtype": "Select",
-   "label": "Compliance Status",
-   "options": "Not Started\nIn Progress\nPending Review\nCompliant\nNon-Compliant"
-  },
-  {
-   "fieldname": "notes_section",
-   "fieldtype": "Section Break",
-   "label": "Notes"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Text Editor",
-   "label": "Notes"
-  }
- ],
- "has_web_view": 1,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-07 10:31:09.000000",
- "modified_by": "Administrator",
- "module": "Amb W Tds",
- "name": "Product Development Project",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "R&D Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Data Entry Operator",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "Distribution Manager"
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "Compliance Officer"
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "title_field": "project_name",
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2025-06-07 10:31:09.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "project_name",
+    "project_type",
+    "status",
+    "workflow_state",
+    "column_break_4",
+    "start_date",
+    "expected_completion",
+    "priority",
+    "project_details_section",
+    "product_category",
+    "target_markets",
+    "project_description",
+    "column_break_11",
+    "business_case",
+    "success_criteria",
+    "estimated_investment",
+    "team_section",
+    "project_manager",
+    "r_and_d_lead",
+    "regulatory_lead",
+    "column_break_17",
+    "team_members",
+    "external_consultants",
+    "progress_section",
+    "completion_percentage",
+    "current_phase",
+    "next_milestone",
+    "column_break_22",
+    "last_update_date",
+    "issues_risks",
+    "regulatory_section",
+    "regulatory_strategy",
+    "target_countries",
+    "column_break_27",
+    "required_certifications",
+    "compliance_status",
+    "notes_section",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "RND-.####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "project_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Project Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "project_type",
+      "fieldtype": "Select",
+      "label": "Project Type",
+      "options": "New Product Development\nProduct Improvement\nFormulation Research\nMarket Expansion\nRegulatory Compliance\nOther",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Planning\nIn Progress\nTesting\nRegulatory Review\nCompleted\nOn Hold\nCancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "workflow_state",
+      "fieldtype": "Link",
+      "label": "Workflow State",
+      "options": "Workflow State",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "start_date",
+      "fieldtype": "Date",
+      "label": "Start Date"
+    },
+    {
+      "fieldname": "expected_completion",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Expected Completion"
+    },
+    {
+      "fieldname": "priority",
+      "fieldtype": "Select",
+      "label": "Priority",
+      "options": "High\nMedium\nLow"
+    },
+    {
+      "fieldname": "project_details_section",
+      "fieldtype": "Section Break",
+      "label": "Project Details"
+    },
+    {
+      "fieldname": "product_category",
+      "fieldtype": "Select",
+      "label": "Product Category",
+      "options": "Aloe Juice\nAloe Powder\nCosmetic Formulation\nPharmaceutical\nDietary Supplement\nOther"
+    },
+    {
+      "fieldname": "target_markets",
+      "fieldtype": "Small Text",
+      "label": "Target Markets"
+    },
+    {
+      "fieldname": "project_description",
+      "fieldtype": "Text Editor",
+      "label": "Project Description"
+    },
+    {
+      "fieldname": "column_break_11",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "business_case",
+      "fieldtype": "Text Editor",
+      "label": "Business Case"
+    },
+    {
+      "fieldname": "success_criteria",
+      "fieldtype": "Small Text",
+      "label": "Success Criteria"
+    },
+    {
+      "fieldname": "estimated_investment",
+      "fieldtype": "Currency",
+      "label": "Estimated Investment"
+    },
+    {
+      "fieldname": "team_section",
+      "fieldtype": "Section Break",
+      "label": "Project Team"
+    },
+    {
+      "fieldname": "project_manager",
+      "fieldtype": "Link",
+      "label": "Project Manager",
+      "options": "User"
+    },
+    {
+      "fieldname": "r_and_d_lead",
+      "fieldtype": "Link",
+      "label": "R&D Lead",
+      "options": "User"
+    },
+    {
+      "fieldname": "regulatory_lead",
+      "fieldtype": "Link",
+      "label": "Regulatory Lead",
+      "options": "User"
+    },
+    {
+      "fieldname": "column_break_17",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "team_members",
+      "fieldtype": "Small Text",
+      "label": "Team Members"
+    },
+    {
+      "fieldname": "external_consultants",
+      "fieldtype": "Small Text",
+      "label": "External Consultants"
+    },
+    {
+      "fieldname": "progress_section",
+      "fieldtype": "Section Break",
+      "label": "Progress Tracking"
+    },
+    {
+      "fieldname": "completion_percentage",
+      "fieldtype": "Percent",
+      "label": "Completion Percentage"
+    },
+    {
+      "fieldname": "current_phase",
+      "fieldtype": "Data",
+      "label": "Current Phase"
+    },
+    {
+      "fieldname": "next_milestone",
+      "fieldtype": "Data",
+      "label": "Next Milestone"
+    },
+    {
+      "fieldname": "column_break_22",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "last_update_date",
+      "fieldtype": "Date",
+      "label": "Last Update Date"
+    },
+    {
+      "fieldname": "issues_risks",
+      "fieldtype": "Text Editor",
+      "label": "Issues & Risks"
+    },
+    {
+      "fieldname": "regulatory_section",
+      "fieldtype": "Section Break",
+      "label": "Regulatory Information"
+    },
+    {
+      "fieldname": "regulatory_strategy",
+      "fieldtype": "Text Editor",
+      "label": "Regulatory Strategy"
+    },
+    {
+      "fieldname": "target_countries",
+      "fieldtype": "Small Text",
+      "label": "Target Countries"
+    },
+    {
+      "fieldname": "column_break_27",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "required_certifications",
+      "fieldtype": "Small Text",
+      "label": "Required Certifications"
+    },
+    {
+      "fieldname": "compliance_status",
+      "fieldtype": "Select",
+      "label": "Compliance Status",
+      "options": "Not Started\nIn Progress\nPending Review\nCompliant\nNon-Compliant"
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text Editor",
+      "label": "Notes"
+    }
+  ],
+  "has_web_view": 1,
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-06-07 10:31:09.000000",
+  "modified_by": "Administrator",
+  "module": "Amb W Tds",
+  "name": "Product Development Project",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "R&D Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Data Entry Operator",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Distribution Manager"
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Compliance Officer"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "project_name",
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1,
+  "app": "amb_w_tds"
 }

@@ -1,72 +1,73 @@
 {
- "doctype": "DocType",
- "name": "BOM Version",
- "module": "Amb W Tds",
- "is_submittable": 0,
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "BOMV-.YYYY.-"
-  },
-  {
-   "fieldname": "bom_template",
-   "fieldtype": "Link",
-   "label": "BOM Template",
-   "options": "BOM Template",
-   "reqd": 1
-  },
-  {
-   "fieldname": "version_number",
-   "fieldtype": "Float",
-   "label": "Version Number",
-   "reqd": 1
-  },
-  {
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "label": "Is Active Version",
-   "default": 0
-  },
-  {
-   "fieldname": "effective_from",
-   "fieldtype": "Date",
-   "label": "Effective From"
-  },
-  {
-   "fieldname": "effective_to",
-   "fieldtype": "Date",
-   "label": "Effective To"
-  },
-  {
-   "fieldname": "change_description",
-   "fieldtype": "Text",
-   "label": "Change Description"
-  }
- ],
- "permissions": [
-  {
-   "role": "System Manager",
-   "permlevel": 0,
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "delete": 1,
-   "submit": 0,
-   "cancel": 0,
-   "amend": 0
-  },
-  {
-   "role": "Manufacturing User",
-   "permlevel": 0,
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "delete": 0,
-   "submit": 0,
-   "cancel": 0,
-   "amend": 0
-  }
- ]
+  "doctype": "DocType",
+  "name": "BOM Version",
+  "module": "Amb W Tds",
+  "is_submittable": 0,
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Series",
+      "options": "BOMV-.YYYY.-"
+    },
+    {
+      "fieldname": "bom_template",
+      "fieldtype": "Link",
+      "label": "BOM Template",
+      "options": "BOM Template",
+      "reqd": 1
+    },
+    {
+      "fieldname": "version_number",
+      "fieldtype": "Float",
+      "label": "Version Number",
+      "reqd": 1
+    },
+    {
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Is Active Version",
+      "default": 0
+    },
+    {
+      "fieldname": "effective_from",
+      "fieldtype": "Date",
+      "label": "Effective From"
+    },
+    {
+      "fieldname": "effective_to",
+      "fieldtype": "Date",
+      "label": "Effective To"
+    },
+    {
+      "fieldname": "change_description",
+      "fieldtype": "Text",
+      "label": "Change Description"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 0,
+      "cancel": 0,
+      "amend": 0
+    },
+    {
+      "role": "Manufacturing User",
+      "permlevel": 0,
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "submit": 0,
+      "cancel": 0,
+      "amend": 0
+    }
+  ],
+  "app": "amb_w_tds"
 }

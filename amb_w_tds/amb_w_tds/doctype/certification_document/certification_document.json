@@ -1,452 +1,453 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2025-06-07 10:31:09.000000",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "document_title",
-  "document_type",
-  "status",
-  "column_break_4",
-  "country",
-  "issuing_authority",
-  "certificate_number",
-  "document_details_section",
-  "organization",
-  "product_name",
-  "scope_of_certification",
-  "column_break_11",
-  "standard_reference",
-  "certification_criteria",
-  "assessment_type",
-  "dates_section",
-  "issue_date",
-  "expiry_date",
-  "last_renewal_date",
-  "column_break_17",
-  "next_renewal_due",
-  "review_frequency",
-  "grace_period_days",
-  "document_management_section",
-  "document_file",
-  "file_size",
-  "document_version",
-  "column_break_24",
-  "storage_location",
-  "access_level",
-  "verification_status",
-  "financial_section",
-  "certification_cost",
-  "renewal_cost",
-  "currency",
-  "column_break_30",
-  "payment_status",
-  "invoice_reference",
-  "cost_center",
-  "contacts_section",
-  "primary_contact",
-  "contact_email",
-  "secondary_contact",
-  "column_break_36",
-  "auditor_name",
-  "auditor_email",
-  "certifying_body_phone",
-  "compliance_section",
-  "compliance_requirements",
-  "audit_findings",
-  "column_break_42",
-  "corrective_actions",
-  "surveillance_schedule",
-  "system_section",
-  "created_by_user",
-  "last_updated_by",
-  "column_break_47",
-  "document_hash",
-  "backup_location",
-  "notes"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "CERT-.####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "document_title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Document Title",
-   "reqd": 1
-  },
-  {
-   "fieldname": "document_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Document Type",
-   "options": "ISO Certificate\nGMP Certificate\nOrganic Certificate\nFDA Registration\nHealth Canada License\nEU Registration\nHACCP Certificate\nQuality Certificate\nTesting Report\nAnalysis Certificate\nOther",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "Valid\nExpired\nExpiring Soon\nSuspended\nRevoked\nPending Renewal\nUnder Review",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "country",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Country",
-   "options": "Country"
-  },
-  {
-   "fieldname": "issuing_authority",
-   "fieldtype": "Data",
-   "label": "Issuing Authority",
-   "reqd": 1
-  },
-  {
-   "fieldname": "certificate_number",
-   "fieldtype": "Data",
-   "label": "Certificate Number"
-  },
-  {
-   "fieldname": "document_details_section",
-   "fieldtype": "Section Break",
-   "label": "Document Details"
-  },
-  {
-   "fieldname": "organization",
-   "fieldtype": "Link",
-   "label": "Organization",
-   "options": "Distribution Organization"
-  },
-  {
-   "fieldname": "product_name",
-   "fieldtype": "Data",
-   "label": "Product Name"
-  },
-  {
-   "fieldname": "scope_of_certification",
-   "fieldtype": "Text Editor",
-   "label": "Scope of Certification"
-  },
-  {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "standard_reference",
-   "fieldtype": "Data",
-   "label": "Standard Reference"
-  },
-  {
-   "fieldname": "certification_criteria",
-   "fieldtype": "Small Text",
-   "label": "Certification Criteria"
-  },
-  {
-   "fieldname": "assessment_type",
-   "fieldtype": "Select",
-   "label": "Assessment Type",
-   "options": "Initial Assessment\nSurveillance Audit\nRecertification\nSpecial Audit\nComplaint Investigation"
-  },
-  {
-   "fieldname": "dates_section",
-   "fieldtype": "Section Break",
-   "label": "Important Dates"
-  },
-  {
-   "fieldname": "issue_date",
-   "fieldtype": "Date",
-   "label": "Issue Date"
-  },
-  {
-   "fieldname": "expiry_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Expiry Date"
-  },
-  {
-   "fieldname": "last_renewal_date",
-   "fieldtype": "Date",
-   "label": "Last Renewal Date"
-  },
-  {
-   "fieldname": "column_break_17",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "next_renewal_due",
-   "fieldtype": "Date",
-   "label": "Next Renewal Due"
-  },
-  {
-   "fieldname": "review_frequency",
-   "fieldtype": "Select",
-   "label": "Review Frequency",
-   "options": "Annual\nBi-annual\nTriennial\nAs Required"
-  },
-  {
-   "fieldname": "grace_period_days",
-   "fieldtype": "Int",
-   "label": "Grace Period (Days)"
-  },
-  {
-   "fieldname": "document_management_section",
-   "fieldtype": "Section Break",
-   "label": "Document Management"
-  },
-  {
-   "fieldname": "document_file",
-   "fieldtype": "Attach",
-   "label": "Document File"
-  },
-  {
-   "fieldname": "file_size",
-   "fieldtype": "Data",
-   "label": "File Size",
-   "read_only": 1
-  },
-  {
-   "fieldname": "document_version",
-   "fieldtype": "Data",
-   "label": "Document Version"
-  },
-  {
-   "fieldname": "column_break_24",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "storage_location",
-   "fieldtype": "Data",
-   "label": "Storage Location"
-  },
-  {
-   "fieldname": "access_level",
-   "fieldtype": "Select",
-   "label": "Access Level",
-   "options": "Public\nInternal\nConfidential\nRestricted"
-  },
-  {
-   "fieldname": "verification_status",
-   "fieldtype": "Select",
-   "label": "Verification Status",
-   "options": "Verified\nPending Verification\nUnverified\nVerification Failed"
-  },
-  {
-   "fieldname": "financial_section",
-   "fieldtype": "Section Break",
-   "label": "Financial Information"
-  },
-  {
-   "fieldname": "certification_cost",
-   "fieldtype": "Currency",
-   "label": "Certification Cost"
-  },
-  {
-   "fieldname": "renewal_cost",
-   "fieldtype": "Currency",
-   "label": "Renewal Cost"
-  },
-  {
-   "fieldname": "currency",
-   "fieldtype": "Link",
-   "label": "Currency",
-   "options": "Currency"
-  },
-  {
-   "fieldname": "column_break_30",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "payment_status",
-   "fieldtype": "Select",
-   "label": "Payment Status",
-   "options": "Paid\nPending\nOverdue\nPartial\nWaived"
-  },
-  {
-   "fieldname": "invoice_reference",
-   "fieldtype": "Data",
-   "label": "Invoice Reference"
-  },
-  {
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center"
-  },
-  {
-   "fieldname": "contacts_section",
-   "fieldtype": "Section Break",
-   "label": "Contact Information"
-  },
-  {
-   "fieldname": "primary_contact",
-   "fieldtype": "Data",
-   "label": "Primary Contact"
-  },
-  {
-   "fieldname": "contact_email",
-   "fieldtype": "Data",
-   "label": "Contact Email",
-   "options": "Email"
-  },
-  {
-   "fieldname": "secondary_contact",
-   "fieldtype": "Data",
-   "label": "Secondary Contact"
-  },
-  {
-   "fieldname": "column_break_36",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "auditor_name",
-   "fieldtype": "Data",
-   "label": "Auditor Name"
-  },
-  {
-   "fieldname": "auditor_email",
-   "fieldtype": "Data",
-   "label": "Auditor Email",
-   "options": "Email"
-  },
-  {
-   "fieldname": "certifying_body_phone",
-   "fieldtype": "Data",
-   "label": "Certifying Body Phone"
-  },
-  {
-   "fieldname": "compliance_section",
-   "fieldtype": "Section Break",
-   "label": "Compliance Information"
-  },
-  {
-   "fieldname": "compliance_requirements",
-   "fieldtype": "Text Editor",
-   "label": "Compliance Requirements"
-  },
-  {
-   "fieldname": "audit_findings",
-   "fieldtype": "Text Editor",
-   "label": "Audit Findings"
-  },
-  {
-   "fieldname": "column_break_42",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "corrective_actions",
-   "fieldtype": "Text Editor",
-   "label": "Corrective Actions"
-  },
-  {
-   "fieldname": "surveillance_schedule",
-   "fieldtype": "Small Text",
-   "label": "Surveillance Schedule"
-  },
-  {
-   "fieldname": "system_section",
-   "fieldtype": "Section Break",
-   "label": "System Information"
-  },
-  {
-   "fieldname": "created_by_user",
-   "fieldtype": "Link",
-   "label": "Created By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "last_updated_by",
-   "fieldtype": "Link",
-   "label": "Last Updated By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_47",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "document_hash",
-   "fieldtype": "Data",
-   "label": "Document Hash",
-   "read_only": 1
-  },
-  {
-   "fieldname": "backup_location",
-   "fieldtype": "Data",
-   "label": "Backup Location"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Text Editor",
-   "label": "Notes"
-  }
- ],
- "has_web_view": 1,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-07 10:31:09.000000",
- "modified_by": "Administrator",
- "module": "Amb W Tds",
- "name": "Certification Document",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Compliance Officer",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Data Entry Operator",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "Distribution Manager"
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "R&D Manager"
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "title_field": "document_title",
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2025-06-07 10:31:09.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "document_title",
+    "document_type",
+    "status",
+    "column_break_4",
+    "country",
+    "issuing_authority",
+    "certificate_number",
+    "document_details_section",
+    "organization",
+    "product_name",
+    "scope_of_certification",
+    "column_break_11",
+    "standard_reference",
+    "certification_criteria",
+    "assessment_type",
+    "dates_section",
+    "issue_date",
+    "expiry_date",
+    "last_renewal_date",
+    "column_break_17",
+    "next_renewal_due",
+    "review_frequency",
+    "grace_period_days",
+    "document_management_section",
+    "document_file",
+    "file_size",
+    "document_version",
+    "column_break_24",
+    "storage_location",
+    "access_level",
+    "verification_status",
+    "financial_section",
+    "certification_cost",
+    "renewal_cost",
+    "currency",
+    "column_break_30",
+    "payment_status",
+    "invoice_reference",
+    "cost_center",
+    "contacts_section",
+    "primary_contact",
+    "contact_email",
+    "secondary_contact",
+    "column_break_36",
+    "auditor_name",
+    "auditor_email",
+    "certifying_body_phone",
+    "compliance_section",
+    "compliance_requirements",
+    "audit_findings",
+    "column_break_42",
+    "corrective_actions",
+    "surveillance_schedule",
+    "system_section",
+    "created_by_user",
+    "last_updated_by",
+    "column_break_47",
+    "document_hash",
+    "backup_location",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "CERT-.####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "document_title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Document Title",
+      "reqd": 1
+    },
+    {
+      "fieldname": "document_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Document Type",
+      "options": "ISO Certificate\nGMP Certificate\nOrganic Certificate\nFDA Registration\nHealth Canada License\nEU Registration\nHACCP Certificate\nQuality Certificate\nTesting Report\nAnalysis Certificate\nOther",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Valid\nExpired\nExpiring Soon\nSuspended\nRevoked\nPending Renewal\nUnder Review",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "country",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Country",
+      "options": "Country"
+    },
+    {
+      "fieldname": "issuing_authority",
+      "fieldtype": "Data",
+      "label": "Issuing Authority",
+      "reqd": 1
+    },
+    {
+      "fieldname": "certificate_number",
+      "fieldtype": "Data",
+      "label": "Certificate Number"
+    },
+    {
+      "fieldname": "document_details_section",
+      "fieldtype": "Section Break",
+      "label": "Document Details"
+    },
+    {
+      "fieldname": "organization",
+      "fieldtype": "Link",
+      "label": "Organization",
+      "options": "Distribution Organization"
+    },
+    {
+      "fieldname": "product_name",
+      "fieldtype": "Data",
+      "label": "Product Name"
+    },
+    {
+      "fieldname": "scope_of_certification",
+      "fieldtype": "Text Editor",
+      "label": "Scope of Certification"
+    },
+    {
+      "fieldname": "column_break_11",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "standard_reference",
+      "fieldtype": "Data",
+      "label": "Standard Reference"
+    },
+    {
+      "fieldname": "certification_criteria",
+      "fieldtype": "Small Text",
+      "label": "Certification Criteria"
+    },
+    {
+      "fieldname": "assessment_type",
+      "fieldtype": "Select",
+      "label": "Assessment Type",
+      "options": "Initial Assessment\nSurveillance Audit\nRecertification\nSpecial Audit\nComplaint Investigation"
+    },
+    {
+      "fieldname": "dates_section",
+      "fieldtype": "Section Break",
+      "label": "Important Dates"
+    },
+    {
+      "fieldname": "issue_date",
+      "fieldtype": "Date",
+      "label": "Issue Date"
+    },
+    {
+      "fieldname": "expiry_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Expiry Date"
+    },
+    {
+      "fieldname": "last_renewal_date",
+      "fieldtype": "Date",
+      "label": "Last Renewal Date"
+    },
+    {
+      "fieldname": "column_break_17",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "next_renewal_due",
+      "fieldtype": "Date",
+      "label": "Next Renewal Due"
+    },
+    {
+      "fieldname": "review_frequency",
+      "fieldtype": "Select",
+      "label": "Review Frequency",
+      "options": "Annual\nBi-annual\nTriennial\nAs Required"
+    },
+    {
+      "fieldname": "grace_period_days",
+      "fieldtype": "Int",
+      "label": "Grace Period (Days)"
+    },
+    {
+      "fieldname": "document_management_section",
+      "fieldtype": "Section Break",
+      "label": "Document Management"
+    },
+    {
+      "fieldname": "document_file",
+      "fieldtype": "Attach",
+      "label": "Document File"
+    },
+    {
+      "fieldname": "file_size",
+      "fieldtype": "Data",
+      "label": "File Size",
+      "read_only": 1
+    },
+    {
+      "fieldname": "document_version",
+      "fieldtype": "Data",
+      "label": "Document Version"
+    },
+    {
+      "fieldname": "column_break_24",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "storage_location",
+      "fieldtype": "Data",
+      "label": "Storage Location"
+    },
+    {
+      "fieldname": "access_level",
+      "fieldtype": "Select",
+      "label": "Access Level",
+      "options": "Public\nInternal\nConfidential\nRestricted"
+    },
+    {
+      "fieldname": "verification_status",
+      "fieldtype": "Select",
+      "label": "Verification Status",
+      "options": "Verified\nPending Verification\nUnverified\nVerification Failed"
+    },
+    {
+      "fieldname": "financial_section",
+      "fieldtype": "Section Break",
+      "label": "Financial Information"
+    },
+    {
+      "fieldname": "certification_cost",
+      "fieldtype": "Currency",
+      "label": "Certification Cost"
+    },
+    {
+      "fieldname": "renewal_cost",
+      "fieldtype": "Currency",
+      "label": "Renewal Cost"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency"
+    },
+    {
+      "fieldname": "column_break_30",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "payment_status",
+      "fieldtype": "Select",
+      "label": "Payment Status",
+      "options": "Paid\nPending\nOverdue\nPartial\nWaived"
+    },
+    {
+      "fieldname": "invoice_reference",
+      "fieldtype": "Data",
+      "label": "Invoice Reference"
+    },
+    {
+      "fieldname": "cost_center",
+      "fieldtype": "Link",
+      "label": "Cost Center",
+      "options": "Cost Center"
+    },
+    {
+      "fieldname": "contacts_section",
+      "fieldtype": "Section Break",
+      "label": "Contact Information"
+    },
+    {
+      "fieldname": "primary_contact",
+      "fieldtype": "Data",
+      "label": "Primary Contact"
+    },
+    {
+      "fieldname": "contact_email",
+      "fieldtype": "Data",
+      "label": "Contact Email",
+      "options": "Email"
+    },
+    {
+      "fieldname": "secondary_contact",
+      "fieldtype": "Data",
+      "label": "Secondary Contact"
+    },
+    {
+      "fieldname": "column_break_36",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "auditor_name",
+      "fieldtype": "Data",
+      "label": "Auditor Name"
+    },
+    {
+      "fieldname": "auditor_email",
+      "fieldtype": "Data",
+      "label": "Auditor Email",
+      "options": "Email"
+    },
+    {
+      "fieldname": "certifying_body_phone",
+      "fieldtype": "Data",
+      "label": "Certifying Body Phone"
+    },
+    {
+      "fieldname": "compliance_section",
+      "fieldtype": "Section Break",
+      "label": "Compliance Information"
+    },
+    {
+      "fieldname": "compliance_requirements",
+      "fieldtype": "Text Editor",
+      "label": "Compliance Requirements"
+    },
+    {
+      "fieldname": "audit_findings",
+      "fieldtype": "Text Editor",
+      "label": "Audit Findings"
+    },
+    {
+      "fieldname": "column_break_42",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "corrective_actions",
+      "fieldtype": "Text Editor",
+      "label": "Corrective Actions"
+    },
+    {
+      "fieldname": "surveillance_schedule",
+      "fieldtype": "Small Text",
+      "label": "Surveillance Schedule"
+    },
+    {
+      "fieldname": "system_section",
+      "fieldtype": "Section Break",
+      "label": "System Information"
+    },
+    {
+      "fieldname": "created_by_user",
+      "fieldtype": "Link",
+      "label": "Created By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_updated_by",
+      "fieldtype": "Link",
+      "label": "Last Updated By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_47",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "document_hash",
+      "fieldtype": "Data",
+      "label": "Document Hash",
+      "read_only": 1
+    },
+    {
+      "fieldname": "backup_location",
+      "fieldtype": "Data",
+      "label": "Backup Location"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text Editor",
+      "label": "Notes"
+    }
+  ],
+  "has_web_view": 1,
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-06-07 10:31:09.000000",
+  "modified_by": "Administrator",
+  "module": "Amb W Tds",
+  "name": "Certification Document",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Compliance Officer",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Data Entry Operator",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Distribution Manager"
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "R&D Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "document_title",
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1,
+  "app": "amb_w_tds"
 }

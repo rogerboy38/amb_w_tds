@@ -51,7 +51,7 @@
       "in_list_view": 1,
       "reqd": 1,
       "width": "120",
-      "description": "E.g., '≥99.5%', '≤0.05%', '10-20', or '2.0 ± 0.1'"
+      "description": "E.g., '\u226599.5%', '\u22640.05%', '10-20', or '2.0 \u00b1 0.1'"
     },
     {
       "fieldname": "test_method",
@@ -199,5 +199,6 @@
   "sort_order": "DESC",
   "states": [],
   "track_changes": 1,
-  "track_seen": 1
+  "track_seen": 1,
+  "app": "amb_w_tds"
 }

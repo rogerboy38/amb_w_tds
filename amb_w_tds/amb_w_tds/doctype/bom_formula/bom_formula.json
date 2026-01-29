@@ -32,7 +32,7 @@
     {
       "fieldname": "fermentation_temperature",
       "fieldtype": "Float",
-      "label": "Temperature (°C)"
+      "label": "Temperature (\u00b0C)"
     },
     {
       "fieldname": "target_ph",
@@ -68,5 +68,6 @@
       "label": "Total Composition (PPM)",
       "read_only": 1
     }
-  ]
+  ],
+  "app": "amb_w_tds"
 }

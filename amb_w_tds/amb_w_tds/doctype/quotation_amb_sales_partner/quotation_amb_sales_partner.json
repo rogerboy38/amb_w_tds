@@ -27,5 +27,6 @@
       "label": "Legacy Agent ID",
       "fieldtype": "Data"
     }
-  ]
+  ],
+  "app": "amb_w_tds"
 }

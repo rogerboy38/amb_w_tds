@@ -26,5 +26,6 @@
       "fieldtype": "Data",
       "label": "Test Method"
     }
-  ]
+  ],
+  "app": "amb_w_tds"
 }
