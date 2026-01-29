@@ -1,5 +1,5 @@
 # amb_w_tds package
-__version__ = "9.0.4"
+__version__ = "9.0.5"
 
 
 #from . import __version__ as version
@@ -23,8 +23,9 @@ website_route_rules = [
 after_install = "amb_w_tds.setup.setup_pages.after_install"
 
 # Export modules for scheduler events
-from . import migration
-from .api import agent, audit, quotation_amb, validate
-from .agent import performance
-from .raven import utils
+# Commented out to prevent ImportError during doctype loading
+# from . import migration
+# from .api import agent, audit, quotation_amb, validate
+# from .agent import performance
+# from .raven import utils
 
