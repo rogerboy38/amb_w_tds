@@ -1,0 +1,30 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Amino Acid",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    {
+      "fieldname": "amino_acid",
+      "fieldtype": "Select",
+      "label": "Amino Acid",
+      "options": "Total Aminoacids\nAspartic acid\nGlutamic acid\nAlanine\nLeucine\nProline\nSerine\nThreonine\nValine\nLysine\nGlycine\nPhenylalanine\nIsoleucine\nHistidine\nTyrosine\nMethionine\nCysteine"
+    },
+    {
+      "fieldname": "concentration_ppm",
+      "fieldtype": "Float",
+      "label": "Concentration (PPM)"
+    },
+    {
+      "fieldname": "activity",
+      "fieldtype": "Small Text",
+      "label": "Biological Activity"
+    },
+    {
+      "fieldname": "test_method",
+      "fieldtype": "Data",
+      "label": "Test Method"
+    }
+  ]
+}

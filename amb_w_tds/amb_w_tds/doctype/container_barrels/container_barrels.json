@@ -25,11 +25,13 @@
    "reqd": 1
   },
   {
+   "default": "Barrel",
+   "description": "Select the package type for this container",
    "fieldname": "packaging_type",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Packaging Type",
-   "options": "Item"
+   "label": "Package",
+   "options": "Barrel\nPail\nPallet\nBag\nNot Set"
   },
   {
    "fieldname": "barcode_scan_input",
@@ -86,9 +88,9 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-11-03 13:13:21.794726",
+ "modified": "2025-12-04 19:30:46.077082",
  "modified_by": "Administrator",
- "module": "amb_w_tds",
+ "module": "Amb W Tds",
  "name": "Container Barrels",
  "owner": "Administrator",
  "permissions": [],

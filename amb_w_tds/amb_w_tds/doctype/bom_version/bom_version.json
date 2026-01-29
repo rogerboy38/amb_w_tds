@@ -1,145 +1,48 @@
 {
  "doctype": "DocType",
- "module": "amb_w_tds",
  "name": "BOM Version",
- "is_submittable": 1,
- "track_changes": 1,
- "show_name_in_global_search": 1,
+ "module": "Amb W Tds",
+ "is_submittable": 0,
  "fields": [
   {
-   "fieldname": "bom_name",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "BOMV-.YYYY.-"
+  },
+  {
+   "fieldname": "bom_template",
    "fieldtype": "Link",
-   "label": "BOM",
-   "options": "BOM",
+   "label": "BOM Template",
+   "options": "BOM Template",
    "reqd": 1
   },
   {
-   "fieldname": "version",
-   "fieldtype": "Data",
-   "label": "Version",
-   "reqd": 1,
-   "description": "Version number (e.g., 1.0, 1.1, 2.0)"
-  },
-  {
-   "fieldname": "bom_enhancement",
-   "fieldtype": "Link",
-   "label": "BOM Enhancement",
-   "options": "BOM Enhancement",
-   "description": "Reference to the BOM Enhancement that created this version"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Draft\nUnder Review\nApproved\nActive\nInactive\nExpired\nRejected",
-   "default": "Draft"
-  },
-  {
-   "fieldname": "effective_date",
-   "fieldtype": "Date",
-   "label": "Effective Date",
-   "description": "Date when this version becomes active"
-  },
-  {
-   "fieldname": "expiration_date",
-   "fieldtype": "Date",
-   "label": "Expiration Date",
-   "description": "Date when this version expires"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Text",
-   "label": "Description"
-  },
-  {
-   "fieldname": "change_summary",
-   "fieldtype": "Text Editor",
-   "label": "Change Summary",
-   "description": "Summary of changes in this version"
-  },
-  {
-   "fieldname": "total_cost",
-   "fieldtype": "Currency",
-   "label": "Total Cost",
-   "read_only": 1,
-   "precision": 2
-  },
-  {
-   "fieldname": "total_items",
-   "fieldtype": "Int",
-   "label": "Total Items",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_operations",
-   "fieldtype": "Int",
-   "label": "Total Operations",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_operation_time",
+   "fieldname": "version_number",
    "fieldtype": "Float",
-   "label": "Total Operation Time (mins)",
-   "read_only": 1,
-   "precision": 2
+   "label": "Version Number",
+   "reqd": 1
   },
   {
-   "fieldname": "metrics_section",
-   "fieldtype": "Section Break",
-   "label": "Version Metrics"
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active Version",
+   "default": 0
   },
   {
-   "fieldname": "approval_section",
-   "fieldtype": "Section Break",
-   "label": "Approval Information",
-   "depends_on": "eval:doc.status === 'Rejected'"
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From"
   },
   {
-   "fieldname": "rejection_reason",
+   "fieldname": "effective_to",
+   "fieldtype": "Date",
+   "label": "Effective To"
+  },
+  {
+   "fieldname": "change_description",
    "fieldtype": "Text",
-   "label": "Rejection Reason",
-   "depends_on": "eval:doc.status === 'Rejected'"
-  },
-  {
-   "fieldname": "deactivation_section",
-   "fieldtype": "Section Break",
-   "label": "Deactivation Information",
-   "depends_on": "eval:doc.status === 'Inactive'"
-  },
-  {
-   "fieldname": "deactivation_reason",
-   "fieldtype": "Text",
-   "label": "Deactivation Reason",
-   "depends_on": "eval:doc.status === 'Inactive'"
-  },
-  {
-   "fieldname": "attachments_section",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "attachment",
-   "fieldtype": "Attach",
-   "label": "Attachment"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "options": "BOM Version",
-   "read_only": 1,
-   "print_hide": 1,
-   "no_copy": 1
-  }
- ],
- "links": [
-  {
-   "link_doctype": "BOM",
-   "link_fieldname": "bom_name"
-  },
-  {
-   "link_doctype": "BOM Enhancement",
-   "link_fieldname": "bom_enhancement"
+   "label": "Change Description"
   }
  ],
  "permissions": [
@@ -150,13 +53,9 @@
    "write": 1,
    "create": 1,
    "delete": 1,
-   "submit": 1,
-   "cancel": 1,
-   "amend": 1,
-   "report": 1,
-   "export": 1,
-   "import": 1,
-   "set_user_permissions": 1
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0
   },
   {
    "role": "Manufacturing User",
@@ -165,19 +64,9 @@
    "write": 1,
    "create": 1,
    "delete": 0,
-   "submit": 1,
+   "submit": 0,
    "cancel": 0,
-   "amend": 0,
-   "report": 1,
-   "export": 1,
-   "import": 0,
-   "set_user_permissions": 0
+   "amend": 0
   }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "version",
- "search_fields": "bom_name,version,description",
- "default_view": "List",
- "show_title_field_in_link": 1
+ ]
 }

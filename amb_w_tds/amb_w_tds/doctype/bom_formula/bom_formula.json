@@ -1,0 +1,72 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula",
+  "module": "Amb W Tds",
+  "is_submittable": 0,
+  "istable": 0,
+  "custom": 0,
+  "fields": [
+    {
+      "fieldname": "formula_name",
+      "fieldtype": "Data",
+      "label": "Formula Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "product_sku",
+      "fieldtype": "Link",
+      "options": "Item",
+      "label": "Product SKU"
+    },
+    {
+      "fieldname": "formula_type",
+      "fieldtype": "Select",
+      "options": "Fermented Aloe Juice\nAloe Concentrate\nAloe Powder",
+      "label": "Formula Type"
+    },
+    {
+      "fieldname": "fermentation_time_hours",
+      "fieldtype": "Int",
+      "label": "Fermentation Time (Hours)"
+    },
+    {
+      "fieldname": "fermentation_temperature",
+      "fieldtype": "Float",
+      "label": "Temperature (°C)"
+    },
+    {
+      "fieldname": "target_ph",
+      "fieldtype": "Float",
+      "label": "Target pH Level"
+    },
+    {
+      "fieldname": "base_aloe_material",
+      "fieldtype": "Link",
+      "options": "Item",
+      "label": "Base Aloe Material"
+    },
+    {
+      "fieldname": "target_solids",
+      "fieldtype": "Percent",
+      "label": "Target Total Solids %"
+    },
+    {
+      "fieldname": "expected_yield",
+      "fieldtype": "Percent",
+      "label": "Expected Yield %",
+      "default": 95
+    },
+    {
+      "fieldname": "amino_acids",
+      "fieldtype": "Table",
+      "options": "BOM Formula Amino Acid",
+      "label": "Amino Acids"
+    },
+    {
+      "fieldname": "total_composition_ppm",
+      "fieldtype": "Float",
+      "label": "Total Composition (PPM)",
+      "read_only": 1
+    }
+  ]
+}

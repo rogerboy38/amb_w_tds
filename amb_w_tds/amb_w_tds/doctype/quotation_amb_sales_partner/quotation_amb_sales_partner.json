@@ -1,0 +1,31 @@
+{
+  "doctype": "DocType",
+  "name": "Quotation AMB Sales Partner",
+  "module": "AMB W TDS",
+  "istable": 1,
+  "fields": [
+    {
+      "fieldname": "sales_partner",
+      "label": "Sales Partner",
+      "fieldtype": "Link",
+      "options": "Sales Partner",
+      "reqd": 1
+    },
+    {
+      "fieldname": "commission_rate",
+      "label": "Commission Rate (%)",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "commission_amount",
+      "label": "Commission Amount",
+      "fieldtype": "Currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "legacy_agent_id",
+      "label": "Legacy Agent ID",
+      "fieldtype": "Data"
+    }
+  ]
+}
