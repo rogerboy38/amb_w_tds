@@ -1,0 +1,140 @@
+# Copyright (c) 2024, AMB and contributors
+# For license information, please see license.txt
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import nowdate
+
+
+class TDSProductSpecification(Document):
+    """
+    TDS Product Specification - Technical Data Sheet
+    """
+    
+    def validate(self):
+        """Validation logic before saving"""
+        # SAFE VALIDATION - Only call methods that exist
+        self.safe_validate_version_control()
+    
+    def safe_validate_version_control(self):
+        """Safe version control that won't crash if version field is missing"""
+        try:
+            # Check if version field exists
+            if not hasattr(self, 'version'):
+                # Create version attribute with default
+                self.version = "1.00"
+                frappe.msgprint("Version field was missing. Created with default value 1.00", 
+                              alert=True, indicator="blue")
+            
+            # Ensure version is not empty
+            if not self.version or str(self.version).strip() == "":
+                self.version = "1.00"
+            
+            # Format version properly (x.xx)
+            try:
+                version_float = float(self.version)
+                self.version = f"{version_float:.2f}"
+            except (ValueError, TypeError):
+                self.version = "1.00"
+                
+        except Exception as e:
+            # Log error but don't break save
+            frappe.log_error(
+                message=f"Error in version validation: {str(e)}",
+                title="TDS Product Specification Validation"
+            )
+            # Set safe default
+            self.version = "1.00"
+    
+    def before_save(self):
+        """Before save hook"""
+        # Optional: Add any before_save logic here
+        pass
+    
+    def on_submit(self):
+        """On submit hook"""
+        # Optional: Add any on_submit logic here
+        pass
+    
+    def on_cancel(self):
+        """On cancel"""
+        # Optional: Add any on_cancel logic here
+        pass
+    
+    def archive_previous_versions(self):
+        """Mark previous versions as archived when new version is approved"""
+        if self.docstatus == 1:
+            try:
+                current_version = float(self.version) if hasattr(self, 'version') else 1.0
+                
+                previous_versions = frappe.get_all(
+                    'TDS Product Specification',
+                    filters={
+                        'product_item': self.product_item,
+                        'version': ['<', current_version],
+                        'docstatus': 1,
+                        'is_archived': 0
+                    },
+                    pluck='name'
+                )
+                
+                for prev_tds in previous_versions:
+                    frappe.db.set_value('TDS Product Specification', prev_tds, 'is_archived', 1)
+                    frappe.db.set_value('TDS Product Specification', prev_tds, 'archived_date', nowdate())
+                    
+            except Exception as e:
+                frappe.log_error(f"Error archiving versions: {str(e)}")
+
+
+# ==================== WHITELISTED METHODS ====================
+
+@frappe.whitelist()
+def get_latest_tds_version(product_item):
+    """Get latest TDS version for a product"""
+    tds = frappe.db.get_value(
+        'TDS Product Specification',
+        filters={
+            'product_item': product_item,
+            'docstatus': 1
+        },
+        fieldname=['name', 'version', 'approval_date'],
+        order_by='version desc',
+        as_dict=True
+    )
+    
+    return tds
+
+
+@frappe.whitelist()
+def copy_specifications_from_previous(source_tds, target_tds):
+    """Copy specifications from previous TDS version"""
+    source = frappe.get_doc('TDS Product Specification', source_tds)
+    target = frappe.get_doc('TDS Product Specification', target_tds)
+    
+    # Clear existing specifications
+    target.specifications = []
+    
+    # Copy from source
+    if hasattr(source, 'specifications'):
+        for spec in source.specifications:
+            target.append('specifications', {
+                'parameter': spec.parameter,
+                'specification': spec.specification,
+                'test_method': spec.test_method
+            })
+    
+    target.save()
+    
+    return target.name
+
+
+@frappe.whitelist()
+def get_tds_history(product_item):
+    """Get version history for a product"""
+    return frappe.get_all(
+        'TDS Product Specification',
+        filters={'product_item': product_item},
+        fields=['name', 'version', 'approval_date', 'approved_by', 'docstatus', 'is_archived'],
+        order_by='version desc'
+    )
