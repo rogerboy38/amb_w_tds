@@ -4195,7 +4195,7 @@
   "menu_index": null,
   "migration_hash": null,
   "modified": "2025-10-24 14:37:59.336842",
-  "module": "Amb W Tds",
+  "module": "amb_w_tds",
   "name": "Batch AMB",
   "naming_rule": "By script",
   "nsm_parent_field": "parent_batch_amb",

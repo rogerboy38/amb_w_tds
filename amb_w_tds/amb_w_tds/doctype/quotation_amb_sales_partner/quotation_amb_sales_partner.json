@@ -1,7 +1,7 @@
 {
   "doctype": "DocType",
   "name": "Quotation AMB Sales Partner",
-  "module": "AMB W TDS",
+  "module": "amb_w_tds",
   "istable": 1,
   "fields": [
     {

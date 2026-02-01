@@ -1,154 +1,154 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2025-11-01 22:56:03.000000",
- "default_view": "List",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "container_selection",
-  "batch_amb",
-  "sync_direction",
-  "column_break_1",
-  "sync_status",
-  "sync_timestamp",
-  "retry_count",
-  "section_break_data",
-  "synced_fields",
-  "sync_result",
-  "column_break_data",
-  "error_message",
-  "conflict_detected",
-  "resolution_applied"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "CSL-.YYYY.-.#####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "container_selection",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Container Selection",
-   "options": "Container Selection",
-   "reqd": 1
-  },
-  {
-   "fieldname": "batch_amb",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Batch AMB",
-   "options": "Batch AMB"
-  },
-  {
-   "fieldname": "sync_direction",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Sync Direction",
-   "options": "CS_to_Batch\nBatch_to_CS\nBidirectional\nInternal\nConflict_Resolution",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sync_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Sync Status",
-   "options": "Success\nError\nPartial\nRetrying",
-   "reqd": 1
-  },
-  {
-   "fieldname": "sync_timestamp",
-   "fieldtype": "Datetime",
-   "in_list_view": 1,
-   "label": "Sync Timestamp",
-   "reqd": 1
-  },
-  {
-   "fieldname": "retry_count",
-   "fieldtype": "Int",
-   "label": "Retry Count",
-   "default": 0
-  },
-  {
-   "fieldname": "section_break_data",
-   "fieldtype": "Section Break",
-   "label": "Sync Data"
-  },
-  {
-   "fieldname": "synced_fields",
-   "fieldtype": "Long Text",
-   "label": "Synced Fields (JSON)"
-  },
-  {
-   "fieldname": "sync_result",
-   "fieldtype": "Long Text",
-   "label": "Sync Result (JSON)"
-  },
-  {
-   "fieldname": "column_break_data",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "error_message",
-   "fieldtype": "Text",
-   "label": "Error Message"
-  },
-  {
-   "fieldname": "conflict_detected",
-   "fieldtype": "Check",
-   "label": "Conflict Detected"
-  },
-  {
-   "fieldname": "resolution_applied",
-   "fieldtype": "Text",
-   "label": "Resolution Applied"
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-11-01 22:56:03.000000",
- "modified_by": "Administrator",
- "module": "Amb W Tds",
- "name": "Container Sync Log",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Manufacturing Manager",
-   "share": 1
-  },
-  {
-   "read": 1,
-   "role": "Manufacturing User"
-  }
- ],
- "sort_field": "sync_timestamp",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2025-11-01 22:56:03.000000",
+  "default_view": "List",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "container_selection",
+    "batch_amb",
+    "sync_direction",
+    "column_break_1",
+    "sync_status",
+    "sync_timestamp",
+    "retry_count",
+    "section_break_data",
+    "synced_fields",
+    "sync_result",
+    "column_break_data",
+    "error_message",
+    "conflict_detected",
+    "resolution_applied"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Series",
+      "options": "CSL-.YYYY.-.#####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "container_selection",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Container Selection",
+      "options": "Container Selection",
+      "reqd": 1
+    },
+    {
+      "fieldname": "batch_amb",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Batch AMB",
+      "options": "Batch AMB"
+    },
+    {
+      "fieldname": "sync_direction",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Sync Direction",
+      "options": "CS_to_Batch\nBatch_to_CS\nBidirectional\nInternal\nConflict_Resolution",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sync_status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Sync Status",
+      "options": "Success\nError\nPartial\nRetrying",
+      "reqd": 1
+    },
+    {
+      "fieldname": "sync_timestamp",
+      "fieldtype": "Datetime",
+      "in_list_view": 1,
+      "label": "Sync Timestamp",
+      "reqd": 1
+    },
+    {
+      "fieldname": "retry_count",
+      "fieldtype": "Int",
+      "label": "Retry Count",
+      "default": 0
+    },
+    {
+      "fieldname": "section_break_data",
+      "fieldtype": "Section Break",
+      "label": "Sync Data"
+    },
+    {
+      "fieldname": "synced_fields",
+      "fieldtype": "Long Text",
+      "label": "Synced Fields (JSON)"
+    },
+    {
+      "fieldname": "sync_result",
+      "fieldtype": "Long Text",
+      "label": "Sync Result (JSON)"
+    },
+    {
+      "fieldname": "column_break_data",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "error_message",
+      "fieldtype": "Text",
+      "label": "Error Message"
+    },
+    {
+      "fieldname": "conflict_detected",
+      "fieldtype": "Check",
+      "label": "Conflict Detected"
+    },
+    {
+      "fieldname": "resolution_applied",
+      "fieldtype": "Text",
+      "label": "Resolution Applied"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-11-01 22:56:03.000000",
+  "modified_by": "Administrator",
+  "module": "amb_w_tds",
+  "name": "Container Sync Log",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1
+    },
+    {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Manufacturing Manager",
+      "share": 1
+    },
+    {
+      "read": 1,
+      "role": "Manufacturing User"
+    }
+  ],
+  "sort_field": "sync_timestamp",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
 }

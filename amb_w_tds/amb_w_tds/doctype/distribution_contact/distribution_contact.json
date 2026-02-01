@@ -1,348 +1,348 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2025-06-07 10:31:09.000000",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "first_name",
-  "last_name",
-  "full_name",
-  "column_break_4",
-  "organization",
-  "designation",
-  "department",
-  "contact_info_section",
-  "email_id",
-  "phone",
-  "mobile_no",
-  "column_break_11",
-  "website",
-  "linkedin_profile",
-  "preferred_language",
-  "address_section",
-  "address_line_1",
-  "address_line_2",
-  "city",
-  "column_break_18",
-  "state",
-  "postal_code",
-  "country",
-  "professional_section",
-  "regulatory_role",
-  "certifications",
-  "years_experience",
-  "column_break_25",
-  "specializations",
-  "education_background",
-  "professional_memberships",
-  "communication_section",
-  "communication_preference",
-  "best_contact_time",
-  "column_break_31",
-  "time_zone",
-  "newsletter_subscription",
-  "marketing_consent",
-  "system_section",
-  "status",
-  "last_contacted",
-  "column_break_37",
-  "contact_frequency",
-  "notes"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "DIST-CON-.####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "first_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "First Name",
-   "reqd": 1
-  },
-  {
-   "fieldname": "last_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Last Name"
-  },
-  {
-   "fieldname": "full_name",
-   "fieldtype": "Data",
-   "label": "Full Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "organization",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Organization",
-   "options": "Distribution Organization",
-   "reqd": 1
-  },
-  {
-   "fieldname": "designation",
-   "fieldtype": "Data",
-   "label": "Designation"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Data",
-   "label": "Department"
-  },
-  {
-   "fieldname": "contact_info_section",
-   "fieldtype": "Section Break",
-   "label": "Contact Information"
-  },
-  {
-   "fieldname": "email_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Email ID",
-   "options": "Email",
-   "reqd": 1
-  },
-  {
-   "fieldname": "phone",
-   "fieldtype": "Data",
-   "label": "Phone"
-  },
-  {
-   "fieldname": "mobile_no",
-   "fieldtype": "Data",
-   "label": "Mobile No"
-  },
-  {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "website",
-   "fieldtype": "Data",
-   "label": "Website"
-  },
-  {
-   "fieldname": "linkedin_profile",
-   "fieldtype": "Data",
-   "label": "LinkedIn Profile"
-  },
-  {
-   "fieldname": "preferred_language",
-   "fieldtype": "Link",
-   "label": "Preferred Language",
-   "options": "Language"
-  },
-  {
-   "fieldname": "address_section",
-   "fieldtype": "Section Break",
-   "label": "Address"
-  },
-  {
-   "fieldname": "address_line_1",
-   "fieldtype": "Data",
-   "label": "Address Line 1"
-  },
-  {
-   "fieldname": "address_line_2",
-   "fieldtype": "Data",
-   "label": "Address Line 2"
-  },
-  {
-   "fieldname": "city",
-   "fieldtype": "Data",
-   "label": "City"
-  },
-  {
-   "fieldname": "column_break_18",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "state",
-   "fieldtype": "Data",
-   "label": "State"
-  },
-  {
-   "fieldname": "postal_code",
-   "fieldtype": "Data",
-   "label": "Postal Code"
-  },
-  {
-   "fieldname": "country",
-   "fieldtype": "Link",
-   "label": "Country",
-   "options": "Country"
-  },
-  {
-   "fieldname": "professional_section",
-   "fieldtype": "Section Break",
-   "label": "Professional Information"
-  },
-  {
-   "fieldname": "regulatory_role",
-   "fieldtype": "Select",
-   "label": "Regulatory Role",
-   "options": "Quality Manager\nRegulatory Affairs Manager\nProduct Manager\nDistribution Manager\nSales Manager\nBusiness Development\nCompliance Officer\nLegal Counsel\nOther"
-  },
-  {
-   "fieldname": "certifications",
-   "fieldtype": "Small Text",
-   "label": "Certifications"
-  },
-  {
-   "fieldname": "years_experience",
-   "fieldtype": "Int",
-   "label": "Years of Experience"
-  },
-  {
-   "fieldname": "column_break_25",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "specializations",
-   "fieldtype": "Small Text",
-   "label": "Specializations"
-  },
-  {
-   "fieldname": "education_background",
-   "fieldtype": "Small Text",
-   "label": "Education Background"
-  },
-  {
-   "fieldname": "professional_memberships",
-   "fieldtype": "Small Text",
-   "label": "Professional Memberships"
-  },
-  {
-   "fieldname": "communication_section",
-   "fieldtype": "Section Break",
-   "label": "Communication Preferences"
-  },
-  {
-   "fieldname": "communication_preference",
-   "fieldtype": "Select",
-   "label": "Communication Preference",
-   "options": "Email\nPhone\nMobile\nVideo Call\nIn Person"
-  },
-  {
-   "fieldname": "best_contact_time",
-   "fieldtype": "Select",
-   "label": "Best Contact Time",
-   "options": "Morning (9 AM - 12 PM)\nAfternoon (12 PM - 5 PM)\nEvening (5 PM - 8 PM)\nFlexible"
-  },
-  {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "time_zone",
-   "fieldtype": "Data",
-   "label": "Time Zone"
-  },
-  {
-   "fieldname": "newsletter_subscription",
-   "fieldtype": "Check",
-   "label": "Newsletter Subscription"
-  },
-  {
-   "fieldname": "marketing_consent",
-   "fieldtype": "Check",
-   "label": "Marketing Consent"
-  },
-  {
-   "fieldname": "system_section",
-   "fieldtype": "Section Break",
-   "label": "System Information"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Active\nInactive\nPending\nDo Not Contact",
-   "reqd": 1
-  },
-  {
-   "fieldname": "last_contacted",
-   "fieldtype": "Datetime",
-   "label": "Last Contacted"
-  },
-  {
-   "fieldname": "column_break_37",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "contact_frequency",
-   "fieldtype": "Select",
-   "label": "Contact Frequency",
-   "options": "Weekly\nBi-weekly\nMonthly\nQuarterly\nAs Needed"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Text Editor",
-   "label": "Notes"
-  }
- ],
- "has_web_view": 1,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-07 10:31:09.000000",
- "modified_by": "Administrator",
- "module": "Amb W Tds",
- "name": "Distribution Contact",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Distribution Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Data Entry Operator",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "Compliance Officer"
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "R&D Manager"
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "title_field": "full_name",
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2025-06-07 10:31:09.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "first_name",
+    "last_name",
+    "full_name",
+    "column_break_4",
+    "organization",
+    "designation",
+    "department",
+    "contact_info_section",
+    "email_id",
+    "phone",
+    "mobile_no",
+    "column_break_11",
+    "website",
+    "linkedin_profile",
+    "preferred_language",
+    "address_section",
+    "address_line_1",
+    "address_line_2",
+    "city",
+    "column_break_18",
+    "state",
+    "postal_code",
+    "country",
+    "professional_section",
+    "regulatory_role",
+    "certifications",
+    "years_experience",
+    "column_break_25",
+    "specializations",
+    "education_background",
+    "professional_memberships",
+    "communication_section",
+    "communication_preference",
+    "best_contact_time",
+    "column_break_31",
+    "time_zone",
+    "newsletter_subscription",
+    "marketing_consent",
+    "system_section",
+    "status",
+    "last_contacted",
+    "column_break_37",
+    "contact_frequency",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "DIST-CON-.####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "first_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "First Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "last_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Last Name"
+    },
+    {
+      "fieldname": "full_name",
+      "fieldtype": "Data",
+      "label": "Full Name",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "organization",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Organization",
+      "options": "Distribution Organization",
+      "reqd": 1
+    },
+    {
+      "fieldname": "designation",
+      "fieldtype": "Data",
+      "label": "Designation"
+    },
+    {
+      "fieldname": "department",
+      "fieldtype": "Data",
+      "label": "Department"
+    },
+    {
+      "fieldname": "contact_info_section",
+      "fieldtype": "Section Break",
+      "label": "Contact Information"
+    },
+    {
+      "fieldname": "email_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Email ID",
+      "options": "Email",
+      "reqd": 1
+    },
+    {
+      "fieldname": "phone",
+      "fieldtype": "Data",
+      "label": "Phone"
+    },
+    {
+      "fieldname": "mobile_no",
+      "fieldtype": "Data",
+      "label": "Mobile No"
+    },
+    {
+      "fieldname": "column_break_11",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "website",
+      "fieldtype": "Data",
+      "label": "Website"
+    },
+    {
+      "fieldname": "linkedin_profile",
+      "fieldtype": "Data",
+      "label": "LinkedIn Profile"
+    },
+    {
+      "fieldname": "preferred_language",
+      "fieldtype": "Link",
+      "label": "Preferred Language",
+      "options": "Language"
+    },
+    {
+      "fieldname": "address_section",
+      "fieldtype": "Section Break",
+      "label": "Address"
+    },
+    {
+      "fieldname": "address_line_1",
+      "fieldtype": "Data",
+      "label": "Address Line 1"
+    },
+    {
+      "fieldname": "address_line_2",
+      "fieldtype": "Data",
+      "label": "Address Line 2"
+    },
+    {
+      "fieldname": "city",
+      "fieldtype": "Data",
+      "label": "City"
+    },
+    {
+      "fieldname": "column_break_18",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "state",
+      "fieldtype": "Data",
+      "label": "State"
+    },
+    {
+      "fieldname": "postal_code",
+      "fieldtype": "Data",
+      "label": "Postal Code"
+    },
+    {
+      "fieldname": "country",
+      "fieldtype": "Link",
+      "label": "Country",
+      "options": "Country"
+    },
+    {
+      "fieldname": "professional_section",
+      "fieldtype": "Section Break",
+      "label": "Professional Information"
+    },
+    {
+      "fieldname": "regulatory_role",
+      "fieldtype": "Select",
+      "label": "Regulatory Role",
+      "options": "Quality Manager\nRegulatory Affairs Manager\nProduct Manager\nDistribution Manager\nSales Manager\nBusiness Development\nCompliance Officer\nLegal Counsel\nOther"
+    },
+    {
+      "fieldname": "certifications",
+      "fieldtype": "Small Text",
+      "label": "Certifications"
+    },
+    {
+      "fieldname": "years_experience",
+      "fieldtype": "Int",
+      "label": "Years of Experience"
+    },
+    {
+      "fieldname": "column_break_25",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "specializations",
+      "fieldtype": "Small Text",
+      "label": "Specializations"
+    },
+    {
+      "fieldname": "education_background",
+      "fieldtype": "Small Text",
+      "label": "Education Background"
+    },
+    {
+      "fieldname": "professional_memberships",
+      "fieldtype": "Small Text",
+      "label": "Professional Memberships"
+    },
+    {
+      "fieldname": "communication_section",
+      "fieldtype": "Section Break",
+      "label": "Communication Preferences"
+    },
+    {
+      "fieldname": "communication_preference",
+      "fieldtype": "Select",
+      "label": "Communication Preference",
+      "options": "Email\nPhone\nMobile\nVideo Call\nIn Person"
+    },
+    {
+      "fieldname": "best_contact_time",
+      "fieldtype": "Select",
+      "label": "Best Contact Time",
+      "options": "Morning (9 AM - 12 PM)\nAfternoon (12 PM - 5 PM)\nEvening (5 PM - 8 PM)\nFlexible"
+    },
+    {
+      "fieldname": "column_break_31",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "time_zone",
+      "fieldtype": "Data",
+      "label": "Time Zone"
+    },
+    {
+      "fieldname": "newsletter_subscription",
+      "fieldtype": "Check",
+      "label": "Newsletter Subscription"
+    },
+    {
+      "fieldname": "marketing_consent",
+      "fieldtype": "Check",
+      "label": "Marketing Consent"
+    },
+    {
+      "fieldname": "system_section",
+      "fieldtype": "Section Break",
+      "label": "System Information"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Active\nInactive\nPending\nDo Not Contact",
+      "reqd": 1
+    },
+    {
+      "fieldname": "last_contacted",
+      "fieldtype": "Datetime",
+      "label": "Last Contacted"
+    },
+    {
+      "fieldname": "column_break_37",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "contact_frequency",
+      "fieldtype": "Select",
+      "label": "Contact Frequency",
+      "options": "Weekly\nBi-weekly\nMonthly\nQuarterly\nAs Needed"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text Editor",
+      "label": "Notes"
+    }
+  ],
+  "has_web_view": 1,
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-06-07 10:31:09.000000",
+  "modified_by": "Administrator",
+  "module": "amb_w_tds",
+  "name": "Distribution Contact",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Distribution Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Data Entry Operator",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Compliance Officer"
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "R&D Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "full_name",
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1
 }

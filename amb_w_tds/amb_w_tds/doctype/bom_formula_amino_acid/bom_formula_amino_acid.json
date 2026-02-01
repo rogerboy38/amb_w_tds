@@ -1,7 +1,7 @@
 {
   "doctype": "DocType",
   "name": "BOM Formula Amino Acid",
-  "module": "Amb W Tds",
+  "module": "amb_w_tds",
   "istable": 1,
   "custom": 0,
   "fields": [

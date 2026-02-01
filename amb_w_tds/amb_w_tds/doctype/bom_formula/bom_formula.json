@@ -1,7 +1,7 @@
 {
   "doctype": "DocType",
   "name": "BOM Formula",
-  "module": "Amb W Tds",
+  "module": "amb_w_tds",
   "is_submittable": 0,
   "istable": 0,
   "custom": 0,
@@ -32,7 +32,7 @@
     {
       "fieldname": "fermentation_temperature",
       "fieldtype": "Float",
-      "label": "Temperature (°C)"
+      "label": "Temperature (\u00b0C)"
     },
     {
       "fieldname": "target_ph",

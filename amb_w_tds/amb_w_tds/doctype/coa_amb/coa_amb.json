@@ -248,7 +248,7 @@
       "fieldtype": "Text Editor",
       "label": "STORAGE AND HANDLING CONDITIONS",
       "fetch_from": "linked_tds.storage_and_handling_conditions",
-      "default": "In case the whole product is not used, it is recommended to store it in a refrigerated warehouse at a temperature of 0° to 2° C or frozen at -18°C until the next use. We strongly suggest not to take back to the original container unused portions of the product that have been exposed to the environment.\nOnce the packaging of the product is opened, shelf life is not guaranteed and it is the costumer's responsibility to avoid spoilage.\nAseptic techniques are mandatory for sampling and industrial use",
+      "default": "In case the whole product is not used, it is recommended to store it in a refrigerated warehouse at a temperature of 0\u00b0 to 2\u00b0 C or frozen at -18\u00b0C until the next use. We strongly suggest not to take back to the original container unused portions of the product that have been exposed to the environment.\nOnce the packaging of the product is opened, shelf life is not guaranteed and it is the costumer's responsibility to avoid spoilage.\nAseptic techniques are mandatory for sampling and industrial use",
       "reqd": 0
     },
     {
@@ -353,7 +353,7 @@
   "menu_index": null,
   "migration_hash": null,
   "modified": "2025-12-17 11:34:33.056039",
-  "module": "Amb W Tds",
+  "module": "amb_w_tds",
   "name": "COA AMB",
   "naming_rule": "By \"Naming Series\" field",
   "nsm_parent_field": null,
