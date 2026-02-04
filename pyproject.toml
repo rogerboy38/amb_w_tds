@@ -8,9 +8,6 @@ requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 
-# Add this line - specify your Frappe version requirement
-requires_frappe_version = ">=15.0.0,<16.0.0"
-
 dependencies = [
     # "frappe~=15.0.0" # Installed and managed by bench.
 ]
@@ -27,6 +24,9 @@ build-backend = "flit_core.buildapi"
 title = "AMB W TDS"
 category = "Domains"
 description = "Distribution and Compliance Management System"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<17.0.0"
 
 [tool.ruff]
 line-length = 110
