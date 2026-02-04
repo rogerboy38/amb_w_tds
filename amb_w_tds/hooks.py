@@ -1,4 +1,5 @@
 app_name = "amb_w_tds"
+app_version = "9.1.0"
 app_title = "AMB W TDS"
 app_publisher = "AMB WELLNESS"
 app_description = "AMB WELLNESS TDS + Migration + Quotation AMB system"
