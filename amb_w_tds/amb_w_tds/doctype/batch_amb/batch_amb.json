@@ -90,7 +90,8 @@
   "production_plant",
   "production_year",
   "manufacturing_plant",
-  "custom_last_api_sync"
+  "custom_last_api_sync",
+  "custom_serial_numbers"
  ],
  "fields": [
   {
@@ -573,13 +574,18 @@
    "fieldtype": "Datetime",
    "label": "Last API Sync",
    "read_only": 1
+  },
+  {
+   "fieldname": "custom_serial_numbers",
+   "fieldtype": "Long Text",
+   "label": "Serial Numbers"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-02-11 14:13:16.874146",
+ "modified": "2026-02-11 14:45:49.193108",
  "modified_by": "Administrator",
  "module": "Amb W Tds",
  "name": "Batch AMB",
