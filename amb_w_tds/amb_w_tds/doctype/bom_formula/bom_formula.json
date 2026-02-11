@@ -5,12 +5,15 @@
   "is_submittable": 0,
   "istable": 0,
   "custom": 0,
+  "allow_rename": 1,
+  "autoname": "field:formula_name",
   "fields": [
     {
       "fieldname": "formula_name",
       "fieldtype": "Data",
       "label": "Formula Name",
-      "reqd": 1
+      "reqd": 1,
+      "unique": 1
     },
     {
       "fieldname": "product_sku",
@@ -32,7 +35,7 @@
     {
       "fieldname": "fermentation_temperature",
       "fieldtype": "Float",
-      "label": "Temperature (°C)"
+      "label": "Temperature (\u00b0C)"
     },
     {
       "fieldname": "target_ph",
