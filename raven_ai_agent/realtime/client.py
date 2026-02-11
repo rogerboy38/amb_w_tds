@@ -123,6 +123,17 @@ class RealtimeClient:
             env_config = get_config()
             socketio_url = get_external_socketio_url()
             
+            # CRITICAL: python-socketio needs https:// not wss:// for initial handshake
+            # The library handles WebSocket upgrade internally after HTTP connection
+            if socketio_url.startswith("wss://"):
+                socketio_url = socketio_url.replace("wss://", "https://")
+            elif socketio_url.startswith("ws://"):
+                socketio_url = socketio_url.replace("ws://", "http://")
+            
+            # Remove /socket.io suffix if present (we specify path separately)
+            if socketio_url.endswith("/socket.io"):
+                socketio_url = socketio_url[:-10]
+            
             return ConnectionConfig(
                 url=socketio_url,
                 path="/socket.io",
