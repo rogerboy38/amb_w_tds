@@ -1,0 +1,153 @@
+
+(env) frappe@UbuntuVM:~/frappe-bench$ # Add socketio_port = 8005 to common_site_config
+python3 -c "
+import json
+with open('/home/frappe/frappe-bench/sites/common_site_config.json', 'r') as f:
+    config = json.load(f)
+config['socketio_port'] = 8005
+with open('/home/frappe/frappe-bench/sites/common_site_config.json', 'w') as f:
+    json.dump(config, f, indent=1)
+"
+
+bench restart
+$ supervisorctl restart frappe-bench-web:
+frappe-bench-web:frappe-bench-node-socketio: stopped
+frappe-bench-web:frappe-bench-frappe-web: stopped
+frappe-bench-web:frappe-bench-node-socketio: ERROR (spawn error)
+frappe-bench-web:frappe-bench-frappe-web: started
+ERROR: supervisorctl restart frappe-bench-web:
+subprocess.CalledProcessError: Command 'supervisorctl restart frappe-bench-web:' returned non-zero exit status 7.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/frappe/.local/bin/bench", line 7, in <module>
+    sys.exit(cli())
+             ~~~^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/cli.py", line 132, in cli
+    bench_command()
+    ~~~~~~~~~~~~~^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/commands/utils.py", line 41, in restart
+    Bench(".").reload(web, supervisor, systemd)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/render.py", line 126, in wrapper_fn
+    return fn(*args, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/bench.py", line 156, in reload
+    restart_supervisor_processes(bench_path=self.name, web_workers=web, _raise=_raise)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/bench.py", line 367, in restart_supervisor_processes
+    failure = bench.run(f"{sudo}supervisorctl restart {group}", _raise=_raise)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/bench.py", line 50, in run
+    return exec_cmd(cmd, cwd=cwd or self.cwd, _raise=_raise, env=env)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/__init__.py", line 193, in exec_cmd
+    raise CommandFailedError(cmd) from subprocess.CalledProcessError(return_code, cmd)
+bench.exceptions.CommandFailedError: supervisorctl restart frappe-bench-web:
+
+^CException ignored in atexit callback <function check_latest_version at 0x734a49313530>:
+Traceback (most recent call last):
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/__init__.py", line 151, in check_latest_version
+    pypi_request = requests.get("https://pypi.org/pypi/frappe-bench/json")
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 791, in urlopen
+    response = self._make_request(
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 468, in _make_request
+    self._validate_conn(conn)
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1097, in _validate_conn
+    conn.connect()
+  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 611, in connect
+    self.sock = sock = self._new_conn()
+  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 203, in _new_conn
+    sock = connection.create_connection(
+  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+    sock.connect(sa)
+KeyboardInterrupt: 
+(env) frappe@UbuntuVM:~/frappe-bench$ bench restart
+$ supervisorctl restart frappe-bench-web:
+frappe-bench-web:frappe-bench-node-socketio: stopped
+frappe-bench-web:frappe-bench-frappe-web: stopped
+frappe-bench-web:frappe-bench-node-socketio: ERROR (spawn error)
+frappe-bench-web:frappe-bench-frappe-web: started
+ERROR: supervisorctl restart frappe-bench-web:
+subprocess.CalledProcessError: Command 'supervisorctl restart frappe-bench-web:' returned non-zero exit status 7.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/frappe/.local/bin/bench", line 7, in <module>
+    sys.exit(cli())
+             ~~~^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/cli.py", line 132, in cli
+    bench_command()
+    ~~~~~~~~~~~~~^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/commands/utils.py", line 41, in restart
+    Bench(".").reload(web, supervisor, systemd)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/render.py", line 126, in wrapper_fn
+    return fn(*args, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/bench.py", line 156, in reload
+    restart_supervisor_processes(bench_path=self.name, web_workers=web, _raise=_raise)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/bench.py", line 367, in restart_supervisor_processes
+    failure = bench.run(f"{sudo}supervisorctl restart {group}", _raise=_raise)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/bench.py", line 50, in run
+    return exec_cmd(cmd, cwd=cwd or self.cwd, _raise=_raise, env=env)
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/__init__.py", line 193, in exec_cmd
+    raise CommandFailedError(cmd) from subprocess.CalledProcessError(return_code, cmd)
+bench.exceptions.CommandFailedError: supervisorctl restart frappe-bench-web:
+
+^CException ignored in atexit callback <function check_latest_version at 0x755508adf530>:
+Traceback (most recent call last):
+  File "/home/frappe/.local/lib/python3.14/site-packages/bench/utils/__init__.py", line 151, in check_latest_version
+    pypi_request = requests.get("https://pypi.org/pypi/frappe-bench/json")
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/frappe/.local/lib/python3.14/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 791, in urlopen
+    response = self._make_request(
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 468, in _make_request
+    self._validate_conn(conn)
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 1097, in _validate_conn
+    conn.connect()
+  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 611, in connect
+    self.sock = sock = self._new_conn()
+  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 203, in _new_conn
+    sock = connection.create_connection(
+  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 73, in create_connection
+    sock.connect(sa)
+KeyboardInterrupt: 
+(env) frappe@UbuntuVM:~/frappe-bench$ cd sites/
+(env) frappe@UbuntuVM:~/frappe-bench/sites$ nano common_site_config
+(env) frappe@UbuntuVM:~/frappe-bench/sites$ nano common_site_config.json 
+(env) frappe@UbuntuVM:~/frappe-bench/sites$ bench restart
+$ supervisorctl restart frappe-bench-web:
+frappe-bench-web:frappe-bench-frappe-web: stopped
+frappe-bench-web:frappe-bench-frappe-web: started
+frappe-bench-web:frappe-bench-node-socketio: started
+$ supervisorctl restart frappe-bench-workers:
+frappe-bench-workers:frappe-bench-frappe-schedule: stopped
+frappe-bench-workers:frappe-bench-frappe-short-worker-0: stopped
+frappe-bench-workers:frappe-bench-frappe-short-worker-1: stopped
+frappe-bench-workers:frappe-bench-frappe-long-worker-0: stopped
+frappe-bench-workers:frappe-bench-frappe-long-worker-1: stopped
+frappe-bench-workers:frappe-bench-frappe-schedule: started
+frappe-bench-workers:frappe-bench-frappe-short-worker-0: started
+frappe-bench-workers:frappe-bench-frappe-short-worker-1: started
+frappe-bench-workers:frappe-bench-frappe-long-worker-0: started
+frappe-bench-workers:frappe-bench-frappe-long-worker-1: started
+
