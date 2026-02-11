@@ -1,0 +1,135 @@
+frappe@bench-33280-000005-f1-virginia:~/frappe-bench$ source init.sh 
+5.28.0
+Current Site set to sysmayal.v.frappe.cloud
+Apps in this namespace:
+frappe, erpnext, raven, raven_ai_agent
+
+In [1]: exec(open('apps/raven_ai_agent/test_phase1_validation.py').read(
+   ...: ))
+------------------------------------------------------------------------
+FileNotFoundError                      Traceback (most recent call last)
+Cell In[1], line 1
+----> 1 exec(open('apps/raven_ai_agent/test_phase1_validation.py').read())
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py:324, in _modified_open(file, *args, **kwargs)
+    317 if file in {0, 1, 2}:
+    318     raise ValueError(
+    319         f"IPython won't let you open fd={file} by default "
+    320         "as it is likely to crash IPython. If you know what you are doing, "
+    321         "you can use builtins' open."
+    322     )
+--> 324 return io_open(file, *args, **kwargs)
+
+FileNotFoundError: [Errno 2] No such file or directory: 'apps/raven_ai_agent/test_phase1_validation.py'
+
+In [2]: exec(open('apps/raven_ai_agent/raven_ai_agent/test_phase1_valida
+   ...: tion.py').read())
+------------------------------------------------------------------------
+FileNotFoundError                      Traceback (most recent call last)
+Cell In[2], line 1
+----> 1 exec(open('apps/raven_ai_agent/raven_ai_agent/test_phase1_validation.py').read())
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py:324, in _modified_open(file, *args, **kwargs)
+    317 if file in {0, 1, 2}:
+    318     raise ValueError(
+    319         f"IPython won't let you open fd={file} by default "
+    320         "as it is likely to crash IPython. If you know what you are doing, "
+    321         "you can use builtins' open."
+    322     )
+--> 324 return io_open(file, *args, **kwargs)
+
+FileNotFoundError: [Errno 2] No such file or directory: 'apps/raven_ai_agent/raven_ai_agent/test_phase1_validation.py'
+
+In [3]: exit
+
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench$ cd apps
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps$ cd raven_ai_agent/
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent$ cd raven_ai_agent/
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ ls
+README.md    channels  modules.txt     realtime   utils
+__init__.py  config    patches.txt     scripts    voice
+__pycache__  docs      providers       skills     workspace.json
+agents       doctype   public          templates
+api          gateway   pyproject.toml  tests
+browser      hooks.py  raven_ai_agent  tmp
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ cd scripts/
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/scripts$ ls
+verify_components.py
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/scripts$ cd ..
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ cd tests/
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/tests$ ls
+__init__.py  __pycache__  test_agent.py  test_standalone.py
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/tests$ cd ..
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ ls
+README.md    channels  modules.txt     realtime   utils
+__init__.py  config    patches.txt     scripts    voice
+__pycache__  docs      providers       skills     workspace.json
+agents       doctype   public          templates
+api          gateway   pyproject.toml  tests
+browser      hooks.py  raven_ai_agent  tmp
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ cd raven_ai_agent/
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/raven_ai_agent$ ls
+__init__.py  __pycache__  doctype  skills
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/raven_ai_agent$ cd ,,
+bash: cd: ,,: No such file or directory
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent/raven_ai_agent$ cd ..
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent/raven_ai_agent$ cd ..
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent$ ls
+MANIFEST.in
+README.md
+__init__.py
+agents
+api
+browser
+channels
+check_socketio.sh
+config
+docs
+extract
+frappe-bench.service
+frappe-socketio.service
+gateway
+hooks.py
+license.txt
+modules.txt
+node_modules
+package.json
+patches.txt
+providers
+push_to_git_plus.sh
+pyproject.toml
+raven_ai_agent
+raven_ai_agent.egg-info
+realtime
+scripts
+setup.py
+setup_services.sh
+skills
+technical_specification_for_ai_agent_app_migrator.md
+templates
+test_minimax_direct.py
+tests
+tmp
+user_input_files
+utils
+uv.lock
+voice
+workspace.json
+yarn.lock
+(env) frappe@bench-33280-000005-f1-virginia:~/frappe-bench/apps/raven_ai
+_agent$ 
