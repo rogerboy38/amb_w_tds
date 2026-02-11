@@ -3700,6 +3700,37 @@
       "unique": 0,
       "width": null
     },
+        {
+      "fieldname": "use_containers",
+      "fieldtype": "Check",
+      "label": "Use Containers",
+      "default": "0",
+      "insert_after": "barrel_count",
+      "parent": "Batch AMB",
+      "parentfield": "fields",
+      "parenttype": "DocType"
+    },
+    {
+      "fieldname": "total_container_qty",
+      "fieldtype": "Float",
+      "label": "Total Container Qty",
+      "read_only": 1,
+      "precision": "3",
+      "insert_after": "use_containers",
+      "parent": "Batch AMB",
+      "parentfield": "fields",
+      "parenttype": "DocType"
+    },
+    {
+      "fieldname": "total_containers",
+      "fieldtype": "Int",
+      "label": "Total Containers",
+      "read_only": 1,
+      "insert_after": "total_container_qty",
+      "parent": "Batch AMB",
+      "parentfield": "fields",
+      "parenttype": "DocType"
+    },
     {
       "allow_bulk_edit": 0,
       "allow_in_quick_entry": 0,
