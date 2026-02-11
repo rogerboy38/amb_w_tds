@@ -1,0 +1,163 @@
+In [1]: from raven_ai_agent.realtime.client import RealtimeClient
+   ...: client = RealtimeClient()
+   ...: print(client._get_config())
+   ...: client.connect()
+   ...: print(client.get_status())
+ConnectionConfig(url='https://sysmayal.ngrok.io', path='/socket.io', transports=['polling', 'websocket'], reconnection=True, reconnection_attempts=5, reconnection_delay=1.0, reconnection_delay_max=30.0, timeout=20.0, auth=None)
+^C------------------------------------------------------------------------
+KeyboardInterrupt                      Traceback (most recent call last)
+Cell In[1], line 4
+      2 client = RealtimeClient()
+      3 print(client._get_config())
+----> 4 client.connect()
+      5 print(client.get_status())
+
+File ~/frappe-bench/apps/raven_ai_agent/raven_ai_agent/realtime/client.py:233, in RealtimeClient.connect(self)
+    231 try:
+    232     logger.info(f"Connecting to {config.url}...")
+--> 233     self._sio.connect(
+    234         config.url,
+    235         socketio_path=config.path,
+    236         transports=config.transports,
+    237         auth=config.auth,
+    238         wait_timeout=config.timeout,
+    239     )
+    240     return self._state == ConnectionState.CONNECTED
+    241 except Exception as e:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:170, in Client.connect(self, url, headers, auth, transports, namespaces, socketio_path, wait, wait_timeout, retry)
+    168             break
+    169     if set(self.namespaces) != set(self.connection_namespaces):
+--> 170         self.disconnect()
+    171         raise exceptions.ConnectionError(
+    172             'One or more namespaces failed to connect: '
+    173             + ', '.join(self.failed_namespaces))
+    175 self.connected = True
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:313, in Client.disconnect(self)
+    310 for n in self.namespaces:
+    311     self._send_packet(self.packet_class(
+    312         packet.DISCONNECT, namespace=n))
+--> 313 self.eio.disconnect()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:133, in Client.disconnect(self, abort, reason)
+    131     self.ws.close()
+    132 if not abort:
+--> 133     self.read_loop_task.join()
+    134 self.state = 'disconnected'
+    135 try:
+
+File /usr/lib/python3.14/threading.py:1133, in Thread.join(self, timeout)
+   1130 if timeout is not None:
+   1131     timeout = max(timeout, 0)
+-> 1133 self._os_thread_handle.join(timeout)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:21, in signal_handler(sig, frame)
+     19         client.disconnect()
+     20 if callable(original_signal_handler):
+---> 21     return original_signal_handler(sig, frame)
+     22 else:  # pragma: no cover
+     23     # Handle case where no original SIGINT handler was present.
+     24     return signal.default_int_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/base_client.py:24, in signal_handler(sig, frame)
+     22     client._reconnect_abort.set()
+     23 if callable(original_signal_handler):
+---> 24     return original_signal_handler(sig, frame)
+     25 else:  # pragma: no cover
+     26     # Handle case where no original SIGINT handler was present.
+     27     return signal.default_int_handler(sig, frame)
+
+KeyboardInterrupt: 
+
+In [2]: # Ctrl+C first, then:
+   ...: from raven_ai_agent.realtime.client import RealtimeClient, Conne
+   ...: ctionConfig
+   ...: 
+   ...: # Direct local connection
+   ...: config = ConnectionConfig(url='http://localhost:9000', path='/so
+   ...: cket.io')
+   ...: client = RealtimeClient(config=config)
+   ...: client.connect()
+   ...: print(client.get_status())
+
+^C^C------------------------------------------------------------------------
+KeyboardInterrupt                      Traceback (most recent call last)
+Cell In[2], line 7
+      5 config = ConnectionConfig(url='http://localhost:9000', path='/socket.io')
+      6 client = RealtimeClient(config=config)
+----> 7 client.connect()
+      8 print(client.get_status())
+
+File ~/frappe-bench/apps/raven_ai_agent/raven_ai_agent/realtime/client.py:233, in RealtimeClient.connect(self)
+    231 try:
+    232     logger.info(f"Connecting to {config.url}...")
+--> 233     self._sio.connect(
+    234         config.url,
+    235         socketio_path=config.path,
+    236         transports=config.transports,
+    237         auth=config.auth,
+    238         wait_timeout=config.timeout,
+    239     )
+    240     return self._state == ConnectionState.CONNECTED
+    241 except Exception as e:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:164, in Client.connect(self, url, headers, auth, transports, namespaces, socketio_path, wait, wait_timeout, retry)
+    161     raise exceptions.ConnectionError(exc.args[0]) from exc
+    163 if wait:
+--> 164     while self._connect_event.wait(timeout=wait_timeout):
+    165         self._connect_event.clear()
+    166         if len(self.namespaces) + len(self.failed_namespaces) == \
+    167                 len(self.connection_namespaces):
+
+File /usr/lib/python3.14/threading.py:670, in Event.wait(self, timeout)
+    668 signaled = self._flag
+    669 if not signaled:
+--> 670     signaled = self._cond.wait(timeout)
+    671 return signaled
+
+File /usr/lib/python3.14/threading.py:373, in Condition.wait(self, timeout)
+    371 else:
+    372     if timeout > 0:
+--> 373         gotit = waiter.acquire(True, timeout)
+    374     else:
+    375         gotit = waiter.acquire(False)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:19, in signal_handler(sig, frame)
+     17 for client in connected_clients[:]:
+     18     if not client.is_asyncio_based():
+---> 19         client.disconnect()
+     20 if callable(original_signal_handler):
+     21     return original_signal_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:133, in Client.disconnect(self, abort, reason)
+    131     self.ws.close()
+    132 if not abort:
+--> 133     self.read_loop_task.join()
+    134 self.state = 'disconnected'
+    135 try:
+
+File /usr/lib/python3.14/threading.py:1133, in Thread.join(self, timeout)
+   1130 if timeout is not None:
+   1131     timeout = max(timeout, 0)
+-> 1133 self._os_thread_handle.join(timeout)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:21, in signal_handler(sig, frame)
+     19         client.disconnect()
+     20 if callable(original_signal_handler):
+---> 21     return original_signal_handler(sig, frame)
+     22 else:  # pragma: no cover
+     23     # Handle case where no original SIGINT handler was present.
+     24     return signal.default_int_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/base_client.py:24, in signal_handler(sig, frame)
+     22     client._reconnect_abort.set()
+     23 if callable(original_signal_handler):
+---> 24     return original_signal_handler(sig, frame)
+     25 else:  # pragma: no cover
+     26     # Handle case where no original SIGINT handler was present.
+     27     return signal.default_int_handler(sig, frame)
+
+KeyboardInterrupt: 
+
+In [3]: 
