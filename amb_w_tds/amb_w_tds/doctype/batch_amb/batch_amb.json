@@ -541,6 +541,18 @@
       "unique": 0,
       "width": null
     },
+        {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "default": "{default_company}",
+      "insert_after": "production_plant_name",
+      "parent": "Batch AMB",
+      "parentfield": "fields",
+      "parenttype": "DocType"
+    },
     {
       "fieldname": "processing_management_section",
       "fieldtype": "Section Break",
