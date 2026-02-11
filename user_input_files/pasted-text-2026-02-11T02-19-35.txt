@@ -1,0 +1,578 @@
+(env) frappe@UbuntuVM:~/frappe-bench$ bench console
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, helpdesk, hrms, raven, insights, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, builder, raven_ai_agent, app_migrator, crm
+
+In [1]: # In fresh bench console:
+   ...: import socketio
+   ...: 
+   ...: sio = socketio.Client()
+   ...: 
+   ...: @sio.event
+   ...: def connect():
+   ...:     print("Connected!")
+   ...: 
+   ...: # Test with ngrok URL
+   ...: sio.connect('https://sysmayal.ngrok.io', socketio_path='/socket.
+   ...: io', transports=['polling'])
+   ...: print("Status:", sio.connected)
+
+^C------------------------------------------------------------------------
+KeyboardInterrupt                      Traceback (most recent call last)
+Cell In[1], line 11
+      8     print("Connected!")
+     10 # Test with ngrok URL
+---> 11 sio.connect('https://sysmayal.ngrok.io', socketio_path='/socket.io', transports=['polling'])
+     12 print("Status:", sio.connected)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:149, in Client.connect(self, url, headers, auth, transports, namespaces, socketio_path, wait, wait_timeout, retry)
+    147 real_headers = self._get_real_value(self.connection_headers)
+    148 try:
+--> 149     self.eio.connect(real_url, headers=real_headers,
+    150                      transports=transports,
+    151                      engineio_path=socketio_path)
+    152 except engineio.exceptions.ConnectionError as exc:
+    153     for n in self.connection_namespaces:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:96, in Client.connect(self, url, headers, transports, engineio_path)
+     94         raise ValueError('No valid transports provided')
+     95 self.transports = transports or valid_transports
+---> 96 return getattr(self, '_connect_' + self.transports[0])(
+     97     url, headers or {}, engineio_path)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:196, in Client._connect_polling(self, url, headers, engineio_path)
+    194 self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
+    195 self.logger.info('Attempting polling connection to ' + self.base_url)
+--> 196 r = self._send_request(
+    197     'GET', self.base_url + self._get_url_timestamp(), headers=headers,
+    198     timeout=self.request_timeout)
+    199 if r is None or isinstance(r, str):
+    200     self._reset()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:453, in Client._send_request(self, method, url, headers, body, timeout)
+    451     self.http.verify = False
+    452 try:
+--> 453     return self.http.request(method, url, headers=headers, data=body,
+    454                              timeout=timeout)
+    455 except requests.exceptions.RequestException as exc:
+    456     self.logger.info('HTTP %s request to %s failed with error %s.',
+    457                      method, url, exc)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:589, in Session.request(self, method, url, params, data, headers, cookies, files, auth, timeout, allow_redirects, proxies, hooks, stream, verify, cert, json)
+    584 send_kwargs = {
+    585     "timeout": timeout,
+    586     "allow_redirects": allow_redirects,
+    587 }
+    588 send_kwargs.update(settings)
+--> 589 resp = self.send(prep, **send_kwargs)
+    591 return resp
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:703, in Session.send(self, request, **kwargs)
+    700 start = preferred_clock()
+    702 # Send the request
+--> 703 r = adapter.send(request, **kwargs)
+    705 # Total elapsed time of the request (approximately)
+    706 elapsed = preferred_clock() - start
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/adapters.py:644, in HTTPAdapter.send(self, request, stream, timeout, verify, cert, proxies)
+    641     timeout = TimeoutSauce(connect=timeout, read=timeout)
+    643 try:
+--> 644     resp = conn.urlopen(
+    645         method=request.method,
+    646         url=url,
+    647         body=request.body,
+    648         headers=request.headers,
+    649         redirect=False,
+    650         assert_same_host=False,
+    651         preload_content=False,
+    652         decode_content=False,
+    653         retries=self.max_retries,
+    654         timeout=timeout,
+    655         chunked=chunked,
+    656     )
+    658 except (ProtocolError, OSError) as err:
+    659     raise ConnectionError(err, request=request)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:787, in HTTPConnectionPool.urlopen(self, method, url, body, headers, retries, redirect, assert_same_host, timeout, pool_timeout, release_conn, chunked, body_pos, preload_content, decode_content, **response_kw)
+    784 response_conn = conn if not release_conn else None
+    786 # Make the request on the HTTPConnection object
+--> 787 response = self._make_request(
+    788     conn,
+    789     method,
+    790     url,
+    791     timeout=timeout_obj,
+    792     body=body,
+    793     headers=headers,
+    794     chunked=chunked,
+    795     retries=retries,
+    796     response_conn=response_conn,
+    797     preload_content=preload_content,
+    798     decode_content=decode_content,
+    799     **response_kw,
+    800 )
+    802 # Everything went great!
+    803 clean_exit = True
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:464, in HTTPConnectionPool._make_request(self, conn, method, url, body, headers, retries, timeout, chunked, response_conn, preload_content, decode_content, enforce_content_length)
+    461 try:
+    462     # Trigger any extra validation we need to do.
+    463     try:
+--> 464         self._validate_conn(conn)
+    465     except (SocketTimeout, BaseSSLError) as e:
+    466         self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:1093, in HTTPSConnectionPool._validate_conn(self, conn)
+   1091 # Force connect early to allow us to validate the connection.
+   1092 if conn.is_closed:
+-> 1093     conn.connect()
+   1095 # TODO revise this, see https://github.com/urllib3/urllib3/issues/2791
+   1096 if not conn.is_verified and not conn.proxy_is_verified:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:759, in HTTPSConnection.connect(self)
+    757 try:
+    758     sock: socket.socket | ssl.SSLSocket
+--> 759     self.sock = sock = self._new_conn()
+    760     server_hostname: str = self.host
+    761     tls_in_tls = False
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:204, in HTTPConnection._new_conn(self)
+    199 """Establish a socket connection and set nodelay settings on it.
+    200 
+    201 :return: New socket connection.
+    202 """
+    203 try:
+--> 204     sock = connection.create_connection(
+    205         (self._dns_host, self.port),
+    206         self.timeout,
+    207         source_address=self.source_address,
+    208         socket_options=self.socket_options,
+    209     )
+    210 except socket.gaierror as e:
+    211     raise NameResolutionError(self.host, self, e) from e
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/util/connection.py:73, in create_connection(address, timeout, source_address, socket_options)
+     71 if source_address:
+     72     sock.bind(source_address)
+---> 73 sock.connect(sa)
+     74 # Break explicitly a reference cycle
+     75 err = None
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:21, in signal_handler(sig, frame)
+     19         client.disconnect()
+     20 if callable(original_signal_handler):
+---> 21     return original_signal_handler(sig, frame)
+     22 else:  # pragma: no cover
+     23     # Handle case where no original SIGINT handler was present.
+     24     return signal.default_int_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/base_client.py:24, in signal_handler(sig, frame)
+     22     client._reconnect_abort.set()
+     23 if callable(original_signal_handler):
+---> 24     return original_signal_handler(sig, frame)
+     25 else:  # pragma: no cover
+     26     # Handle case where no original SIGINT handler was present.
+     27     return signal.default_int_handler(sig, frame)
+
+KeyboardInterrupt: 
+
+In [2]: import socketio
+   ...: 
+   ...: sio = socketio.Client(logger=True, engineio_logger=True)
+   ...: 
+   ...: @sio.event
+   ...: def connect():
+   ...:     print("Connected!")
+   ...: 
+   ...: sio.connect('https://sysmayal.ngrok.io', socketio_path='/socket.
+   ...: io', transports=['polling'])
+   ...: print("Status:", sio.connected)
+
+
+^C------------------------------------------------------------------------
+KeyboardInterrupt                      Traceback (most recent call last)
+Cell In[2], line 9
+      5 @sio.event
+      6 def connect():
+      7     print("Connected!")
+----> 9 sio.connect('https://sysmayal.ngrok.io', socketio_path='/socket.io', transports=['polling'])
+     10 print("Status:", sio.connected)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:149, in Client.connect(self, url, headers, auth, transports, namespaces, socketio_path, wait, wait_timeout, retry)
+    147 real_headers = self._get_real_value(self.connection_headers)
+    148 try:
+--> 149     self.eio.connect(real_url, headers=real_headers,
+    150                      transports=transports,
+    151                      engineio_path=socketio_path)
+    152 except engineio.exceptions.ConnectionError as exc:
+    153     for n in self.connection_namespaces:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:96, in Client.connect(self, url, headers, transports, engineio_path)
+     94         raise ValueError('No valid transports provided')
+     95 self.transports = transports or valid_transports
+---> 96 return getattr(self, '_connect_' + self.transports[0])(
+     97     url, headers or {}, engineio_path)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:196, in Client._connect_polling(self, url, headers, engineio_path)
+    194 self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
+    195 self.logger.info('Attempting polling connection to ' + self.base_url)
+--> 196 r = self._send_request(
+    197     'GET', self.base_url + self._get_url_timestamp(), headers=headers,
+    198     timeout=self.request_timeout)
+    199 if r is None or isinstance(r, str):
+    200     self._reset()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:453, in Client._send_request(self, method, url, headers, body, timeout)
+    451     self.http.verify = False
+    452 try:
+--> 453     return self.http.request(method, url, headers=headers, data=body,
+    454                              timeout=timeout)
+    455 except requests.exceptions.RequestException as exc:
+    456     self.logger.info('HTTP %s request to %s failed with error %s.',
+    457                      method, url, exc)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:589, in Session.request(self, method, url, params, data, headers, cookies, files, auth, timeout, allow_redirects, proxies, hooks, stream, verify, cert, json)
+    584 send_kwargs = {
+    585     "timeout": timeout,
+    586     "allow_redirects": allow_redirects,
+    587 }
+    588 send_kwargs.update(settings)
+--> 589 resp = self.send(prep, **send_kwargs)
+    591 return resp
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:703, in Session.send(self, request, **kwargs)
+    700 start = preferred_clock()
+    702 # Send the request
+--> 703 r = adapter.send(request, **kwargs)
+    705 # Total elapsed time of the request (approximately)
+    706 elapsed = preferred_clock() - start
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/adapters.py:644, in HTTPAdapter.send(self, request, stream, timeout, verify, cert, proxies)
+    641     timeout = TimeoutSauce(connect=timeout, read=timeout)
+    643 try:
+--> 644     resp = conn.urlopen(
+    645         method=request.method,
+    646         url=url,
+    647         body=request.body,
+    648         headers=request.headers,
+    649         redirect=False,
+    650         assert_same_host=False,
+    651         preload_content=False,
+    652         decode_content=False,
+    653         retries=self.max_retries,
+    654         timeout=timeout,
+    655         chunked=chunked,
+    656     )
+    658 except (ProtocolError, OSError) as err:
+    659     raise ConnectionError(err, request=request)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:787, in HTTPConnectionPool.urlopen(self, method, url, body, headers, retries, redirect, assert_same_host, timeout, pool_timeout, release_conn, chunked, body_pos, preload_content, decode_content, **response_kw)
+    784 response_conn = conn if not release_conn else None
+    786 # Make the request on the HTTPConnection object
+--> 787 response = self._make_request(
+    788     conn,
+    789     method,
+    790     url,
+    791     timeout=timeout_obj,
+    792     body=body,
+    793     headers=headers,
+    794     chunked=chunked,
+    795     retries=retries,
+    796     response_conn=response_conn,
+    797     preload_content=preload_content,
+    798     decode_content=decode_content,
+    799     **response_kw,
+    800 )
+    802 # Everything went great!
+    803 clean_exit = True
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:464, in HTTPConnectionPool._make_request(self, conn, method, url, body, headers, retries, timeout, chunked, response_conn, preload_content, decode_content, enforce_content_length)
+    461 try:
+    462     # Trigger any extra validation we need to do.
+    463     try:
+--> 464         self._validate_conn(conn)
+    465     except (SocketTimeout, BaseSSLError) as e:
+    466         self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:1093, in HTTPSConnectionPool._validate_conn(self, conn)
+   1091 # Force connect early to allow us to validate the connection.
+   1092 if conn.is_closed:
+-> 1093     conn.connect()
+   1095 # TODO revise this, see https://github.com/urllib3/urllib3/issues/2791
+   1096 if not conn.is_verified and not conn.proxy_is_verified:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:759, in HTTPSConnection.connect(self)
+    757 try:
+    758     sock: socket.socket | ssl.SSLSocket
+--> 759     self.sock = sock = self._new_conn()
+    760     server_hostname: str = self.host
+    761     tls_in_tls = False
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:204, in HTTPConnection._new_conn(self)
+    199 """Establish a socket connection and set nodelay settings on it.
+    200 
+    201 :return: New socket connection.
+    202 """
+    203 try:
+--> 204     sock = connection.create_connection(
+    205         (self._dns_host, self.port),
+    206         self.timeout,
+    207         source_address=self.source_address,
+    208         socket_options=self.socket_options,
+    209     )
+    210 except socket.gaierror as e:
+    211     raise NameResolutionError(self.host, self, e) from e
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/util/connection.py:73, in create_connection(address, timeout, source_address, socket_options)
+     71 if source_address:
+     72     sock.bind(source_address)
+---> 73 sock.connect(sa)
+     74 # Break explicitly a reference cycle
+     75 err = None
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:21, in signal_handler(sig, frame)
+     19         client.disconnect()
+     20 if callable(original_signal_handler):
+---> 21     return original_signal_handler(sig, frame)
+     22 else:  # pragma: no cover
+     23     # Handle case where no original SIGINT handler was present.
+     24     return signal.default_int_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/base_client.py:24, in signal_handler(sig, frame)
+     22     client._reconnect_abort.set()
+     23 if callable(original_signal_handler):
+---> 24     return original_signal_handler(sig, frame)
+     25 else:  # pragma: no cover
+     26     # Handle case where no original SIGINT handler was present.
+     27     return signal.default_int_handler(sig, frame)
+
+KeyboardInterrupt: 
+
+In [3]: # Ctrl+C first, then fresh console:
+   ...: import socketio
+   ...: 
+   ...: sio = socketio.Client(logger=True, engineio_logger=True)
+   ...: 
+   ...: @sio.event
+   ...: def connect():
+   ...:     print("Connected!")
+   ...: 
+   ...: @sio.event
+   ...: def disconnect():
+   ...:     print("Disconnected!")
+   ...: 
+   ...: sio.connect('http://localhost:9000', transports=['polling'])
+Connected!
+
+In [4]: # Ctrl+C first, then fresh console:
+   ...: import socketio
+   ...: 
+   ...: sio = socketio.Client(logger=True, engineio_logger=True)
+   ...: 
+   ...: @sio.event
+   ...: def connect():
+   ...:     print("Connected!")
+   ...: 
+   ...: @sio.event
+   ...: def disconnect():
+   ...:     print("Disconnected!")
+   ...: 
+   ...: sio.connect('http://sysmayal.ngrok.io', transports=['polling'])
+
+^CDisconnected!
+------------------------------------------------------------------------
+KeyboardInterrupt                      Traceback (most recent call last)
+Cell In[4], line 14
+     10 @sio.event
+     11 def disconnect():
+     12     print("Disconnected!")
+---> 14 sio.connect('http://sysmayal.ngrok.io', transports=['polling'])
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/client.py:149, in Client.connect(self, url, headers, auth, transports, namespaces, socketio_path, wait, wait_timeout, retry)
+    147 real_headers = self._get_real_value(self.connection_headers)
+    148 try:
+--> 149     self.eio.connect(real_url, headers=real_headers,
+    150                      transports=transports,
+    151                      engineio_path=socketio_path)
+    152 except engineio.exceptions.ConnectionError as exc:
+    153     for n in self.connection_namespaces:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:96, in Client.connect(self, url, headers, transports, engineio_path)
+     94         raise ValueError('No valid transports provided')
+     95 self.transports = transports or valid_transports
+---> 96 return getattr(self, '_connect_' + self.transports[0])(
+     97     url, headers or {}, engineio_path)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:196, in Client._connect_polling(self, url, headers, engineio_path)
+    194 self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
+    195 self.logger.info('Attempting polling connection to ' + self.base_url)
+--> 196 r = self._send_request(
+    197     'GET', self.base_url + self._get_url_timestamp(), headers=headers,
+    198     timeout=self.request_timeout)
+    199 if r is None or isinstance(r, str):
+    200     self._reset()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/client.py:453, in Client._send_request(self, method, url, headers, body, timeout)
+    451     self.http.verify = False
+    452 try:
+--> 453     return self.http.request(method, url, headers=headers, data=body,
+    454                              timeout=timeout)
+    455 except requests.exceptions.RequestException as exc:
+    456     self.logger.info('HTTP %s request to %s failed with error %s.',
+    457                      method, url, exc)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:589, in Session.request(self, method, url, params, data, headers, cookies, files, auth, timeout, allow_redirects, proxies, hooks, stream, verify, cert, json)
+    584 send_kwargs = {
+    585     "timeout": timeout,
+    586     "allow_redirects": allow_redirects,
+    587 }
+    588 send_kwargs.update(settings)
+--> 589 resp = self.send(prep, **send_kwargs)
+    591 return resp
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/sessions.py:703, in Session.send(self, request, **kwargs)
+    700 start = preferred_clock()
+    702 # Send the request
+--> 703 r = adapter.send(request, **kwargs)
+    705 # Total elapsed time of the request (approximately)
+    706 elapsed = preferred_clock() - start
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/requests/adapters.py:644, in HTTPAdapter.send(self, request, stream, timeout, verify, cert, proxies)
+    641     timeout = TimeoutSauce(connect=timeout, read=timeout)
+    643 try:
+--> 644     resp = conn.urlopen(
+    645         method=request.method,
+    646         url=url,
+    647         body=request.body,
+    648         headers=request.headers,
+    649         redirect=False,
+    650         assert_same_host=False,
+    651         preload_content=False,
+    652         decode_content=False,
+    653         retries=self.max_retries,
+    654         timeout=timeout,
+    655         chunked=chunked,
+    656     )
+    658 except (ProtocolError, OSError) as err:
+    659     raise ConnectionError(err, request=request)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:787, in HTTPConnectionPool.urlopen(self, method, url, body, headers, retries, redirect, assert_same_host, timeout, pool_timeout, release_conn, chunked, body_pos, preload_content, decode_content, **response_kw)
+    784 response_conn = conn if not release_conn else None
+    786 # Make the request on the HTTPConnection object
+--> 787 response = self._make_request(
+    788     conn,
+    789     method,
+    790     url,
+    791     timeout=timeout_obj,
+    792     body=body,
+    793     headers=headers,
+    794     chunked=chunked,
+    795     retries=retries,
+    796     response_conn=response_conn,
+    797     preload_content=preload_content,
+    798     decode_content=decode_content,
+    799     **response_kw,
+    800 )
+    802 # Everything went great!
+    803 clean_exit = True
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connectionpool.py:493, in HTTPConnectionPool._make_request(self, conn, method, url, body, headers, retries, timeout, chunked, response_conn, preload_content, decode_content, enforce_content_length)
+    490 # conn.request() calls http.client.*.request, not the method in
+    491 # urllib3.request. It also calls makefile (recv) on the socket.
+    492 try:
+--> 493     conn.request(
+    494         method,
+    495         url,
+    496         body=body,
+    497         headers=headers,
+    498         chunked=chunked,
+    499         preload_content=preload_content,
+    500         decode_content=decode_content,
+    501         enforce_content_length=enforce_content_length,
+    502     )
+    504 # We are swallowing BrokenPipeError (errno.EPIPE) since the server is
+    505 # legitimately able to close the connection after sending a valid response.
+    506 # With this behaviour, the received response is still readable.
+    507 except BrokenPipeError:
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:500, in HTTPConnection.request(self, method, url, body, headers, chunked, preload_content, decode_content, enforce_content_length)
+    498 for header, value in headers.items():
+    499     self.putheader(header, value)
+--> 500 self.endheaders()
+    502 # If we're given a body we start sending that in chunks.
+    503 if chunks is not None:
+
+File /usr/lib/python3.14/http/client.py:1353, in HTTPConnection.endheaders(self, message_body, encode_chunked)
+   1351 else:
+   1352     raise CannotSendHeader()
+-> 1353 self._send_output(message_body, encode_chunked=encode_chunked)
+
+File /usr/lib/python3.14/http/client.py:1113, in HTTPConnection._send_output(self, message_body, encode_chunked)
+   1111 msg = b"\r\n".join(self._buffer)
+   1112 del self._buffer[:]
+-> 1113 self.send(msg)
+   1115 if message_body is not None:
+   1116 
+   1117     # create a consistent interface to message_body
+   1118     if hasattr(message_body, 'read'):
+   1119         # Let file-like take precedence over byte-like.  This
+   1120         # is needed to allow the current position of mmap'ed
+   1121         # files to be taken into account.
+
+File /usr/lib/python3.14/http/client.py:1057, in HTTPConnection.send(self, data)
+   1055 if self.sock is None:
+   1056     if self.auto_open:
+-> 1057         self.connect()
+   1058     else:
+   1059         raise NotConnected()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:331, in HTTPConnection.connect(self)
+    330 def connect(self) -> None:
+--> 331     self.sock = self._new_conn()
+    332     if self._tunnel_host:
+    333         # If we're tunneling it means we're connected to our proxy.
+    334         self._has_connected_to_proxy = True
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/connection.py:204, in HTTPConnection._new_conn(self)
+    199 """Establish a socket connection and set nodelay settings on it.
+    200 
+    201 :return: New socket connection.
+    202 """
+    203 try:
+--> 204     sock = connection.create_connection(
+    205         (self._dns_host, self.port),
+    206         self.timeout,
+    207         source_address=self.source_address,
+    208         socket_options=self.socket_options,
+    209     )
+    210 except socket.gaierror as e:
+    211     raise NameResolutionError(self.host, self, e) from e
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/urllib3/util/connection.py:73, in create_connection(address, timeout, source_address, socket_options)
+     71 if source_address:
+     72     sock.bind(source_address)
+---> 73 sock.connect(sa)
+     74 # Break explicitly a reference cycle
+     75 err = None
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/engineio/base_client.py:21, in signal_handler(sig, frame)
+     19         client.disconnect()
+     20 if callable(original_signal_handler):
+---> 21     return original_signal_handler(sig, frame)
+     22 else:  # pragma: no cover
+     23     # Handle case where no original SIGINT handler was present.
+     24     return signal.default_int_handler(sig, frame)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/socketio/base_client.py:24, in signal_handler(sig, frame)
+     22     client._reconnect_abort.set()
+     23 if callable(original_signal_handler):
+---> 24     return original_signal_handler(sig, frame)
+     25 else:  # pragma: no cover
+     26     # Handle case where no original SIGINT handler was present.
+     27     return signal.default_int_handler(sig, frame)
+
+KeyboardInterrupt: 
+
+In [5]: 
