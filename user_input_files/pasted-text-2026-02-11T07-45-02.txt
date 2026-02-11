@@ -1,0 +1,289 @@
+bench get-app file:///home/frappe/context/apps/raven
+Getting Raven
+$ git clone file:///home/frappe/context/apps/raven  --depth 1 --origin upstream
+Cloning into 'raven'...
+Ignoring dependencies of file:///home/frappe/context/apps/raven. To install dependencies use --resolve-deps
+Installing raven
+$ uv pip install --quiet --upgrade -e /home/frappe/frappe-bench/apps/raven  --python /home/frappe/frappe-bench/env/bin/python
+$ yarn install --check-files
+yarn install v1.22.22
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning " > @raven/lib@0.0.0" has unmet peer dependency "frappe-react-sdk@*".
+warning " > @raven/lib@0.0.0" has unmet peer dependency "react@*".
+warning " > @raven/lib@0.0.0" has unmet peer dependency "@types/react@*".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-code-block-lowlight@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-code-block-lowlight@2.12.0" has unmet peer dependency "@tiptap/extension-code-block@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-highlight@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-image@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-link@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-mention@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-placeholder@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-table@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-table-cell@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-table-header@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-table-row@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-typography@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/extension-underline@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/react@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/suggestion@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > autoprefixer@10.4.21" has unmet peer dependency "postcss@^8.1.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > vite-plugin-pwa@1.0.0" has unmet peer dependency "workbox-build@^7.3.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > vite-plugin-pwa@1.0.0" has unmet peer dependency "workbox-window@^7.3.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > @react-navigation/drawer@7.3.11" has unmet peer dependency "@react-navigation/native@^7.1.8".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > @shopify/flash-list@1.7.3" has unmet peer dependency "@babel/runtime@*".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > prettier-plugin-tailwindcss@0.6.11" has unmet peer dependency "prettier@^3.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-user-inactivity@1.2.0" has incorrect peer dependency "react@^17.0.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-user-inactivity@1.2.0" has incorrect peer dependency "react-native@^0.63.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-user-inactivity@1.2.0" has unmet peer dependency "react-native-background-timer@^2.4.1".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > zeego@3.0.6" has incorrect peer dependency "@react-native-menu/menu@1.2.2".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > zeego@3.0.6" has incorrect peer dependency "react-native-ios-context-menu@3.1.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > zeego@3.0.6" has incorrect peer dependency "react-native-ios-utilities@5.1.2".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/react > @tiptap/extension-bubble-menu@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > raven-web > @tiptap/react > @tiptap/extension-floating-menu@2.12.0" has unmet peer dependency "@tiptap/core@^2.7.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > @react-navigation/drawer > @react-navigation/elements@2.4.1" has unmet peer dependency "@react-navigation/native@^7.1.8".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native > @react-native/codegen@0.76.9" has unmet peer dependency "@babel/preset-env@^7.1.6".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-render-html > @native-html/transient-render-engine@11.2.3" has unmet peer dependency "@types/react-native@*".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-user-inactivity > usetimeout-react-hook@0.1.2" has incorrect peer dependency "react@^16.8.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-user-inactivity > usetimeout-react-hook@0.1.2" has incorrect peer dependency "react-dom@^16.8.0".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native > @react-native/codegen > jscodeshift@0.14.0" has unmet peer dependency "@babel/preset-env@^7.1.6".
+warning "workspace-aggregator-5b43c495-fdef-497c-9714-647314be3fa3 > @raven/mobile > react-native-render-html > @native-html/transient-render-engine > @native-html/css-processor@1.11.0" has unmet peer dependency "@types/react-native@*".
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+[4/4] Building fresh packages...
+$ yarn install-web && yarn install-desk
+yarn run v1.22.22
+$ cd frontend && yarn install
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 1.45s.
+yarn run v1.22.22
+$ cd raven && yarn install
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning " > @tiptap/extension-highlight@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning " > @tiptap/extension-link@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning " > @tiptap/extension-mention@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning " > @tiptap/extension-placeholder@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning " > @tiptap/extension-underline@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning " > @tiptap/react@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+warning "@tiptap/react > @tiptap/extension-bubble-menu@2.6.4" has unmet peer dependency "@tiptap/core@^2.6.4".
+warning "@tiptap/react > @tiptap/extension-bubble-menu@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/react > @tiptap/extension-floating-menu@2.6.4" has unmet peer dependency "@tiptap/core@^2.6.4".
+warning "@tiptap/react > @tiptap/extension-floating-menu@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/core@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/extension-code-block@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/extension-dropcursor@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/extension-gapcursor@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/extension-history@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning "@tiptap/starter-kit > @tiptap/extension-horizontal-rule@2.6.4" has incorrect peer dependency "@tiptap/pm@^2.6.4".
+warning " > @tiptap/suggestion@2.5.9" has unmet peer dependency "@tiptap/core@^2.5.9".
+[4/4] Building fresh packages...
+Done in 4.81s.
+Done in 83.69s.
+$ bench build --app raven
+Linking /home/frappe/frappe-bench/apps/frappe/frappe/public to ./assets/frappe
+/home/frappe/frappe-bench/apps/frappe/node_modules to ./assets/frappe/node_modules
+/home/frappe/frappe-bench/apps/raven/raven/public to ./assets/raven
+/home/frappe/frappe-bench/apps/raven/node_modules to ./assets/raven/node_modules
+/home/frappe/frappe-bench/apps/erpnext/erpnext/public to ./assets/erpnext
+/home/frappe/frappe-bench/apps/erpnext/node_modules to ./assets/erpnext/node_modules
+Application Assets Linked
+
+
+yarn run v1.22.22
+$ node esbuild --production --apps raven --run-build-command
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+File                                                        Size
+
+raven/dist/js/
+└─ raven.bundle.R2EZDILB.js                                 9.42 Kb
+
+raven/dist/
+└─ raven_chat.bundle.FGXUOTBN.js                            516.26 Kb
+
+raven/dist/css/
+└─ raven.bundle.BTHOOZ3J.css                                6.88 Kb
+
+raven/dist/css-rtl/
+└─ raven.bundle.WJ6U2IQX.css                                6.89 Kb
+
+ DONE  Total Build Time: 708.361ms
+
+
+Running build command for raven
+$ cd frontend && yarn build
+$ vite build --base=/assets/raven/raven/ && yarn copy-html-entry
+vite v6.3.6 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 1588 modules transformed.
+rendering chunks...
+computing gzip size...
+../raven/public/raven/manifest.webmanifest                                   0.78 kB
+../raven/public/raven/index.html                                            11.02 kB │ gzip:   1.41 kB
+../raven/public/raven/assets/CalSans-SemiBold-uYvlD9JW.woff2                40.93 kB
+../raven/public/raven/assets/CalSans-SemiBold-BGUi8Ca7.woff                 52.50 kB
+../raven/public/raven/assets/dark_mode_left_right-C-9Gk6N9.png             116.56 kB
+../raven/public/raven/assets/theme_dark_mode-DfcjMo-_.png                  117.30 kB
+../raven/public/raven/assets/theme_system_mode-WOCSySnS.png                124.16 kB
+../raven/public/raven/assets/light_mode_left_right-BTxruvO_.png            131.87 kB
+../raven/public/raven/assets/theme_light_mode-D_K0IkOz.png                 132.84 kB
+../raven/public/raven/assets/CalSans-SemiBold-CtqmqM5J.ttf                 148.96 kB
+../raven/public/raven/assets/useCurrentChannelData-BsL46_d-.css              0.23 kB │ gzip:   0.17 kB
+../raven/public/raven/assets/tiptap-Rf8UWCWH.css                             2.03 kB │ gzip:   0.76 kB
+../raven/public/raven/assets/CreatePoll-DdjxYr1F.css                        21.66 kB │ gzip:   3.04 kB
+../raven/public/raven/assets/index-_PRaSSPc.css                            755.64 kB │ gzip:  91.85 kB
+../raven/public/raven/assets/preferences-lyJFpS9j.js                         0.20 kB │ gzip:   0.19 kB
+../raven/public/raven/assets/useDebounce-Blvj0WsR.js                         0.20 kB │ gzip:   0.17 kB
+../raven/public/raven/assets/useRavenSettings-B_r7UZgk.js                    0.24 kB │ gzip:   0.19 kB
+../raven/public/raven/assets/validations-DJFqvO1k.js                         0.27 kB │ gzip:   0.20 kB
+../raven/public/raven/assets/useGetUserRecords-CpA4HR7w.js                   0.32 kB │ gzip:   0.23 kB
+../raven/public/raven/assets/useDoctypeMeta-CQ3wt_HG.js                      0.38 kB │ gzip:   0.27 kB
+../raven/public/raven/assets/SuccessCallout-5fHXdYqK.js                      0.50 kB │ gzip:   0.33 kB
+../raven/public/raven/assets/PageHeader-V3Pcgdbm.js                          0.52 kB │ gzip:   0.33 kB
+../raven/public/raven/assets/NotFound-DJrccFQ6.js                            0.55 kB │ gzip:   0.35 kB
+../raven/public/raven/assets/CommonSettingsMenu-BY3SzmmS.js                  0.57 kB │ gzip:   0.35 kB
+../raven/public/raven/assets/ServerScriptNotEnabledForm-CJWxWLoC.js          0.68 kB │ gzip:   0.44 kB
+../raven/public/raven/assets/AINotEnabledCallout-TCSjJWGx.js                 0.74 kB │ gzip:   0.44 kB
+../raven/public/raven/assets/Skeleton-BsP0DraE.js                            0.79 kB │ gzip:   0.44 kB
+../raven/public/raven/assets/AuthContainer-5Z55ov8W.js                       0.92 kB │ gzip:   0.51 kB
+../raven/public/raven/assets/strong-CgsrY3Ql.js                              0.93 kB │ gzip:   0.52 kB
+../raven/public/raven/assets/skeleton-Bdp2DVgv.js                            1.06 kB │ gzip:   0.61 kB
+../raven/public/raven/assets/DateSeparator-Dtc5mGio.js                       1.07 kB │ gzip:   0.53 kB
+../raven/public/raven/assets/ViewThread-C7eOjodn.js                          1.09 kB │ gzip:   0.65 kB
+../raven/public/raven/assets/UploadImageModal-C333UC3t.js                    1.11 kB │ gzip:   0.65 kB
+../raven/public/raven/assets/ThreadDrawer-CCQEtC2p.js                        1.13 kB │ gzip:   0.67 kB
+../raven/public/raven/assets/InstructionTemplateForm-v7GzQEYS.js             1.19 kB │ gzip:   0.65 kB
+../raven/public/raven/assets/TableLoader-CphU0El4.js                         1.25 kB │ gzip:   0.63 kB
+../raven/public/raven/assets/AddMembersDropdown-D9CMMS-M.js                  1.35 kB │ gzip:   0.74 kB
+../raven/public/raven/assets/MessageBox-Cylidp4X.js                          1.36 kB │ gzip:   0.70 kB
+../raven/public/raven/assets/EmptyListViewState-CT6WrJ1s.js                  1.49 kB │ gzip:   0.72 kB
+../raven/public/raven/assets/CreateSavedPrompt-PgUNgAM7.js                   1.50 kB │ gzip:   0.82 kB
+../raven/public/raven/assets/DeleteAlert-CEW572Ob.js                         1.50 kB │ gzip:   0.78 kB
+../raven/public/raven/assets/SavedMessages-Bz88qL6-.js                       1.55 kB │ gzip:   0.86 kB
+../raven/public/raven/assets/radio-cards-CkOtGReX.js                         1.55 kB │ gzip:   0.78 kB
+../raven/public/raven/assets/CreateWebhook-Bfp6EqKx.js                       1.56 kB │ gzip:   0.85 kB
+../raven/public/raven/assets/EmojiPicker-D8VP833i.js                         1.59 kB │ gzip:   0.91 kB
+../raven/public/raven/assets/CodeBlock-uYU1xH1X.js                           1.62 kB │ gzip:   0.92 kB
+../raven/public/raven/assets/CreateInstructionTemplate-DGzQuhap.js           1.66 kB │ gzip:   0.87 kB
+../raven/public/raven/assets/CreateFunction-B6IT_g1S.js                      1.72 kB │ gzip:   0.93 kB
+../raven/public/raven/assets/CreateDocumentNotification-DV8S3_SY.js          1.75 kB │ gzip:   0.91 kB
+../raven/public/raven/assets/CreateMessageAction-AOC0IdHJ.js                 1.76 kB │ gzip:   0.93 kB
+../raven/public/raven/assets/SavedPromptForm-BPaNkvfz.js                     1.79 kB │ gzip:   0.93 kB
+../raven/public/raven/assets/MobileApp-CQpEeks0.js                           1.90 kB │ gzip:   0.95 kB
+../raven/public/raven/assets/CreateBot-DnKnYh1y.js                           1.92 kB │ gzip:   1.04 kB
+../raven/public/raven/assets/PageSelector-CHmY60LJ.js                        1.96 kB │ gzip:   0.94 kB
+../raven/public/raven/assets/ViewSavedPrompt-B4q1vDY9.js                     2.10 kB │ gzip:   1.11 kB
+../raven/public/raven/assets/LoginWithEmail-BjU6omj4.js                      2.15 kB │ gzip:   1.07 kB
+../raven/public/raven/assets/FileSourceUploadDialog-DjPkZxRy.js              2.15 kB │ gzip:   1.09 kB
+../raven/public/raven/assets/Preferences-DD1qjRS-.js                         2.15 kB │ gzip:   1.07 kB
+../raven/public/raven/assets/CreateSchedulerEvent-6ijzayVw.js                2.18 kB │ gzip:   1.09 kB
+../raven/public/raven/assets/MessageActionList-BbPgH_bC.js                   2.19 kB │ gzip:   1.07 kB
+../raven/public/raven/assets/ViewFunction-Csc1xC1A.js                        2.24 kB │ gzip:   1.16 kB
+../raven/public/raven/assets/ViewMessageAction-DfbCwpU8.js                   2.25 kB │ gzip:   1.16 kB
+../raven/public/raven/assets/ViewInstructionTemplate-BYcZ6FQi.js             2.27 kB │ gzip:   1.16 kB
+../raven/public/raven/assets/SavedPromptsList-D2-9DEa4.js                    2.28 kB │ gzip:   1.15 kB
+../raven/public/raven/assets/ViewDocumentNotification-D2noZAdh.js            2.29 kB │ gzip:   1.16 kB
+../raven/public/raven/assets/InstructionTemplateList-J4wOQxix.js             2.31 kB │ gzip:   1.11 kB
+../raven/public/raven/assets/FunctionList-K94q0YKE.js                        2.34 kB │ gzip:   1.11 kB
+../raven/public/raven/assets/DocumentNotificationList-DnKhcXmQ.js            2.37 kB │ gzip:   1.13 kB
+../raven/public/raven/assets/SetCustomStatusContent-DjHP7OWl.js              2.41 kB │ gzip:   1.21 kB
+../raven/public/raven/assets/ForgotPassword-Bcf9MsST.js                      2.50 kB │ gzip:   1.28 kB
+../raven/public/raven/assets/AddWorkspaceMemberModalContent-CTMp2MGo.js      2.75 kB │ gzip:   1.34 kB
+../raven/public/raven/assets/BotList-Crz51X97.js                             2.94 kB │ gzip:   1.30 kB
+../raven/public/raven/assets/WebhookList-D_cGwtW0.js                         2.98 kB │ gzip:   1.28 kB
+../raven/public/raven/assets/MobileInputActions-YnIfZUmr.js                  2.98 kB │ gzip:   1.30 kB
+../raven/public/raven/assets/ViewBot-Sfx3Ge7a.js                             3.02 kB │ gzip:   1.58 kB
+../raven/public/raven/assets/table-dCpsf4Sr.js                               3.04 kB │ gzip:   1.08 kB
+../raven/public/raven/assets/SignUp-B37xq7dC.js                              3.07 kB │ gzip:   1.38 kB
+../raven/public/raven/assets/SchedulerEvents-CijnkALU.js                     3.09 kB │ gzip:   1.36 kB
+../raven/public/raven/assets/switch-CgZBZQoR.js                              3.22 kB │ gzip:   1.55 kB
+../raven/public/raven/assets/FileSourcesList-CZt_JpUQ.js                     3.23 kB │ gzip:   1.48 kB
+../raven/public/raven/assets/SettingsContentContainer-pRr4vueL.js            3.28 kB │ gzip:   1.36 kB
+../raven/public/raven/assets/Appearance-Cx9AaU-m.js                          3.45 kB │ gzip:   1.21 kB
+../raven/public/raven/assets/Settings-BmrjbBNI.js                            3.46 kB │ gzip:   1.31 kB
+../raven/public/raven/assets/ViewWebhook-DG9yHerS.js                         3.48 kB │ gzip:   1.62 kB
+../raven/public/raven/assets/AddCustomEmojiDialog-Lp2tDUM8.js                3.53 kB │ gzip:   1.63 kB
+../raven/public/raven/assets/ViewSchedulerEvent-D_gtDSOg.js                  3.62 kB │ gzip:   1.60 kB
+../raven/public/raven/assets/CustomEmojiList-8aVJL1Id.js                     3.70 kB │ gzip:   1.58 kB
+../raven/public/raven/assets/MultipleUserCombobox-DAT-hwzR.js                3.75 kB │ gzip:   1.59 kB
+../raven/public/raven/assets/WorkspaceList-BVmaV8zc.js                       3.78 kB │ gzip:   1.44 kB
+../raven/public/raven/assets/UserList-Cz591dfR.js                            4.46 kB │ gzip:   1.91 kB
+../raven/public/raven/assets/tabs-BD3By9ix.js                                4.52 kB │ gzip:   1.79 kB
+../raven/public/raven/assets/GIFPicker-DGPMbESk.js                           4.55 kB │ gzip:   1.56 kB
+../raven/public/raven/assets/hover-card-CAYbbkg6.js                          6.07 kB │ gzip:   2.33 kB
+../raven/public/raven/assets/FrappeHR-B1U4aOTn.js                            6.20 kB │ gzip:   2.38 kB
+../raven/public/raven/assets/DocumentProcessors-BSJUMTn-.js                  6.77 kB │ gzip:   2.37 kB
+../raven/public/raven/assets/PushNotifications-BxLKoyOq.js                   6.96 kB │ gzip:   2.49 kB
+../raven/public/raven/assets/DocumentPreviewTool-PoMTQq0j.js                 7.45 kB │ gzip:   3.08 kB
+../raven/public/raven/assets/DoctypeLinkRenderer-DI1-tRgs.js                 7.72 kB │ gzip:   3.01 kB
+../raven/public/raven/assets/UserProfile-C7uff7sU.js                         7.83 kB │ gzip:   2.86 kB
+../raven/public/raven/assets/AddRavenUsersPage-CauHqL0a.js                   7.90 kB │ gzip:   3.22 kB
+../raven/public/raven/assets/Login-CQrVjF-P.js                               8.19 kB │ gzip:   3.12 kB
+../raven/public/raven/assets/ViewFilesContent-CRoXSI9I.js                    8.27 kB │ gzip:   2.93 kB
+../raven/public/raven/assets/AISettings-BzcUUIbB.js                          8.84 kB │ gzip:   2.89 kB
+../raven/public/raven/assets/HelpAndSupport-DxJZRaBR.js                      8.86 kB │ gzip:   3.19 kB
+../raven/public/raven/assets/ViewWorkspace-DjIF3Nwe.js                       9.28 kB │ gzip:   3.44 kB
+../raven/public/raven/assets/useThreadPageActive-DfUqBk6m.js                 9.33 kB │ gzip:   3.86 kB
+../raven/public/raven/assets/DoctypeVariableDialogForm-CyJIBfQs.js           9.53 kB │ gzip:   3.30 kB
+../raven/public/raven/assets/WorkspaceMemberManagement-ClAehMEH.js          10.32 kB │ gzip:   3.43 kB
+../raven/public/raven/assets/Threads-9i3p1G9K.js                            10.41 kB │ gzip:   3.82 kB
+../raven/public/raven/assets/EmptyState-C40KYyN1.js                         10.93 kB │ gzip:   3.94 kB
+../raven/public/raven/assets/InstructionField--wpkKck0.js                   10.97 kB │ gzip:   3.96 kB
+../raven/public/raven/assets/SchedulerEventsForm-DL23e58K.js                11.64 kB │ gzip:   2.38 kB
+../raven/public/raven/assets/DocumentNotificationForm-CndrI1cJ.js           14.04 kB │ gzip:   4.23 kB
+../raven/public/raven/assets/MessageActionForm-CrZnYVBR.js                  17.05 kB │ gzip:   5.01 kB
+../raven/public/raven/assets/FunctionForm-D0aP-udj.js                       26.14 kB │ gzip:   7.21 kB
+../raven/public/raven/assets/ImageViewer-4B2MbQh7.js                        30.28 kB │ gzip:   9.62 kB
+../raven/public/raven/assets/BotForm-DpxOdcoR.js                            34.58 kB │ gzip:  10.86 kB
+../raven/public/raven/assets/WebhookForm-A-5YWqb-.js                        35.23 kB │ gzip:   6.68 kB
+../raven/public/raven/assets/index-D3jjjf5Z.js                              52.08 kB │ gzip:  18.37 kB
+../raven/public/raven/assets/ChatSpace-B3ykCdA4.js                          60.02 kB │ gzip:  16.36 kB
+../raven/public/raven/assets/TypingIndicator-7H3YGfoF.js                    67.03 kB │ gzip:  19.99 kB
+../raven/public/raven/assets/index-HMmTyaQK.js                             132.45 kB │ gzip:  33.07 kB
+../raven/public/raven/assets/useCurrentChannelData-BrwVQ3N1.js             144.90 kB │ gzip:  50.67 kB
+../raven/public/raven/assets/CreatePoll-CXUXG35J.js                        178.99 kB │ gzip:  46.25 kB
+../raven/public/raven/assets/index-Dr66Ytn9.js                             548.40 kB │ gzip: 169.73 kB
+../raven/public/raven/assets/index-CtjWn3ii.js                           1,171.76 kB │ gzip: 360.28 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 16.14s
+
+PWA v1.0.0
+Building public/sw.js service worker ("es" format)...
+vite v6.3.6 building for production...
+transforming...
+✓ 75 modules transformed.
+rendering chunks...
+computing gzip size...
+../raven/public/raven/sw.mjs  99.53 kB │ gzip: 21.19 kB
+✓ built in 314ms
+
+PWA v1.0.0
+mode      injectManifest
+format:   es
+precache  119 entries (3558.57 KiB)
+files generated
+  ../raven/public/raven/sw.js
+$ cp ../raven/public/raven/index.html ../raven/www/raven.html
+Done in 20.75s.
+Compiling translations for raven
+
+Install Apps - Raven AI Agent
+5.6s
+
+Upload - Docker Image
