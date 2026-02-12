@@ -1353,12 +1353,11 @@ function set_default_values(frm) {
 }
 
 function load_user_preferences(frm) {
-    // Load user's preferred warehouses, etc.
-    frappe.db.get_value('User', frappe.session.user, 'default_warehouse', function(r) {
-        if (r && r.default_warehouse && !frm.doc.target_warehouse) {
-            frm.set_value('target_warehouse', r.default_warehouse);
-        }
-    });
+	// Load user's preferred warehouses using frappe.defaults (safe API)
+	var default_wh = frappe.defaults.get_user_default('Warehouse');
+	if (default_wh && !frm.doc.target_warehouse) {
+		frm.set_value('target_warehouse', default_wh);
+	}
 }
 
 function calculate_container_totals(frm) {
