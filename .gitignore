@@ -894,6 +894,8 @@
 # data/
 # uploads/
 # downloads/
+**/.minimax
+**/.expert
 
 # Claude Agent SDK debug files
 **/.claude/debug/
