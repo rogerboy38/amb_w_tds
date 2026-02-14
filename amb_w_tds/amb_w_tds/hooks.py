@@ -27,10 +27,12 @@ doctype_class = {
 doctype_js = {
     "Quotation AMB": "amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/doctype/batch_amb/batch_amb.js",
+    "Work Order": "public/js/work_order_list.js", 
 }
 
 app_include_js = [
-    "/assets/amb_w_tds/js/batch_widget.js"
+    "/assets/amb_w_tds/js/batch_widget.js",
+    "/assets/amb_w_tds/js/work_order_list.js",
 ]
 
 # ========================================
@@ -135,4 +137,3 @@ default_mail_footer = """
 override_whitelisted_methods = {
 	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
 }
-
