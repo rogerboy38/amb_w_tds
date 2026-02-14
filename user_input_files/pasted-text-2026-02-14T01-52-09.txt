@@ -1,0 +1,531 @@
+(env) frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps$ tree raven_ai_agent/
+raven_ai_agent/
+├── agents
+│   ├── bom_creator_agent.py
+│   ├── executive_agent.py
+│   ├── __init__.py
+│   ├── rnd_agent.py
+│   └── sales_order_followup_agent.py
+├── api
+│   ├── agent.py
+│   ├── agent_V1.py
+│   ├── agent_v2.py
+│   ├── alexa_to_raven.py
+│   ├── bom_fixer.py
+│   ├── channel_utils.py
+│   ├── __init__.py
+│   ├── raven_v2_functions.py
+│   ├── webhook.py
+│   └── workflows.py
+├── browser
+│   ├── browser_extension
+│   │   └── error_capture
+│   │       ├── background.js
+│   │       ├── content.js
+│   │       ├── injector.js
+│   │       └── manifest.json
+│   ├── global_browser.py
+│   └── screenshots
+│       ├── frappe_login_console_errors.png
+│       ├── screenshot_20260209_231645.png
+│       └── screenshot_20260209_231705.png
+├── channels
+│   ├── base.py
+│   ├── __init__.py
+│   ├── raven_channel.py
+│   ├── slack.py
+│   ├── telegram.py
+│   └── whatsapp.py
+├── check_socketio.sh
+├── config
+│   ├── desktop.py
+│   ├── docs.py
+│   ├── doctype_fields.py
+│   ├── environment.py
+│   ├── __init__.py
+│   └── realtime.py
+├── docs
+│   ├── 00_ORCHESTRATOR_PROJECT_PLAN.md
+│   ├── AGENTS.md
+│   ├── AMB_Content_Distribution_Project_Spec.md
+│   ├── fix_session_on_raven_message.md
+│   ├── FORMULATION_ORCHESTRATOR_SPEC_V4.pdf
+│   ├── FRAPPE_CLOUD_MINIMAL_HOOKS.md
+│   ├── frappe-realtime-troubleshooting.md
+│   ├── frappe-websocket-fix-summary.docx
+│   ├── frappe-websocket-fix-summary.md
+│   ├── frappe-websocket-fix-summary.pdf
+│   ├── PARALLEL_TEAM_INITIAL_REPORT.md
+│   ├── PARALLEL_TEAM_MULTIPLATFORM_SPEC.md
+│   ├── project_formulation
+│   │   ├── FEATURE_SUGGEST_ALTERNATIVES.md
+│   │   ├── FORMULATION_ORCHESTRATOR_SPEC_V4.md
+│   │   ├── IMPLEMENTATION_ROADMAP_Aloe_Optimization.md
+│   │   ├── INPUT_FORMAT_CONSISTENCY_REVIEW.md
+│   │   ├── INTEGRATION_TEST_PLAN.md
+│   │   ├── phase_1_additional_questions.md
+│   │   ├── phase_1_chat.md
+│   │   ├── PHASE1_FORMULATION_READER_AGENT.md
+│   │   ├── PHASE1_IMPLEMENTATION_REPORT.md
+│   │   ├── PHASE2_BATCH_SELECTOR_AGENT.md
+│   │   ├── phase_2_chat.md
+│   │   ├── PHASE2_IMPLEMENTATION_REPORT.md
+│   │   ├── PHASE2_INPUT_FORMAT_SUPPORT.md
+│   │   ├── _phase_2_orchestrator_questions.md
+│   │   ├── phase_2_questions.md
+│   │   ├── phase_3_chat.md
+│   │   ├── PHASE3_IMPLEMENTATION_REPORT.md
+│   │   ├── _phase_3_orchestrator_questions.md
+│   │   ├── PHASE3_TDS_COMPLIANCE_CHECKER.md
+│   │   ├── phase_4_chat.md
+│   │   ├── PHASE4_COST_CALCULATOR.md
+│   │   ├── PHASE4_IMPLEMENTATION_REPORT.md
+│   │   ├── _phase_4_orchestrator_questions.md
+│   │   ├── phase_5_chat.md
+│   │   ├── PHASE5_OPTIMIZATION_ENGINE.md
+│   │   ├── phase_6_chat.md
+│   │   ├── PHASE6_IMPLEMENTATION_COMPLETE.md
+│   │   ├── PHASE6_QUICK_REFERENCE.md
+│   │   ├── PHASE6_REPORT_GENERATOR.md
+│   │   ├── RAVEN_CHANNEL_COMMUNICATION_SPEC.md
+│   │   ├── SYSTEM_PROMPT.md
+│   │   ├── TECH_SPEC_PHASE2_INPUT_ADAPTER.md
+│   │   ├── TECH_SPEC_PHASE4_COST_CALCULATOR.md
+│   │   ├── TECH_SPEC_PHASE5_OPTIMIZATION_ENGINE.md
+│   │   └── TECH_SPEC_PHASE6_REPORT_GENERATOR.md
+│   ├── RAVEN_ENVIRONMENT_CONFIG.md
+│   ├── RAVEN_INFRASTRUCTURE_FIX_HANDOUT.md
+│   ├── RAVEN_REALTIME_FIX_HANDOUT.md
+│   ├── README.md
+│   ├── realtime-fix-handout-session2.md
+│   ├── REALTIME_MODULE_HANDOUT.md
+│   └── SOCKETIO_FIX_HANDOUT.md
+├── extract
+│   ├── api_raven_message.py
+│   ├── raven_chat_stream.ts
+│   ├── raven_frontend_hooks.ts
+│   ├── raven_hooks.py
+│   ├── raven_message.py
+│   └── raw_content
+│       ├── discuss_frappe_io_20349c6a.txt
+│       ├── discuss_frappe_io_f3427a64.txt
+│       ├── docs_frappe_io_b12e56b1.txt
+│       ├── frappe-react_vercel_app_564e577d.txt
+│       ├── github_com_055bff70.txt
+│       ├── github_com_07b1033a.txt
+│       ├── github_com_332288ca.txt
+│       ├── github_com_55f01143.txt
+│       ├── github_com_59c2b318.txt
+│       ├── github_com_7d5e8298.txt
+│       ├── github_com_8c19fd3f.txt
+│       ├── github_com_a34ae8b0.txt
+│       ├── github_com_a394aa68.txt
+│       ├── github_com_c6369afd.txt
+│       ├── github_com_fc598924.txt
+│       ├── github_com_ff9de9dc.txt
+│       ├── raw_githubusercontent_com_5bcce1cd.txt
+│       └── raw_githubusercontent_com_6b69c850.txt
+├── frappe-bench.service
+├── frappe-socketio.service
+├── gateway
+│   ├── __init__.py
+│   ├── router.py
+│   └── session_manager.py
+├── hooks.py
+├── __init__.py
+├── license.txt
+├── MANIFEST.in
+├── modules.txt
+├── node_modules
+├── package.json
+├── patches.txt
+├── providers
+│   ├── base.py
+│   ├── claude.py
+│   ├── deepseek.py
+│   ├── __init__.py
+│   ├── minimax.py
+│   └── openai_provider.py
+├── push_to_git_plus.sh
+├── pyproject.toml
+├── raven_ai_agent
+│   ├── agents
+│   │   ├── bom_creator_agent.py
+│   │   ├── executive_agent.py
+│   │   ├── __init__.py
+│   │   ├── rnd_agent.py
+│   │   └── sales_order_followup_agent.py
+│   ├── api
+│   │   ├── agent.py
+│   │   ├── agent_V1.py
+│   │   ├── agent_v2.py
+│   │   ├── alexa_to_raven.py
+│   │   ├── bom_fixer.py
+│   │   ├── channel_utils.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── agent.cpython-312.pyc
+│   │   │   ├── agent.cpython-314.pyc
+│   │   │   ├── channel_utils.cpython-314.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── __init__.cpython-314.pyc
+│   │   │   └── workflows.cpython-314.pyc
+│   │   ├── raven_v2_functions.py
+│   │   ├── webhook.py
+│   │   └── workflows.py
+│   ├── browser
+│   │   ├── browser_extension
+│   │   │   └── error_capture
+│   │   │       ├── background.js
+│   │   │       ├── content.js
+│   │   │       ├── injector.js
+│   │   │       └── manifest.json
+│   │   └── global_browser.py
+│   ├── channels
+│   │   ├── base.py
+│   │   ├── __init__.py
+│   │   ├── raven_channel.py
+│   │   ├── slack.py
+│   │   ├── telegram.py
+│   │   └── whatsapp.py
+│   ├── config
+│   │   ├── desktop.py
+│   │   ├── docs.py
+│   │   ├── doctype_fields.py
+│   │   ├── environment.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── environment.cpython-314.pyc
+│   │   │   ├── __init__.cpython-314.pyc
+│   │   │   └── realtime.cpython-314.pyc
+│   │   └── realtime.py
+│   ├── docs
+│   │   └── project_formulation
+│   │       ├── FEATURE_SUGGEST_ALTERNATIVES.md
+│   │       ├── INPUT_FORMAT_CONSISTENCY_REVIEW.md
+│   │       ├── INTEGRATION_TEST_PLAN.md
+│   │       ├── phase_2_chat.md
+│   │       ├── PHASE2_IMPLEMENTATION_REPORT.md
+│   │       ├── PHASE2_INPUT_FORMAT_SUPPORT.md
+│   │       ├── phase_3_chat.md
+│   │       ├── PHASE3_IMPLEMENTATION_REPORT.md
+│   │       ├── _phase_3_orchestrator_questions.md
+│   │       ├── phase_4_chat.md
+│   │       ├── PHASE4_IMPLEMENTATION_REPORT.md
+│   │       ├── _phase_4_orchestrator_questions.md
+│   │       ├── phase_5_chat.md
+│   │       ├── phase_6_chat.md
+│   │       ├── PHASE6_IMPLEMENTATION_COMPLETE.md
+│   │       ├── PHASE6_QUICK_REFERENCE.md
+│   │       ├── TECH_SPEC_PHASE2_INPUT_ADAPTER.md
+│   │       ├── TECH_SPEC_PHASE4_COST_CALCULATOR.md
+│   │       ├── TECH_SPEC_PHASE5_OPTIMIZATION_ENGINE.md
+│   │       └── TECH_SPEC_PHASE6_REPORT_GENERATOR.md
+│   ├── doctype
+│   │   ├── ai_agent_settings
+│   │   │   ├── ai_agent_settings.json
+│   │   │   ├── ai_agent_settings.py
+│   │   │   └── __init__.py
+│   │   ├── ai_memory
+│   │   │   ├── ai_memory.json
+│   │   │   ├── ai_memory.py
+│   │   │   └── __init__.py
+│   │   ├── alexa_user_mapping
+│   │   │   ├── alexa_user_mapping.json
+│   │   │   ├── alexa_user_mapping.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── gateway
+│   │   ├── __init__.py
+│   │   ├── router.py
+│   │   └── session_manager.py
+│   ├── hooks.py
+│   ├── __init__.py
+│   ├── modules.txt
+│   ├── patches.txt
+│   ├── providers
+│   │   ├── base.py
+│   │   ├── claude.py
+│   │   ├── deepseek.py
+│   │   ├── __init__.py
+│   │   ├── minimax.py
+│   │   └── openai_provider.py
+│   ├── public
+│   │   ├── build.json
+│   │   ├── css
+│   │   │   └── raven_ai_agent.css
+│   │   ├── js
+│   │   │   └── raven_ai_agent.js
+│   │   └── node_modules -> /home/frappe/frappe-bench/apps/raven_ai_agent/node_modules
+│   ├── __pycache__
+│   │   ├── hooks.cpython-312.pyc
+│   │   ├── hooks.cpython-314.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── __init__.cpython-314.pyc
+│   ├── pyproject.toml
+│   ├── raven_ai_agent
+│   │   ├── doctype
+│   │   │   ├── ai_agent_settings
+│   │   │   │   ├── ai_agent_settings.json
+│   │   │   │   ├── ai_agent_settings.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   │       ├── ai_agent_settings.cpython-312.pyc
+│   │   │   │       ├── ai_agent_settings.cpython-314.pyc
+│   │   │   │       ├── __init__.cpython-312.pyc
+│   │   │   │       └── __init__.cpython-314.pyc
+│   │   │   ├── ai_memory
+│   │   │   │   ├── ai_memory.json
+│   │   │   │   ├── ai_memory.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   │       ├── ai_memory.cpython-312.pyc
+│   │   │   │       └── __init__.cpython-312.pyc
+│   │   │   ├── alexa_user_mapping
+│   │   │   │   ├── alexa_user_mapping.json
+│   │   │   │   ├── alexa_user_mapping.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── __init__.cpython-312.pyc
+│   │   │       └── __init__.cpython-314.pyc
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   └── __init__.cpython-314.pyc
+│   │   └── skills
+│   │       ├── batch_selector
+│   │       │   └── tests.py
+│   │       └── formulation_orchestrator
+│   │           ├── agents
+│   │           │   ├── cost_calculator.py
+│   │           │   ├── optimization_engine.py
+│   │           │   └── report_generator.py
+│   │           └── tests.py
+│   ├── README.md
+│   ├── realtime
+│   │   ├── client.py
+│   │   └── __init__.py
+│   ├── scripts
+│   │   └── verify_components.py
+│   ├── skills
+│   │   ├── AGENTS.md
+│   │   ├── batch_selector
+│   │   │   ├── __init__.py
+│   │   │   ├── parsers.py
+│   │   │   └── selector.py
+│   │   ├── browser.py
+│   │   ├── formulation_advisor
+│   │   │   ├── advisor.py
+│   │   │   ├── __init__.py
+│   │   │   ├── SKILL.md
+│   │   │   └── skill.py
+│   │   ├── formulation_orchestrator
+│   │   │   ├── agents
+│   │   │   │   ├── base.py
+│   │   │   │   ├── batch_selector.py
+│   │   │   │   ├── cost_calculator.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── optimization_engine.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── base.cpython-314.pyc
+│   │   │   │   │   ├── batch_selector.cpython-314.pyc
+│   │   │   │   │   ├── cost_calculator.cpython-314.pyc
+│   │   │   │   │   ├── __init__.cpython-314.pyc
+│   │   │   │   │   ├── optimization_engine.cpython-314.pyc
+│   │   │   │   │   ├── report_generator.cpython-314.pyc
+│   │   │   │   │   └── tds_compliance.cpython-314.pyc
+│   │   │   │   ├── report_generator.py
+│   │   │   │   └── tds_compliance.py
+│   │   │   ├── __init__.py
+│   │   │   ├── messages.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-314.pyc
+│   │   │   │   ├── messages.cpython-314.pyc
+│   │   │   │   └── skill.cpython-314.pyc
+│   │   │   ├── SKILL.md
+│   │   │   ├── skill.py
+│   │   │   └── tests.py
+│   │   ├── formulation_reader
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   ├── __init__.cpython-314.pyc
+│   │   │   │   ├── reader.cpython-312.pyc
+│   │   │   │   ├── reader.cpython-314.pyc
+│   │   │   │   ├── skill.cpython-312.pyc
+│   │   │   │   └── skill.cpython-314.pyc
+│   │   │   ├── reader.py
+│   │   │   ├── SKILL.md
+│   │   │   ├── skill.py
+│   │   │   └── tests.py
+│   │   ├── framework.py
+│   │   ├── __init__.py
+│   │   ├── migration_fixer
+│   │   │   ├── api.py
+│   │   │   ├── fixer.py
+│   │   │   ├── __init__.py
+│   │   │   ├── SKILL.md
+│   │   │   └── skill.py
+│   │   ├── __pycache__
+│   │   │   ├── browser.cpython-312.pyc
+│   │   │   ├── browser.cpython-314.pyc
+│   │   │   ├── framework.cpython-312.pyc
+│   │   │   ├── framework.cpython-314.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   └── __init__.cpython-314.pyc
+│   │   ├── skill_creator
+│   │   │   ├── __init__.py
+│   │   │   ├── SKILL.md
+│   │   │   └── skill.py
+│   │   └── skill_sync
+│   │       ├── assets
+│   │       │   └── sync.sh
+│   │       ├── __init__.py
+│   │       └── SKILL.md
+│   ├── templates
+│   │   ├── bom_creator_prompt.md
+│   │   └── __init__.py
+│   ├── tests
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   └── test_standalone.cpython-312-pytest-9.0.2.pyc
+│   │   ├── test_agent.py
+│   │   └── test_standalone.py
+│   ├── tmp -> /tmp/workspace_tmp
+│   ├── utils
+│   │   ├── bom_migration.py
+│   │   ├── bom_validation.py
+│   │   ├── cost_monitor.py
+│   │   ├── __init__.py
+│   │   ├── memory.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── __init__.cpython-314.pyc
+│   │   │   ├── memory.cpython-312.pyc
+│   │   │   ├── memory.cpython-314.pyc
+│   │   │   ├── vector_store.cpython-312.pyc
+│   │   │   └── vector_store.cpython-314.pyc
+│   │   └── vector_store.py
+│   ├── voice
+│   │   ├── elevenlabs.py
+│   │   └── __init__.py
+│   └── workspace.json
+├── raven_ai_agent.egg-info
+│   ├── dependency_links.txt
+│   ├── not-zip-safe
+│   ├── PKG-INFO
+│   ├── requires.txt
+│   ├── SOURCES.txt
+│   └── top_level.txt
+├── README.md
+├── realtime
+│   ├── client.py
+│   └── __init__.py
+├── scripts
+│   ├── ssh_sandbox.sh
+│   └── verify_components.py
+├── setup.py
+├── setup_services.sh
+├── skills
+│   ├── AGENTS.md
+│   ├── batch_selector
+│   │   ├── __init__.py
+│   │   ├── parsers.py
+│   │   └── selector.py
+│   ├── browser.py
+│   ├── formulation_advisor
+│   │   ├── advisor.py
+│   │   ├── __init__.py
+│   │   ├── SKILL.md
+│   │   └── skill.py
+│   ├── formulation_orchestrator
+│   │   ├── agents
+│   │   │   ├── base.py
+│   │   │   ├── batch_selector.py
+│   │   │   ├── cost_calculator.py
+│   │   │   ├── __init__.py
+│   │   │   ├── optimization_engine.py
+│   │   │   ├── report_generator.py
+│   │   │   └── tds_compliance.py
+│   │   ├── __init__.py
+│   │   ├── messages.py
+│   │   ├── SKILL.md
+│   │   ├── skill.py
+│   │   └── tests.py
+│   ├── formulation_reader
+│   │   ├── __init__.py
+│   │   ├── reader.py
+│   │   ├── SKILL.md
+│   │   ├── skill.py
+│   │   └── tests.py
+│   ├── framework.py
+│   ├── __init__.py
+│   ├── migration_fixer
+│   │   ├── api.py
+│   │   ├── fixer.py
+│   │   ├── __init__.py
+│   │   ├── SKILL.md
+│   │   └── skill.py
+│   ├── skill_creator
+│   │   ├── __init__.py
+│   │   ├── SKILL.md
+│   │   └── skill.py
+│   └── skill_sync
+│       ├── assets
+│       │   └── sync.sh
+│       ├── __init__.py
+│       └── SKILL.md
+├── technical_specification_for_ai_agent_app_migrator.md
+├── templates
+│   ├── bom_creator_prompt.md
+│   └── __init__.py
+├── test_minimax_direct.py
+├── test_phase1_validation.py
+├── tests
+│   ├── __init__.py
+│   ├── test_agent.py
+│   └── test_standalone.py
+├── tmp -> /tmp/workspace_tmp
+├── user_input_files
+│   ├── image.png
+│   ├── pasted-text-2026-02-09T08-10-33.txt
+│   ├── pasted-text-2026-02-09T15-39-22.txt
+│   ├── pasted-text-2026-02-09T16-45-33.txt
+│   ├── pasted-text-2026-02-09T16-58-10.txt
+│   ├── pasted-text-2026-02-10T01-30-19.txt
+│   ├── pasted-text-2026-02-10T04-05-03.txt
+│   ├── pasted-text-2026-02-10T04-33-23.txt
+│   ├── pasted-text-2026-02-10T04-34-17.txt
+│   ├── pasted-text-2026-02-10T04-38-04.txt
+│   ├── pasted-text-2026-02-10T04-41-43.txt
+│   ├── pasted-text-2026-02-10T05-00-12.txt
+│   ├── pasted-text-2026-02-10T05-26-09.txt
+│   ├── pasted-text-2026-02-10T05-31-48.txt
+│   ├── pasted-text-2026-02-10T05-37-07.txt
+│   ├── pasted-text-2026-02-10T05-52-17.txt
+│   ├── pasted-text-2026-02-10T05-55-38.txt
+│   ├── pasted-text-2026-02-10T06-00-01.txt
+│   ├── pasted-text-2026-02-10T06-30-16.txt
+│   ├── pasted-text-2026-02-10T07-16-11.txt
+│   ├── pasted-text-2026-02-10T18-09-25.txt
+│   ├── pasted-text-2026-02-10T18-11-26.txt
+│   ├── pasted-text-2026-02-11T00-58-02.txt
+│   └── pasted-text-2026-02-11T01-47-44.txt
+├── utils
+│   ├── bom_migration.py
+│   ├── bom_validation.py
+│   ├── cost_monitor.py
+│   ├── __init__.py
+│   ├── memory.py
+│   └── vector_store.py
+├── uv.lock
+├── voice
+│   ├── elevenlabs.py
+│   └── __init__.py
+├── workspace.json
+└── yarn.lock
+
+92 directories, 435 files
