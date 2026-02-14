@@ -91,7 +91,20 @@
   "production_year",
   "manufacturing_plant",
   "custom_last_api_sync",
-  "custom_serial_numbers"
+  "custom_serial_numbers",
+  "produced_qty",
+  "work_order",
+  "bom_no",
+  "uom",
+  "batch_quantity",
+  "calculate_cost",
+  "labor_cost",
+  "overhead_cost",
+  "material_cost",
+  "total_batch_cost",
+  "cost_per_unit",
+  "batch_status",
+  "item_name"
  ],
  "fields": [
   {
@@ -579,14 +592,80 @@
    "fieldname": "custom_serial_numbers",
    "fieldtype": "Long Text",
    "label": "Serial Numbers"
+  },
+  {
+   "fieldname": "produced_qty",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Produced Qty"
+  },
+  {
+   "fieldname": "work_order",
+   "fieldtype": "Data",
+   "label": "Work Order"
+  },
+  {
+   "fieldname": "bom_no",
+   "fieldtype": "Data",
+   "label": "BOM No"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Data",
+   "label": "UOM"
+  },
+  {
+   "fieldname": "batch_quantity",
+   "fieldtype": "Data",
+   "label": "Batch Quantity"
+  },
+  {
+   "fieldname": "calculate_cost",
+   "fieldtype": "Data",
+   "label": "Calculate Cost"
+  },
+  {
+   "fieldname": "labor_cost",
+   "fieldtype": "Data",
+   "label": "Labor Cost"
+  },
+  {
+   "fieldname": "overhead_cost",
+   "fieldtype": "Data",
+   "label": "Overhead Cost"
+  },
+  {
+   "fieldname": "material_cost",
+   "fieldtype": "Data",
+   "label": "Material Cost"
+  },
+  {
+   "fieldname": "total_batch_cost",
+   "fieldtype": "Data",
+   "label": "Total Batch Cost"
+  },
+  {
+   "fieldname": "cost_per_unit",
+   "fieldtype": "Data",
+   "label": "Cost Per Unit"
+  },
+  {
+   "fieldname": "batch_status",
+   "fieldtype": "Data",
+   "label": "Batch Status"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-02-11 14:45:49.193108",
- "modified_by": "Administrator",
+ "modified": "2026-02-14 09:05:30.777020",
+ "modified_by": "fcrm@amb-wellness.com",
  "module": "Amb W Tds",
  "name": "Batch AMB",
  "naming_rule": "By script",
