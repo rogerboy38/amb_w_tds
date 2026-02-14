@@ -423,20 +423,31 @@ class ReportGenerator(BaseSubAgent):
         compliance = phases.get('compliance', {})
         costs = phases.get('costs', {})
         optimization = phases.get('optimization', {})
+        batch_selection = phases.get('batch_selection', {})
+        
+        # Batch selection status
+        coverage = batch_selection.get('coverage_percent', 0)
+        if coverage >= 100:
+            recommendations.append(f"✅ Stock available: {batch_selection.get('total_qty', 0)} units ({coverage:.0f}% coverage)")
+        elif coverage > 0:
+            recommendations.append(f"⚠️ Partial stock: Only {coverage:.0f}% coverage available")
         
         # Compliance recommendations
-        if not compliance.get('passed', True):
+        summary = compliance.get('summary', {})
+        if not summary.get('tds_requirements_provided', True):
+            recommendations.append("ℹ️ No TDS requirements specified - compliance check skipped")
+        elif summary.get('no_coa_count', 0) > 0:
+            recommendations.append(f"⚠️ {summary.get('no_coa_count')} batch(es) missing COA data - cannot verify compliance")
+        elif not compliance.get('passed', True):
             non_compliant = compliance.get('non_compliant_batches', [])
-            recommendations.append(
-                f"⚠️ {len(non_compliant)} batch(es) failed TDS compliance. "
-                "Consider using suggested alternatives."
-            )
+            recommendations.append(f"❌ {len(non_compliant)} batch(es) failed TDS compliance")
         
         # Cost recommendations
         if costs:
-            cost_per_unit = costs.get('cost_per_unit', 0)
-            # Could add threshold-based recommendations here
-            
+            total_cost = costs.get('total_cost', 0)
+            if total_cost == 0:
+                recommendations.append("⚠️ No pricing data - set valuation_rate on Item or create Item Price")
+        
         # Optimization recommendations
         if optimization.get('recommendations'):
             for rec in optimization['recommendations']:
@@ -446,6 +457,7 @@ class ReportGenerator(BaseSubAgent):
                         f"one of {len(rec.get('alternatives', []))} compliant alternatives"
                     )
         
+        # Final status
         if not recommendations:
             recommendations.append("✅ All criteria met. Proceed with production.")
         
