@@ -142,13 +142,13 @@ function getSavedPosition() {
     return null;
 }
 
-function savePosition(bottom, left) {
-    localStorage.setItem(amb.batch_widget.config.positionKey, JSON.stringify({ bottom, left }));
+function savePosition(top, right) {
+    localStorage.setItem(amb.batch_widget.config.positionKey, JSON.stringify({ top, right }));
 }
 
 function makeDraggable(widget) {
     const header = widget.find('.widget-drag-handle');
-    let startX, startY, startBottom, startLeft;
+    let startX, startY, startTop, startRight;
     
     header.css('cursor', 'move');
     
@@ -163,8 +163,8 @@ function makeDraggable(widget) {
         startY = touch.clientY;
         
         const rect = widget[0].getBoundingClientRect();
-        startBottom = window.innerHeight - rect.bottom;
-        startLeft = rect.left;
+        startTop = rect.top;
+        startRight = window.innerWidth - rect.right;
         
         widget.css('transition', 'none');
         
@@ -173,21 +173,21 @@ function makeDraggable(widget) {
             const deltaX = touch.clientX - startX;
             const deltaY = touch.clientY - startY;
             
-            let newBottom = startBottom - deltaY;
-            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+            let newRight = startRight - deltaX;
             
             // Bounds checking
             const widgetWidth = widget.outerWidth();
             const widgetHeight = widget.outerHeight();
             
-            newBottom = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newBottom));
-            newLeft = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newLeft));
+            newTop = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newTop));
+            newRight = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newRight));
             
             widget.css({
-                'bottom': newBottom + 'px',
-                'left': newLeft + 'px',
-                'top': 'auto',
-                'right': 'auto'
+                'top': newTop + 'px',
+                'right': newRight + 'px',
+                'left': 'auto',
+                'bottom': 'auto'
             });
         });
         
@@ -198,7 +198,7 @@ function makeDraggable(widget) {
             
             // Save position
             const rect = widget[0].getBoundingClientRect();
-            savePosition(window.innerHeight - rect.bottom, rect.left);
+            savePosition(rect.top, window.innerWidth - rect.right);
         });
     });
 }
@@ -534,8 +534,8 @@ function show_navbar_widget(html_content, count, stats = {}) {
     ` : '';
     
     let positionStyles = savedPosition 
-        ? `bottom: ${savedPosition.bottom}px; left: ${savedPosition.left}px;`
-        : 'bottom: 20px; left: 20px;';
+        ? `top: ${savedPosition.top}px; right: ${savedPosition.right}px;`
+        : 'top: 70px; right: 20px;';
     
     let widget = $(`
         <div class="batch-announcement-widget" style="
@@ -888,7 +888,7 @@ window.reset_batch_widget_position = function() {
     localStorage.removeItem(amb.batch_widget.config.positionKey);
     const widget = $('.batch-announcement-widget');
     if (widget.length) {
-        widget.css({ 'bottom': '20px', 'left': '20px', 'top': 'auto', 'right': 'auto' });
+        widget.css({ 'top': '70px', 'right': '20px' });
     }
 };
 
