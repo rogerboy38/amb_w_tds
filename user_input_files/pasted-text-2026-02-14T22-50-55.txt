@@ -1,0 +1,92 @@
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench && bench --site sysmayal.localhost execute amb_w_tds.scripts.bom_audit_agent.run_audit
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Usage: bench  execute [OPTIONS] METHOD
+Try 'bench  execute --help' for help.
+
+Error: 404 Not Found: sysmayal.localhost does not exist.
+
+Sites on this bench:
+* v2.sysmayal.cloud
+frappe@UbuntuVM:~/frappe-bench$ cd sites/
+frappe@UbuntuVM:~/frappe-bench/sites$ bench use v2.sysmayal.cloud/
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Current Site set to v2.sysmayal.cloud/
+frappe@UbuntuVM:~/frappe-bench/sites$ cd ~/frappe-bench && bench execute amb_w_tds.scripts.bom_audit_agent.run_audit
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+================================================================================
+BOM HIERARCHY AUDIT - Phase 1
+================================================================================
+
+📊 Fetching existing BOMs from database...
+   Found 501 total BOMs for 483 unique items
+
+🔍 Auditing Semi Finished...
+   ⚠️  0301: FLAT BOM - missing parent items ['0227-PERMEADO']
+   ❌ 0302: NO BOM EXISTS
+   ⚠️  0303: FLAT BOM - missing parent items ['0227-NORMAL']
+
+🔍 Auditing Specialized Mixes...
+   ⚠️  0304: BOM exists but INACTIVE
+   ⚠️  0305: BOM exists but INACTIVE
+   ⚠️  0306: BOM exists but INACTIVE
+
+🔍 Auditing Standard Variants...
+   ⚠️  0307: FLAT BOM - missing parent items ['0301']
+   ⚠️  0308: BOM exists but INACTIVE
+   ⚠️  0309: BOM exists but INACTIVE
+   ⚠️  0310: BOM exists but INACTIVE
+   ⚠️  0311: BOM exists but INACTIVE
+   ⚠️  0312: BOM exists but INACTIVE
+   ⚠️  0313: BOM exists but INACTIVE
+   ⚠️  0314: BOM exists but INACTIVE
+   ⚠️  0315: BOM exists but INACTIVE
+   ⚠️  0316: BOM exists but INACTIVE
+   ⚠️  0317: BOM exists but INACTIVE
+   ⚠️  0318: BOM exists but INACTIVE
+   ⚠️  0319: BOM exists but INACTIVE
+   ⚠️  0320: BOM exists but INACTIVE
+   ⚠️  0321: BOM exists but INACTIVE
+   ⚠️  0322: BOM exists but INACTIVE
+   ⚠️  0323: BOM exists but INACTIVE
+   ⚠️  0324: BOM exists but INACTIVE
+   ⚠️  0325: BOM exists but INACTIVE
+   ⚠️  0326: BOM exists but INACTIVE
+   ⚠️  0327: BOM exists but INACTIVE
+   ⚠️  0328: BOM exists but INACTIVE
+   ⚠️  0329: BOM exists but INACTIVE
+   ⚠️  0330: BOM exists but INACTIVE
+   ⚠️  0331: BOM exists but INACTIVE
+   ⚠️  0332: BOM exists but INACTIVE
+   ⚠️  0333: BOM exists but INACTIVE
+   ❌ 0334: NO BOM EXISTS
+   ⚠️  0335: BOM exists but INACTIVE
+   ⚠️  0336: BOM exists but INACTIVE
+   ⚠️  0337: BOM exists but INACTIVE
+   ⚠️  0338: BOM exists but INACTIVE
+   ⚠️  0339: BOM exists but INACTIVE
+   ⚠️  0340: BOM exists but INACTIVE
+   ⚠️  0341: BOM exists but INACTIVE
+   ⚠️  0342: BOM exists but INACTIVE
+
+================================================================================
+AUDIT SUMMARY
+================================================================================
+   Total Expected Boms: 42
+   Missing Boms: 2
+   Flat Boms: 3
+   Correct Hierarchy: 0
+   Inactive Boms: 37
+   Compliance Rate: 0.0%
+
+📁 Report saved to: /tmp/bom_audit_20260214_165042.json
+{"timestamp": "2026-02-14T16:50:42.718462", "site": "v2.sysmayal.cloud/", "summary": {"total_expected_boms": 42, "missing_boms": 2, "flat_boms": 3, "correct_hierarchy": 0, "inactive_boms": 37, "compliance_rate": 0.0}, "details": {"missing_boms": [{"item_code": "0302", "expected_name": "Retenido Powder"}, {"item_code": "0334", "expected_name": "Standard Variant 0334"}], "flat_boms": [{"item_code": "0301", "bom_name": "BOM-0301-001", "expected_parents": ["0227-PERMEADO"]}, {"item_code": "0303", "bom_name": "BOM-0303-005", "expected_parents": ["0227-NORMAL"]}, {"item_code": "0307", "bom_name": "BOM-0307-006", "expected_parents": ["0301"]}], "correct_hierarchy": [], "unexpected_boms": [], "inactive_boms": [{"item_code": "0304", "bom_name": "BOM-0304-001"}, {"item_code": "0305", "bom_name": "BOM-0305-001"}, {"item_code": "0306", "bom_name": "BOM-0306-001"}, {"item_code": "0308", "bom_name": "BOM-0308-001"}, {"item_code": "0309", "bom_name": "BOM-0309-001"}, {"item_code": "0310", "bom_name": "BOM-0310-001"}, {"item_code": "0311", "bom_name": "BOM-0311-001"}, {"item_code": "0312", "bom_name": "BOM-0312-001"}, {"item_code": "0313", "bom_name": "BOM-0313-001"}, {"item_code": "0314", "bom_name": "BOM-0314-001"}, {"item_code": "0315", "bom_name": "BOM-0315-001"}, {"item_code": "0316", "bom_name": "BOM-0316-001"}, {"item_code": "0317", "bom_name": "BOM-0317-001"}, {"item_code": "0318", "bom_name": "BOM-0318-001"}, {"item_code": "0319", "bom_name": "BOM-0319-001"}, {"item_code": "0320", "bom_name": "BOM-0320-001"}, {"item_code": "0321", "bom_name": "BOM-0321-001"}, {"item_code": "0322", "bom_name": "BOM-0322-001"}, {"item_code": "0323", "bom_name": "BOM-0323-001"}, {"item_code": "0324", "bom_name": "BOM-0324-001"}, {"item_code": "0325", "bom_name": "BOM-0325-001"}, {"item_code": "0326", "bom_name": "BOM-0326-001"}, {"item_code": "0327", "bom_name": "BOM-0327-001"}, {"item_code": "0328", "bom_name": "BOM-0328-001"}, {"item_code": "0329", "bom_name": "BOM-0329-001"}, {"item_code": "0330", "bom_name": "BOM-0330-001"}, {"item_code": "0331", "bom_name": "BOM-0331-001"}, {"item_code": "0332", "bom_name": "BOM-0332-001"}, {"item_code": "0333", "bom_name": "BOM-0333-001"}, {"item_code": "0335", "bom_name": "BOM-0335-001"}, {"item_code": "0336", "bom_name": "BOM-0336-001"}, {"item_code": "0337", "bom_name": "BOM-0337-001"}, {"item_code": "0338", "bom_name": "BOM-0338-001"}, {"item_code": "0339", "bom_name": "BOM-0339-001"}, {"item_code": "0340", "bom_name": "BOM-0340-001"}, {"item_code": "0341", "bom_name": "BOM-0341-001"}, {"item_code": "0342", "bom_name": "BOM-0342-001"}]}, "recommendations": [{"priority": "HIGH", "action": "Create 2 missing BOMs"}, {"priority": "MEDIUM", "action": "Update 3 flat BOMs"}]}
+frappe@UbuntuVM:~/frappe-bench$ 
