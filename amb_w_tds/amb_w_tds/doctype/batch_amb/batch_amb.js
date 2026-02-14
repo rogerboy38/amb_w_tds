@@ -1,7 +1,7 @@
 // =============================================================================
 // BATCH AMB - COMPLETE INTEGRATED CLIENT SCRIPT
 // Combines original functionality, BatchL2 enhancements, and Serial Tracking
-// Version: 2026-02-14 - Merged Batch L2 client script features (Create Sublot/Container, Bulk Scan, View Batch Tree)
+// Version: 2026-02-14 - Merged Batch L2 client script features (Create Sublot/Container, Bulk Scan, View Batch Tree), route_options support for frappe.new_doc()
 // =============================================================================
 
 frappe.ui.form.on('Batch AMB', {
@@ -37,6 +37,18 @@ frappe.ui.form.on('Batch AMB', {
     
     onload: function(frm) {
         console.log('📥 Batch AMB Onload for:', frm.doc.name);
+
+		        // Apply defaults from frappe.new_doc() / URL parameters
+        if (frm.is_new() && frappe.route_options) {
+            console.log('📋 Applying route_options:', frappe.route_options);
+            for (let key in frappe.route_options) {
+                if (frappe.route_options.hasOwnProperty(key) && frm.fields_dict[key]) {
+                    frm.set_value(key, frappe.route_options[key]);
+                }
+            }
+            // Clear route_options after applying
+            frappe.route_options = null;
+        }
         
         // Original functionality
         set_default_values(frm);
