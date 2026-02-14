@@ -1,0 +1,189 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:plant_name",
+ "creation": "2025-11-01 22:56:03.000000",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "plant_name",
+  "plant_code",
+  "is_active",
+  "column_break_1",
+  "plant_manager",
+  "location",
+  "operating_hours",
+  "section_break_rules",
+  "container_rules",
+  "section_break_conversion",
+  "juice_conversion_rules",
+  "section_break_settings",
+  "default_tara_weights",
+  "min_fill_threshold",
+  "max_fill_threshold",
+  "column_break_settings",
+  "weight_tolerance_percentage",
+  "auto_sync_enabled",
+  "sync_interval_minutes"
+ ],
+ "fields": [
+  {
+   "fieldname": "plant_name",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Plant Name",
+   "options": "Juice\nDry\nMix\nLab",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "plant_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Plant Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active",
+   "default": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "plant_manager",
+   "fieldtype": "Link",
+   "label": "Plant Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location"
+  },
+  {
+   "fieldname": "operating_hours",
+   "fieldtype": "Data",
+   "label": "Operating Hours"
+  },
+  {
+   "fieldname": "section_break_rules",
+   "fieldtype": "Section Break",
+   "label": "Container Rules"
+  },
+  {
+   "fieldname": "container_rules",
+   "fieldtype": "Table",
+   "label": "Container Type Rules",
+   "options": "Container Type Rule"
+  },
+  {
+   "fieldname": "section_break_conversion",
+   "fieldtype": "Section Break",
+   "label": "Juice Conversion (1X/30X)"
+  },
+  {
+   "fieldname": "juice_conversion_rules",
+   "fieldtype": "Table",
+   "label": "1X/30X Conversion Rules",
+   "options": "Juice Conversion Config"
+  },
+  {
+   "fieldname": "section_break_settings",
+   "fieldtype": "Section Break",
+   "label": "Default Settings"
+  },
+  {
+   "fieldname": "default_tara_weights",
+   "fieldtype": "Text",
+   "label": "Default Tara Weights (JSON)",
+   "default": "{\"220L Barrel\": 15.0, \"1000L IBC\": 45.0, \"20L Pail\": 2.5, \"Industrial Bag\": 0.5}"
+  },
+  {
+   "fieldname": "min_fill_threshold",
+   "fieldtype": "Float",
+   "label": "Min Fill Threshold %",
+   "default": 10.0,
+   "precision": 1
+  },
+  {
+   "fieldname": "max_fill_threshold",
+   "fieldtype": "Float",
+   "label": "Max Fill Threshold %",
+   "default": 95.0,
+   "precision": 1
+  },
+  {
+   "fieldname": "column_break_settings",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "weight_tolerance_percentage",
+   "fieldtype": "Float",
+   "label": "Weight Tolerance %",
+   "default": 1.0,
+   "precision": 1
+  },
+  {
+   "fieldname": "auto_sync_enabled",
+   "fieldtype": "Check",
+   "label": "Auto Sync Enabled",
+   "default": 1
+  },
+  {
+   "fieldname": "sync_interval_minutes",
+   "fieldtype": "Int",
+   "label": "Sync Interval (Minutes)",
+   "default": 5
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-11-01 22:56:03.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Plant Configuration",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Manufacturing User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
