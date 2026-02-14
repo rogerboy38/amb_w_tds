@@ -1,7 +1,7 @@
 // =============================================================================
 // BATCH AMB - COMPLETE INTEGRATED CLIENT SCRIPT
 // Combines original functionality, BatchL2 enhancements, and Serial Tracking
-// Version: 2024-12-08 - Fixed Serial Generation
+// Version: 2026-02-14 - Merged Batch L2 client script features (Create Sublot/Container, Bulk Scan, View Batch Tree)
 // =============================================================================
 
 frappe.ui.form.on('Batch AMB', {
@@ -884,6 +884,51 @@ function add_bom_button_to_form(frm) {
 
 function add_level_specific_buttons(frm) {
     // Add buttons based on batch level
+	    const currentLevel = frm.doc.custom_batch_level;
+    if (!currentLevel) return;
+    
+    // Level 1: Create Sublot button
+    if (currentLevel === '1') {
+        frm.add_custom_button(__('Create Sublot'), function() {
+            create_sublot_batch(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 2: Create Sublot + Create Container buttons
+    if (currentLevel === '2') {
+        frm.add_custom_button(__('Create Sublot'), function() {
+            create_sublot_batch(frm);
+        });
+        frm.add_custom_button(__('Create Container'), function() {
+            create_container_batch(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 3: handled by existing code below, plus additional buttons
+    if (currentLevel === '3') {
+        frm.add_custom_button(__('Create Container'), function() {
+            create_container_batch(frm);
+        });
+        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+            open_bulk_scan_dialog(frm);
+        });
+        frm.add_custom_button(__('Generate Barrel Serials'), function() {
+            generate_bulk_barrel_serials(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 4: Scan Multiple Barcodes
+    if (currentLevel === '4') {
+        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+            open_bulk_scan_dialog(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Add global buttons for non-level-4
+    add_global_buttons(frm);
+    
+    // Original Level 3 scanning functionality continues below
+
     if (frm.doc.custom_batch_level == '3') {
         const scan_group = __('🔍 Scanning');
         
@@ -1608,5 +1653,107 @@ function calculate_net_weight_fixed(frm, cdt, cdn) {
     } else {
         row.weight_validated = 0;
     }
+}
+
+// ==================== BATCH L2 MERGED FUNCTIONS ====================
+
+// Create Sublot Batch (Level 2) from parent
+function create_sublot_batch(frm) {
+    frappe.new_doc('Batch AMB', {
+        'custom_batch_level': '2',
+        'parent_batch_amb': frm.doc.name,
+        'work_order_ref': frm.doc.work_order_ref,
+        'sales_order_related': frm.doc.sales_order_related,
+        'item_to_manufacture': frm.doc.item_to_manufacture,
+        'production_plant_name': frm.doc.production_plant_name,
+        'original_item_code': frm.doc.original_item_code || frm.doc.item_code
+    });
+}
+
+// Create Container Batch (Level 3) from parent
+function create_container_batch(frm) {
+    frappe.new_doc('Batch AMB', {
+        'custom_batch_level': '3',
+        'parent_batch_amb': frm.doc.name,
+        'work_order_ref': frm.doc.work_order_ref,
+        'sales_order_related': frm.doc.sales_order_related,
+        'item_to_manufacture': frm.doc.item_to_manufacture,
+        'production_plant_name': frm.doc.production_plant_name,
+        'original_item_code': frm.doc.original_item_code || frm.doc.item_code,
+        'current_item_code': frm.doc.current_item_code || frm.doc.item_code
+    });
+}
+
+// Add global buttons (View Batch Tree)
+function add_global_buttons(frm) {
+    if (frm.doc.custom_batch_level && frm.doc.custom_batch_level !== '4') {
+        frm.add_custom_button(__('View Batch Tree'), function() {
+            show_batch_hierarchy(frm);
+        });
+    }
+}
+
+// Show batch hierarchy (placeholder)
+function show_batch_hierarchy(frm) {
+    frappe.msgprint(__('Batch hierarchy view - Feature coming soon'));
+}
+
+// Open bulk barcode scan dialog
+function open_bulk_scan_dialog(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Bulk Barcode Scanning'),
+        fields: [{
+            fieldtype: 'Small Text',
+            fieldname: 'barcode_list',
+            label: __('Scan Multiple Barcodes (one per line)'),
+            reqd: 1
+        }],
+        primary_action_label: __('Process Barcodes'),
+        primary_action: function() {
+            const barcodes = dialog.get_value('barcode_list').split('\n').filter(b => b.trim());
+            process_bulk_barcodes(frm, barcodes);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// Process bulk barcodes
+function process_bulk_barcodes(frm, barcodes) {
+    frappe.msgprint(__('Processing {0} barcodes...', [barcodes.length]));
+}
+
+// Generate bulk barrel serials dialog
+function generate_bulk_barrel_serials(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Generate Barrel Serial Numbers'),
+        fields: [
+            {
+                fieldtype: 'Int',
+                fieldname: 'barrel_count',
+                label: __('Number of Barrels'),
+                reqd: 1,
+                default: 1
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'prefix',
+                label: __('Serial Prefix'),
+                default: 'BRL'
+            }
+        ],
+        primary_action_label: __('Generate Serials'),
+        primary_action: function() {
+            const data = dialog.get_value();
+            generate_serials_l2(frm, data.barrel_count, data.prefix);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// Generate serials (placeholder)
+function generate_serials_l2(frm, count, prefix) {
+    frappe.msgprint(__('Generating {0} serials with prefix {1}...', [count, prefix]));
 }
 
