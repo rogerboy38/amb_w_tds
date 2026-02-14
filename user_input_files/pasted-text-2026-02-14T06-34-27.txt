@@ -1,0 +1,153 @@
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ git pull upstream main
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ git stash
+git pull upstream main
+git stash pop
+Saved working directory and index state WIP on feature/v9.1.0-development: a90555d Update:
+From https://github.com/rogerboy38/amb_w_tds
+ * branch            main       -> FETCH_HEAD
+Auto-merging amb_w_tds/__init__.py
+CONFLICT (add/add): Merge conflict in amb_w_tds/__init__.py
+Auto-merging amb_w_tds/amb_w_tds/__init__.py
+Auto-merging amb_w_tds/amb_w_tds/doctype/amb_kpi_factors/amb_kpi_factors.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/amb_kpi_factors/amb_kpi_factors.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/animal_trial/animal_trial.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/animal_trial/animal_trial.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/barrel/barrel.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/barrel/barrel.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/batch_amb_item/batch_amb_item.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/batch_amb_item/batch_amb_item.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/batch_processing_history/batch_processing_history.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/batch_processing_history/batch_processing_history.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_enhancement/bom_enhancement.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_enhancement/bom_enhancement.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_formula/bom_formula.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_formula/bom_formula.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_formula_amino_acid/bom_formula_amino_acid.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_formula_amino_acid/bom_formula_amino_acid.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_template/bom_template.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_template/bom_template.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_template_item/bom_template_item.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_template_item/bom_template_item.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/bom_version/bom_version.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/bom_version/bom_version.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/certification_document/certification_document.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/certification_document/certification_document.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/coa_amb/coa_amb.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/coa_amb/coa_amb.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/coa_amb2/coa_amb2.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/coa_amb2/coa_amb2.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/coa_quality_test_parameter/coa_quality_test_parameter.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/coa_quality_test_parameter/coa_quality_test_parameter.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/container_selection/container_selection.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/container_selection/container_selection.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/container_sync_log/container_sync_log.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/container_sync_log/container_sync_log.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/container_type_rule/container_type_rule.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/container_type_rule/container_type_rule.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/country_regulation/country_regulation.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/country_regulation/country_regulation.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/distribution_contact/distribution_contact.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/distribution_contact/distribution_contact.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/distribution_organization/distribution_organization.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/distribution_organization/distribution_organization.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/formulation/formulation.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/formulation/formulation.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/intended_purpose/intended_purpose.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/intended_purpose/intended_purpose.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/juice_conversion_config/juice_conversion_config.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/juice_conversion_config/juice_conversion_config.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/kpi_cost_breakdown/kpi_cost_breakdown.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/kpi_cost_breakdown/kpi_cost_breakdown.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/lote_amb/lote_amb.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/lote_amb/lote_amb.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/market_entry_plan/market_entry_plan.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/market_entry_plan/market_entry_plan.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/market_research/market_research.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/market_research/market_research.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/plant_configuration/plant_configuration.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/plant_configuration/plant_configuration.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/product_compliance/product_compliance.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/product_compliance/product_compliance.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/product_development_project/product_development_project.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/product_development_project/product_development_project.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/production_plant_amb/production_plant_amb.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/production_plant_amb/production_plant_amb.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/quotation_amb_sales_partner/quotation_amb_sales_partner.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/quotation_amb_sales_partner/quotation_amb_sales_partner.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/rnd_parent_doctype/rnd_parent_doctype.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/rnd_parent_doctype/rnd_parent_doctype.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/tds_product_specification/tds_product_specification.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/tds_product_specification/tds_product_specification.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/tds_product_specification_v2/tds_product_specification_v2.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/tds_product_specification_v2/tds_product_specification_v2.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/tds_settings/tds_settings.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/tds_settings/tds_settings.json
+Auto-merging amb_w_tds/amb_w_tds/doctype/third_party_api/third_party_api.json
+CONFLICT (add/add): Merge conflict in amb_w_tds/amb_w_tds/doctype/third_party_api/third_party_api.json
+Auto-merging amb_w_tds/hooks.py
+CONFLICT (add/add): Merge conflict in amb_w_tds/hooks.py
+CONFLICT (distinct types): hooks.py had different types on each side; renamed one of them so each can be recorded somewhere.
+Auto-merging pyproject.toml
+CONFLICT (add/add): Merge conflict in pyproject.toml
+error: could not apply e6bb87b... Bump __version__ to 9.1.0 to match app_version in hooks.py
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+Could not apply e6bb87b... Bump __version__ to 9.1.0 to match app_version in hooks.py
+amb_w_tds/__init__.py: needs merge
+amb_w_tds/amb_w_tds/doctype/amb_kpi_factors/amb_kpi_factors.json: needs merge
+amb_w_tds/amb_w_tds/doctype/animal_trial/animal_trial.json: needs merge
+amb_w_tds/amb_w_tds/doctype/barrel/barrel.json: needs merge
+amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.json: needs merge
+amb_w_tds/amb_w_tds/doctype/batch_amb_item/batch_amb_item.json: needs merge
+amb_w_tds/amb_w_tds/doctype/batch_processing_history/batch_processing_history.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_enhancement/bom_enhancement.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_formula/bom_formula.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_formula_amino_acid/bom_formula_amino_acid.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_template/bom_template.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_template_item/bom_template_item.json: needs merge
+amb_w_tds/amb_w_tds/doctype/bom_version/bom_version.json: needs merge
+amb_w_tds/amb_w_tds/doctype/certification_document/certification_document.json: needs merge
+amb_w_tds/amb_w_tds/doctype/coa_amb/coa_amb.json: needs merge
+amb_w_tds/amb_w_tds/doctype/coa_amb2/coa_amb2.json: needs merge
+amb_w_tds/amb_w_tds/doctype/coa_quality_test_parameter/coa_quality_test_parameter.json: needs merge
+amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.json: needs merge
+amb_w_tds/amb_w_tds/doctype/container_selection/container_selection.json: needs merge
+amb_w_tds/amb_w_tds/doctype/container_sync_log/container_sync_log.json: needs merge
+amb_w_tds/amb_w_tds/doctype/container_type_rule/container_type_rule.json: needs merge
+amb_w_tds/amb_w_tds/doctype/country_regulation/country_regulation.json: needs merge
+amb_w_tds/amb_w_tds/doctype/distribution_contact/distribution_contact.json: needs merge
+amb_w_tds/amb_w_tds/doctype/distribution_organization/distribution_organization.json: needs merge
+amb_w_tds/amb_w_tds/doctype/formulation/formulation.json: needs merge
+amb_w_tds/amb_w_tds/doctype/intended_purpose/intended_purpose.json: needs merge
+amb_w_tds/amb_w_tds/doctype/juice_conversion_config/juice_conversion_config.json: needs merge
+amb_w_tds/amb_w_tds/doctype/kpi_cost_breakdown/kpi_cost_breakdown.json: needs merge
+amb_w_tds/amb_w_tds/doctype/lote_amb/lote_amb.json: needs merge
+amb_w_tds/amb_w_tds/doctype/market_entry_plan/market_entry_plan.json: needs merge
+amb_w_tds/amb_w_tds/doctype/market_research/market_research.json: needs merge
+amb_w_tds/amb_w_tds/doctype/plant_configuration/plant_configuration.json: needs merge
+amb_w_tds/amb_w_tds/doctype/product_compliance/product_compliance.json: needs merge
+amb_w_tds/amb_w_tds/doctype/product_development_project/product_development_project.json: needs merge
+amb_w_tds/amb_w_tds/doctype/production_plant_amb/production_plant_amb.json: needs merge
+amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.json: needs merge
+amb_w_tds/amb_w_tds/doctype/quotation_amb_sales_partner/quotation_amb_sales_partner.json: needs merge
+amb_w_tds/amb_w_tds/doctype/rnd_parent_doctype/rnd_parent_doctype.json: needs merge
+amb_w_tds/amb_w_tds/doctype/tds_product_specification/tds_product_specification.json: needs merge
+amb_w_tds/amb_w_tds/doctype/tds_product_specification_v2/tds_product_specification_v2.json: needs merge
+amb_w_tds/amb_w_tds/doctype/tds_settings/tds_settings.json: needs merge
+amb_w_tds/amb_w_tds/doctype/third_party_api/third_party_api.json: needs merge
+amb_w_tds/hooks.py: needs merge
+hooks.py: needs merge
+hooks.py~HEAD: needs merge
+pyproject.toml: needs merge
+The stash entry is kept in case you need it again.
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ 
