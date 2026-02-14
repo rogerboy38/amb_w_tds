@@ -380,14 +380,18 @@ class ReportGenerator(BaseSubAgent):
     
     def _format_compliance(self, compliance: Dict) -> Dict:
         """Format compliance results."""
+        summary = compliance.get('summary', {})
         return {
             "passed": compliance.get('passed', False),
             "compliant_count": len(compliance.get('compliant_batches', [])),
             "non_compliant_count": len(compliance.get('non_compliant_batches', [])),
-            "compliance_rate": compliance.get('summary', {}).get('compliance_rate', 0),
+            "no_coa_count": summary.get('no_coa_count', 0),
+            "tds_requirements_provided": summary.get('tds_requirements_provided', True),
+            "compliance_rate": summary.get('compliance_rate', 0),
             "failing_batches": [
                 {
                     "batch_name": b.get('batch_name'),
+                    "status": b.get('status'),
                     "failing_parameters": b.get('failing_parameters', [])
                 }
                 for b in compliance.get('non_compliant_batches', [])
@@ -475,17 +479,29 @@ class ReportGenerator(BaseSubAgent):
         # Compliance
         compliance = report.get('compliance', {})
         if compliance:
-            status = "✅ PASSED" if compliance.get('passed') else "❌ FAILED"
+            if not compliance.get('tds_requirements_provided', True):
+                status = "⚠️ NO TDS REQUIREMENTS (skipped)"
+            elif compliance.get('passed'):
+                status = "✅ PASSED"
+            else:
+                status = "❌ FAILED"
             lines.append(f"\n✅ COMPLIANCE: {status}")
             lines.append(f"  Compliant: {compliance.get('compliant_count')}")
             lines.append(f"  Non-Compliant: {compliance.get('non_compliant_count')}")
+            if compliance.get('no_coa_count', 0) > 0:
+                lines.append(f"  Missing COA: {compliance.get('no_coa_count')}")
         
         # Costs
         costs = report.get('costs', {})
         if costs:
             lines.append("\n💰 COSTS:")
-            lines.append(f"  Total: {costs.get('currency', 'MXN')} {costs.get('total_cost', 0):,.2f}")
-            lines.append(f"  Per Unit: {costs.get('currency', 'MXN')} {costs.get('cost_per_unit', 0):,.2f}")
+            total_cost = costs.get('total_cost', 0)
+            if total_cost == 0:
+                lines.append(f"  Total: ⚠️ {costs.get('currency', 'MXN')} 0.00 (No pricing data)")
+                lines.append(f"  Note: Set valuation_rate on Item or create Item Price")
+            else:
+                lines.append(f"  Total: {costs.get('currency', 'MXN')} {total_cost:,.2f}")
+                lines.append(f"  Per Unit: {costs.get('currency', 'MXN')} {costs.get('cost_per_unit', 0):,.2f}")
         
         # Recommendations
         recommendations = report.get('recommendations', [])
