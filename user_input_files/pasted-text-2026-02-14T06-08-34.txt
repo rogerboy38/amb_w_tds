@@ -1,0 +1,425 @@
+BATCH AMB AI AGENT - ACTUAL SCOPE DOCUMENT
+
+Based on Lessons Learned from Investigation Session
+
+Date: February 13, 2026
+
+
+
+=== PROJECT PIVOT: New Strategic Focus ===
+
+
+
+Original Scope (Deprecated):
+
+- Migrate legacy batches from old system
+
+- Complex data transformation from historical records
+
+
+
+New Scope (Current Focus):
+
+- Help users CREATE and MANAGE new Batch AMB records
+
+- Assist with real-time Work Order batch operations
+
+- Streamline the manufacturing/inventory workflow
+
+
+
+=== CURRENT STATE ANALYSIS ===
+
+
+
+Existing Records: 33 Batch AMB entries
+
+
+
+Work Order Distribution:
+
+- MFG-WO-00925: 12 records (LOTE-25-45-0001 to LOTE-25-45-0009)
+
+- MFG-WO-01725: 6 records (LOTE-25-40-0005 to LOTE-25-43-0002)
+
+- MFG-WO-02625: 9 records (LOTE-25-39-0004 to LOTE-25-40-0004)
+
+
+
+Naming Convention Identified:
+
+Pattern: {Sales Order}-{Sequence}-{Component}
+
+Example: 0334009251-1-C1
+
+- 0334009251 = Sales Order Reference
+
+- -1 = Batch sequence number
+
+- -C1 = Component identifier
+
+
+
+=== TECHNICAL SPECIFICATION SUMMARY ===
+
+
+
+Discovered Architecture:
+
+Location: /apps/amb_w_tds/amb_w_tds/
+
+- amb_w_tds/doctype/batch_amb/ (Controller, Schema, Client)
+
+- public/js/formulated_agent_widget.js (AI Agent Widget)
+
+
+
+Widget Implementation:
+
+- Type: Formulated Agent (Small orange lightning widget)
+
+- Behavior: Click-to-run AI assistant
+
+- Current Issue: Needs repositioning to bottom-left with drag capability
+
+
+
+=== AI AGENT CAPABILITIES ===
+
+
+
+Phase 1: Core Assistance (MVP)
+
+1. Batch Creation Helper
+
+   - Guide user through Batch AMB form fields
+
+   - Auto-suggest Lot ID based on Work Order pattern
+
+   - Validate naming conventions
+
+
+
+2. Work Order Integration
+
+   - Link batches to correct Work Order (MFG-WO-XXXXX)
+
+   - Track batch sequences automatically
+
+   - Prevent duplicate batch entries
+
+
+
+3. Field Validation
+
+   - Ensure required fields are populated
+
+   - Validate Lot ID format (LOTE-YY-WW-NNNN)
+
+   - Check Work Order reference exists
+
+
+
+Phase 2: Smart Features
+
+1. Batch Naming Assistant
+
+   - Auto-generate next sequence number
+
+   - Suggest component codes (C1, C2, etc.)
+
+   - Maintain consistency with existing batches
+
+
+
+2. Quick Actions
+
+   - Duplicate batch with incremented sequence
+
+   - Bulk create batches for Work Order
+
+   - Link multiple batches to same lot
+
+
+
+Phase 3: Advanced Intelligence
+
+1. Pattern Recognition
+
+   - Learn from user's batch creation habits
+
+   - Suggest optimal batch groupings
+
+   - Predict next batch requirements
+
+
+
+2. Quality Integration
+
+   - Link to TDS (Technical Data Sheets)
+
+   - COA (Certificate of Analysis) generation
+
+   - Compliance tracking
+
+
+
+=== IMPLEMENTATION TASKS ===
+
+
+
+Sprint 1 (Immediate):
+
+- Reposition widget to bottom-left corner
+
+- Add drag functionality to widget
+
+- Implement basic field assistance prompts
+
+- Add Lot ID auto-suggestion
+
+
+
+Sprint 2 (Short-term):
+
+- Work Order linkage validation
+
+- Sequence number auto-increment
+
+- Duplicate batch functionality
+
+- Form validation rules
+
+
+
+Sprint 3 (Medium-term):
+
+- Bulk batch creation wizard
+
+- Dashboard widget for batch overview
+
+- Integration with Production Monitor
+
+- TDS linkage automation
+
+
+
+=== FILES TO MODIFY ===
+
+
+
+Widget positioning fix:
+
+/apps/amb_w_tds/amb_w_tds/public/js/formulated_agent_widget.js
+
+
+
+Batch creation logic:
+
+/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.py
+
+
+
+Client-side helpers:
+
+/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js
+
+
+
+DocType schema:
+
+/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.json
+
+
+
+=== SSH COMMANDS FOR DEVELOPMENT ===
+
+
+
+# Navigate to app directory
+
+cd /home/frappe/frappe-bench/apps/amb_w_tds
+
+
+
+# Check widget code
+
+cat amb_w_tds/public/js/formulated_agent_widget.js
+
+
+
+# Edit widget positioning
+
+nano amb_w_tds/public/js/formulated_agent_widget.js
+
+
+
+# Clear cache after changes
+
+cd /home/frappe/frappe-bench
+
+bench --site v2.sysmayal.cloud clear-cache
+
+
+
+# Build assets
+
+bench build --app amb_w_tds
+
+
+
+# Watch for changes during development
+
+bench watch
+
+
+
+=== SUCCESS CRITERIA ===
+
+
+
+1. Widget appears in bottom-left corner
+
+2. Widget is draggable to user preference
+
+3. Agent assists with batch creation form
+
+4. Auto-suggests Lot ID based on Work Order
+
+5. Validates naming conventions
+
+6. Prevents duplicate entries
+
+7. Integrates with existing TDS workflow
+
+
+
+=== LESSONS LEARNED ===
+
+
+
+| Issue | Resolution |
+
+| Widget position hardcoded | Make configurable with drag support |
+
+| Old migration focus | Pivot to new batch assistance |
+
+| Complex naming patterns | Document and automate validation |
+
+| Multiple Work Orders per day | Support sequence tracking |
+
+| Component variations | Allow C1, C2, etc. suffixes |
+
+
+
+---
+
+Document Version: 1.0
+
+Created: February 13, 2026
+
+Next Review: After Sprint 1 completion
+
+
+
+=== SPRINT 1 CLARIFICATIONS (For Parallel Team) ===
+
+Updated: February 13, 2026
+
+
+
+Q1. WIDGET LOCATION - DEPLOYMENT APPROACH
+
+Answer: SSH directly to production server
+
+Path: /apps/amb_w_tds/amb_w_tds/public/js/formulated_agent_widget.js
+
+Reason: This is the active production instance, changes need to be live immediately
+
+Commands after edit:
+
+  bench --site v2.sysmayal.cloud clear-cache
+
+  bench build --app amb_w_tds
+
+
+
+Q2. AI AGENT INTEGRATION
+
+Answer: Use existing Raven AI Agent (@ai)
+
+Do NOT create new specialized bot yet
+
+Reason: Leverage existing infrastructure, the widget should call @ai with context about Batch AMB
+
+Future: Consider @batch_assistant in Phase 2 if specialized behavior is needed
+
+
+
+Q3. LOT ID PATTERN - AUTO-SUGGESTION PRIORITY
+
+Answer: BOTH patterns, in this order:
+
+  1. Primary: LOTE-YY-WW-NNNN (auto-generate based on current date)
+
+  2. Secondary: Title field uses {SalesOrder}-{Seq}-{Component}
+
+Logic:
+
+  - LOTE ID is the DocType name (unique identifier)
+
+  - Title is user-friendly reference linked to Sales Order
+
+  - System should auto-increment NNNN within same YY-WW
+
+
+
+Q4. WORK ORDER INTEGRATION MODE
+
+Answer: Option B - Work independently and query Work Orders when needed
+
+Reason: Users may create Batch AMB from multiple entry points:
+
+  - From Work Order form (context available)
+
+  - From Batch AMB list (need to query)
+
+  - From Production Monitor widget
+
+The agent should detect context and adapt accordingly
+
+
+
+=== TECHNICAL NOTES FOR IMPLEMENTATION ===
+
+
+
+Widget Positioning CSS:
+
+  position: fixed;
+
+  bottom: 20px;
+
+  left: 20px;  /* Changed from right: 20px */
+
+  z-index: 1000;
+
+  cursor: move; /* For drag indication */
+
+
+
+Drag Implementation:
+
+  Use native HTML5 drag or simple mousedown/mousemove
+
+  Save position to localStorage for persistence
+
+
+
+Context Detection:
+
+  Check cur_frm.doctype === 'Work Order' for context
+
+  If Work Order context: pre-fill batch fields
+
+  If standalone: show Work Order selector dropdown
