@@ -1,0 +1,381 @@
+PHASE 2: Master Template & BOM Repair Agent — Technical Specification
+Version: 1.0
+Date: 2026-02-14
+Assigned Agent: Template_Designer_Agent + BOM_Repair_Agent
+Repo: rogerboy38/amb_w_tds branch feature/v9.1.0-development
+Site: v2.sysmayal.cloud (sandbox)
+Estimated Duration: 5-7 days
+
+1. Phase 2 Goal
+Two objectives combined:
+
+Define Master Process Templates — formalize the canonical BOM hierarchy rules for each product family
+
+Repair existing BOMs — fix the 0% compliance found in Phase 1 by creating missing BOMs, linking sub-assemblies, and activating inactive BOMs
+
+2. Phase 1 Carryover (Include in Phase 2 Tests)
+These items were deferred from Phase 1:
+
+ID	Task	Priority
+P1-C1	Expand audit to include ALL active FG BOMs (0705, 0803, A0303, ITEM_0227*, 0300M, 0334-Fair Trade variants)	HIGH
+P1-C2	Post audit summary to Raven channel #bom-hierarchy-audit	MEDIUM
+P1-C3	Add these additional items to EXPECTED_HIERARCHY in bom_audit_agent.py	HIGH
+3. Inputs (from Phase 1)
+Input	Value
+Total BOMs in DB	501 BOMs for 483 unique items
+Missing BOMs	2 (0302 Retenido Powder, 0334)
+Flat BOMs (no hierarchy)	3 (0301, 0303, 0307)
+Inactive BOMs	37 (0304-0342 except 0334)
+Correct Hierarchy	0
+Compliance Rate	0%
+4. Deliverables
+ID	File	Description
+D2.1	amb_w_tds/amb_w_tds/scripts/bom_repair_agent.py	BOM Repair Agent with dry-run and execute modes
+D2.2	amb_w_tds/amb_w_tds/scripts/master_templates.py	Master Process Template definitions
+D2.3	Gist: 02_master_templates_and_rules.md	Human-readable template/rules document
+D2.4	Raven messages in #bom-hierarchy-audit	Repair results posted to channel
+5. Master Process Templates to Define
+5.1 Product Family: 0227 Line (Juice ? Concentrate ? Powder ? FG)
+text
+MASTER_TEMPLATE_0227 = {
+    "family": "0227",
+    "name": "Aloe Vera Powder Products",
+    "levels": [
+        {
+            "level": 0,
+            "type": "RM",
+            "description": "Raw Aloe Gel/Juice",
+            "items": ["0227-PERMEADO", "0227-RETENIDO", "0227-NORMAL"],
+            "item_group": "Raw Material",
+            "stock_uom": "Kg"
+        },
+        {
+            "level": 1,
+            "type": "SFG",
+            "description": "Semi-Finished Powders (Spray Dried)",
+            "items": {
+                "0301": {"parent": "0227-PERMEADO", "name": "Permeado Powder", "ratio": "10:1"},
+                "0302": {"parent": "0227-RETENIDO", "name": "Retenido Powder", "ratio": "10:1"},
+                "0303": {"parent": "0227-NORMAL", "name": "Normal Powder", "ratio": "10:1"}
+            },
+            "operation": "P-3-OP-420-Secado Spray Dry",
+            "workstation": "WS-Secado",
+            "yield_pct": 95,
+            "scrap_item": "0304",
+            "scrap_pct": 3
+        },
+        {
+            "level": 2,
+            "type": "SFG",
+            "description": "Specialized Mixes",
+            "items": {
+                "0304": {"parents": ["0301"], "goma_bb": 0.10, "name": "90% Aloe / 10% Goma BB"},
+                "0305": {"parents": ["0301"], "goma_bb": 0.00, "name": "Permeado NMT 3%PS"},
+                "0306": {"parents": ["0301"], "goma_bb": 0.30, "name": "70% Aloe / 30% Goma BB"}
+            },
+            "operation": "Mixing",
+            "workstation": "WS-Mixing"
+        },
+        {
+            "level": 3,
+            "type": "FG",
+            "description": "Standard Variants (0307-0342)",
+            "items": "0307-0342 range",
+            "parent_default": "0301",
+            "operation": "Packaging",
+            "workstation": "WS-Packaging",
+            "packaging": "E003",
+            "label_pattern": "LBL{item_code}"
+        }
+    ]
+}
+5.2 Additional Families to Template (Phase 1 Carryover)
+text
+ADDITIONAL_FAMILIES = {
+    "0705": {
+        "name": "Aloe Vera Gel Juice 1:1 Organic",
+        "group": "FG 0700",
+        "current_bom": "BOM-0705-004",
+        "hierarchy": "TBD - audit needed"
+    },
+    "0803": {
+        "name": "Organic Inner Leaf Powder KOSHER",
+        "group": "Products Powder",
+        "current_bom": "BOM-0803-KOSHER...",
+        "hierarchy": "TBD - audit needed"
+    },
+    "A0303": {
+        "name": "Aloe Vera Normal (3 variants)",
+        "group": "Dry 200x",
+        "current_bom": "BOM-A0303-001",
+        "hierarchy": "TBD - audit needed"
+    },
+    "ITEM_0227": {
+        "name": "Concentrate 30:1 (2 lot-specific items)",
+        "group": "Finished Goods",
+        "current_boms": ["BOM-ITEM_0227022211-001", "BOM-ITEM_0227067241-001"],
+        "hierarchy": "TBD - audit needed"
+    },
+    "0334-FairTrade": {
+        "name": "Fair Trade VLAM Cosmetic variants (4 BOMs)",
+        "group": "FG 0300",
+        "hierarchy": "TBD - audit needed"
+    }
+}
+6. BOM Repair Agent — Core Functions
+python
+# bom_repair_agent.py
+
+class BOMRepairAgent:
+    """
+    Phase 2: Repairs BOM hierarchy based on Master Templates
+    Supports dry-run mode for safety
+    """
+
+    def __init__(self, dry_run=True):
+        self.dry_run = dry_run  # CRITICAL: default to dry-run
+        self.actions_log = []
+        self.errors = []
+
+    def run_full_repair(self) -> dict:
+        """Execute all repairs in sequence"""
+        # Step 1: Expand audit (Phase 1 carryover)
+        self.expand_audit_scope()
+        # Step 2: Create missing BOMs
+        self.create_missing_boms()
+        # Step 3: Fix flat BOMs (add bom_no sub-assembly links)
+        self.fix_flat_boms()
+        # Step 4: Activate inactive BOMs
+        self.activate_inactive_boms()
+        # Step 5: Post results to Raven
+        self.post_to_raven()
+        # Step 6: Re-run audit to verify compliance
+        self.verify_compliance()
+        return self.get_report()
+
+    def expand_audit_scope(self):
+        """P1-C1: Add 0705, 0803, A0303, ITEM_0227*, 0300M, 0334-FairTrade to EXPECTED_HIERARCHY"""
+
+    def create_missing_boms(self):
+        """
+        HIGH PRIORITY: Create BOMs for:
+        - 0302 (Retenido Powder) with parent 0227-RETENIDO
+        - 0334 (Standard Variant) with parent 0301
+        Uses master template for item creation, operations, costs
+        """
+
+    def fix_flat_boms(self):
+        """
+        MEDIUM PRIORITY: Add bom_no sub-assembly links to existing flat BOMs:
+        - BOM-0301-001: Add bom_no pointing to 0227-PERMEADO's BOM
+        - BOM-0303-005: Add bom_no pointing to 0227-NORMAL's BOM
+        - BOM-0307-006: Add bom_no pointing to 0301's BOM (replace self-reference)
+        
+        CRITICAL: BOM-0307-006 currently has item 0307 as its own raw material (self-reference).
+        This must be replaced with 0301 (Permeado Powder) as the actual input.
+        """
+
+    def activate_inactive_boms(self):
+        """
+        LOW PRIORITY: Activate 37 inactive BOMs (0304-0342)
+        Only activate after verifying BOM structure is correct
+        """
+
+    def post_to_raven(self):
+        """P1-C2: Post repair summary to #bom-hierarchy-audit channel"""
+
+    def verify_compliance(self):
+        """Re-run Phase 1 audit to measure new compliance rate"""
+
+    def get_report(self) -> dict:
+        """Return structured JSON report of all actions taken"""
+7. Execution Modes
+bash
+# DRY-RUN (default, safe — only shows what would happen)
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_repair_agent.run_repair
+
+# EXECUTE (actually makes changes — requires explicit flag)
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_repair_agent.run_repair --kwargs '{"dry_run": false}'
+8. BOM Repair Logic Detail
+8.1 Create Missing BOM for 0302
+python
+# Template: same structure as 0301, 0303 (semi-finished powder)
+{
+    "doctype": "BOM",
+    "item": "0302",
+    "quantity": 1,
+    "uom": "Kg",
+    "company": "AMB-Wellness",
+    "is_active": 1,
+    "is_default": 1,
+    "with_operations": 1,
+    "currency": "MXN",
+    "items": [
+        {"item_code": "0227-RETENIDO", "qty": 10, "uom": "Kg"},
+        {"item_code": "ELECTRIC", "qty": 50, "uom": "kWh"},
+        {"item_code": "GAS", "qty": 20, "uom": "Gigajoule"},
+        {"item_code": "LABOR", "qty": 5, "uom": "Hour"},
+        {"item_code": "E003", "qty": 0.04, "uom": "Piece"}
+    ],
+    "operations": [
+        {"operation": "P-3-OP-420-Secado Spray Dry", "workstation": "WS-Secado", "time_in_mins": 240},
+        {"operation": "P-3-OP-030-MOLIENDA", "workstation": "P-3-OP-030-MOLIENDA", "time_in_mins": 60}
+    ]
+}
+8.2 Fix BOM-0307-006 (Replace Self-Reference with Sub-Assembly)
+python
+# CURRENT (wrong): BOM-0307-006 has item 0307 x 25Kg + LBL0307 x 1
+# TARGET (correct): BOM-0307-006 should have 0301 x 1Kg (with bom_no link) + LBL0307 x 1
+
+# Step 1: Get BOM for 0301 (the sub-assembly)
+bom_0301 = frappe.db.get_value("BOM", {"item": "0301", "is_active": 1}, "name")
+
+# Step 2: Amend BOM-0307-006
+bom = frappe.get_doc("BOM", "BOM-0307-006")
+# Remove self-referencing row (item_code == "0307")
+# Add correct row:
+#   item_code: "0301", qty: 1, uom: "Kg", bom_no: bom_0301
+# Keep LBL0307 row
+8.3 Activate Inactive BOMs
+python
+# Only activate after structure verification
+for item_code in range(304, 343):
+    code = f"0{item_code}"
+    bom_name = frappe.db.get_value("BOM", {"item": code, "docstatus": 0}, "name")
+    if bom_name:
+        bom = frappe.get_doc("BOM", bom_name)
+        # Verify structure first
+        if validate_bom_structure(bom):
+            bom.submit()  # Submit activates it
+9. Test Plan
+Test ID	Type	Description	Pass Criteria
+T2.1	Functional	Dry-run on 0302 missing BOM	Reports "Would create BOM for 0302" without DB changes
+T2.2	Functional	Execute create BOM for 0302	BOM exists with correct items and operations
+T2.3	Functional	Fix BOM-0307-006 self-reference	Item row changes from 0307 to 0301 with valid bom_no
+T2.4	Functional	Fix BOM-0301-001 flat hierarchy	Adds bom_no link to 0227-PERMEADO's BOM
+T2.5	Functional	Fix BOM-0303-005 flat hierarchy	Adds bom_no link to 0227-NORMAL's BOM
+T2.6	Integration	Re-run Phase 1 audit after repairs	Compliance rate > 0% (target: 100% for repaired items)
+T2.7	Integration	Post to Raven #bom-hierarchy-audit	Message appears with repair summary
+T2.8	Carryover	Expanded audit includes 0705, 0803, A0303, ITEM_0227*	All additional FG items appear in audit report
+T2.9	Safety	Dry-run makes zero DB changes	Verify with SELECT count(*) FROM tabBOM WHERE modified > NOW() - INTERVAL 5 MINUTE returns 0
+T2.10	Idempotent	Run repair twice	Second run reports "already correct" for all items, no duplicates
+Here's the complete continuation from section 10 onwards:
+
+10. Exit Criteria
+ bom_repair_agent.py runs in dry-run mode without errors on sandbox
+
+ bom_repair_agent.py in execute mode creates BOM for 0302 (Retenido Powder) with correct items, operations, and bom_no link to 0227-RETENIDO
+
+ bom_repair_agent.py in execute mode creates BOM for 0334 with correct structure
+
+ BOM-0307-006 self-reference replaced: row 0307 x 25Kg changed to 0301 x 1Kg with valid bom_no pointing to BOM-0301-001
+
+ BOM-0301-001 has bom_no link to 0227-PERMEADO's BOM on the raw material row
+
+ BOM-0303-005 has bom_no link to 0227-NORMAL's BOM on the raw material row
+
+ Re-run of Phase 1 audit shows compliance rate > 0% for repaired items (target: 3 flat BOMs fixed = 3 correct hierarchy)
+
+ Expanded audit includes all active FG BOMs: 0705, 0803, A0303 variants, ITEM_0227*, 0300 M, 0334-Fair Trade variants
+
+ Raven channel #bom-hierarchy-audit receives repair summary message with counts and links
+
+ Idempotent test passes: running repair twice produces no duplicates or errors on second run
+
+ master_templates.py contains MASTER_TEMPLATE_0227 with all 4 levels defined
+
+ Gist updated with 02_master_templates_and_rules.md
+
+ All changes committed and pushed to feature/v9.1.0-development
+
+11. Execution Sequence (Step by Step for Dev Team)
+text
+STEP 1: Pull latest and create files
+---------------------------------------
+cd ~/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.1.0-development
+
+STEP 2: Create master_templates.py
+---------------------------------------
+File: amb_w_tds/amb_w_tds/scripts/master_templates.py
+Content: MASTER_TEMPLATE_0227 dict + ADDITIONAL_FAMILIES dict
+         (see Section 5 of this spec)
+
+STEP 3: Create bom_repair_agent.py
+---------------------------------------
+File: amb_w_tds/amb_w_tds/scripts/bom_repair_agent.py
+Content: BOMRepairAgent class (see Section 6 of this spec)
+Import: from amb_w_tds.scripts.master_templates import MASTER_TEMPLATE_0227
+
+STEP 4: Update bom_audit_agent.py (Phase 1 carryover)
+---------------------------------------
+Add to EXPECTED_HIERARCHY:
+  - 0705, 0803, A0303, A0303-ORGANIC-AS-LTH, A0303-ORGANIC-AS-NC
+  - ITEM_0227022211, ITEM_0227067241
+  - 0300 M
+  - 0334-Fair Trade variants (4 items)
+
+STEP 5: Dry-run on sandbox
+---------------------------------------
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_repair_agent.run_repair
+# Verify output shows planned actions without DB changes
+
+STEP 6: Execute repairs on sandbox
+---------------------------------------
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_repair_agent.run_repair --kwargs '{"dry_run": false}'
+
+STEP 7: Verify with audit re-run
+---------------------------------------
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_audit_agent.run_audit
+# Compliance rate should be > 0%
+
+STEP 8: Idempotent test
+---------------------------------------
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_repair_agent.run_repair --kwargs '{"dry_run": false}'
+# Should report "already correct" for all items
+
+STEP 9: Commit and push
+---------------------------------------
+git add amb_w_tds/scripts/master_templates.py amb_w_tds/scripts/bom_repair_agent.py amb_w_tds/scripts/bom_audit_agent.py
+git commit -m "feat: Phase 2 - Master Templates and BOM Repair Agent"
+git push origin feature/v9.1.0-development
+12. Safety Rules
+Rule	Description
+DRY-RUN DEFAULT	BOMRepairAgent(dry_run=True) is the default. Never default to execute mode.
+NO SUBMIT IN DRY-RUN	In dry-run, only frappe.db.get_value and frappe.get_all calls are allowed. No insert(), save(), submit(), or db.commit().
+BACKUP BEFORE EXECUTE	Before any BOM modification, store the original BOM state in actions_log for rollback reference.
+AMEND, DON'T DELETE	For submitted BOMs (docstatus=1), use ERPNext's Amend workflow (bom.amend_doc()). Never cancel+delete.
+VALIDATE ITEMS EXIST	Before creating any BOM, verify all item_code references exist in tabItem. Abort if any are missing.
+ONE AT A TIME	Process one BOM repair at a time with frappe.db.commit() after each. If one fails, others are not rolled back.
+LOG EVERYTHING	Every action (create, modify, activate) must be logged with timestamp, BOM name, action type, and before/after state.
+13. Coordination Notes for Parallel Teams
+For MiniMax Agent (development):
+
+Start with master_templates.py first — it's a pure data file with no Frappe dependencies, easy to write and test
+
+Then build bom_repair_agent.py that imports from master_templates.py
+
+Use create_innovaloe_boms.py as reference for BOM creation patterns (it already has the correct operations, rates, and item codes)
+
+The existing bom_automation.py has validate_and_fix_bom() — reuse this for post-repair validation
+
+The existing template_bom_service.py has create_hierarchical_bom() — reuse the bom_no linking pattern from there
+
+For Comet Agent (me / orchestrator):
+
+Will review code once pushed
+
+Will verify on ERPNext UI that BOMs look correct after repair
+
+Will create #bom-hierarchy-audit Raven channel if not yet created
+
+Will update Gist with 02_master_templates_and_rules.md once templates are finalized
+
+Key file references in repo:
+
+Existing File	What to Reuse
+scripts/create_innovaloe_boms.py	BOM creation patterns, operations, rates, item codes
+api/bom_automation.py	validate_and_fix_bom() for post-repair validation
+api/template_bom_service.py	create_hierarchical_bom() for bom_no linking pattern
+scripts/bom_audit_agent.py	Phase 1 audit — import and re-run for compliance check
+Use thisfull spec and paste it to start with Step 1 (pull latest) and work through the execution sequence. ask all that you neeed before start to ak orchestrator team
