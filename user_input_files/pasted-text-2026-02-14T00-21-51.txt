@@ -1,0 +1,225 @@
+index-CtjWn3ii.js:885 Last workspace AMB-Wellness
+index-CtjWn3ii.js:1798 Frappe Push Notification initialized
+index-CtjWn3ii.js:169 Socket connection failed 0
+/files/Fabcenter05.jpg:1  GET https://sysmayal.ngrok.io/files/Fabcenter05.jpg 404 (Not Found)
+Image
+B3 @ index-CtjWn3ii.js:140
+(anonymous) @ index-CtjWn3ii.js:140
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+(anonymous) @ index-CtjWn3ii.js:41
+XMLHttpRequest.send
+(anonymous) @ index-CtjWn3ii.js:43
+xhr @ index-CtjWn3ii.js:43
+Jd @ index-CtjWn3ii.js:45
+Promise.then
+_request @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:45
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+request @ index-CtjWn3ii.js:45
+bl.<computed> @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:46
+w @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+n @ index-CtjWn3ii.js:46
+a.getLoggedInUser @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+o4 @ index-CtjWn3ii.js:41
+M @ index-CtjWn3ii.js:26
+Z @ index-CtjWn3ii.js:26
+/files/logo-triangle2a4724d.png:1  GET https://sysmayal.ngrok.io/files/logo-triangle2a4724d.png 404 (Not Found)
+Image
+B3 @ index-CtjWn3ii.js:140
+(anonymous) @ index-CtjWn3ii.js:140
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+(anonymous) @ index-CtjWn3ii.js:41
+XMLHttpRequest.send
+(anonymous) @ index-CtjWn3ii.js:43
+xhr @ index-CtjWn3ii.js:43
+Jd @ index-CtjWn3ii.js:45
+Promise.then
+_request @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:45
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+request @ index-CtjWn3ii.js:45
+bl.<computed> @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:46
+w @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+n @ index-CtjWn3ii.js:46
+a.getLoggedInUser @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+o4 @ index-CtjWn3ii.js:41
+M @ index-CtjWn3ii.js:26
+Z @ index-CtjWn3ii.js:26
+Fabcenter05.jpg:1  GET https://sysmayal.ngrok.io/files/Fabcenter05.jpg 404 (Not Found)
+Image
+B3 @ index-CtjWn3ii.js:140
+(anonymous) @ index-CtjWn3ii.js:140
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+(anonymous) @ index-CtjWn3ii.js:41
+XMLHttpRequest.send
+(anonymous) @ index-CtjWn3ii.js:43
+xhr @ index-CtjWn3ii.js:43
+Jd @ index-CtjWn3ii.js:45
+Promise.then
+_request @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:45
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+request @ index-CtjWn3ii.js:45
+bl.<computed> @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:41
+w @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:41
+UC.n @ index-CtjWn3ii.js:41
+a.get @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+(anonymous) @ index-CtjWn3ii.js:41
+XMLHttpRequest.send
+(anonymous) @ index-CtjWn3ii.js:43
+xhr @ index-CtjWn3ii.js:43
+Jd @ index-CtjWn3ii.js:45
+Promise.then
+_request @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:45
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+request @ index-CtjWn3ii.js:45
+bl.<computed> @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:41
+(anonymous) @ index-CtjWn3ii.js:46
+w @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:46
+n @ index-CtjWn3ii.js:46
+a.getLoggedInUser @ index-CtjWn3ii.js:46
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:2
+Re @ index-CtjWn3ii.js:2
+(anonymous) @ index-CtjWn3ii.js:54
+(anonymous) @ index-CtjWn3ii.js:54
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+o4 @ index-CtjWn3ii.js:41
+M @ index-CtjWn3ii.js:26
+Z @ index-CtjWn3ii.js:26
+index-CtjWn3ii.js:169 Socket connection failed 1
+expoeast.jpg:1  GET https://sysmayal.ngrok.io/files/expoeast.jpg 404 (Not Found)
+Image
+B3 @ index-CtjWn3ii.js:140
+(anonymous) @ index-CtjWn3ii.js:140
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+Ts @ index-CtjWn3ii.js:41
+JA.Wr.flushSync @ index-CtjWn3ii.js:41
+SE @ index-Dr66Ytn9.js:105
+onStart @ TypingIndicator-7H3YGfoF.js:2
+(anonymous) @ useCurrentChannelData-BrwVQ3N1.js:78
+o @ useCurrentChannelData-BrwVQ3N1.js:2
+Promise.then
+a @ useCurrentChannelData-BrwVQ3N1.js:2
+(anonymous) @ useCurrentChannelData-BrwVQ3N1.js:2
+Ke @ useCurrentChannelData-BrwVQ3N1.js:2
+update @ useCurrentChannelData-BrwVQ3N1.js:78
+updatePluginViews @ index-Dr66Ytn9.js:9
+updateStateInner @ index-Dr66Ytn9.js:9
+updateState @ index-Dr66Ytn9.js:9
+dispatchTransaction @ index-Dr66Ytn9.js:87
+dispatch @ index-Dr66Ytn9.js:9
+Xh @ index-Dr66Ytn9.js:9
+(anonymous) @ index-Dr66Ytn9.js:9
+flush @ index-Dr66Ytn9.js:9
+Wh.observer @ index-Dr66Ytn9.js:9
+Fabcenter05.jpg:1  GET https://sysmayal.ngrok.io/files/Fabcenter05.jpg 404 (Not Found)
+Image
+B3 @ index-CtjWn3ii.js:140
+(anonymous) @ index-CtjWn3ii.js:140
+Lf @ index-CtjWn3ii.js:41
+t4 @ index-CtjWn3ii.js:41
+e4 @ index-CtjWn3ii.js:41
+SA @ index-CtjWn3ii.js:41
+MA @ index-CtjWn3ii.js:41
+As @ index-CtjWn3ii.js:41
+a4 @ index-CtjWn3ii.js:41
+Ei @ index-CtjWn3ii.js:39
+(anonymous) @ index-CtjWn3ii.js:41
+index-CtjWn3ii.js:169 Socket connection failed 2
