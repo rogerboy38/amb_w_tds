@@ -1,0 +1,196 @@
+Here is the Phase 1 Technical Specification ready to share with the parallel team. This is formatted as a Gist-ready markdown file (01_phase1_bom_audit_agent_spec.md):
+
+Phase 1 — BOM_Audit_Agent: Technical Specification
+Version: 1.0
+Date: 2026-02-14
+Project: AI Agent for Hierarchical BOM Creator (ERPNext v16 MRP)
+Repo: rogerboy38/amb_w_tds branch feature/v9.1.0-development
+Gist: https://gist.github.com/rogerboy38/bb7b5bbb60c71ca14e1e83ba27c8f166
+
+1. Agent Identity & Scope
+Field	Value
+Agent Name	BOM_Audit_Agent
+Phase	1 — Discovery & Current-State BOM Mapping
+Responsible	AI Agent (bench console + script execution)
+Site	v2.sysmayal.cloud
+Company	AMB-Wellness
+Currency	MXN
+Goal: Build an accurate, machine-readable map of all current FG BOMs, detect multi-level (sub-assembly) structures, characterize item groups, and document Work Order → Sales Order relationships. Output feeds Phase 2 (Template_Designer_Agent).
+
+2. Inputs
+Input	Source	Description
+ERPNext Database	v2.sysmayal.cloud via bench console	Live BOM, Item, Work Order, Sales Order data
+Existing scripts	amb_w_tds/scripts/create_innovaloe_boms.py	Historical BOM creation logic with product hierarchy knowledge
+Existing API modules	amb_w_tds/api/bom_automation.py	BOM validation, WO creation, diagnosis functions
+Existing API modules	amb_w_tds/api/template_bom_service.py	TemplateBOMService class with hierarchical BOM stub
+Existing API modules	amb_w_tds/api/bom_tree_fix.py	Tree view fix (last month)
+3. Outputs (Deliverables)
+Output ID	File	Format	Description
+O1.1	scripts/bom_analysis.py	Python (bench execute)	Finalized audit script with main() entry point
+O1.2	Gist: 01_bom_audit_results.json	JSON	Full BOM tree dump for all 16 FG items
+O1.3	Gist: 01_phase1_summary.md	Markdown	Human-readable findings report
+O1.4	scripts/bom_analysis_test.py	Python	Test suite for T1.1–T1.5
+4. Current-State Findings (Discovery Complete)
+4.1 FG Items with Active Default BOMs — 16 total
+Item Code	Item Name	Item Group	Default BOM
+0300 M	0300 Master BOM	FG Mix Powder Products 0300	BOM-0300 M-001
+0301	ALOE VERA PERMEADO	Dry 200x	BOM-0301-001
+0307	INNOVALOE ALOE VERA GEL SPRAY DRIED POWDER 200:1	Products Powder	BOM-0307-006
+0334 -WTLB-25KG...	Aloe Vera 25KG Pail	FG 0300	BOM-0334-WTLB...
+0334- Fair Trade-VLAM...	Fair Trade Cosmetic variants (×4 BOMs)	FG 0300	Various
+0334-TEMPLATE	INNOVALOE ORGANIC Template	FG 0300	BOM-0334-001
+0705	INNOVALOE ALOE VERA GEL JUICE 1:1 ORGANIC	FG 0700	BOM-0705-004
+0803- KOSHER-ORGANIC...	ORGANIC INNER LEAF POWDER	Products Powder	BOM-0803-...
+A0303	ALOE VERA NORMAL	Dry 200x	BOM-A0303-001
+A0303-ORGANIC-AS LTH...	ALOE VERA NORMAL variant	Dry 200x	BOM-A0303-ORGANIC...
+A0303-ORGANIC-AS NC...	ALOE VERA NORMAL variant	Dry 200x	BOM-A0303-ORGANIC-NC...
+ITEM_0227022211	INNOVALOE CONCENTRATE 30:1	Finished Goods	BOM-ITEM_0227022211-001
+ITEM_0227067241	INNOVALOE CONCENTRATE 30:1	Finished Goods	BOM-ITEM_0227067241-001
+4.2 Sub-Assembly Status: ALL BOMs ARE FLAT
+Zero items have bom_no references in their BOM Item child rows
+
+The intended hierarchy 0307 (FG) → 0303 (SFG Powder) → 0227 (SFG Concentrate) exists only conceptually in create_innovaloe_boms.py, not in the actual BOM data
+
+Example: BOM-0307-006 contains only {0307 × 25Kg, LBL0307 × 1} — self-referencing FG item + label, no sub-assembly link
+
+4.3 Item Groups (7 groups)
+Item Group	Count	Notes
+Dry 200x	5	A0303 variants, 0301
+Products Powder	4	0307, 0803
+FG 0300	4	0334 variants
+Finished Goods	2	ITEM_0227* concentrate items
+FG 0700	1	0705 juice
+FG Mix Powder Products 0300	1	0300 M master
+Products Liquid	1	(liquid product)
+4.4 Work Orders — SO → WO Relationships
+Work Order	Item	Status	Sales Order	Notes
+MFG-WO-03626	0307	Draft	SO-117326-AGROMAYAL	Latest
+MFG-WO-03526	0307	Draft	SO-117326-AGROMAYAL	
+MFG-WO-03326	0307	Not Started	SO-117326-AGROMAYAL	
+MFG-WO-03426	0307	Not Started	None	No SO link
+P-VTA-00425	0803-KOSHER...	Draft	SO-02725-LORAND LABS	
+MFG-WO-02725	0705	Draft	SO-02825-Barentz Italia	
+MFG-WO-02625	0433	Draft	SO-02625-Accelerated Health	
+LOTE-00225	022700001	Draft	None	Concentrate lot
+LOTE-00125	0227-30X-Fair Trade...	Draft	None	Concentrate lot
+Key pattern: WOs for FG items (0307, 0705, 0803) link to Sales Orders. WOs for intermediate items (0227 lots) do NOT link to SOs — they're created independently. This is the gap MRP multi-level should solve.
+
+5. Implementation Tasks
+Task 5.1: Finalize bom_analysis.py
+Location: amb_w_tds/scripts/bom_analysis.py
+
+Requirements:
+
+python
+# Entry point for bench --site <site> execute amb_w_tds.scripts.bom_analysis.main
+def main():
+    """
+    Runs full BOM audit and outputs:
+    1. JSON BOM trees to stdout/file
+    2. Summary report to stdout
+    3. Sub-assembly detection results
+    4. WO-SO mapping
+    5. Item group characterization
+    """
+Core function signature:
+
+python
+def get_bom_tree(item_code: str, level: int = 0, max_level: int = 5, visited: set = None) -> dict:
+    """
+    Recursively walk BOM structure for an item.
+    
+    Returns:
+        {
+            "item": str,           # Item code
+            "item_name": str,      # Item name
+            "level": int,          # Depth in tree
+            "bom": str | None,     # BOM name if exists
+            "children": [          # BOM Item rows
+                {
+                    "item_code": str,
+                    "item_name": str,
+                    "qty": float,
+                    "uom": str,
+                    "has_sub_bom": bool,  # True if bom_no is set
+                    "bom_no": str | None,
+                    "sub_tree": dict | None  # Recursive tree if sub-assembly
+                }
+            ]
+        }
+    """
+Additional functions needed:
+
+python
+def get_all_fg_with_boms() -> list[dict]:
+    """Return all items that have active default BOMs"""
+
+def get_work_order_mapping() -> dict:
+    """Return SO → WO → Item relationships"""
+
+def get_item_group_summary() -> dict:
+    """Return item group characterization"""
+
+def export_results(all_trees: dict, wo_mapping: dict, groups: dict) -> dict:
+    """Bundle all results into a single JSON-exportable dict"""
+Execution modes:
+
+bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_analysis.main — full run
+
+bench --site v2.sysmayal.cloud console → from amb_w_tds.scripts.bom_analysis import get_bom_tree; get_bom_tree("0307") — single-item inspection
+
+Task 5.2: Store Results in Gist
+After running bom_analysis.py, capture the JSON output and create 01_bom_audit_results.json in the project Gist containing:
+
+json
+{
+  "metadata": {
+    "site": "v2.sysmayal.cloud",
+    "timestamp": "2026-02-14T14:00:00",
+    "script_version": "1.0",
+    "total_fg_items": 16,
+    "multi_level_boms_found": 0
+  },
+  "bom_trees": { /* per-item trees */ },
+  "work_order_mapping": { /* SO→WO→Item */ },
+  "item_groups": { /* group characterization */ },
+  "gaps_identified": [
+    "All BOMs are flat — no bom_no sub-assembly links",
+    "0307 BOM self-references item as raw material",
+    "0227 concentrate WOs not linked to downstream FG WOs",
+    "Item groups inconsistent (ITEM_0227* in 'Finished Goods' not a dedicated SFG group)"
+  ]
+}
+Task 5.3: Create 01_phase1_summary.md Gist
+Human-readable summary with the tables from section 4 above, plus action items for Phase 2.
+
+6. Test Plan
+Test ID	Type	Description	Pass Criteria
+T1.1	Functional	Run script on known FG 0307 with flat BOM	Tree has root with bom: "BOM-0307-006", children with item_code, qty, uom, has_sub_bom: false
+T1.2	Functional	Create synthetic multi-level test BOM (e.g., TEST-FG → TEST-SFG with bom_no), re-run	has_sub_bom: true and nested sub_tree generated for test item
+T1.3	Functional	For WO MFG-WO-03626, verify script outputs production_item: 0307, bom_no, sales_order: SO-117326-*, status: Draft	All fields present and correct
+T1.4	Non-functional	Full run for all 16 FG items completes	Runtime < 60 seconds
+T1.5	Non-functional	Script handles missing/inactive BOMs	No unhandled exceptions; items without BOMs show bom: null gracefully
+T1.2 Bench console script to create synthetic test BOM:
+
+python
+# Create test SFG item
+if not frappe.db.exists("Item", "TEST-SFG-0303"):
+    sfg = frappe.get_doc({"doctype": "Item", "item_code": "TEST-SFG-0303", "item_name": "Test SFG Powder", "item_group": "Dry 200x", "stock_uom": "Kg", "is_stock_item": 1})
+    sfg.insert(ignore_permissions=True)
+
+# Create BOM for SFG
+if not frappe.db.exists("BOM", {"item": "TEST-SFG-0303", "is_active": 1}):
+    sfg_bom = frappe.get_doc({"doctype": "BOM", "item": "TEST-SFG-0303", "quantity": 1, "company": "AMB-Wellness", "is_active": 1, "is_default": 1, "items": [{"item_code": "0227", "qty": 10, "uom": "Kg"}]})
+    sfg_bom.insert(ignore_permissions=True)
+    sfg_bom.submit()
+
+# Create test FG item
+if not frappe.db.exists("Item", "TEST-FG-0307"):
+    fg = frappe.get_doc({"doctype": "Item", "item_code": "TEST-FG-0307", "item_name": "Test FG Powder", "item_group": "Products Powder", "stock_uom": "Kg", "is_stock_item": 1})
+    fg.insert(ignore_permissions=True)
+
+# Create multi-level BOM for FG referencing SFG
+sfg_bom_name = frappe.db.get_value("BOM", {"item": "TEST-SFG-0303", "is_active": 1}, "name")
+if not frappe.db.exists("BOM", {"item": "TEST-FG-0307", "is_active": 1}):
+    fg_bom = frappe.get_doc({"doctype": "BOM", "item": "TEST-FG-0307", "quantity": 1, "company": "AMB-Wellness", "is_active": 1, "is_default": 1, "items": [{"item_code": "TEST-SFG-0303", "qty": 1, "uom": "Kg", "bom_no": sfg_bom_name}, {"item_code": "LBL0307", "qty": 1, "uom": "Nos"}]})
+    fg_bom.
