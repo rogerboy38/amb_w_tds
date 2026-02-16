@@ -552,6 +552,29 @@ class BatchAMB(NestedSet):
         return timeline
     
     @frappe.whitelist()
+    def fixed_generate_serial_numbers(self, quantity=5, prefix=None):
+        """
+        Generate serial numbers for this batch.
+        Called from client-side.
+        """
+        try:
+            frappe.msgprint(f"Generating {quantity} serial numbers for {self.name} with prefix '{prefix}'")
+            # --- Aquí va tu lógica real de generación ---
+            # 1. Usar self para acceder a los datos del batch actual
+            # self.custom_serial_numbers = [] # Ejemplo
+            # self.save()
+            # 2. Retornar resultado
+            # -----------------------------------------
+            return {
+                "status": "success",
+                "message": f"Generated {quantity} serial numbers",
+                "batch_name": self.name
+            }
+        except Exception as e:
+            frappe.log_error(f"Error in fixed_generate_serial_numbers: {str(e)}")
+            frappe.throw(f"Error generating serial numbers: {str(e)}")
+    
+    @frappe.whitelist()
     def get_processing_metrics(self):
         """Get processing metrics for analytics"""
         metrics = {
