@@ -1,0 +1,156 @@
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+cd ~/frappe-bench/apps/amb_w_tds
+bash scripts/test_v9.1.0_simple.sh
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 4 (delta 2), reused 4 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 950 bytes | 475.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   5caa32b..bba8dc2  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating 5caa32b..bba8dc2
+Fast-forward
+ scripts/test_v9.1.0_simple.sh | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+ create mode 100644 scripts/test_v9.1.0_simple.sh
+==========================================
+  v9.1.0 Test Suite
+==========================================
+
+Test 1: Version Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds' has no attribute 'test_version'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+
+Test 2: BOM Agent Import
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds.raven.bom_tracking_agent' has no attribute 'test_import'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/home/frappe/frappe-bench/apps/amb_w_tds/amb_w_tds/raven/bom_tracking_agent.py", line 15, in <module>
+    import frappe
+ModuleNotFoundError: No module named 'frappe'
+
+Test 3: Serial Agent Import
+❌ Serial agent import failed
+
+Test 4: Config Check
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+ImportError: cannot import name 'REGISTERED_AGENTS' from 'amb_w_tds.raven.config' (/home/frappe/frappe-bench/apps/amb_w_tds/amb_w_tds/raven/config.py)
+
+Test 5: BOM Health Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds.scripts.bom_status_manager' has no attribute 'run_health_check_dry'. Did you mean: 'run_health_check'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+
+Test 6: Hooks Check
+2
+✅ BOM hooks found
+
+==========================================
+If tests fail, run:
+  bench migrate
+  bench clear-cache && bench restart
+==========================================
