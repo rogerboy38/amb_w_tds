@@ -123,6 +123,7 @@ class PlannedBOM:
     already_exists: bool = False
     existing_bom_name: Optional[str] = None
     step_number: Optional[int] = None
+    process_type: Optional[str] = None  # concentration, standardization, packing, etc.
     is_default: int = 1
     is_active: int = 1
     
@@ -137,6 +138,7 @@ class PlannedBOM:
             "already_exists": self.already_exists,
             "existing_bom_name": self.existing_bom_name,
             "step_number": self.step_number,
+            "process_type": self.process_type,
             "is_default": self.is_default,
             "is_active": self.is_active
         }
