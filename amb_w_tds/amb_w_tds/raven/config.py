@@ -7,7 +7,7 @@ def get_agents():
     """Register all agents with Raven"""
     agents = {}
     
-    # Serial Tracking Agent
+    # Serial Tracking Agent (existing working agent)
     try:
         from amb_w_tds.raven.serial_minimal_working import MinimalSerialAgent
         
@@ -22,7 +22,7 @@ def get_agents():
     except ImportError as e:
         print(f"⚠️ Could not import MinimalSerialAgent: {e}")
     
-    # BOM Tracking Agent (v9.1.0)
+    # BOM Tracking Agent (v9.1.0 - new)
     try:
         from amb_w_tds.raven.bom_tracking_agent import BOMTrackingAgent
         
