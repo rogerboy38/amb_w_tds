@@ -22,7 +22,7 @@ echo "=========================================="
 echo "T3.1 & T3.2: Live BOM Creation (dry_run=False)"
 echo "=========================================="
 bench --site $SITE execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec \
-    --kwargs '{"request_text": "0227-ORGANIC-VANILLA-1000L-IBC", "dry_run": false}' 2>&1 | tail -20
+    --kwargs '{"request_text": "0227-ORGANIC-VANILLA-1000L-IBC", "dry_run": False}' 2>&1 | tail -20
 echo ""
 
 # T3.3: Verify Items Created
@@ -114,7 +114,7 @@ echo "T3.6 & T3.7: Idempotency Test (Re-run)"
 echo "=========================================="
 echo "Running engine again with same spec..."
 bench --site $SITE execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec \
-    --kwargs '{"request_text": "0227-ORGANIC-VANILLA-1000L-IBC", "dry_run": false}' 2>&1 | tail -10
+    --kwargs '{"request_text": "0227-ORGANIC-VANILLA-1000L-IBC", "dry_run": False}' 2>&1 | tail -10
 echo ""
 echo "Expected: items_reused and boms_reused should be populated (no duplicates)"
 echo ""
