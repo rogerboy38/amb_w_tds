@@ -1,30 +1,36 @@
 """
-Minimal working Raven agent for serial tracking
+Serial Tracking Agent for Raven AI
+Synchronous agent compatible with Raven message handler
+
+Commands:
+- ping/test - Check if agent is alive
+- help - Show available commands
+- gen <n> <batch> - Generate n serials for batch
+- validate <serial> - Validate serial format
 """
 
-import frappe
 import re
 
-class MinimalSerialAgent:
-    """Minimal working agent that doesn't inherit from Document"""
+
+class SerialTrackingAgent:
+    """Raven agent for serial number management"""
     
     agent_name = "serial_tracking"
-    agent_description = "Minimal serial tracking agent"
+    agent_description = "Serial number generation and validation"
     agent_version = "1.0.0"
     
     def __init__(self):
-        """Simple constructor without Document requirements"""
         self.name = self.agent_name
         self.description = self.agent_description
         self.version = self.agent_version
     
     def handle_message(self, message, channel=None, **kwargs):
-        """Handle incoming messages"""
+        """Handle incoming Raven messages"""
         message_lower = str(message).lower().strip()
         
-        if message_lower == "ping" or message_lower == "test":
+        if message_lower in ["ping", "test"]:
             return {
-                "content": "✅ Pong! Agent is working.",
+                "content": "✅ Pong! Serial Tracking Agent is working.",
                 "type": "text"
             }
         
@@ -32,13 +38,17 @@ class MinimalSerialAgent:
             return {
                 "content": """🤖 **Serial Tracking Agent** v1.0.0
 
-Commands:
+**Commands:**
 - `ping` or `test` - Check if agent is alive
 - `help` - Show this help
 - `gen <n> <batch>` - Generate n serials for batch
 - `validate <serial>` - Validate serial format
 
-Example: `gen 5 0219074251-88`""",
+**Examples:**
+```
+gen 5 0219074251-88
+validate 0219074251-0001
+```""",
                 "type": "text"
             }
         
@@ -50,14 +60,13 @@ Example: `gen 5 0219074251-88`""",
         
         else:
             return {
-                "content": f"🤖 I'm your Serial Tracking Agent. You said: '{message}'\n\nTry 'help' for commands.",
+                "content": f"🤖 Serial Tracking Agent received: '{message}'\n\nType `help` for commands.",
                 "type": "text"
             }
     
     def _handle_generate(self, message):
         """Handle generate command"""
         try:
-            # Parse: gen 5 0219074251-88
             parts = message.split()
             if len(parts) >= 3:
                 count = int(parts[1])
@@ -71,13 +80,13 @@ Example: `gen 5 0219074251-88`""",
                 
                 # Generate serials
                 serials = []
-                for i in range(1, count + 1):
+                for i in range(1, min(count + 1, 21)):  # Limit to 20
                     serials.append(f"{golden}-{i:04d}")
                 
                 serials_text = "\n".join([f"• {s}" for s in serials])
                 
                 return {
-                    "content": f"""✅ **Generated {count} serials for {batch}**
+                    "content": f"""✅ **Generated {len(serials)} serials for {batch}**
 
 **Serials:**
 {serials_text}
@@ -86,7 +95,7 @@ Example: `gen 5 0219074251-88`""",
                     "type": "text",
                     "metadata": {
                         "serials": serials,
-                        "count": count,
+                        "count": len(serials),
                         "batch": batch
                     }
                 }
@@ -110,7 +119,7 @@ Example: `gen 5 0219074251-88`""",
                 serial = parts[1]
                 
                 if '-' in serial:
-                    golden, seq = serial.split('-')
+                    golden, seq = serial.split('-', 1)
                     
                     if golden.isdigit() and seq.isdigit() and len(seq) == 4:
                         return {
@@ -119,12 +128,9 @@ Example: `gen 5 0219074251-88`""",
 **Serial:** {serial}
 **Golden:** {golden}
 **Sequence:** {seq}
-**Status:** ✅ Valid format""",
+**Status:** Valid format""",
                             "type": "text",
-                            "metadata": {
-                                "valid": True,
-                                "serial": serial
-                            }
+                            "metadata": {"valid": True, "serial": serial}
                         }
                     else:
                         issues = []
@@ -139,13 +145,9 @@ Example: `gen 5 0219074251-88`""",
                             "content": f"""❌ **Serial Invalid**
 
 **Serial:** {serial}
-**Issues:** {', '.join(issues)}
-**Status:** ❌ Invalid format""",
+**Issues:** {', '.join(issues)}""",
                             "type": "text",
-                            "metadata": {
-                                "valid": False,
-                                "serial": serial
-                            }
+                            "metadata": {"valid": False, "serial": serial}
                         }
                 
                 return {
@@ -164,16 +166,15 @@ Example: `gen 5 0219074251-88`""",
                 "type": "text"
             }
 
+
 # Raven registration
 def get_agents():
     """Register this agent with Raven"""
-    from amb_w_tds.raven.serial_minimal_working import MinimalSerialAgent
-    
     return {
         "serial_tracking": {
-            "class": MinimalSerialAgent,
-            "name": MinimalSerialAgent.agent_name,
-            "description": MinimalSerialAgent.agent_description,
-            "version": MinimalSerialAgent.agent_version
+            "class": SerialTrackingAgent,
+            "name": SerialTrackingAgent.agent_name,
+            "description": SerialTrackingAgent.agent_description,
+            "version": SerialTrackingAgent.agent_version
         }
     }
