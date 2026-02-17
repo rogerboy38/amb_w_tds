@@ -1,0 +1,182 @@
+      (actual BOM creation with dry_run=False)
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.2.0-development
+bash scripts/test_v9.2.0_phase3_mrp.sh
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 4 (delta 2), reused 4 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 2.26 KiB | 2.26 MiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+   2922a78..72dbacf  feature/v9.2.0-development -> origin/feature/v9.2.0-development
+Updating 2922a78..72dbacf
+Fast-forward
+ scripts/test_v9.2.0_phase3_mrp.sh | 169 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 169 insertions(+)
+ create mode 100644 scripts/test_v9.2.0_phase3_mrp.sh
+==========================================
+  v9.2.0 Phase 3 - MRP Integration Tests
+  Site: v2.sysmayal.cloud
+  Test Item: TEST-0227-ORGANIC-VANILLA-1000L-IBC
+==========================================
+
+⚠️  WARNING: This will create REAL items and BOMs!
+    Press Ctrl+C within 5 seconds to cancel...
+
+==========================================
+T3.1 & T3.2: Live BOM Creation (dry_run=False)
+==========================================
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 273, in execute
+    fn_kwargs = eval(kwargs)
+  File "<string>", line 1, in <module>
+NameError: name 'false' is not defined. Did you mean: 'False'?
+
+name 'false' is not defined
+
+==========================================
+T3.3: Verify Items Created
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Found 0 SFG items:
+
+In [5]:    ...:    ...: 
+In [6]: 
+In [7]: 
+In [8]:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.4: Verify BOMs with Multi-Level Links
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]:    ...:    ...: 
+In [4]: 
+In [4]:    ...:    ...:    ...:    ...: 
+In [5]: ✅ Found 0 BOMs:
+
+In [6]:    ...:    ...: 
+In [7]: 
+In [8]:    ...:    ...: ---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+Cell In[8], line 2
+      1 bom_items = frappe.get_all("BOM Item",
+----> 2     filters={"parent": b.name},
+      3     fields=["item_code", "qty", "bom_no"])
+
+NameError: name 'b' is not defined
+
+In [9]:    ...:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.5: Verify Operations on BOMs
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]:    ...:    ...: 
+In [3]: 
+In [3]: 
+In [4]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: 
+In [5]:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.6 & T3.7: Idempotency Test (Re-run)
+==========================================
+Running engine again with same spec...
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 273, in execute
+    fn_kwargs = eval(kwargs)
+  File "<string>", line 1, in <module>
+NameError: name 'false' is not defined. Did you mean: 'False'?
+
+name 'false' is not defined
+
+Expected: items_reused and boms_reused should be populated (no duplicates)
+
+==========================================
+T3.8: MRP Explosion Check (Info)
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]: 
+In [4]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+  Phase 3 Tests Summary
+==========================================
+
+T3.1: Live FG creation      - Check output above
+T3.2: Live SFG creation     - Check output above
+T3.3: Items verified        - Check output above
+T3.4: BOMs with bom_no      - Check output above
+T3.5: Operations            - Check output above
+T3.6: Yield calculation     - Included in BOM
+T3.7: Idempotency           - Check re-run output
+T3.8: MRP explosion         - Check output above
+
+==========================================
+
+To cleanup test data, run:
+  bench --site v2.sysmayal.cloud console
+  >>> frappe.delete_doc('Item', '0227-ORGANIC-VANILLA-1000L-IBC', force=1)
+  >>> # Delete SFGs and BOMs similarly
+
+To test full MRP cycle:
+  1. Create Sales Order for 0227-ORGANIC-VANILLA-1000L-IBC
+  2. Run Production Planning Tool
+  3. Check Material Requests and Work Orders generated
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ 
