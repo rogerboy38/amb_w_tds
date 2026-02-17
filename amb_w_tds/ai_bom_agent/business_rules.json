@@ -1,0 +1,77 @@
+{
+  "version": "9.2.0",
+  "description": "Business rules for AMB-Wellness Aloe Vera BOM Creation - Aligned with real production data",
+  
+  "item_classification": {
+    "finished_goods": {
+      "item_group": "Products Powder",
+      "prefix_patterns": ["0307", "0301"],
+      "description": "Final products ready for sale"
+    },
+    "semi_finished_goods": {
+      "item_group": "SFG Semi Finished Goods",
+      "prefix_patterns": ["0227", "0303"],
+      "description": "Intermediate products used as sub-assemblies"
+    },
+    "raw_materials": {
+      "item_group": "Raw Materials",
+      "prefix_patterns": ["M0"],
+      "description": "Raw material inputs"
+    },
+    "containers": {
+      "item_group": "Packaging Materials",
+      "prefix_patterns": ["E0"],
+      "description": "Packaging and container items"
+    }
+  },
+
+  "uom_rules": {
+    "default_product_uom": "Kg",
+    "container_uom": "Piece",
+    "liquid_volume_uom": "Litre",
+    "energy_uom": "kWh",
+    "labor_uom": "Hour",
+    "allow_fractional_quantities": true,
+    "precision": 6
+  },
+
+  "bom_structure_rules": {
+    "allow_multi_level": true,
+    "max_levels": 3,
+    "sub_assembly_linking": {
+      "enabled": true,
+      "link_field": "bom_no",
+      "description": "Sub-assemblies like 0227 are linked via bom_no field"
+    }
+  },
+
+  "production_inputs": {
+    "utilities": {
+      "water": {"item_code": "WATER", "uom": "Litre"},
+      "electricity": {"item_code": "ELECTRIC", "uom": "kWh"},
+      "labor": {"item_code": "LABOR", "uom": "Hour"}
+    },
+    "filter_aids": {
+      "diatomaceous_earth": ["M004", "M005", "M006"],
+      "activated_carbon": ["M042"]
+    },
+    "primary_raw_material": {
+      "aloe_vera_gel": {"item_code": "M033", "uom": "Kg"}
+    }
+  },
+
+  "container_rules": {
+    "E001": {"name": "220L Barrel Blue", "typical_qty_per_kg": 0.004351},
+    "E011": {"name": "1000L IBC", "typical_qty_per_kg": 0.001},
+    "E002": {"name": "25Kg Bag", "typical_qty_per_kg": 0.04}
+  },
+
+  "validation_rules": {
+    "required_fields": ["item_code", "qty", "uom"],
+    "item_must_exist": true,
+    "bom_naming": {
+      "pattern": "BOM-{item_code}-{sequence}",
+      "auto_generate": true
+    }
+  }
+}

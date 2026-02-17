@@ -1,0 +1,148 @@
+frappe@UbuntuVM:~/frappe-bench$ cd ~/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.2.0-development
+bash scripts/test_v9.2.0_phase3_mrp.sh
+remote: Enumerating objects: 26, done.
+remote: Counting objects: 100% (26/26), done.
+remote: Compressing objects: 100% (8/8), done.
+remote: Total 17 (delta 11), reused 14 (delta 8), pack-reused 0 (from 0)
+Unpacking objects: 100% (17/17), 10.20 KiB | 1.13 MiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+   ed66d07..e5b7b5e  feature/v9.2.0-development -> origin/feature/v9.2.0-development
+Updating ed66d07..e5b7b5e
+Fast-forward
+ ai_bom_agent/business_rules.json                           |  77 +++++++
+ amb_w_tds/ai_bom_agent/engine.py                           |   4 +-
+ amb_w_tds/ai_bom_agent/parser.py                           | 397 ++++++++++++++++++---------------
+ amb_w_tds/ai_bom_agent/templates/template_0227_master.json | 340 ++++++++++++++++++++--------
+ amb_w_tds/ai_bom_agent/templates/template_0307_master.json | 536 +++++++++++++++++++++++++++++++--------------
+ scripts/test_v9.2.0_phase3_mrp.sh                          | 167 ++++++--------
+ 6 files changed, 987 insertions(+), 534 deletions(-)
+ create mode 100644 ai_bom_agent/business_rules.json
+==========================================
+  v9.2.0 Phase 3 - MRP Integration Tests
+  Site: v2.sysmayal.cloud
+  FG Item: 0307
+  SFG Item: 0227
+==========================================
+
+⚠️  WARNING: This will create/modify BOMs!
+    Press Ctrl+C within 5 seconds to cancel...
+
+==========================================
+T3.1: Test BOM Creation for 0307
+==========================================
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 273, in execute
+    fn_kwargs = eval(kwargs)
+  File "<string>", line 1, in <module>
+NameError: name 'true' is not defined. Did you mean: 'True'?
+
+name 'true' is not defined
+
+==========================================
+T3.2: Verify Existing BOMs
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]:    ...:    ...: 
+In [4]: 
+In [4]: BOMs for 0307:
+
+In [5]:    ...:    ...:    - BOM-0307-005 (default=0, active=0, status=2)
+   - BOM-0307-004 (default=1, active=1, status=1)
+   - BOM-0307-003 (default=0, active=1, status=0)
+   - BOM-0307-001 (default=0, active=0, status=2)
+   - BOM-0307-002 (default=0, active=0, status=2)
+
+In [6]: 
+In [7]:    ...:    ...: 
+In [8]: 
+In [8]: 
+BOMs for 0227:
+
+In [9]:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.3: Verify Multi-Level BOM Structure
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]: 
+In [4]:    ...:    ...: ✅ Default BOM for 0307: BOM-0307-004
+
+In [5]: 
+In [6]:    ...:    ...: 
+In [7]: 
+In [7]: 
+Components:
+
+In [8]:    ...:    ...:    ...:    ...:    ...:    ...:   Cell In[8], line 7
+    print(f"❌ No default BOM found for 0307")
+    ^
+IndentationError: expected an indented block after 'else' statement on line 6
+
+
+In [9]: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.4: MRP Explosion Test
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+  Phase 3 Tests Summary
+==========================================
+
+Real production items tested:
+  - 0307: Aloe Vera Gel Spray Dried Powder 200:1 (FG)
+  - 0227: Aloe Vera Gel Concentrate 30:1 (SFG)
+
+Key validations:
+  - Multi-level BOM structure (0307 → 0227 → raw materials)
+  - Sub-assembly linking via bom_no field
+  - Fractional container quantities
+  - MRP explosion capability
+
