@@ -43,10 +43,10 @@
       "rule_id": "B004",
       "name": "SFG Item Group",
       "category": "mandatory",
-      "description": "All SFGs must belong to 'Semi Finished Goods' item group",
+      "description": "All SFGs must belong to 'SFG Semi Finished Goods' item group",
       "condition": "item_code.startswith('SFG-')",
-      "validation": "item_group == 'Semi Finished Goods'",
-      "error_message": "SFG items must have item_group = 'Semi Finished Goods'"
+      "validation": "item_group == 'SFG Semi Finished Goods'",
+      "error_message": "SFG items must have item_group = 'SFG Semi Finished Goods'"
     },
     {
       "rule_id": "B005",

@@ -5,7 +5,7 @@
     "name": "Aloe Vera Juice Line",
     "description": "Master template for 0227 Aloe Vera juice production - 3-step process",
     "created_date": "2026-02-17",
-    "item_group": "Semi Finished Goods",
+    "item_group": "SFG Semi Finished Goods",
     "default_company": "Formulated",
     "default_warehouse": "Work In Progress - F"
   },
@@ -161,9 +161,9 @@
     },
     {
       "rule_id": "B6",
-      "description": "All SFGs belong to Semi Finished Goods group",
+      "description": "All SFGs belong to SFG Semi Finished Goods group",
       "condition": "output_item_pattern.startswith('SFG-')",
-      "action": "set_item_property('item_group', 'Semi Finished Goods')"
+      "action": "set_item_property('item_group', 'SFG Semi Finished Goods')"
     }
   ]
 }

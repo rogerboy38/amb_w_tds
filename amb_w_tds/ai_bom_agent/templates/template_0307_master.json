@@ -5,7 +5,7 @@
     "name": "Aloe Powder Line",
     "description": "Master template for 0307 Aloe Vera powder production - 4-step process with spray drying",
     "created_date": "2026-02-17",
-    "item_group": "Semi Finished Goods",
+    "item_group": "SFG Semi Finished Goods",
     "default_company": "Formulated",
     "default_warehouse": "Work In Progress - F"
   },
