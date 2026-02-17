@@ -682,6 +682,420 @@ def get_repair_suggestions(issue_type=None, limit=10):
 
 
 # ============================================================================
+# AUTO-FIX ENGINE - Intelligent Issue Resolution
+# ============================================================================
+
+def auto_fix(dry_run=True, issue_types=None, max_fixes=50):
+    """
+    Automatically fix detected BOM issues.
+    
+    Args:
+        dry_run: If True, only simulate fixes without applying (default: True)
+        issue_types: List of issue types to fix (None = all auto-fixable)
+        max_fixes: Maximum number of fixes to apply (safety limit)
+    
+    Returns:
+        dict with fix results and detailed report
+    
+    Usage:
+        bench execute amb_w_tds.scripts.bom_status_manager.auto_fix
+        bench execute amb_w_tds.scripts.bom_status_manager.auto_fix --kwargs '{"dry_run": False}'
+        bench execute amb_w_tds.scripts.bom_status_manager.auto_fix --kwargs '{"issue_types": ["NO_DEFAULT_BOM"]}'
+    """
+    print("=" * 70)
+    print("BOM STATUS MANAGER - AUTO-FIX ENGINE")
+    print(f"Run Time: {now_datetime()}")
+    print(f"Mode: {'DRY RUN (simulation)' if dry_run else '🔴 LIVE MODE (applying fixes)'}")
+    print(f"Max Fixes: {max_fixes}")
+    print("=" * 70)
+    
+    # Run health check to get issues
+    print("\n📋 Running health check to identify issues...")
+    health_result = run_health_check(verbose=False)
+    all_issues = health_result['issues']
+    
+    # Filter to auto-fixable issue types
+    AUTO_FIXABLE_TYPES = [
+        'NO_DEFAULT_BOM',
+        'MULTIPLE_DEFAULTS', 
+        'INACTIVE_DEFAULT',
+        'ORPHANED_BOM',
+        'DISABLED_ITEM_BOM'
+    ]
+    
+    if issue_types:
+        target_types = [t for t in issue_types if t in AUTO_FIXABLE_TYPES]
+    else:
+        target_types = AUTO_FIXABLE_TYPES
+    
+    fixable_issues = [i for i in all_issues if i['type'] in target_types]
+    
+    print(f"\n🎯 Found {len(fixable_issues)} auto-fixable issues")
+    print(f"   Target types: {', '.join(target_types)}")
+    
+    if not fixable_issues:
+        print("\n✅ No auto-fixable issues found!")
+        return {
+            'status': 'success',
+            'message': 'No issues to fix',
+            'fixes_applied': 0,
+            'fixes_failed': 0,
+            'dry_run': dry_run
+        }
+    
+    # Apply fixes
+    fixes_applied = []
+    fixes_failed = []
+    fixes_skipped = []
+    
+    for i, issue in enumerate(fixable_issues[:max_fixes]):
+        print(f"\n{'='*50}")
+        print(f"[{i+1}/{min(len(fixable_issues), max_fixes)}] Fixing: {issue['type']}")
+        print(f"Details: {issue['message']}")
+        
+        try:
+            result = _apply_fix(issue, dry_run=dry_run)
+            
+            if result['status'] == 'fixed':
+                fixes_applied.append({
+                    'issue': issue,
+                    'action': result['action'],
+                    'details': result.get('details', '')
+                })
+                print(f"{'🔄 Would fix' if dry_run else '✅ Fixed'}: {result['action']}")
+                
+            elif result['status'] == 'skipped':
+                fixes_skipped.append({
+                    'issue': issue,
+                    'reason': result['reason']
+                })
+                print(f"⏭️ Skipped: {result['reason']}")
+                
+            else:
+                fixes_failed.append({
+                    'issue': issue,
+                    'error': result.get('error', 'Unknown error')
+                })
+                print(f"❌ Failed: {result.get('error', 'Unknown error')}")
+                
+        except Exception as e:
+            fixes_failed.append({
+                'issue': issue,
+                'error': str(e)
+            })
+            print(f"❌ Exception: {str(e)}")
+    
+    # Generate report
+    report = _generate_fix_report(
+        fixes_applied=fixes_applied,
+        fixes_failed=fixes_failed,
+        fixes_skipped=fixes_skipped,
+        dry_run=dry_run,
+        total_issues=len(fixable_issues),
+        max_fixes=max_fixes
+    )
+    
+    # Print summary
+    print("\n" + "=" * 70)
+    print("AUTO-FIX SUMMARY")
+    print("=" * 70)
+    print(f"Mode: {'DRY RUN' if dry_run else 'LIVE'}")
+    print(f"Total fixable issues: {len(fixable_issues)}")
+    print(f"{'Would fix' if dry_run else 'Fixed'}: {len(fixes_applied)}")
+    print(f"Skipped: {len(fixes_skipped)}")
+    print(f"Failed: {len(fixes_failed)}")
+    
+    if len(fixable_issues) > max_fixes:
+        print(f"⚠️ {len(fixable_issues) - max_fixes} issues not processed (max_fixes limit)")
+    
+    if not dry_run and fixes_applied:
+        print("\n💾 Committing database changes...")
+        frappe.db.commit()
+        print("✅ Changes committed successfully")
+    
+    print("\n" + "=" * 70)
+    
+    if dry_run:
+        print("💡 To apply these fixes, run with: --kwargs '{\"dry_run\": False}'")
+    
+    # Post to Raven if available
+    _post_fix_report_to_raven(report, dry_run)
+    
+    return report
+
+
+def _apply_fix(issue, dry_run=True):
+    """
+    Apply a single fix based on issue type.
+    
+    Returns dict with:
+        - status: 'fixed', 'skipped', or 'failed'
+        - action: description of what was done
+        - details: additional information
+    """
+    issue_type = issue['type']
+    
+    # =========================================================================
+    # FIX: NO_DEFAULT_BOM - Set an active BOM as default
+    # =========================================================================
+    if issue_type == 'NO_DEFAULT_BOM':
+        item = issue['item']
+        
+        # Find the best candidate: most recent active submitted BOM
+        candidates = frappe.db.sql("""
+            SELECT name, total_cost, creation, modified
+            FROM `tabBOM`
+            WHERE item = %s AND docstatus = 1 AND is_active = 1
+            ORDER BY creation DESC
+        """, (item,), as_dict=True)
+        
+        if not candidates:
+            return {
+                'status': 'skipped',
+                'reason': f'No active submitted BOM found for {item}'
+            }
+        
+        best_bom = candidates[0]['name']
+        
+        if not dry_run:
+            # Clear any existing defaults for this item (safety)
+            frappe.db.sql("""
+                UPDATE `tabBOM` SET is_default = 0
+                WHERE item = %s AND is_default = 1
+            """, (item,))
+            
+            # Set new default
+            frappe.db.set_value("BOM", best_bom, "is_default", 1, update_modified=False)
+        
+        return {
+            'status': 'fixed',
+            'action': f'Set {best_bom} as default BOM for {item}',
+            'details': f'Selected from {len(candidates)} candidate(s)'
+        }
+    
+    # =========================================================================
+    # FIX: MULTIPLE_DEFAULTS - Keep newest, clear others
+    # =========================================================================
+    elif issue_type == 'MULTIPLE_DEFAULTS':
+        item = issue['item']
+        bom_names = issue['bom_names'].split(',')
+        
+        # Get details to find the best one (most recent, active)
+        boms = frappe.db.sql("""
+            SELECT name, creation, modified, total_cost
+            FROM `tabBOM`
+            WHERE item = %s AND is_default = 1 AND docstatus = 1 AND is_active = 1
+            ORDER BY modified DESC
+        """, (item,), as_dict=True)
+        
+        if len(boms) < 2:
+            return {
+                'status': 'skipped',
+                'reason': f'Issue may have been resolved - only {len(boms)} default BOM found'
+            }
+        
+        keep_bom = boms[0]['name']
+        clear_boms = [b['name'] for b in boms[1:]]
+        
+        if not dry_run:
+            for bom_name in clear_boms:
+                frappe.db.set_value("BOM", bom_name, "is_default", 0, update_modified=False)
+        
+        return {
+            'status': 'fixed',
+            'action': f'Kept {keep_bom} as default, cleared {len(clear_boms)} others',
+            'details': f'Cleared: {", ".join(clear_boms)}'
+        }
+    
+    # =========================================================================
+    # FIX: INACTIVE_DEFAULT - Remove default flag from non-submitted BOMs
+    # =========================================================================
+    elif issue_type == 'INACTIVE_DEFAULT':
+        bom_name = issue['bom']
+        item = issue['item']
+        
+        # Check current state
+        bom_info = frappe.db.get_value("BOM", bom_name, 
+            ["docstatus", "is_active", "is_default"], as_dict=True)
+        
+        if not bom_info:
+            return {
+                'status': 'skipped',
+                'reason': f'BOM {bom_name} not found'
+            }
+        
+        if bom_info['docstatus'] == 1 and bom_info['is_active'] == 1:
+            return {
+                'status': 'skipped',
+                'reason': f'BOM {bom_name} is now active and submitted'
+            }
+        
+        # Check if there's another active BOM that should be default
+        alternative = frappe.db.get_value("BOM", {
+            "item": item,
+            "docstatus": 1,
+            "is_active": 1,
+            "name": ("!=", bom_name)
+        }, "name")
+        
+        if not dry_run:
+            # Remove default flag from inactive BOM
+            frappe.db.set_value("BOM", bom_name, "is_default", 0, update_modified=False)
+            
+            # Set alternative as default if available
+            if alternative:
+                frappe.db.set_value("BOM", alternative, "is_default", 1, update_modified=False)
+        
+        if alternative:
+            return {
+                'status': 'fixed',
+                'action': f'Removed default from {bom_name}, set {alternative} as new default',
+                'details': f'Original was docstatus={bom_info["docstatus"]}, is_active={bom_info["is_active"]}'
+            }
+        else:
+            return {
+                'status': 'fixed',
+                'action': f'Removed default flag from inactive BOM {bom_name}',
+                'details': f'No alternative active BOM found for {item}'
+            }
+    
+    # =========================================================================
+    # FIX: ORPHANED_BOM - Deactivate BOMs for non-existent items
+    # =========================================================================
+    elif issue_type == 'ORPHANED_BOM':
+        bom_name = issue['bom']
+        
+        if not dry_run:
+            frappe.db.set_value("BOM", bom_name, {
+                "is_active": 0,
+                "is_default": 0
+            }, update_modified=False)
+        
+        return {
+            'status': 'fixed',
+            'action': f'Deactivated orphaned BOM {bom_name}',
+            'details': f'Item {issue["item"]} no longer exists'
+        }
+    
+    # =========================================================================
+    # FIX: DISABLED_ITEM_BOM - Deactivate BOMs for disabled items
+    # =========================================================================
+    elif issue_type == 'DISABLED_ITEM_BOM':
+        bom_name = issue['bom']
+        
+        if not dry_run:
+            frappe.db.set_value("BOM", bom_name, {
+                "is_active": 0,
+                "is_default": 0
+            }, update_modified=False)
+        
+        return {
+            'status': 'fixed',
+            'action': f'Deactivated BOM {bom_name} for disabled item',
+            'details': f'Item {issue["item"]} is disabled'
+        }
+    
+    # =========================================================================
+    # Unknown issue type
+    # =========================================================================
+    return {
+        'status': 'skipped',
+        'reason': f'No auto-fix available for issue type: {issue_type}'
+    }
+
+
+def _generate_fix_report(fixes_applied, fixes_failed, fixes_skipped, 
+                         dry_run, total_issues, max_fixes):
+    """Generate detailed fix report."""
+    
+    report = {
+        'timestamp': str(now_datetime()),
+        'company': get_default_company(),
+        'mode': 'DRY_RUN' if dry_run else 'LIVE',
+        'summary': {
+            'total_fixable_issues': total_issues,
+            'max_fixes_limit': max_fixes,
+            'fixes_applied': len(fixes_applied),
+            'fixes_skipped': len(fixes_skipped),
+            'fixes_failed': len(fixes_failed),
+            'success_rate': f"{len(fixes_applied)/(len(fixes_applied)+len(fixes_failed))*100:.1f}%" if (fixes_applied or fixes_failed) else "N/A"
+        },
+        'applied': fixes_applied,
+        'skipped': fixes_skipped,
+        'failed': fixes_failed
+    }
+    
+    # Group by type
+    type_summary = {}
+    for fix in fixes_applied:
+        t = fix['issue']['type']
+        type_summary[t] = type_summary.get(t, 0) + 1
+    report['summary']['by_type'] = type_summary
+    
+    return report
+
+
+def _post_fix_report_to_raven(report, dry_run):
+    """Post fix report to Raven channel if available."""
+    try:
+        mode_emoji = "🔄" if dry_run else "✅"
+        mode_text = "DRY RUN" if dry_run else "LIVE"
+        
+        summary = report['summary']
+        
+        message = f"""**{mode_emoji} BOM Auto-Fix Report** ({mode_text})
+━━━━━━━━━━━━━━━━━━━━━━━━
+📊 **Summary:**
+• Total Issues: {summary['total_fixable_issues']}
+• {'Would Fix' if dry_run else 'Fixed'}: {summary['fixes_applied']}
+• Skipped: {summary['fixes_skipped']}
+• Failed: {summary['fixes_failed']}
+
+"""
+        if summary.get('by_type'):
+            message += "📋 **By Type:**\n"
+            for t, count in summary['by_type'].items():
+                message += f"• {t}: {count}\n"
+        
+        if not dry_run and summary['fixes_applied'] > 0:
+            message += "\n✅ Changes have been committed to database."
+        elif dry_run:
+            message += "\n💡 Run with dry_run=False to apply these fixes."
+        
+        # Try to post to Raven
+        from amb_w_tds.scripts.bom_audit_agent import post_to_raven
+        post_to_raven(message[:500])  # Truncate if needed
+        print(f"📨 Posted report to Raven")
+        
+    except Exception as e:
+        print(f"ℹ️ Could not post to Raven: {str(e)[:50]}")
+
+
+# ============================================================================
+# BATCH FIX SHORTCUTS
+# ============================================================================
+
+def fix_missing_defaults(dry_run=True):
+    """Fix all items missing default BOMs."""
+    return auto_fix(dry_run=dry_run, issue_types=['NO_DEFAULT_BOM'])
+
+
+def fix_inactive_defaults(dry_run=True):
+    """Fix all inactive BOMs marked as default."""
+    return auto_fix(dry_run=dry_run, issue_types=['INACTIVE_DEFAULT'])
+
+
+def fix_multiple_defaults(dry_run=True):
+    """Fix all items with multiple default BOMs."""
+    return auto_fix(dry_run=dry_run, issue_types=['MULTIPLE_DEFAULTS'])
+
+
+def fix_all(dry_run=True):
+    """Fix all auto-fixable issues."""
+    return auto_fix(dry_run=dry_run)
+
+
+# ============================================================================
 # QUICK ACCESS FUNCTIONS
 # ============================================================================
 
@@ -696,5 +1110,15 @@ def run_full_scan():
 
 
 def run_live():
-    """Entry point for bench execute"""
+    """Entry point for bench execute - runs health check with verbose output"""
     return run_health_check(verbose=True)
+
+
+def run_auto_fix_dry():
+    """Run auto-fix in dry-run mode (safe preview)"""
+    return auto_fix(dry_run=True)
+
+
+def run_auto_fix_live():
+    """Run auto-fix in live mode (applies changes)"""
+    return auto_fix(dry_run=False)
