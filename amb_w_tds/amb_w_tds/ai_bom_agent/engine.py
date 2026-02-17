@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-from .data_contracts import ParsedSpec, PlannedItem, PlannedBOM, GenerationReport
+from .data_contracts import ParsedSpec, PlannedItem, PlannedBOM, GenerationReport, BOMItem
 from .parser import ProductSpecificationParser
 from .templates import MasterTemplateDB
 from .erpnext_client import ItemAndBOMService
@@ -232,12 +232,12 @@ class AgentCoreEngine:
         ))
         
         # Plan FG BOM (uses last step output)
-        fg_bom_items = [{
-            "item_code": previous_output,
-            "qty": 1.0,
-            "uom": spec.target_uom,
-            "bom_no": self.erpnext.get_default_bom(previous_output)
-        }]
+        fg_bom_items = [BOMItem(
+            item_code=previous_output,
+            qty=1.0,
+            uom=spec.target_uom,
+            bom_no=self.erpnext.get_default_bom(previous_output)
+        )]
         
         fg_bom_exists = self.erpnext.bom_exists(fg_item["item_code"])
         
@@ -289,7 +289,7 @@ class AgentCoreEngine:
         spec: ParsedSpec,
         step: Dict[str, Any],
         previous_output: Optional[str]
-    ) -> List[Dict[str, Any]]:
+    ) -> List[BOMItem]:
         """Plan BOM items for a step."""
         items = []
         
@@ -303,29 +303,29 @@ class AgentCoreEngine:
             
             # If pattern references previous step output
             if "PREV_OUTPUT" in item_pattern and previous_output:
-                items.append({
-                    "item_code": previous_output,
-                    "qty": qty,
-                    "uom": uom,
-                    "bom_no": self.erpnext.get_default_bom(previous_output)
-                })
+                items.append(BOMItem(
+                    item_code=previous_output,
+                    qty=qty,
+                    uom=uom,
+                    bom_no=self.erpnext.get_default_bom(previous_output)
+                ))
             else:
                 # Resolve pattern to actual item code
                 item_code = self._resolve_item_pattern(item_pattern, spec)
-                items.append({
-                    "item_code": item_code,
-                    "qty": qty,
-                    "uom": uom
-                })
+                items.append(BOMItem(
+                    item_code=item_code,
+                    qty=qty,
+                    uom=uom
+                ))
         
         # If no input items defined but we have previous output, use it
         if not items and previous_output:
-            items.append({
-                "item_code": previous_output,
-                "qty": 1.0,
-                "uom": "Kg",
-                "bom_no": self.erpnext.get_default_bom(previous_output)
-            })
+            items.append(BOMItem(
+                item_code=previous_output,
+                qty=1.0,
+                uom="Kg",
+                bom_no=self.erpnext.get_default_bom(previous_output)
+            ))
         
         return items
     
