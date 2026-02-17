@@ -13,7 +13,8 @@ from typing import Optional
 @frappe.whitelist()
 def create_multi_level_bom_from_spec(
     request_text: str,
-    dry_run: bool = False
+    dry_run: bool = False,
+    company: str = "AMB-Wellness"
 ) -> dict:
     """
     Create a multi-level BOM hierarchy from a product specification.
@@ -80,7 +81,7 @@ def create_multi_level_bom_from_spec(
         }
     
     # Run engine
-    engine = AgentCoreEngine()
+    engine = AgentCoreEngine(company=company)
     report = engine.generate(spec, dry_run=dry_run)
     
     return report.to_dict()
