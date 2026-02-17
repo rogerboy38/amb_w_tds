@@ -1,0 +1,46 @@
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_status_manager.run_health_check
+======================================================================
+BOM STATUS MANAGER - HEALTH CHECK
+Run Time: 2026-02-16 23:24:06.905372
+Company: Formulated
+======================================================================
+
+🔍 Checking: Circular References...
+   ✅ No issues found
+
+🔍 Checking: Orphaned BOMs...
+   ✅ No issues found
+
+🔍 Checking: Missing Default BOMs...
+   ⚠️  Found 4 issue(s)
+
+🔍 Checking: Multiple Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Inactive Default BOMs...
+   ⚠️  Found 13 issue(s)
+
+🔍 Checking: Cost Anomalies...
+   ⚠️  Found 2 issue(s)
+
+🔍 Checking: Missing Components...
+   ✅ No issues found
+
+======================================================================
+HEALTH CHECK SUMMARY
+======================================================================
+Total Issues: 19
+  🔴 Critical: 0
+  🟠 High: 0
+  🟡 Medium: 17
+  🔵 Low: 2
+
+By Type:
+  - INACTIVE_DEFAULT: 13
+  - NO_DEFAULT_BOM: 4
+  - COST_ANOMALY: 2
+
+🏥 Overall Health Status: WARNING
+======================================================================
+{"timestamp": "2026-02-16 23:24:07.274115", "company": "Formulated", "health_status": "WARNING", "total_issues": 19, "severity_counts": {"MEDIUM": 17, "LOW": 2}, "type_counts": {"NO_DEFAULT_BOM": 4, "INACTIVE_DEFAULT": 13, "COST_ANOMALY": 2}, "issues": [{"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0303", "item_name": "0303 ALOE VERA NORMAL", "bom_count": 1, "message": "Item 0303 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0612", "item_name": "ALOE 70% + GOMA BB 30%", "bom_count": 1, "message": "Item 0612 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0705", "item_name": "INNOVALOE ALOE VERA GEL JUICE 1:1 ORGANIC", "bom_count": 1, "message": "Item 0705 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0712-LQE-CLRD-COSMETIC", "item_name": "INNOVALOE ALOE VERA GEL CONCENTRATE 30:1-LQE-CLRD-COSMETIC", "bom_count": 1, "message": "Item 0712-LQE-CLRD-COSMETIC has 1 active BOM(s) but none set as default"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0301-001", "item": "0301", "message": "BOM BOM-0301-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "item": "0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "message": "BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001", "message": "BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334-001", "item": "0334-TEMPLATE", "message": "BOM BOM-0334-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-20251116-014156", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-2109", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-2109 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0705-004", "item": "0705", "message": "BOM BOM-0705-004 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001", "item": "0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20", "message": "BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-001", "item": "A0303", "message": "BOM BOM-A0303-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227022211-001", "item": "ITEM_0227022211", "message": "BOM BOM-ITEM_0227022211-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227067241-001", "item": "ITEM_0227067241", "message": "BOM BOM-ITEM_0227067241-001 is marked as default but is docstatus=0"}, {"type": "COST_ANOMALY", "severity": "LOW", "bom": "BOM-0307-004", "item": "0307", "cost": 517924.06, "avg_cost": 259403.53, "deviation": "99.7%", "message": "BOM BOM-0307-004 cost $517924.06 deviates 99.7% from average $259403.53"}, {"type": "COST_ANOMALY", "severity": "LOW", "bom": "BOM-0307-006", "item": "0307", "cost": 883.0, "avg_cost": 259403.53, "deviation": "99.7%", "message": "BOM BOM-0307-006 cost $883.00 deviates 99.7% from average $259403.53"}]}
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ 
