@@ -6,7 +6,7 @@
  "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
-   "quick_entry": 1,
+ "quick_entry": 1,
  "field_order": [
   "batch_info_section",
   "naming_series",
