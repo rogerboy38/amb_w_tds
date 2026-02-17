@@ -346,12 +346,12 @@ class AgentCoreEngine:
         spec: ParsedSpec
     ) -> str:
         """Resolve an item pattern to actual item code."""
-        # Replace placeholders
+        # Replace placeholders (handle None values)
         resolved = pattern
-        resolved = resolved.replace("{FAMILY}", spec.family)
-        resolved = resolved.replace("{ATTRIBUTE}", spec.attribute)
-        resolved = resolved.replace("{FLAVOR}", spec.flavor)
-        resolved = resolved.replace("{PACKAGING}", spec.packaging)
+        resolved = resolved.replace("{FAMILY}", spec.family or "")
+        resolved = resolved.replace("{ATTRIBUTE}", spec.attribute or "")
+        resolved = resolved.replace("{FLAVOR}", spec.flavor or "")
+        resolved = resolved.replace("{PACKAGING}", spec.packaging or "")
         
         # Remove wildcards for now (could do lookup in future)
         resolved = resolved.replace("*", "")
