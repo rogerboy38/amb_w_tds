@@ -100,37 +100,40 @@ def fix_bom_0307(dry_run=True):
         return result
     
     try:
-        # Step 1: Deactivate current BOM
-        if bom.is_active:
+        # Step 1: Handle the old BOM based on docstatus
+        company = bom.company or get_default_company()
+        print(f"ℹ️ Using company: {company}")
+        
+        if bom.docstatus == 1:  # Submitted - need to cancel first
             bom.is_active = 0
             bom.is_default = 0
             bom.db_update()
-            frappe.db.commit()
-            print(f"✅ Deactivated BOM-0307-006")
-        
-        # Step 2: Cancel if submitted
-        if bom.docstatus == 1:
             bom.cancel()
             frappe.db.commit()
             print(f"✅ Cancelled BOM-0307-006")
         
-        # Step 3: Create new BOM with correct structure
-        # Get company from existing BOM or detect from defaults
-        company = bom.company or get_default_company()
-        print(f"ℹ️ Using company: {company}")
+        if bom.docstatus == 2:  # Already cancelled - delete it
+            frappe.delete_doc("BOM", "BOM-0307-006", force=True, ignore_permissions=True)
+            frappe.db.commit()
+            print(f"✅ Deleted cancelled BOM-0307-006")
+        elif bom.docstatus == 0:  # Draft - just delete
+            frappe.delete_doc("BOM", "BOM-0307-006", force=True, ignore_permissions=True)
+            frappe.db.commit()
+            print(f"✅ Deleted draft BOM-0307-006")
         
-        # Check if there's already an active correct BOM for 0307
+        # Step 2: Check if there's already an active correct BOM for 0307
         existing_correct = frappe.db.exists("BOM", {
             "item": "0307",
             "is_active": 1,
             "docstatus": 1
         })
-        if existing_correct and existing_correct != "BOM-0307-006":
+        if existing_correct:
             result["status"] = "skipped"
             result["action"] = f"Active BOM {existing_correct} already exists for 0307"
             print(f"ℹ️ Active BOM {existing_correct} already exists, skipping creation")
             return result
         
+        # Step 3: Create new BOM with correct structure
         new_bom = frappe.get_doc({
             "doctype": "BOM",
             "item": "0307",
@@ -144,7 +147,7 @@ def fix_bom_0307(dry_run=True):
                 {"item_code": "LBL0307", "qty": STANDARD_QTY["label"], "uom": "Nos"}
             ]
         })
-        # Let ERPNext auto-generate the name (will be BOM-0307-007 or similar)
+        # Let ERPNext auto-generate the name
         new_bom.insert(ignore_permissions=True)
         new_bom.submit()
         frappe.db.commit()
