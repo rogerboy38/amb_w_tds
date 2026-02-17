@@ -1,0 +1,161 @@
+In [1]: from amb_w_tds.ai_bom_agent.erpnext_client import ItemAndBOMService
+   ...: svc = ItemAndBOMService()
+   ...: result = svc.create_item(
+   ...:     item_code="TEST-DIAG-004",
+   ...:     item_name="Test Diagnostic Item",
+   ...:     item_group="SFG Semi Finished Goods",
+   ...:     stock_uom="Kg"
+   ...: )
+   ...: print("SUCCESS:", result.get("item_code"))
+   ...: frappe.delete_doc("Item", "TEST-DIAG-004", force=1)
+   ...: frappe.db.commit()
+SUCCESS: TEST-DIAG-004
+
+In [2]: exit
+
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ bash scripts/test_v9.2.0_phase3_mrp.sh
+==========================================
+  v9.2.0 Phase 3 - MRP Integration Tests
+  Site: v2.sysmayal.cloud
+  Test Item: TEST-0227-ORGANIC-VANILLA-1000L-IBC
+==========================================
+
+⚠️  WARNING: This will create REAL items and BOMs!
+    Press Ctrl+C within 5 seconds to cancel...
+
+==========================================
+T3.1 & T3.2: Live BOM Creation (dry_run=False)
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": false, "spec": {"family": "0227", "attribute": "ORGANIC", "flavor": "VANILLA", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "IBC", "target_qty": 1.0, "raw_request": "0227-ORGANIC-VANILLA-1000L-IBC", "parsed_at": "2026-02-17T14:08:23.605721"}, "items_created": [], "items_reused": [], "boms_created": [], "boms_reused": [], "errors": [{"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP1-CONCENTRATION: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP1-CONCENTRATION", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}, {"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP2-STANDARDIZATION: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP2-STANDARDIZATION", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}, {"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP3-PACKING: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP3-PACKING", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}], "warnings": [], "dry_run": false, "execution_time_seconds": 0.044631242752075195, "plan": null}
+
+==========================================
+T3.3: Verify Items Created
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Found 0 SFG items:
+
+In [5]:    ...:    ...: 
+In [6]: 
+In [7]: 
+In [8]:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.4: Verify BOMs with Multi-Level Links
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]:    ...:    ...: 
+In [4]: 
+In [4]:    ...:    ...:    ...:    ...: 
+In [5]: ✅ Found 0 BOMs:
+
+In [6]:    ...:    ...: 
+In [7]: 
+In [8]:    ...:    ...: ---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+Cell In[8], line 2
+      1 bom_items = frappe.get_all("BOM Item",
+----> 2     filters={"parent": b.name},
+      3     fields=["item_code", "qty", "bom_no"])
+
+NameError: name 'b' is not defined
+
+In [9]:    ...:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.5: Verify Operations on BOMs
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]:    ...:    ...: 
+In [3]: 
+In [3]: 
+In [4]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: 
+In [5]:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+T3.6 & T3.7: Idempotency Test (Re-run)
+==========================================
+Running engine again with same spec...
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": false, "spec": {"family": "0227", "attribute": "ORGANIC", "flavor": "VANILLA", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "IBC", "target_qty": 1.0, "raw_request": "0227-ORGANIC-VANILLA-1000L-IBC", "parsed_at": "2026-02-17T14:08:26.882220"}, "items_created": [], "items_reused": [], "boms_created": [], "boms_reused": [], "errors": [{"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP1-CONCENTRATION: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP1-CONCENTRATION", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}, {"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP2-STANDARDIZATION: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP2-STANDARDIZATION", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}, {"rule_id": "B5", "rule_name": "SFG Item Group", "message": "Item SFG-0227-STEP3-PACKING: item_group should be Semi Finished Goods, got SFG Semi Finished Goods", "severity": "ERROR", "context": {"item_code": "SFG-0227-STEP3-PACKING", "attribute": "item_group", "expected": "Semi Finished Goods", "actual": "SFG Semi Finished Goods"}}], "warnings": [], "dry_run": false, "execution_time_seconds": 0.04467034339904785, "plan": null}
+
+Expected: items_reused and boms_reused should be populated (no duplicates)
+
+==========================================
+T3.8: MRP Explosion Check (Info)
+==========================================
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [2]: 
+In [3]: 
+In [4]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+==========================================
+  Phase 3 Tests Summary
+==========================================
+
+T3.1: Live FG creation      - Check output above
+T3.2: Live SFG creation     - Check output above
+T3.3: Items verified        - Check output above
+T3.4: BOMs with bom_no      - Check output above
+T3.5: Operations            - Check output above
+T3.6: Yield calculation     - Included in BOM
+T3.7: Idempotency           - Check re-run output
+T3.8: MRP explosion         - Check output above
+
+==========================================
+
+To cleanup test data, run:
+  bench --site v2.sysmayal.cloud console
+  >>> frappe.delete_doc('Item', '0227-ORGANIC-VANILLA-1000L-IBC', force=1)
+  >>> # Delete SFGs and BOMs similarly
+
+To test full MRP cycle:
+  1. Create Sales Order for 0227-ORGANIC-VANILLA-1000L-IBC
+  2. Run Production Planning Tool
+  3. Check Material Requests and Work Orders generated
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ 
