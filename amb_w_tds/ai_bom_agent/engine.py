@@ -268,7 +268,7 @@ class AgentCoreEngine:
         return {
             "item_code": item_code,
             "item_name": f"{spec.family} {step_name} (Step {step_num})",
-            "item_group": "SFG Semi Finished Goods",
+            "item_group": "SFG Semi Finished Goods - AMB-W",
             "stock_uom": step.get("output_uom", "Kg")
         }
     
