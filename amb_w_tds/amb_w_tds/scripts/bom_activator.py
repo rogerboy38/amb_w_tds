@@ -11,11 +11,8 @@ EXCLUDED:
 """
 
 import frappe
-import json
 from datetime import datetime
 
-
-# BOMs with correct structure (0301 + E003 + LBL pattern)
 SAFE_TO_ACTIVATE = [
     "BOM-0304-001", "BOM-0305-001", "BOM-0306-001",
     "BOM-0308-001", "BOM-0309-001", "BOM-0310-001", "BOM-0311-001",
@@ -29,154 +26,54 @@ SAFE_TO_ACTIVATE = [
     "BOM-0339-001", "BOM-0340-001", "BOM-0341-001", "BOM-0342-001"
 ]
 
-# Excluded BOMs (wrong structure)
-EXCLUDED = ["BOM-0307-001", "BOM-0323-001"]
-
-
 def validate_bom_structure(bom_doc):
-    """Verify BOM has expected 0301 + E003 + LBL structure"""
     items = [d.item_code for d in bom_doc.items]
-    
     has_0301 = "0301" in items
     has_e003 = "E003" in items
     has_label = any(item.startswith("LBL") for item in items)
-    
-    # Allow M016 as optional additive (for 0304, 0306)
     allowed_items = {"0301", "E003", "M016"} | {i for i in items if i.startswith("LBL")}
     unexpected = set(items) - allowed_items
-    
-    return {
-        "has_0301": has_0301,
-        "has_e003": has_e003,
-        "has_label": has_label,
-        "unexpected_items": list(unexpected),
-        "is_valid": has_0301 and has_e003 and has_label and len(unexpected) == 0
-    }
-
+    return {"is_valid": has_0301 and has_e003 and has_label and len(unexpected) == 0, "unexpected": list(unexpected)}
 
 def activate_boms(dry_run=True):
-    """
-    Activate inactive BOMs with correct structure.
-    
-    Args:
-        dry_run: If True, only report what would be done without making changes
-    """
     frappe.set_user("Administrator")
-    
-    results = {
-        "mode": "DRY RUN" if dry_run else "LIVE",
-        "timestamp": datetime.now().isoformat(),
-        "activated": [],
-        "skipped": [],
-        "errors": []
-    }
-    
-    print("=" * 80)
+    activated, skipped = [], []
+    print("=" * 60)
     print(f"BOM ACTIVATOR - {'DRY RUN' if dry_run else 'LIVE MODE'}")
-    print("=" * 80)
-    print(f"Target BOMs: {len(SAFE_TO_ACTIVATE)}")
-    print(f"Excluded: {EXCLUDED}")
-    print("-" * 80)
-    
+    print("=" * 60)
     for bom_name in SAFE_TO_ACTIVATE:
-        try:
-            if not frappe.db.exists("BOM", bom_name):
-                results["skipped"].append({
-                    "bom": bom_name,
-                    "reason": "Does not exist"
-                })
-                print(f"⏭️  {bom_name}: SKIP - Does not exist")
-                continue
-            
-            bom = frappe.get_doc("BOM", bom_name)
-            
-            # Check if already active
-            if bom.is_active:
-                results["skipped"].append({
-                    "bom": bom_name,
-                    "reason": "Already active"
-                })
-                print(f"⏭️  {bom_name}: SKIP - Already active")
-                continue
-            
-            # Validate structure
-            validation = validate_bom_structure(bom)
-            if not validation["is_valid"]:
-                results["skipped"].append({
-                    "bom": bom_name,
-                    "reason": f"Invalid structure: {validation}"
-                })
-                print(f"⏭️  {bom_name}: SKIP - Invalid structure: {validation['unexpected_items']}")
-                continue
-            
-            # Check docstatus
-            if bom.docstatus != 1:
-                results["skipped"].append({
-                    "bom": bom_name,
-                    "reason": f"DocStatus={bom.docstatus} (not Submitted)"
-                })
-                print(f"⏭️  {bom_name}: SKIP - DocStatus={bom.docstatus} (needs to be 1)")
-                continue
-            
-            # Activate
-            if dry_run:
-                results["activated"].append({
-                    "bom": bom_name,
-                    "item": bom.item,
-                    "items": [d.item_code for d in bom.items],
-                    "action": "Would activate"
-                })
-                print(f"✅ {bom_name} ({bom.item}): WOULD ACTIVATE")
-            else:
-                bom.is_active = 1
-                bom.is_default = 1
-                bom.db_update()
-                frappe.db.commit()
-                
-                results["activated"].append({
-                    "bom": bom_name,
-                    "item": bom.item,
-                    "action": "Activated"
-                })
-                print(f"✅ {bom_name} ({bom.item}): ACTIVATED")
-                
-        except Exception as e:
-            results["errors"].append({
-                "bom": bom_name,
-                "error": str(e)
-            })
-            print(f"❌ {bom_name}: ERROR - {str(e)}")
-    
-    # Summary
-    print("=" * 80)
-    print("SUMMARY")
-    print("=" * 80)
-    print(f"Activated: {len(results['activated'])}")
-    print(f"Skipped: {len(results['skipped'])}")
-    print(f"Errors: {len(results['errors'])}")
-    
-    if results["skipped"]:
-        print("\nSkipped Details:")
-        for skip in results["skipped"]:
-            print(f"  - {skip['bom']}: {skip['reason']}")
-    
-    if results["errors"]:
-        print("\nErrors:")
-        for err in results["errors"]:
-            print(f"  - {err['bom']}: {err['error']}")
-    
-    return results
-
+        if not frappe.db.exists("BOM", bom_name):
+            skipped.append(f"{bom_name}: Not found")
+            continue
+        bom = frappe.get_doc("BOM", bom_name)
+        if bom.is_active:
+            skipped.append(f"{bom_name}: Already active")
+            continue
+        v = validate_bom_structure(bom)
+        if not v["is_valid"]:
+            skipped.append(f"{bom_name}: Invalid structure {v['unexpected']}")
+            continue
+        if bom.docstatus != 1:
+            skipped.append(f"{bom_name}: DocStatus={bom.docstatus}")
+            continue
+        if dry_run:
+            activated.append(bom_name)
+            print(f"✅ {bom_name} ({bom.item}): WOULD ACTIVATE")
+        else:
+            bom.is_active = 1
+            bom.is_default = 1
+            bom.db_update()
+            frappe.db.commit()
+            activated.append(bom_name)
+            print(f"✅ {bom_name} ({bom.item}): ACTIVATED")
+    print("=" * 60)
+    print(f"Activated: {len(activated)} | Skipped: {len(skipped)}")
+    for s in skipped:
+        print(f"  ⏭️ {s}")
+    return activated
 
 def run_dry():
-    """Run in dry-run mode (safe, no changes)"""
     return activate_boms(dry_run=True)
 
-
 def run_live():
-    """Run in live mode (makes actual changes)"""
     return activate_boms(dry_run=False)
-
-
-if __name__ == "__main__":
-    run_dry()
