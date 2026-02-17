@@ -1,41 +1,33 @@
 {
   "family": "0307",
-  "version": "2.1",
+  "version": "2.2",
   "meta": {
     "name": "Aloe Vera Gel Spray Dried Powder 200:1",
     "description": "INNOVALOE ALOE VERA GEL SPRAY DRIED POWDER 200:1 - Finished Product (FG)",
-    "created_date": "2026-02-18",
     "item_group": "Products Powder",
     "default_company": "AMB-Wellness",
-    "default_warehouse": "FG to Sell Warehouse - AMB-W",
-    "concentration_type": "200X",
-    "brix_level": 95.0,
-    "stock_uom": "Kg",
-    "has_variants": false,
-    "default_bom": "BOM-0307-004"
+    "stock_uom": "Kg"
   },
   "steps": [
     {
       "step_number": 1,
       "step_name": "Spray Drying",
       "process_type": "spray_drying",
-      "output_item_group": "Products Powder",
+      "output_item_group": "SFG Semi Finished Goods",
       "output_uom": "Kg",
-      "yield_pct": 0.95,
-      "uses_sub_assembly": true,
-      "sub_assembly_code": "0227",
-      "inputs": [
-        {"item_code": "0227", "qty_per_unit": 1.0, "uom": "Kg", "is_sub_assembly": true, "bom_no": null},
-        {"item_code": "WATER", "qty_per_unit": 500.0, "uom": "Litre"},
-        {"item_code": "ELECTRIC", "qty_per_unit": 150.0, "uom": "kWh"},
-        {"item_code": "GAS", "qty_per_unit": 50.0, "uom": "Gigajoule"},
-        {"item_code": "LABOR", "qty_per_unit": 8.0, "uom": "Hour"},
-        {"item_code": "M033", "qty_per_unit": 0.083607, "uom": "Kg"},
-        {"item_code": "M004", "qty_per_unit": 0.062551, "uom": "Kg"},
-        {"item_code": "M005", "qty_per_unit": 0.021398, "uom": "Kg"},
-        {"item_code": "M006", "qty_per_unit": 0.009789, "uom": "Kg"},
-        {"item_code": "M042", "qty_per_unit": 0.198684, "uom": "Kg"},
-        {"item_code": "E001", "qty_per_unit": 0.004351, "uom": "Piece", "is_container": true}
+      "yield_percentage": 0.95,
+      "input_items": [
+        {"item_pattern": "0227", "qty": 1.0, "uom": "Kg"},
+        {"item_pattern": "WATER", "qty": 500.0, "uom": "Litre"},
+        {"item_pattern": "ELECTRIC", "qty": 150.0, "uom": "kWh"},
+        {"item_pattern": "GAS", "qty": 50.0, "uom": "Gigajoule"},
+        {"item_pattern": "LABOR", "qty": 8.0, "uom": "Hour"},
+        {"item_pattern": "M033", "qty": 0.083607, "uom": "Kg"},
+        {"item_pattern": "M004", "qty": 0.062551, "uom": "Kg"},
+        {"item_pattern": "M005", "qty": 0.021398, "uom": "Kg"},
+        {"item_pattern": "M006", "qty": 0.009789, "uom": "Kg"},
+        {"item_pattern": "M042", "qty": 0.198684, "uom": "Kg"},
+        {"item_pattern": "E001", "qty": 0.004351, "uom": "Piece"}
       ]
     }
   ],
