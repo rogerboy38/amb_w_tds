@@ -48,7 +48,26 @@ def get_raven_channel():
 
 
 def post_to_raven(message, channel=None):
-    """Post message to Raven channel"""
+    """Post message to Raven channel
+    
+    Args:
+        message: The message text to post
+        channel: Channel name (str) or channel ID. If None, uses default 'bom-hierarchy-audit'
+    """
+    # Resolve channel name to ID if needed
+    if channel and not channel.startswith("raven-"):
+        # Assume it's a channel name, look up the ID
+        channel_id = frappe.db.get_value(
+            "Raven Channel",
+            {"channel_name": channel},
+            "name"
+        )
+        if channel_id:
+            channel = channel_id
+        else:
+            # Channel name not found, try using as-is
+            pass
+    
     if not channel:
         channel = get_raven_channel()
     if not channel:
