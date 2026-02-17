@@ -95,6 +95,10 @@ class ItemAndBOMService:
         item.is_stock_item = is_stock_item
         item.include_item_in_manufacturing = include_item_in_manufacturing
         
+        # Set mandatory custom fields for Mexico compliance
+        item.product_key = kwargs.pop("product_key", item_code)
+        item.mx_product_service_key = kwargs.pop("mx_product_service_key", "01010101")
+        
         if default_warehouse:
             item.default_warehouse = default_warehouse
         
