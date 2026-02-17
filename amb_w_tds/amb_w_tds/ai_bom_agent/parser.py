@@ -28,11 +28,13 @@ class ProductSpecificationParser:
     # Supported packaging formats with UOM mapping
     # Note: IBC/DRUM/PAIL are container ITEMS, not UOMs
     # E011 = IBC Container (new), E012 = Reused IBC Container
-    # UOM should be "Litre" for liquids (ERPNext standard name)
+    # UOM is always Kg (weight-based measurement)
+    # The "1000L" in packaging refers to container capacity, not the UOM
+    # Actual weight depends on product density (e.g., ~1080 Kg for 1000L concentrated juice)
     PACKAGING_FORMATS = {
-        "1000L-IBC": {"uom": "Litre", "volume_liters": 1000, "container_item": "E011"},
-        "200L-DRUM": {"uom": "Litre", "volume_liters": 200, "container_item": None},
-        "20L-PAIL": {"uom": "Litre", "volume_liters": 20, "container_item": None},
+        "1000L-IBC": {"uom": "Kg", "volume_liters": 1000, "container_item": "E011"},
+        "200L-DRUM": {"uom": "Kg", "volume_liters": 200, "container_item": None},
+        "20L-PAIL": {"uom": "Kg", "volume_liters": 20, "container_item": None},
     }
     
     # Common flavor patterns
