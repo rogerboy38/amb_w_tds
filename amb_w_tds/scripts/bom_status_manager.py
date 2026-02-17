@@ -1063,7 +1063,7 @@ def _post_fix_report_to_raven(report, dry_run):
             message += "\n💡 Run with dry_run=False to apply these fixes."
         
         # Try to post to Raven
-        from amb_w_tds.scripts.bom_audit_agent import post_to_raven
+        from amb_w_tds.scripts.bom_fixer import post_to_raven
         post_to_raven(message[:500])  # Truncate if needed
         print(f"📨 Posted report to Raven")
         
