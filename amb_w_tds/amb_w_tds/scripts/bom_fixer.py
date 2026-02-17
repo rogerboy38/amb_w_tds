@@ -20,6 +20,23 @@ STANDARD_QTY = {
 }
 
 
+def get_default_company():
+    """Get company from user defaults, global defaults, or first available"""
+    # 1. Try user's default company
+    company = frappe.defaults.get_user_default("company")
+    if company:
+        return company
+    
+    # 2. Try global defaults
+    company = frappe.db.get_single_value("Global Defaults", "default_company")
+    if company:
+        return company
+    
+    # 3. Fallback: get first company in system
+    company = frappe.db.get_value("Company", {}, "name")
+    return company or "Innovaloe LLC"
+
+
 def get_raven_channel():
     """Get Raven channel for posting results"""
     channel = frappe.db.get_value(
@@ -98,8 +115,9 @@ def fix_bom_0307(dry_run=True):
             print(f"✅ Cancelled BOM-0307-006")
         
         # Step 3: Create new BOM with correct structure
-        # Get company from existing BOM or default
-        company = bom.company or frappe.db.get_single_value("Global Defaults", "default_company") or "Innovaloe LLC"
+        # Get company from existing BOM or detect from defaults
+        company = bom.company or get_default_company()
+        print(f"ℹ️ Using company: {company}")
         
         new_bom = frappe.get_doc({
             "doctype": "BOM",
