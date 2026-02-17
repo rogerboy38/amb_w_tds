@@ -98,9 +98,13 @@ def fix_bom_0307(dry_run=True):
             print(f"✅ Cancelled BOM-0307-006")
         
         # Step 3: Create new BOM with correct structure
+        # Get company from existing BOM or default
+        company = bom.company or frappe.db.get_single_value("Global Defaults", "default_company") or "Innovaloe LLC"
+        
         new_bom = frappe.get_doc({
             "doctype": "BOM",
             "item": "0307",
+            "company": company,
             "quantity": 1.0,
             "is_active": 1,
             "is_default": 1,
