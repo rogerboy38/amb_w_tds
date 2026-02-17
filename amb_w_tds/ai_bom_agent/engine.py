@@ -392,9 +392,11 @@ class AgentCoreEngine:
             if bom.already_exists:
                 reused.append(bom.item_code)
             else:
+                # Convert BOMItem dataclass objects to dicts for create_bom
+                items_as_dicts = [item.to_dict() for item in bom.bom_items]
                 result = self.erpnext.create_bom(
                     item_code=bom.item_code,
-                    items=bom.bom_items,
+                    items=items_as_dicts,
                     operations=bom.operations,
                     is_default=1
                 )
