@@ -77,11 +77,11 @@ class ValidationRulesEngine:
         {
             "id": "B5",
             "name": "SFG Item Group",
-            "description": "All SFGs item_group = Semi Finished Goods",
+            "description": "All SFGs item_group = SFG Semi Finished Goods",
             "type": "item_attribute",
             "item_pattern": "SFG-*",
             "required_attributes": {
-                "item_group": "Semi Finished Goods"
+                "item_group": "SFG Semi Finished Goods"
             }
         },
         {
