@@ -16,9 +16,10 @@ class ParsedSpec:
     flavor: Optional[str] = None  # e.g., "MANGO", "PLAIN" (for 0227)
     mesh_size: Optional[str] = None  # e.g., "200-MESH" (for 0307)
     packaging: str = ""  # e.g., "1000L-IBC", "25KG-BAG"
-    target_uom: str = "Nos"
+    target_uom: str = "Kg"
     target_qty: float = 1.0
     container_item: Optional[str] = None  # e.g., "E011" for IBC Container
+    container_qty_per_kg: float = 0.0  # Fraction of container per Kg (e.g., 0.000926 for IBC)
     raw_request: str = ""
     parsed_at: datetime = field(default_factory=datetime.now)
     
@@ -32,6 +33,7 @@ class ParsedSpec:
             "target_uom": self.target_uom,
             "target_qty": self.target_qty,
             "container_item": self.container_item,
+            "container_qty_per_kg": self.container_qty_per_kg,
             "raw_request": self.raw_request,
             "parsed_at": self.parsed_at.isoformat() if self.parsed_at else None
         }

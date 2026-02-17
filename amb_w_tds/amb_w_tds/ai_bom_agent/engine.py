@@ -240,12 +240,14 @@ class AgentCoreEngine:
         )]
         
         # Add container item if specified (e.g., E011 for IBC Container)
-        # Use "Piece" UOM which allows fractions (e.g., 0.004 per Kg)
-        if spec.container_item:
+        # Use "Piece" UOM which allows fractions
+        # Qty is calculated: container_qty_per_kg (e.g., 0.000926 for 1080Kg IBC)
+        # When producing 2000 Kg: 2000 × 0.000926 = 1.85 containers
+        if spec.container_item and spec.container_qty_per_kg > 0:
             fg_bom_items.append(BOMItem(
                 item_code=spec.container_item,
-                qty=1.0,
-                uom="Piece"  # Allows fractions unlike "Nos"
+                qty=spec.container_qty_per_kg,  # Fraction per Kg
+                uom="Piece"
             ))
         
         fg_bom_exists = self.erpnext.bom_exists(fg_item["item_code"])

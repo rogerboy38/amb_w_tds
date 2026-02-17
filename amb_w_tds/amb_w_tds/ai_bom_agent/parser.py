@@ -30,11 +30,30 @@ class ProductSpecificationParser:
     # E011 = IBC Container (new), E012 = Reused IBC Container
     # UOM is always Kg (weight-based measurement)
     # The "1000L" in packaging refers to container capacity, not the UOM
-    # Actual weight depends on product density (e.g., ~1080 Kg for 1000L concentrated juice)
+    # container_capacity_kg: weight capacity considering density (~1.08 for concentrated juice)
+    # container_qty_per_kg: fraction of container per 1 Kg of product (1/capacity)
     PACKAGING_FORMATS = {
-        "1000L-IBC": {"uom": "Kg", "volume_liters": 1000, "container_item": "E011"},
-        "200L-DRUM": {"uom": "Kg", "volume_liters": 200, "container_item": None},
-        "20L-PAIL": {"uom": "Kg", "volume_liters": 20, "container_item": None},
+        "1000L-IBC": {
+            "uom": "Kg",
+            "volume_liters": 1000,
+            "container_item": "E011",
+            "container_capacity_kg": 1080,  # ~1000L × 1.08 density
+            "container_qty_per_kg": 0.000926  # 1/1080
+        },
+        "200L-DRUM": {
+            "uom": "Kg",
+            "volume_liters": 200,
+            "container_item": None,  # TODO: Add drum item code
+            "container_capacity_kg": 216,  # ~200L × 1.08 density
+            "container_qty_per_kg": 0.00463  # 1/216
+        },
+        "20L-PAIL": {
+            "uom": "Kg",
+            "volume_liters": 20,
+            "container_item": None,  # TODO: Add pail item code
+            "container_capacity_kg": 21.6,  # ~20L × 1.08 density
+            "container_qty_per_kg": 0.0463  # 1/21.6
+        },
     }
     
     # Common flavor patterns
@@ -130,6 +149,7 @@ class ProductSpecificationParser:
         pkg_info = self.PACKAGING_FORMATS[packaging]
         target_uom = pkg_info["uom"]
         container_item = pkg_info.get("container_item")
+        container_qty_per_kg = pkg_info.get("container_qty_per_kg", 0.0)
         
         return ParsedSpec(
             family=family,
@@ -138,6 +158,7 @@ class ProductSpecificationParser:
             packaging=packaging,
             target_uom=target_uom,
             container_item=container_item,
+            container_qty_per_kg=container_qty_per_kg,
             raw_request=item_code,
             parsed_at=datetime.now()
         )
@@ -223,6 +244,7 @@ class ProductSpecificationParser:
         pkg_info = self.PACKAGING_FORMATS[packaging]
         target_uom = pkg_info["uom"]
         container_item = pkg_info.get("container_item")
+        container_qty_per_kg = pkg_info.get("container_qty_per_kg", 0.0)
         
         return ParsedSpec(
             family=family,
@@ -231,6 +253,7 @@ class ProductSpecificationParser:
             packaging=packaging,
             target_uom=target_uom,
             container_item=container_item,
+            container_qty_per_kg=container_qty_per_kg,
             raw_request=request_text,
             parsed_at=datetime.now()
         )
