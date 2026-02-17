@@ -119,6 +119,18 @@ def fix_bom_0307(dry_run=True):
         company = bom.company or get_default_company()
         print(f"ℹ️ Using company: {company}")
         
+        # Check if there's already an active correct BOM for 0307
+        existing_correct = frappe.db.exists("BOM", {
+            "item": "0307",
+            "is_active": 1,
+            "docstatus": 1
+        })
+        if existing_correct and existing_correct != "BOM-0307-006":
+            result["status"] = "skipped"
+            result["action"] = f"Active BOM {existing_correct} already exists for 0307"
+            print(f"ℹ️ Active BOM {existing_correct} already exists, skipping creation")
+            return result
+        
         new_bom = frappe.get_doc({
             "doctype": "BOM",
             "item": "0307",
@@ -132,6 +144,7 @@ def fix_bom_0307(dry_run=True):
                 {"item_code": "LBL0307", "qty": STANDARD_QTY["label"], "uom": "Nos"}
             ]
         })
+        # Let ERPNext auto-generate the name (will be BOM-0307-007 or similar)
         new_bom.insert(ignore_permissions=True)
         new_bom.submit()
         frappe.db.commit()
