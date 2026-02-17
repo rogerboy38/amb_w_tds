@@ -231,13 +231,21 @@ class AgentCoreEngine:
             already_exists=fg_exists
         ))
         
-        # Plan FG BOM (uses last step output)
+        # Plan FG BOM (uses last step output + container if applicable)
         fg_bom_items = [BOMItem(
             item_code=previous_output,
             qty=1.0,
             uom=spec.target_uom,
             bom_no=self.erpnext.get_default_bom(previous_output)
         )]
+        
+        # Add container item if specified (e.g., E011 for IBC Container)
+        if spec.container_item:
+            fg_bom_items.append(BOMItem(
+                item_code=spec.container_item,
+                qty=1.0,
+                uom="Nos"  # Container is counted in units
+            ))
         
         fg_bom_exists = self.erpnext.bom_exists(fg_item["item_code"])
         

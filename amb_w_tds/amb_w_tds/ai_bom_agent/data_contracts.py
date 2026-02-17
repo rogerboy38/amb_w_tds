@@ -18,6 +18,7 @@ class ParsedSpec:
     packaging: str = ""  # e.g., "1000L-IBC", "25KG-BAG"
     target_uom: str = "Nos"
     target_qty: float = 1.0
+    container_item: Optional[str] = None  # e.g., "E011" for IBC Container
     raw_request: str = ""
     parsed_at: datetime = field(default_factory=datetime.now)
     
@@ -30,6 +31,7 @@ class ParsedSpec:
             "packaging": self.packaging,
             "target_uom": self.target_uom,
             "target_qty": self.target_qty,
+            "container_item": self.container_item,
             "raw_request": self.raw_request,
             "parsed_at": self.parsed_at.isoformat() if self.parsed_at else None
         }

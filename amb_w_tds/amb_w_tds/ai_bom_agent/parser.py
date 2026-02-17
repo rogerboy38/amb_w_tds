@@ -26,10 +26,13 @@ class ProductSpecificationParser:
     SUPPORTED_ATTRIBUTES = ["ORGANIC", "CONVENTIONAL", "KOSHER"]
     
     # Supported packaging formats with UOM mapping
+    # Note: IBC/DRUM/PAIL are container ITEMS, not UOMs
+    # E011 = IBC Container (new), E012 = Reused IBC Container
+    # UOM should be "Litre" for liquids (ERPNext standard name)
     PACKAGING_FORMATS = {
-        "1000L-IBC": {"uom": "IBC", "volume_liters": 1000},
-        "200L-DRUM": {"uom": "DRUM", "volume_liters": 200},
-        "20L-PAIL": {"uom": "PAIL", "volume_liters": 20},
+        "1000L-IBC": {"uom": "Litre", "volume_liters": 1000, "container_item": "E011"},
+        "200L-DRUM": {"uom": "Litre", "volume_liters": 200, "container_item": None},
+        "20L-PAIL": {"uom": "Litre", "volume_liters": 20, "container_item": None},
     }
     
     # Common flavor patterns
@@ -122,7 +125,9 @@ class ProductSpecificationParser:
                 f"Supported: {list(self.PACKAGING_FORMATS.keys())}"
             )
         
-        target_uom = self.PACKAGING_FORMATS[packaging]["uom"]
+        pkg_info = self.PACKAGING_FORMATS[packaging]
+        target_uom = pkg_info["uom"]
+        container_item = pkg_info.get("container_item")
         
         return ParsedSpec(
             family=family,
@@ -130,6 +135,7 @@ class ProductSpecificationParser:
             flavor=flavor,
             packaging=packaging,
             target_uom=target_uom,
+            container_item=container_item,
             raw_request=item_code,
             parsed_at=datetime.now()
         )
@@ -212,7 +218,9 @@ class ProductSpecificationParser:
             # Default to NATURAL if not specified
             flavor = "NATURAL"
         
-        target_uom = self.PACKAGING_FORMATS[packaging]["uom"]
+        pkg_info = self.PACKAGING_FORMATS[packaging]
+        target_uom = pkg_info["uom"]
+        container_item = pkg_info.get("container_item")
         
         return ParsedSpec(
             family=family,
@@ -220,6 +228,7 @@ class ProductSpecificationParser:
             flavor=flavor,
             packaging=packaging,
             target_uom=target_uom,
+            container_item=container_item,
             raw_request=request_text,
             parsed_at=datetime.now()
         )
