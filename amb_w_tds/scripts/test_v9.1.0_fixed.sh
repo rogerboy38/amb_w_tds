@@ -54,7 +54,7 @@ EOF
 
 echo ""
 echo "Test 5: BOM Health Check (actual function)"
-bench --site $SITE execute amb_w_tds.scripts.bom_status_manager.run_health_check --kwargs '{"verbose": false}' 2>&1 | tail -20
+bench --site $SITE execute amb_w_tds.scripts.bom_status_manager.run_health_check --kwargs '{"verbose": False}' 2>&1 | tail -20
 
 echo ""
 echo "Test 6: Hooks Check"
