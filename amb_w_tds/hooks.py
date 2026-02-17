@@ -43,8 +43,8 @@ doc_events = {
 
     # ---- BOM validation hooks (Phase 5)
     "BOM": {
-        "on_submit": "amb_w_tds.amb_w_tds.bom_hooks.on_bom_submit",
-        "on_update": "amb_w_tds.amb_w_tds.bom_hooks.on_bom_update",
+        "on_submit": "amb_w_tds.bom_hooks.on_bom_submit",
+        "on_update": "amb_w_tds.bom_hooks.on_bom_update",
     },
 
     # ---- stock trace / costing / batch migrations
