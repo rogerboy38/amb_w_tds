@@ -83,18 +83,19 @@ def fix_bom_0307(dry_run=True):
         return result
     
     try:
-        # Step 1: Deactivate current BOM (preserve for audit trail, don't cancel)
-        if bom.is_active or bom.is_default:
+        # Step 1: Deactivate current BOM
+        if bom.is_active:
             bom.is_active = 0
             bom.is_default = 0
             bom.db_update()
             frappe.db.commit()
-            print(f"✅ Deactivated BOM-0307-006 (preserved for Work Order history)")
+            print(f"✅ Deactivated BOM-0307-006")
         
-        # Step 2: Skip cancellation - keep linked to Work Order for audit trail
-        # The old BOM stays as inactive historical record
+        # Step 2: Cancel if submitted
         if bom.docstatus == 1:
-            print(f"ℹ️ Keeping BOM-0307-006 submitted (linked to Work Orders)")
+            bom.cancel()
+            frappe.db.commit()
+            print(f"✅ Cancelled BOM-0307-006")
         
         # Step 3: Create new BOM with correct structure
         new_bom = frappe.get_doc({
@@ -114,7 +115,7 @@ def fix_bom_0307(dry_run=True):
         frappe.db.commit()
         
         result["status"] = "fixed"
-        result["action"] = f"Deactivated BOM-0307-006 (kept for history), created {new_bom.name} with 0301+E003+LBL0307"
+        result["action"] = f"Cancelled BOM-0307-006, created {new_bom.name} with 0301+E003+LBL0307"
         print(f"✅ Created and submitted {new_bom.name}")
         
     except Exception as e:
