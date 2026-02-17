@@ -1,0 +1,111 @@
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench && bench execute amb_w_tds.scripts.bom_repair_agent.run_audit
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+================================================================================
+BOM REPAIR AGENT - Phase 2
+Mode: DRY RUN (no changes)
+================================================================================
+
+📊 Fetching existing BOMs from database...
+   Found 501 total BOMs for 483 unique items
+
+🔎 Discovering all FG items with active BOMs...
+   Found 2 items with active default BOMs
+
+🔍 Auditing Semi Finished (3 items)...
+------------------------------------------------------------
+   ⚠️  0301: FLAT BOM - missing parent items ['0227-PERMEADO']
+      Current items: ['LBL4INX6INBL', '0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'E030', 'E028']
+   ❌ 0302: NO BOM EXISTS
+   ⚠️  0303: FLAT BOM - missing parent items ['0227-NORMAL']
+      Current items: ['TRANSP_LEAF', 'GAS', 'ELECTRIC', 'WATER', 'MAQ']...
+
+🔍 Auditing Specialized Mixes (3 items)...
+------------------------------------------------------------
+   ⚠️  0304: BOM exists but INACTIVE (BOM-0304-001)
+   ⚠️  0305: BOM exists but INACTIVE (BOM-0305-001)
+   ⚠️  0306: BOM exists but INACTIVE (BOM-0306-001)
+
+🔍 Auditing Standard Variants (36 items)...
+------------------------------------------------------------
+   ⚠️  0307: FLAT BOM - missing parent items ['0301']
+      Current items: ['0307', 'LBL0307']
+   ⚠️  0308: BOM exists but INACTIVE (BOM-0308-001)
+   ⚠️  0309: BOM exists but INACTIVE (BOM-0309-001)
+   ⚠️  0310: BOM exists but INACTIVE (BOM-0310-001)
+   ⚠️  0311: BOM exists but INACTIVE (BOM-0311-001)
+   ⚠️  0312: BOM exists but INACTIVE (BOM-0312-001)
+   ⚠️  0313: BOM exists but INACTIVE (BOM-0313-001)
+   ⚠️  0314: BOM exists but INACTIVE (BOM-0314-001)
+   ⚠️  0315: BOM exists but INACTIVE (BOM-0315-001)
+   ⚠️  0316: BOM exists but INACTIVE (BOM-0316-001)
+   ⚠️  0317: BOM exists but INACTIVE (BOM-0317-001)
+   ⚠️  0318: BOM exists but INACTIVE (BOM-0318-001)
+   ⚠️  0319: BOM exists but INACTIVE (BOM-0319-001)
+   ⚠️  0320: BOM exists but INACTIVE (BOM-0320-001)
+   ⚠️  0321: BOM exists but INACTIVE (BOM-0321-001)
+   ⚠️  0322: BOM exists but INACTIVE (BOM-0322-001)
+   ⚠️  0323: BOM exists but INACTIVE (BOM-0323-001)
+   ⚠️  0324: BOM exists but INACTIVE (BOM-0324-001)
+   ⚠️  0325: BOM exists but INACTIVE (BOM-0325-001)
+   ⚠️  0326: BOM exists but INACTIVE (BOM-0326-001)
+   ⚠️  0327: BOM exists but INACTIVE (BOM-0327-001)
+   ⚠️  0328: BOM exists but INACTIVE (BOM-0328-001)
+   ⚠️  0329: BOM exists but INACTIVE (BOM-0329-001)
+   ⚠️  0330: BOM exists but INACTIVE (BOM-0330-001)
+   ⚠️  0331: BOM exists but INACTIVE (BOM-0331-001)
+   ⚠️  0332: BOM exists but INACTIVE (BOM-0332-001)
+   ⚠️  0333: BOM exists but INACTIVE (BOM-0333-001)
+   ❌ 0334: NO BOM EXISTS
+   ⚠️  0335: BOM exists but INACTIVE (BOM-0335-001)
+   ⚠️  0336: BOM exists but INACTIVE (BOM-0336-001)
+   ⚠️  0337: BOM exists but INACTIVE (BOM-0337-001)
+   ⚠️  0338: BOM exists but INACTIVE (BOM-0338-001)
+   ⚠️  0339: BOM exists but INACTIVE (BOM-0339-001)
+   ⚠️  0340: BOM exists but INACTIVE (BOM-0340-001)
+   ⚠️  0341: BOM exists but INACTIVE (BOM-0341-001)
+   ⚠️  0342: BOM exists but INACTIVE (BOM-0342-001)
+
+🔍 Auditing Additional Fg (4 items)...
+------------------------------------------------------------
+   📋 0705: Active BOM (BOM-0705-004) with 9 items
+   ❌ 0803-KOSHER-ORGANIC: NO BOM EXISTS
+   ⚠️  A0303: FLAT BOM - missing parent items ['0227-NORMAL']
+      Current items: ['E004', 'E008', 'M016', '0303', 'E009']...
+   📋 0300 M: Active BOM (BOM-0300 M-001) with 4 items
+
+================================================================================
+AUDIT SUMMARY
+================================================================================
+   Total Expected Boms: 46
+   Total Audited: 46
+   Discovered Fg Items: 0
+   Missing Boms: 3
+   Flat Boms: 4
+   Correct Hierarchy: 0
+   Inactive Boms: 37
+   Compliance Rate: 0.0%
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+   [HIGH] Missing BOMs
+   Action: Create 3 missing BOMs
+   Items: 0302, 0334, 0803-KOSHER-ORGANIC
+
+   [MEDIUM] Flat BOMs
+   Action: Update 4 BOMs to include proper parent items
+   Items: 0301, 0303, 0307, A0303
+
+   [LOW] Inactive BOMs
+   Action: Review and activate 37 inactive BOMs
+   Items: 0304, 0305, 0306, 0308, 0309... (+32 more)
+
+📁 Report saved: /tmp/bom_repair_20260216_182353.json
+
+⚠️  Raven channel 'bom-hierarchy-audit' not found
+{"timestamp": "2026-02-16T18:23:53.354736", "site": "v2.sysmayal.cloud/", "mode": "DRY RUN", "summary": {"total_expected_boms": 46, "total_audited": 46, "discovered_fg_items": 0, "missing_boms": 3, "flat_boms": 4, "correct_hierarchy": 0, "inactive_boms": 37, "compliance_rate": 0.0}, "details": {"missing_boms": [{"item_code": "0302", "expected_name": "Retenido Powder", "expected_type": "Semi-Finished", "expected_parents": ["0227-RETENIDO"]}, {"item_code": "0334", "expected_name": "Standard Variant 0334", "expected_type": "Finished", "expected_parents": ["0301"]}, {"item_code": "0803-KOSHER-ORGANIC", "expected_name": "ORGANIC INNER LEAF POWDER", "expected_type": "Finished", "expected_parents": []}], "flat_boms": [{"item_code": "0301", "bom_name": "BOM-0301-001", "expected_name": "Permeado Powder", "expected_parents": ["0227-PERMEADO"], "actual_items": ["LBL4INX6INBL", "0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL", "E030", "E028"]}, {"item_code": "0303", "bom_name": "BOM-0303-005", "expected_name": "Normal Powder", "expected_parents": ["0227-NORMAL"], "actual_items": ["TRANSP_LEAF", "GAS", "ELECTRIC", "WATER", "MAQ", "LABOR"]}, {"item_code": "0307", "bom_name": "BOM-0307-006", "expected_name": "Standard Variant 0307", "expected_parents": ["0301"], "actual_items": ["0307", "LBL0307"]}, {"item_code": "A0303", "bom_name": "BOM-A0303-001", "expected_name": "ALOE VERA NORMAL (Dry 200x)", "expected_parents": ["0227-NORMAL"], "actual_items": ["E004", "E008", "M016", "0303", "E009", "0712-LQE-CLRD-COSMETIC"]}], "correct_hierarchy": [], "inactive_boms": [{"item_code": "0304", "bom_name": "BOM-0304-001", "expected_name": "90% Aloe / 10% Goma BB", "docstatus": 1}, {"item_code": "0305", "bom_name": "BOM-0305-001", "expected_name": "Permeado NMT 3%PS", "docstatus": 1}, {"item_code": "0306", "bom_name": "BOM-0306-001", "expected_name": "70% Aloe / 30% Goma BB", "docstatus": 1}, {"item_code": "0308", "bom_name": "BOM-0308-001", "expected_name": "Standard Variant 0308", "docstatus": 1}, {"item_code": "0309", "bom_name": "BOM-0309-001", "expected_name": "Standard Variant 0309", "docstatus": 1}, {"item_code": "0310", "bom_name": "BOM-0310-001", "expected_name": "Standard Variant 0310", "docstatus": 1}, {"item_code": "0311", "bom_name": "BOM-0311-001", "expected_name": "Standard Variant 0311", "docstatus": 1}, {"item_code": "0312", "bom_name": "BOM-0312-001", "expected_name": "Standard Variant 0312", "docstatus": 1}, {"item_code": "0313", "bom_name": "BOM-0313-001", "expected_name": "Standard Variant 0313", "docstatus": 1}, {"item_code": "0314", "bom_name": "BOM-0314-001", "expected_name": "Standard Variant 0314", "docstatus": 1}, {"item_code": "0315", "bom_name": "BOM-0315-001", "expected_name": "Standard Variant 0315", "docstatus": 1}, {"item_code": "0316", "bom_name": "BOM-0316-001", "expected_name": "Standard Variant 0316", "docstatus": 1}, {"item_code": "0317", "bom_name": "BOM-0317-001", "expected_name": "Standard Variant 0317", "docstatus": 1}, {"item_code": "0318", "bom_name": "BOM-0318-001", "expected_name": "Standard Variant 0318", "docstatus": 1}, {"item_code": "0319", "bom_name": "BOM-0319-001", "expected_name": "Standard Variant 0319", "docstatus": 1}, {"item_code": "0320", "bom_name": "BOM-0320-001", "expected_name": "Standard Variant 0320", "docstatus": 1}, {"item_code": "0321", "bom_name": "BOM-0321-001", "expected_name": "Standard Variant 0321", "docstatus": 1}, {"item_code": "0322", "bom_name": "BOM-0322-001", "expected_name": "Standard Variant 0322", "docstatus": 1}, {"item_code": "0323", "bom_name": "BOM-0323-001", "expected_name": "Standard Variant 0323", "docstatus": 0}, {"item_code": "0324", "bom_name": "BOM-0324-001", "expected_name": "Standard Variant 0324", "docstatus": 1}, {"item_code": "0325", "bom_name": "BOM-0325-001", "expected_name": "Standard Variant 0325", "docstatus": 1}, {"item_code": "0326", "bom_name": "BOM-0326-001", "expected_name": "Standard Variant 0326", "docstatus": 1}, {"item_code": "0327", "bom_name": "BOM-0327-001", "expected_name": "Standard Variant 0327", "docstatus": 1}, {"item_code": "0328", "bom_name": "BOM-0328-001", "expected_name": "Standard Variant 0328", "docstatus": 1}, {"item_code": "0329", "bom_name": "BOM-0329-001", "expected_name": "Standard Variant 0329", "docstatus": 1}, {"item_code": "0330", "bom_name": "BOM-0330-001", "expected_name": "Standard Variant 0330", "docstatus": 1}, {"item_code": "0331", "bom_name": "BOM-0331-001", "expected_name": "Standard Variant 0331", "docstatus": 1}, {"item_code": "0332", "bom_name": "BOM-0332-001", "expected_name": "Standard Variant 0332", "docstatus": 1}, {"item_code": "0333", "bom_name": "BOM-0333-001", "expected_name": "Standard Variant 0333", "docstatus": 1}, {"item_code": "0335", "bom_name": "BOM-0335-001", "expected_name": "Standard Variant 0335", "docstatus": 1}, {"item_code": "0336", "bom_name": "BOM-0336-001", "expected_name": "Standard Variant 0336", "docstatus": 1}, {"item_code": "0337", "bom_name": "BOM-0337-001", "expected_name": "Standard Variant 0337", "docstatus": 1}, {"item_code": "0338", "bom_name": "BOM-0338-001", "expected_name": "Standard Variant 0338", "docstatus": 1}, {"item_code": "0339", "bom_name": "BOM-0339-001", "expected_name": "Standard Variant 0339", "docstatus": 1}, {"item_code": "0340", "bom_name": "BOM-0340-001", "expected_name": "Standard Variant 0340", "docstatus": 1}, {"item_code": "0341", "bom_name": "BOM-0341-001", "expected_name": "Standard Variant 0341", "docstatus": 1}, {"item_code": "0342", "bom_name": "BOM-0342-001", "expected_name": "Standard Variant 0342", "docstatus": 1}], "discovered_fg": [], "repairs_made": []}, "recommendations": [{"priority": "HIGH", "category": "Missing BOMs", "action": "Create 3 missing BOMs", "items": ["0302", "0334", "0803-KOSHER-ORGANIC"]}, {"priority": "MEDIUM", "category": "Flat BOMs", "action": "Update 4 BOMs to include proper parent items", "items": ["0301", "0303", "0307", "A0303"]}, {"priority": "LOW", "category": "Inactive BOMs", "action": "Review and activate 37 inactive BOMs", "items": ["0304", "0305", "0306", "0308", "0309", "0310", "0311", "0312", "0313", "0314", "0315", "0316", "0317", "0318", "0319", "0320", "0321", "0322", "0323", "0324", "0325", "0326", "0327", "0328", "0329", "0330", "0331", "0332", "0333", "0335", "0336", "0337", "0338", "0339", "0340", "0341", "0342"]}]}
+frappe@UbuntuVM:~/frappe-bench$ 

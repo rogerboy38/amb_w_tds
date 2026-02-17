@@ -11,3 +11,6 @@ amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb*.backup*
 amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb(1).js
 amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb2.py
 amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.py.backup2
+
+# Backup directories
+.git_backup_*/

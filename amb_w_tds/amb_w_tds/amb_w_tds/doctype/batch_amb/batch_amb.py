@@ -552,6 +552,29 @@ class BatchAMB(NestedSet):
         return timeline
     
     @frappe.whitelist()
+    def fixed_generate_serial_numbers(self, quantity=5, prefix=None):
+        """
+        Generate serial numbers for this batch.
+        Called from client-side.
+        """
+        try:
+            frappe.msgprint(f"Generating {quantity} serial numbers for {self.name} with prefix '{prefix}'")
+            # --- Aquí va tu lógica real de generación ---
+            # 1. Usar self para acceder a los datos del batch actual
+            # self.custom_serial_numbers = [] # Ejemplo
+            # self.save()
+            # 2. Retornar resultado
+            # -----------------------------------------
+            return {
+                "status": "success",
+                "message": f"Generated {quantity} serial numbers",
+                "batch_name": self.name
+            }
+        except Exception as e:
+            frappe.log_error(f"Error in fixed_generate_serial_numbers: {str(e)}")
+            frappe.throw(f"Error generating serial numbers: {str(e)}")
+    
+    @frappe.whitelist()
     def get_processing_metrics(self):
         """Get processing metrics for analytics"""
         metrics = {
@@ -1355,3 +1378,147 @@ def integrate_serial_tracking(batch_name):
         }
 
 #
+
+# ============================================
+# QUICK ENTRY HELPER METHODS
+# ============================================
+
+@frappe.whitelist()
+def get_sales_orders_with_work_orders():
+    """Get Sales Orders that have linked Work Orders for Quick Entry dropdown."""
+    try:
+        # Get unique Sales Orders that have Work Orders
+        work_orders = frappe.get_all(
+            'Work Order',
+            filters={
+                'docstatus': ['!=', 2],
+                'sales_order': ['is', 'set']
+            },
+            fields=['sales_order', 'sales_order_item'],
+            group_by='sales_order',
+            order_by='creation desc',
+            limit=50
+        )
+
+        sales_orders = []
+        seen = set()
+        for wo in work_orders:
+            so_name = wo.sales_order
+            if so_name and so_name not in seen:
+                seen.add(so_name)
+                so = frappe.get_value('Sales Order', so_name,
+                    ['name', 'customer_name', 'transaction_date', 'status'],
+                    as_dict=True
+                )
+                if so:
+                    sales_orders.append(so)
+
+        return {'success': True, 'sales_orders': sales_orders}
+
+    except Exception as e:
+        frappe.log_error(f"Quick Entry - get_sales_orders error: {str(e)}")
+        return {'success': False, 'message': str(e)}
+
+
+@frappe.whitelist()
+def get_work_orders_for_sales_order(sales_order):
+    """Get Work Orders linked to a Sales Order for Quick Entry cascading.
+
+    Args:
+        sales_order: Sales Order name
+
+    Returns:
+        dict with work_orders list including production_item, qty, status, project
+    """
+    try:
+        if not sales_order:
+            return {'success': False, 'message': 'No Sales Order provided'}
+
+        # Get the project from Sales Order
+        so_project = frappe.db.get_value('Sales Order', sales_order, 'project')
+
+        filters = {
+            'docstatus': ['!=', 2],
+            'status': ['not in', ['Stopped', 'Cancelled']]
+        }
+
+        # If SO has a project, get WOs by project (broader scope)
+        # Otherwise filter directly by sales_order
+        if so_project:
+            filters['project'] = so_project
+        else:
+            filters['sales_order'] = sales_order
+
+        work_orders = frappe.get_all(
+            'Work Order',
+            filters=filters,
+            fields=[
+                'name', 'production_item', 'item_name', 'qty',
+                'status', 'sales_order', 'project',
+                'planned_start_date', 'actual_start_date',
+                'custom_plant_code', 'bom_no'
+            ],
+            order_by='creation desc',
+            limit=50
+        )
+
+        return {
+            'success': True,
+            'work_orders': work_orders,
+            'project': so_project,
+            'sales_order': sales_order
+        }
+
+    except Exception as e:
+        frappe.log_error(f"Quick Entry - get_work_orders error: {str(e)}")
+        return {'success': False, 'message': str(e)}
+
+
+@frappe.whitelist()
+def get_quick_entry_defaults(work_order_name):
+    """Get all defaults needed for Quick Entry from a Work Order.
+
+    This is the main method called when user selects a Work Order
+    in the Quick Entry popup. It returns all fields needed to
+    create a valid Batch AMB with proper golden number generation.
+
+    Args:
+        work_order_name: Work Order name (e.g. MFG-WO-02225)
+
+    Returns:
+        dict with item_to_manufacture, sales_order, plant_code, etc.
+    """
+    try:
+        if not work_order_name:
+            return {'success': False, 'message': 'No Work Order provided'}
+
+        wo = frappe.get_doc('Work Order', work_order_name)
+
+        # Get production plant info
+        plant_code = ''
+        production_plant = ''
+        if hasattr(wo, 'custom_plant_code') and wo.custom_plant_code:
+            plant_code = wo.custom_plant_code
+        if hasattr(wo, 'production_plant') and wo.production_plant:
+            production_plant = wo.production_plant
+
+        return {
+            'success': True,
+            'work_order': wo.name,
+            'production_item': wo.production_item,
+            'item_name': wo.item_name,
+            'qty': wo.qty,
+            'sales_order': wo.sales_order or '',
+            'project': wo.project or '',
+            'bom_no': wo.bom_no or '',
+            'planned_start_date': str(wo.planned_start_date) if wo.planned_start_date else '',
+            'actual_start_date': str(wo.actual_start_date) if wo.actual_start_date else '',
+            'company': wo.company or '',
+            'plant_code': plant_code,
+            'production_plant': production_plant,
+            'status': wo.status
+        }
+
+    except Exception as e:
+        frappe.log_error(f"Quick Entry - get_defaults error: {str(e)}")
+        return {'success': False, 'message': str(e)}
