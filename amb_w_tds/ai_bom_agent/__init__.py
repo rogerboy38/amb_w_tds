@@ -1,12 +1,31 @@
 # AI BOM Agent - v9.2.0
 # Hierarchical BOM Creation System for AMB W TDS
 
+"""
+BOM Creator Agent v9.2.0
+
+AI-powered multi-level BOM creation system for ERPNext.
+
+Modules:
+- data_contracts: Dataclasses for structured data
+- parser: Product specification parser
+- templates: Master template database
+- erpnext_client: ERPNext Item/BOM operations
+- validators: Business rule validation
+- engine: Core orchestration engine
+- api: Frappe API endpoints
+"""
+
 __version__ = "9.2.0"
 
 from pathlib import Path
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# Available product families
+SUPPORTED_FAMILIES = ["0227", "0307"]
+
+# Legacy helper functions (use MasterTemplateDB for new code)
 def get_template(family: str) -> dict:
     """Load master template for a product family"""
     import json
@@ -51,5 +70,32 @@ def get_operations_mapping() -> dict:
     with open(ops_file) as f:
         return json.load(f)
 
-# Available product families
-SUPPORTED_FAMILIES = ["0227", "0307"]
+# Import core classes for external access
+from .data_contracts import ParsedSpec, PlannedItem, PlannedBOM, GenerationReport
+from .parser import ProductSpecificationParser
+from .templates import MasterTemplateDB
+from .erpnext_client import ItemAndBOMService
+from .validators import ValidationRulesEngine, ValidationError
+from .engine import AgentCoreEngine, create_engine
+
+__all__ = [
+    "ParsedSpec",
+    "PlannedItem",
+    "PlannedBOM",
+    "GenerationReport",
+    "ProductSpecificationParser",
+    "MasterTemplateDB",
+    "ItemAndBOMService",
+    "ValidationRulesEngine",
+    "ValidationError",
+    "AgentCoreEngine",
+    "create_engine",
+    "TEMPLATES_DIR",
+    "SUPPORTED_FAMILIES",
+    "get_template",
+    "get_schema",
+    "get_business_rules",
+    "get_yield_rules",
+    "get_uom_conversions",
+    "get_operations_mapping",
+]
