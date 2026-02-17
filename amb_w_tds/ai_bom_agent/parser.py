@@ -1,162 +1,223 @@
 """
 Product Specification Parser for BOM Creator Agent v9.2.0
 
-Parses product requests (natural language or item codes) into structured specifications.
+Parses product requests for AMB-Wellness Aloe Vera production line.
+Real production data aligned with ERPNext v16.
+
+Product Families:
+- 0227: Aloe Vera Gel Concentrate 30:1 (SFG, liquid, has variants)
+- 0307: Aloe Vera Gel Spray Dried Powder 200:1 (FG, powder)
+- 0303: Aloe Vera Normal (intermediate powder)
+- 0301: Other powder products
+
+Containers (Items, NOT UOMs):
+- E001: 220L Barrel Blue (capacity ~230 Kg)
+- E011: IBC Container 1000L (capacity ~1080 Kg)
+- E012: Reused IBC Container
 """
 
 import re
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from .data_contracts import ParsedSpec
 
 
 class ProductSpecificationParser:
     """
-    Parses product specifications from various input formats.
+    Parses product specifications for AMB-Wellness Aloe Vera production.
     
-    Supported families: 0227, 0307
-    Attributes: ORGANIC, CONVENTIONAL, KOSHER
-    Packaging: 1000L-IBC, 200L-DRUM, 20L-PAIL
+    Supported families: 0227, 0307, 0303, 0301
+    All products measured in Kg (weight-based)
+    Containers are items with FRACTIONAL Piece quantities
     """
     
-    # Supported product families
-    SUPPORTED_FAMILIES = ["0227", "0307"]
-    
-    # Supported attributes
-    SUPPORTED_ATTRIBUTES = ["ORGANIC", "CONVENTIONAL", "KOSHER"]
-    
-    # Supported packaging formats with UOM mapping
-    # Note: IBC/DRUM/PAIL are container ITEMS, not UOMs
-    # E011 = IBC Container (new), E012 = Reused IBC Container
-    # UOM is always Kg (weight-based measurement)
-    # The "1000L" in packaging refers to container capacity, not the UOM
-    # container_capacity_kg: weight capacity considering density (~1.08 for concentrated juice)
-    # container_qty_per_kg: fraction of container per 1 Kg of product (1/capacity)
-    PACKAGING_FORMATS = {
-        "1000L-IBC": {
-            "uom": "Kg",
-            "volume_liters": 1000,
-            "container_item": "E011",
-            "container_capacity_kg": 1080,  # ~1000L × 1.08 density
-            "container_qty_per_kg": 0.000926  # 1/1080
+    # Supported product families with their characteristics
+    PRODUCT_FAMILIES = {
+        "0227": {
+            "name": "Aloe Vera Gel Concentrate 30:1",
+            "type": "SFG",  # Sub-assembly
+            "item_group": "Products Liquid",
+            "concentration": "30X",
+            "has_variants": True,
+            "uom": "Kg"
         },
-        "200L-DRUM": {
-            "uom": "Kg",
-            "volume_liters": 200,
-            "container_item": None,  # TODO: Add drum item code
-            "container_capacity_kg": 216,  # ~200L × 1.08 density
-            "container_qty_per_kg": 0.00463  # 1/216
+        "0307": {
+            "name": "Aloe Vera Gel Spray Dried Powder 200:1",
+            "type": "FG",  # Finished Good
+            "item_group": "Products Powder",
+            "concentration": "200X",
+            "has_variants": False,
+            "uom": "Kg"
         },
-        "20L-PAIL": {
-            "uom": "Kg",
-            "volume_liters": 20,
-            "container_item": None,  # TODO: Add pail item code
-            "container_capacity_kg": 21.6,  # ~20L × 1.08 density
-            "container_qty_per_kg": 0.0463  # 1/21.6
+        "0303": {
+            "name": "Aloe Vera Normal (Powder)",
+            "type": "SFG",
+            "item_group": "Dry 200x",
+            "concentration": "200X",
+            "has_variants": False,
+            "uom": "Kg"
         },
+        "0301": {
+            "name": "Aloe Vera Powder Base",
+            "type": "SFG",
+            "item_group": "Products Powder",
+            "concentration": "200X",
+            "has_variants": False,
+            "uom": "Kg"
+        }
     }
     
-    # Common flavor patterns
-    COMMON_FLAVORS = [
-        "NATURAL", "UNFLAVORED", "STRAWBERRY", "MANGO", "PINEAPPLE",
-        "ORANGE", "GRAPE", "APPLE", "LEMON", "LIME", "BERRY",
-        "TROPICAL", "CITRUS", "MIXED", "PLAIN"
-    ]
+    SUPPORTED_FAMILIES = list(PRODUCT_FAMILIES.keys())
     
-    # Pattern for item codes: FAMILY-ATTRIBUTE-FLAVOR-PACKAGING
-    ITEM_CODE_PATTERN = re.compile(
-        r"^(\d{4})-([A-Z]+)-([A-Z]+)-(\d+L-[A-Z]+)$",
-        re.IGNORECASE
-    )
+    # Container definitions - Items NOT UOMs
+    # Containers use FRACTIONAL Piece quantities
+    CONTAINERS = {
+        "E001": {
+            "name": "220L Barrel Blue",
+            "capacity_liters": 220,
+            "capacity_kg": 230,  # Approx weight capacity
+            "qty_per_kg": 0.004351,  # 1/230
+            "uom": "Piece"
+        },
+        "E011": {
+            "name": "IBC Container",
+            "capacity_liters": 1000,
+            "capacity_kg": 1080,  # 1000L × ~1.08 density
+            "qty_per_kg": 0.000926,  # 1/1080
+            "uom": "Piece"
+        },
+        "E012": {
+            "name": "Reused IBC Container",
+            "capacity_liters": 1000,
+            "capacity_kg": 1080,
+            "qty_per_kg": 0.000926,
+            "uom": "Piece"
+        }
+    }
+    
+    # Packaging formats map to container items
+    PACKAGING_FORMATS = {
+        "1000L-IBC": {
+            "container_item": "E011",
+            "uom": "Kg",
+            "capacity_kg": 1080,
+            "qty_per_kg": 0.000926
+        },
+        "200L-DRUM": {
+            "container_item": "E001",
+            "uom": "Kg",
+            "capacity_kg": 230,
+            "qty_per_kg": 0.004351
+        },
+        "220L-DRUM": {
+            "container_item": "E001",
+            "uom": "Kg",
+            "capacity_kg": 230,
+            "qty_per_kg": 0.004351
+        },
+        "20L-PAIL": {
+            "container_item": None,  # TODO: Add pail item code
+            "uom": "Kg",
+            "capacity_kg": 21.6,
+            "qty_per_kg": 0.0463
+        },
+        "25KG-BAG": {
+            "container_item": None,  # For powder products
+            "uom": "Kg",
+            "capacity_kg": 25,
+            "qty_per_kg": 0.04
+        }
+    }
+    
+    # Item code patterns - Real AMB-Wellness format
+    # Examples: 0227, 0307, 0303, A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM
+    ITEM_CODE_PATTERNS = [
+        # Simple numeric: 0227, 0307, 0303
+        re.compile(r"^(\d{4})$"),
+        # With variant suffix: 0227-XXXXX
+        re.compile(r"^(\d{4})-(.+)$"),
+        # Extended format: A0303-ORGANIC-AS NC-...
+        re.compile(r"^[A]?(\d{4})-(.+)$", re.IGNORECASE)
+    ]
     
     def parse(self, request_text: str) -> ParsedSpec:
         """
-        Parse a product request (natural language or item code) into ParsedSpec.
+        Parse a product request into ParsedSpec.
         
         Args:
-            request_text: Raw request text or item code
+            request_text: Item code or natural language request
             
         Returns:
             ParsedSpec with extracted information
             
         Raises:
-            ValueError: If parsing fails or required info is missing
+            ValueError: If parsing fails
         """
         request_text = request_text.strip()
         
         # Try parsing as item code first
-        item_match = self.ITEM_CODE_PATTERN.match(request_text)
-        if item_match:
-            return self.parse_item_code(request_text)
+        for pattern in self.ITEM_CODE_PATTERNS:
+            match = pattern.match(request_text)
+            if match:
+                return self._parse_item_code(request_text, match)
         
-        # Parse as natural language request
+        # Try natural language
         return self._parse_natural_language(request_text)
     
-    def parse_item_code(self, item_code: str) -> ParsedSpec:
+    def _parse_item_code(self, item_code: str, match: re.Match) -> ParsedSpec:
         """
-        Parse a structured item code into ParsedSpec.
+        Parse a structured item code.
         
-        Expected format: FAMILY-ATTRIBUTE-FLAVOR-PACKAGING
-        Example: 0227-ORGANIC-NATURAL-1000L-IBC
-        
-        Args:
-            item_code: Item code string
-            
-        Returns:
-            ParsedSpec with extracted components
-            
-        Raises:
-            ValueError: If item code format is invalid
+        Formats:
+        - Simple: 0227, 0307
+        - With variant: 0227-ORGANIC, 0307-STANDARD
+        - Extended: A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM
         """
-        item_code = item_code.strip().upper()
+        groups = match.groups()
+        family = groups[0]
+        variant = groups[1] if len(groups) > 1 else None
         
-        # Split and validate components
-        parts = item_code.split("-")
-        
-        if len(parts) < 4:
-            raise ValueError(
-                f"Invalid item code format: '{item_code}'. "
-                f"Expected: FAMILY-ATTRIBUTE-FLAVOR-PACKAGING"
-            )
-        
-        family = parts[0]
-        attribute = parts[1]
-        flavor = parts[2]
-        # Packaging might have a hyphen (e.g., 1000L-IBC)
-        packaging = "-".join(parts[3:])
-        
-        # Validate family
         if family not in self.SUPPORTED_FAMILIES:
             raise ValueError(
-                f"Unsupported family '{family}'. "
+                f"Unsupported product family '{family}'. "
                 f"Supported: {self.SUPPORTED_FAMILIES}"
             )
         
-        # Validate attribute
-        if attribute not in self.SUPPORTED_ATTRIBUTES:
-            raise ValueError(
-                f"Unsupported attribute '{attribute}'. "
-                f"Supported: {self.SUPPORTED_ATTRIBUTES}"
-            )
+        family_info = self.PRODUCT_FAMILIES[family]
         
-        # Validate packaging
-        if packaging not in self.PACKAGING_FORMATS:
-            raise ValueError(
-                f"Unsupported packaging '{packaging}'. "
-                f"Supported: {list(self.PACKAGING_FORMATS.keys())}"
-            )
+        # Determine container from variant or default
+        container_item = None
+        container_qty_per_kg = 0.0
+        packaging = None
         
-        pkg_info = self.PACKAGING_FORMATS[packaging]
-        target_uom = pkg_info["uom"]
-        container_item = pkg_info.get("container_item")
-        container_qty_per_kg = pkg_info.get("container_qty_per_kg", 0.0)
+        if variant:
+            # Check if variant includes packaging info
+            variant_upper = variant.upper()
+            for pkg_key, pkg_info in self.PACKAGING_FORMATS.items():
+                if pkg_key.replace("-", "") in variant_upper.replace("-", ""):
+                    packaging = pkg_key
+                    container_item = pkg_info.get("container_item")
+                    container_qty_per_kg = pkg_info.get("qty_per_kg", 0.0)
+                    break
+        
+        # Default packaging based on product type
+        if not packaging:
+            if family_info["type"] == "SFG" and "Liquid" in family_info["item_group"]:
+                packaging = "1000L-IBC"
+                pkg_info = self.PACKAGING_FORMATS[packaging]
+                container_item = pkg_info.get("container_item")
+                container_qty_per_kg = pkg_info.get("qty_per_kg", 0.0)
+            elif "Powder" in family_info["item_group"]:
+                packaging = "25KG-BAG"
         
         return ParsedSpec(
             family=family,
-            attribute=attribute,
-            flavor=flavor,
+            attribute=variant.split("-")[0] if variant and "-" in variant else None,
+            flavor=None,  # Not used in real production
+            mesh_size=None,
             packaging=packaging,
-            target_uom=target_uom,
+            target_uom=family_info["uom"],
+            target_qty=1.0,
             container_item=container_item,
             container_qty_per_kg=container_qty_per_kg,
             raw_request=item_code,
@@ -165,21 +226,12 @@ class ProductSpecificationParser:
     
     def _parse_natural_language(self, request_text: str) -> ParsedSpec:
         """
-        Parse a natural language request into ParsedSpec.
+        Parse a natural language request.
         
         Examples:
-        - "Create BOM for organic aloe juice in 1000L IBC"
-        - "0227 conventional natural 200L drum"
-        - "Make kosher 0307 product in pails"
-        
-        Args:
-            request_text: Natural language request
-            
-        Returns:
-            ParsedSpec with extracted information
-            
-        Raises:
-            ValueError: If required information cannot be extracted
+        - "Create BOM for 0227 concentrate in IBC"
+        - "0307 powder 200:1"
+        - "Aloe vera gel concentrate 30:1"
         """
         text_upper = request_text.upper()
         
@@ -190,81 +242,86 @@ class ProductSpecificationParser:
                 family = f
                 break
         
+        # Try to detect family from product description
+        if not family:
+            if "CONCENTRATE" in text_upper or "30:1" in text_upper or "LIQUID" in text_upper:
+                family = "0227"
+            elif "POWDER" in text_upper or "200:1" in text_upper or "SPRAY" in text_upper:
+                family = "0307"
+            elif "GEL" in text_upper:
+                family = "0227"
+        
         if not family:
             raise ValueError(
                 f"Could not determine product family. "
-                f"Please specify one of: {self.SUPPORTED_FAMILIES}"
+                f"Please specify: {self.SUPPORTED_FAMILIES} or use keywords like "
+                f"'concentrate', 'powder', '30:1', '200:1'"
             )
         
-        # Extract attribute
-        attribute = None
-        for attr in self.SUPPORTED_ATTRIBUTES:
-            if attr in text_upper:
-                attribute = attr
-                break
-        
-        if not attribute:
-            # Default to CONVENTIONAL if not specified
-            attribute = "CONVENTIONAL"
+        family_info = self.PRODUCT_FAMILIES[family]
         
         # Extract packaging
         packaging = None
-        for pkg in self.PACKAGING_FORMATS:
-            # Check for various forms: "1000L-IBC", "1000L IBC", "IBC", etc.
-            pkg_variants = [
-                pkg,
-                pkg.replace("-", " "),
-                pkg.replace("-", ""),
-                pkg.split("-")[-1]  # Just the container type
+        container_item = None
+        container_qty_per_kg = 0.0
+        
+        for pkg_key, pkg_info in self.PACKAGING_FORMATS.items():
+            # Check various forms
+            variants = [
+                pkg_key,
+                pkg_key.replace("-", " "),
+                pkg_key.replace("-", ""),
+                pkg_key.split("-")[-1]
             ]
-            for variant in pkg_variants:
-                if variant in text_upper:
-                    packaging = pkg
+            for v in variants:
+                if v in text_upper:
+                    packaging = pkg_key
+                    container_item = pkg_info.get("container_item")
+                    container_qty_per_kg = pkg_info.get("qty_per_kg", 0.0)
                     break
             if packaging:
                 break
         
+        # Default packaging
         if not packaging:
-            raise ValueError(
-                f"Could not determine packaging format. "
-                f"Please specify one of: {list(self.PACKAGING_FORMATS.keys())}"
-            )
-        
-        # Extract flavor
-        flavor = None
-        for flv in self.COMMON_FLAVORS:
-            if flv in text_upper:
-                flavor = flv
-                break
-        
-        if not flavor:
-            # Default to NATURAL if not specified
-            flavor = "NATURAL"
-        
-        pkg_info = self.PACKAGING_FORMATS[packaging]
-        target_uom = pkg_info["uom"]
-        container_item = pkg_info.get("container_item")
-        container_qty_per_kg = pkg_info.get("container_qty_per_kg", 0.0)
+            if "Liquid" in family_info["item_group"]:
+                packaging = "1000L-IBC"
+                pkg_info = self.PACKAGING_FORMATS[packaging]
+                container_item = pkg_info.get("container_item")
+                container_qty_per_kg = pkg_info.get("qty_per_kg", 0.0)
+            else:
+                packaging = "25KG-BAG"
         
         return ParsedSpec(
             family=family,
-            attribute=attribute,
-            flavor=flavor,
+            attribute=None,
+            flavor=None,
+            mesh_size=None,
             packaging=packaging,
-            target_uom=target_uom,
+            target_uom=family_info["uom"],
+            target_qty=1.0,
             container_item=container_item,
             container_qty_per_kg=container_qty_per_kg,
             raw_request=request_text,
             parsed_at=datetime.now()
         )
     
+    def get_family_info(self, family: str) -> Dict[str, Any]:
+        """Get product family information."""
+        if family not in self.PRODUCT_FAMILIES:
+            raise ValueError(f"Unknown family: {family}")
+        return self.PRODUCT_FAMILIES[family]
+    
+    def get_container_info(self, container_code: str) -> Dict[str, Any]:
+        """Get container item information."""
+        if container_code not in self.CONTAINERS:
+            raise ValueError(f"Unknown container: {container_code}")
+        return self.CONTAINERS[container_code]
+    
     def validate_spec(self, spec: ParsedSpec) -> Dict[str, Any]:
         """
-        Validate a ParsedSpec and return validation results.
+        Validate a ParsedSpec.
         
-        Args:
-            spec: ParsedSpec to validate
-            
         Returns:
             Dict with 'valid' bool and 'errors' list
         """
@@ -273,14 +330,11 @@ class ProductSpecificationParser:
         if spec.family not in self.SUPPORTED_FAMILIES:
             errors.append(f"Invalid family: {spec.family}")
         
-        if spec.attribute not in self.SUPPORTED_ATTRIBUTES:
-            errors.append(f"Invalid attribute: {spec.attribute}")
+        if spec.container_item and spec.container_item not in self.CONTAINERS:
+            errors.append(f"Invalid container: {spec.container_item}")
         
-        if spec.packaging not in self.PACKAGING_FORMATS:
-            errors.append(f"Invalid packaging: {spec.packaging}")
-        
-        if not spec.flavor:
-            errors.append("Flavor is required")
+        if spec.target_uom != "Kg":
+            errors.append(f"UOM must be Kg, got: {spec.target_uom}")
         
         return {
             "valid": len(errors) == 0,
@@ -289,12 +343,11 @@ class ProductSpecificationParser:
     
     def generate_item_code(self, spec: ParsedSpec) -> str:
         """
-        Generate a standard item code from a ParsedSpec.
+        Generate standard item code from ParsedSpec.
         
-        Args:
-            spec: ParsedSpec with product information
-            
-        Returns:
-            Formatted item code string
+        For base items: just the family code (0227, 0307)
+        For variants: family-variant (0227-ORGANIC)
         """
-        return f"{spec.family}-{spec.attribute}-{spec.flavor}-{spec.packaging}"
+        if spec.attribute:
+            return f"{spec.family}-{spec.attribute}"
+        return spec.family
