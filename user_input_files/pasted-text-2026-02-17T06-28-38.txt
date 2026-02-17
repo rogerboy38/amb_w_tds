@@ -1,0 +1,116 @@
+Phase 6: Production Deployment, Raven AI Agent BOM Integration & Repo Cleanup
+
+Context: Phases 1-5 complete. BOM system is healthy on both sandbox and production. 
+Branch: feature/v9.1.0-development
+Site: v2.sysmayal.cloud
+Final commit: a0cec28
+
+This is the FINAL phase. Goal: Update the Raven AI agent to understand BOM operations, clean up the repo, update docs, and prepare for merge.
+
+=== TASK 1: UPDATE RAVEN AI AGENT FOR BOM AWARENESS ===
+
+The raven/ directory (amb_w_tds/amb_w_tds/raven/) currently has serial tracking agents only. It has NO awareness of the BOM system we just built. Fix this:
+
+1. Read ALL existing raven/ files to understand the agent architecture:
+   - serial_tracking_agent.py, serial_tracking_agent_raven.py, serial_tracking_agent_prod.py
+   - config.py, cli.py, setup.py, utils.py
+
+2. Create: amb_w_tds/amb_w_tds/raven/bom_tracking_agent.py
+   This agent should be able to:
+   - Respond to Raven messages asking about BOM health (e.g., "check BOM status", "what BOMs need attention?")
+   - Call bom_status_manager.run_health_check() and format results for Raven
+   - Call bom_inspector.inspect_bom(bom_name) when asked about a specific BOM
+   - Report known issues from bom_known_issues.json
+   - Provide BOM hierarchy info for any item code (e.g., "show me BOM for 0307")
+   - Handle commands: "bom health", "bom inspect <name>", "bom status <item>", "bom issues"
+
+3. Update amb_w_tds/amb_w_tds/raven/config.py:
+   - Add BOM agent configuration alongside serial tracking config
+   - Register bom_tracking_agent in the agent registry
+
+4. Clean up raven/ directory:
+   - Remove duplicate/experimental files: config.py.backup, serial_tracking_agent.py.full
+   - Keep only the production-ready versions
+   - Ensure __init__.py exports are clean
+
+=== TASK 2: REPO CLEANUP — DELETE JUNK FILES ===
+
+Remove these files that should NOT be in the repo:
+
+Root level (amb_w_tds/):
+- ===" (junk file)
+- FETCH_HEAD (git internal, should not be committed)
+- FILTER (junk file)
+- KEEP (junk file)
+- phase_a_git_push.sh (deployment script, not app code)
+- phase_b_git_push.sh (deployment script, not app code)
+- push_to_git_plus.sh (deployment script, not app code)
+
+App level (amb_w_tds/amb_w_tds/):
+- hooks.py.backup (backup file)
+- hooks.py.bakup.20251220_153025 (backup file)
+- test_agent.py (test file in wrong location — should be in tests/)
+
+Raven level (amb_w_tds/amb_w_tds/raven/):
+- config.py.backup
+- serial_tracking_agent.py.full (experimental duplicate)
+- serial_minimal_working.py (experimental)
+- serial_tracking_agent_simple.py (experimental)
+
+Use git rm for each file. Commit as: "chore: remove backup and experimental files"
+
+=== TASK 3: UPDATE VERSION & README ===
+
+1. Update version.txt to 9.1.0
+2. Check __init__.py already has version 9.1.0 (it should from 2 weeks ago)
+3. Update README.md:
+   - Change version badge from v7.0.0 to v9.1.0
+   - Change "Version 2.5.0 - Controller Migration Release" to "Version 9.1.0 - BOM Hierarchy & AI Agent Release"
+   - Add a new section "What's New in v9.1.0" with:
+     - BOM Hierarchy Audit & Auto-Fix system
+     - Intelligent BOM Status Manager with health scanning
+     - Automated BOM validation hooks (on_submit, on_update)
+     - Weekly scheduled BOM health checks
+     - Raven AI integration for BOM monitoring
+     - Known issues tracking (bom_known_issues.json)
+   - Update the scripts section to list all new scripts
+   - Keep all existing content (Batch Management, COA, TDS, Production Widget, Barrel Lifecycle)
+
+4. Create v9.1.0_RELEASE_NOTES.md with full changelog:
+   - Phase 1-5 summary
+   - New files added
+   - BOM issues fixed
+   - Hook integrations
+   - Raven agent updates
+   - Known limitations
+
+=== TASK 4: UPDATE HOOKS.PY — ENSURE ALL INTEGRATIONS REGISTERED ===
+
+Review hooks.py and ensure:
+- BOM doc_events are properly registered (from Phase 5 bom_hooks.py)
+- Scheduler events include the weekly BOM health check
+- Stock Entry hooks still work (stock_entry_hooks.py)
+- No duplicate or conflicting entries
+- app_version matches 9.1.0
+
+=== TASK 5: FINAL VERIFICATION ===
+
+1. Run: bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_status_manager.run_health_check_dry
+   - Should return HEALTHY
+2. Run: bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.scheduled_bom_health.run
+   - Should post weekly report to Raven
+3. Verify no import errors after cleanup: bench --site v2.sysmayal.cloud console
+   - import amb_w_tds
+   - import amb_w_tds.raven.bom_tracking_agent
+
+=== TASK 6: DELIVERABLE ===
+
+Create BOM_PHASE6_FINAL_REPORT.md with:
+- Full project summary (Phases 1-6)
+- All files created/modified
+- Production verification results
+- Known issues still open (BOM-0301-001, BOM-0303-005, 0302, 0803-KOSHER-ORGANIC)
+- Recommendation: merge feature/v9.1.0-development → main
+
+Commit everything, push to git. This is the final phase.
+This covers everything: Raven AI agent BOM integration, junk file cleanup, version bump, README update, release notes, and final verification
