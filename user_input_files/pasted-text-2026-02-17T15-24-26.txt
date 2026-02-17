@@ -1,0 +1,512 @@
+Already up to date.
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+cd ~/frappe-bench/apps/amb_w_tds
+bash scripts/test_v9.1.0_simple.sh
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 4 (delta 2), reused 4 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 950 bytes | 475.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   5caa32b..bba8dc2  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating 5caa32b..bba8dc2
+Fast-forward
+ scripts/test_v9.1.0_simple.sh | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+ create mode 100644 scripts/test_v9.1.0_simple.sh
+==========================================
+  v9.1.0 Test Suite
+==========================================
+
+Test 1: Version Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds' has no attribute 'test_version'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+
+Test 2: BOM Agent Import
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds.raven.bom_tracking_agent' has no attribute 'test_import'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/home/frappe/frappe-bench/apps/amb_w_tds/amb_w_tds/raven/bom_tracking_agent.py", line 15, in <module>
+    import frappe
+ModuleNotFoundError: No module named 'frappe'
+
+Test 3: Serial Agent Import
+❌ Serial agent import failed
+
+Test 4: Config Check
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+ImportError: cannot import name 'REGISTERED_AGENTS' from 'amb_w_tds.raven.config' (/home/frappe/frappe-bench/apps/amb_w_tds/amb_w_tds/raven/config.py)
+
+Test 5: BOM Health Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 284, in execute
+    ret = frappe.get_attr(method)(*fn_args, **fn_kwargs)
+          ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/__init__.py", line 1114, in get_attr
+    return getattr(get_module(modulename), methodname)
+AttributeError: module 'amb_w_tds.scripts.bom_status_manager' has no attribute 'run_health_check_dry'. Did you mean: 'run_health_check'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 288, in execute
+    ret = eval(code, globals(), locals())  # nosemgrep
+  File "<bench execute>", line 1, in <module>
+NameError: name 'amb_w_tds' is not defined
+
+name 'amb_w_tds' is not defined
+
+Test 6: Hooks Check
+2
+✅ BOM hooks found
+
+==========================================
+If tests fail, run:
+  bench migrate
+  bench clear-cache && bench restart
+==========================================
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+bash scripts/test_v9.1.0_fixed.sh
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 4 (delta 2), reused 4 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 1.08 KiB | 551.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   bba8dc2..5dd3e60  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating bba8dc2..5dd3e60
+Fast-forward
+ scripts/test_v9.1.0_fixed.sh | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 68 insertions(+)
+ create mode 100644 scripts/test_v9.1.0_fixed.sh
+==========================================
+  v9.1.0 Test Suite - Fixed
+==========================================
+
+Test 1: Version Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+9.1.0
+9.1.0
+
+Test 2: BOM Agent Import (via bench console)
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...: ✅ BOM Agent: bom_tracking v1.0.0
+
+
+Test 3: Serial Agent Import
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...: ✅ Serial Agent: serial_tracking v1.0.0
+
+
+Test 4: Config get_agents() Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: ✅ Registered MinimalSerialAgent as 'serial_tracking'
+✅ Registered BOMTrackingAgent as 'bom_tracking'
+Registered agents: ['serial_tracking', 'bom_tracking']
+✅ Both agents registered
+
+
+Test 5: BOM Health Check (actual function)
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 273, in execute
+    fn_kwargs = eval(kwargs)
+  File "<string>", line 1, in <module>
+NameError: name 'false' is not defined. Did you mean: 'False'?
+
+name 'false' is not defined
+
+Test 6: Hooks Check
+2
+✅ BOM hooks found
+
+==========================================
+Done! If imports fail, run:
+  bench migrate
+  bench clear-cache && bench restart
+==========================================
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+bash scripts/test_v9.1.0_fixed.sh
+remote: Enumerating objects: 7, done.
+remote: Counting objects: 100% (7/7), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 4 (delta 3), reused 4 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 354 bytes | 354.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   5dd3e60..c7abbab  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating 5dd3e60..c7abbab
+Fast-forward
+ scripts/test_v9.1.0_fixed.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+==========================================
+  v9.1.0 Test Suite - Fixed
+==========================================
+
+Test 1: Version Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+9.1.0
+9.1.0
+
+Test 2: BOM Agent Import (via bench console)
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...: ✅ BOM Agent: bom_tracking v1.0.0
+
+
+Test 3: Serial Agent Import
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...: ✅ Serial Agent: serial_tracking v1.0.0
+
+
+Test 4: Config get_agents() Check
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...:    ...: ✅ Registered MinimalSerialAgent as 'serial_tracking'
+✅ Registered BOMTrackingAgent as 'bom_tracking'
+Registered agents: ['serial_tracking', 'bom_tracking']
+✅ Both agents registered
+
+
+Test 5: BOM Health Check (actual function)
+🔍 Checking: Multiple Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Inactive Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Cost Anomalies...
+   ✅ No issues found
+
+🔍 Checking: Missing Components...
+   ✅ No issues found
+
+======================================================================
+HEALTH CHECK SUMMARY
+======================================================================
+✅ All checks passed! No issues detected.
+
+🏥 Overall Health Status: HEALTHY
+======================================================================
+{"timestamp": "2026-02-17 02:11:15.428017", "company": "Formulated", "health_status": "HEALTHY", "total_issues": 0, "severity_counts": {}, "type_counts": {}, "issues": []}
+
+Test 6: Hooks Check
+2
+✅ BOM hooks found
+
+==========================================
+Done! If imports fail, run:
+  bench migrate
+  bench clear-cache && bench restart
+==========================================
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 9 (delta 5), reused 9 (delta 5), pack-reused 0 (from 0)
+Unpacking objects: 100% (9/9), 3.32 KiB | 3.32 MiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   c7abbab..76c1f13  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating c7abbab..76c1f13
+Fast-forward
+ amb_w_tds/raven/RAVEN_COMMANDS_HELP.md |  87 +++++++++++++++++++++++++++++++++++++
+ scripts/BOM_PHASE6_FINAL_REPORT.md     | 142 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 229 insertions(+)
+ create mode 100644 amb_w_tds/raven/RAVEN_COMMANDS_HELP.md
+ create mode 100644 scripts/BOM_PHASE6_FINAL_REPORT.md
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ git pull origin feature/v9.1.0-development
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+Already up to date.
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ..
+frappe@UbuntuVM:~/frappe-bench/apps$ cd raven_ai_agent/
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ git pull origin feature/v9.1.0-development
+fatal: 'origin' does not appear to be a git repository
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ ls
+check_socketio.sh        patches.txt                                           test_phase1_validation.py
+docs                     push_to_git_plus.sh                                   test_phase2_validation.py
+frappe-bench.service     pyproject.toml                                        test_phase3_validation.py
+frappe-socketio.service  raven_ai_agent                                        test_phase4_validation.py
+hooks.py                 raven_ai_agent.egg-info                               tmp
+__init__.py              README.md                                             user_input_files
+license.txt              scripts                                               uv.lock
+MANIFEST.in              setup.py                                              workspace.json
+modules.txt              setup_services.sh                                     yarn.lock
+node_modules             technical_specification_for_ai_agent_app_migrator.md
+package.json             test_minimax_direct.py
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ ./push_to_git_plus.sh 
+
+╔══════════════════════════════════════════════════════════════╗
+║                   App Raven AI Agent Git Helper                    ║
+║                        Version 1.1.2                         ║
+╚══════════════════════════════════════════════════════════════╝
+
+Repository: https://github.com/rogerboy38/app_raven_ai_agent
+Authentication: SSH (git@github.com)
+Current Version: v1.1.0
+Current Branch: main
+Remote: origin
+================================================================
+
+➤ Starting Git push process...
+➤ Adding remote 'origin' with SSH URL...
+✓ Added remote 'origin' -> git@github.com:rogerboy38/raven_ai_agent.git
+➤ Testing SSH connection to GitHub...
+✓ SSH connection to GitHub verified
+➤ Syncing with remote repository...
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 4 (delta 1), reused 4 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 1.39 KiB | 1.39 MiB/s, done.
+From github.com:rogerboy38/raven_ai_agent
+ * [new branch]      main       -> origin/main
+➤ Your branch is behind remote. Pulling changes...
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ git status
+On branch main
+Your branch is up to date with 'upstream/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    raven_ai_agent/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/__pycache__/hooks.cpython-312.pyc
+	deleted:    raven_ai_agent/api/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/api/__pycache__/agent.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/__pycache__/browser.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/__pycache__/framework.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/formulation_reader/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/formulation_reader/__pycache__/reader.cpython-312.pyc
+	deleted:    raven_ai_agent/skills/formulation_reader/__pycache__/skill.cpython-312.pyc
+	deleted:    raven_ai_agent/tests/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/tests/__pycache__/test_standalone.cpython-312-pytest-9.0.2.pyc
+	deleted:    raven_ai_agent/utils/__pycache__/__init__.cpython-312.pyc
+	deleted:    raven_ai_agent/utils/__pycache__/memory.cpython-312.pyc
+	deleted:    raven_ai_agent/utils/__pycache__/vector_store.cpython-312.pyc
+
+no changes added to commit (use "git add" and/or "git commit -a")
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ git add --all && git commit -m "chore: remove pycache files from tracking"
+[main c665b05] chore: remove pycache files from tracking
+ 15 files changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 raven_ai_agent/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/__pycache__/hooks.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/api/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/api/__pycache__/agent.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/__pycache__/browser.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/__pycache__/framework.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/formulation_reader/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/formulation_reader/__pycache__/reader.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/skills/formulation_reader/__pycache__/skill.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/tests/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/tests/__pycache__/test_standalone.cpython-312-pytest-9.0.2.pyc
+ delete mode 100644 raven_ai_agent/utils/__pycache__/__init__.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/utils/__pycache__/memory.cpython-312.pyc
+ delete mode 100644 raven_ai_agent/utils/__pycache__/vector_store.cpython-312.pyc
+frappe@UbuntuVM:~/frappe-bench/apps/raven_ai_agent$ cd ~/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.2.0-development
+bash scripts/test_v9.2.0_phase2.sh
+remote: Enumerating objects: 57, done.
+remote: Counting objects: 100% (56/56), done.
+remote: Compressing objects: 100% (30/30), done.
+remote: Total 42 (delta 14), reused 38 (delta 11), pack-reused 0 (from 0)
+Unpacking objects: 100% (42/42), 34.54 KiB | 589.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+ * [new branch]      feature/v9.2.0-development -> origin/feature/v9.2.0-development
+Updating 76c1f13..94c9e79
+Fast-forward
+ amb_w_tds/__init__.py                                      |   2 +-
+ amb_w_tds/ai_bom_agent/__init__.py                         | 101 ++++++++++
+ amb_w_tds/ai_bom_agent/api.py                              | 230 ++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/data_contracts.py                   | 229 ++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/engine.py                           | 420 +++++++++++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/erpnext_client.py                   | 340 +++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/parser.py                           | 266 ++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates.py                        | 245 ++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/business_rules.json       | 151 +++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/naming_conventions.md     | 174 +++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/operations_mapping.json   | 158 ++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_0227_master.json | 169 +++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_0307_master.json | 186 ++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_schema.json      | 162 ++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/uom_conversions.json      | 156 +++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json     | 133 +++++++++++++
+ amb_w_tds/ai_bom_agent/validators.py                       | 360 +++++++++++++++++++++++++++++++++++
+ amb_w_tds/hooks.py                                         |   2 +-
+ scripts/test_v9.2.0_phase2.sh                              |  99 ++++++++++
+ version.txt                                                |   2 +-
+ 20 files changed, 3582 insertions(+), 3 deletions(-)
+ create mode 100644 amb_w_tds/ai_bom_agent/__init__.py
+ create mode 100644 amb_w_tds/ai_bom_agent/api.py
+ create mode 100644 amb_w_tds/ai_bom_agent/data_contracts.py
+ create mode 100644 amb_w_tds/ai_bom_agent/engine.py
+ create mode 100644 amb_w_tds/ai_bom_agent/erpnext_client.py
+ create mode 100644 amb_w_tds/ai_bom_agent/parser.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/business_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/naming_conventions.md
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/operations_mapping.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0227_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0307_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_schema.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/uom_conversions.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/validators.py
+ create mode 100644 scripts/test_v9.2.0_phase2.sh
+==========================================
+  v9.2.0 Phase 2 Test Suite
+  Site: v2.sysmayal.cloud
+==========================================
+

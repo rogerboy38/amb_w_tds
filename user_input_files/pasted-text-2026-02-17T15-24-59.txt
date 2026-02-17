@@ -1,0 +1,139 @@
+frappe@srv1345217:~/frappe-bench/apps/raven_ai_agent$ cd ~/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.2.0-development
+bash scripts/test_v9.2.0_phase2.sh
+remote: Enumerating objects: 57, done.
+remote: Counting objects: 100% (56/56), done.
+remote: Compressing objects: 100% (30/30), done.
+remote: Total 42 (delta 14), reused 38 (delta 11), pack-reused 0 (from 0)
+Unpacking objects: 100% (42/42), 34.54 KiB | 736.00 KiB/s, done.
+From https://github.com/rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+ * [new branch]      feature/v9.2.0-development -> origin/feature/v9.2.0-development
+Updating 76c1f13..94c9e79
+Fast-forward
+ amb_w_tds/__init__.py                                      |   2 +-
+ amb_w_tds/ai_bom_agent/__init__.py                         | 101 +++++++++++++
+ amb_w_tds/ai_bom_agent/api.py                              | 230 ++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/data_contracts.py                   | 229 ++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/engine.py                           | 420 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/erpnext_client.py                   | 340 ++++++++++++++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/parser.py                           | 266 +++++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates.py                        | 245 ++++++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/business_rules.json       | 151 ++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/naming_conventions.md     | 174 +++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/operations_mapping.json   | 158 +++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_0227_master.json | 169 ++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_0307_master.json | 186 ++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_schema.json      | 162 +++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/uom_conversions.json      | 156 +++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json     | 133 ++++++++++++++++++
+ amb_w_tds/ai_bom_agent/validators.py                       | 360 +++++++++++++++++++++++++++++++++++++++++++++++
+ amb_w_tds/hooks.py                                         |   2 +-
+ scripts/test_v9.2.0_phase2.sh                              |  99 +++++++++++++
+ version.txt                                                |   2 +-
+ 20 files changed, 3582 insertions(+), 3 deletions(-)
+ create mode 100644 amb_w_tds/ai_bom_agent/__init__.py
+ create mode 100644 amb_w_tds/ai_bom_agent/api.py
+ create mode 100644 amb_w_tds/ai_bom_agent/data_contracts.py
+ create mode 100644 amb_w_tds/ai_bom_agent/engine.py
+ create mode 100644 amb_w_tds/ai_bom_agent/erpnext_client.py
+ create mode 100644 amb_w_tds/ai_bom_agent/parser.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/business_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/naming_conventions.md
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/operations_mapping.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0227_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0307_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_schema.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/uom_conversions.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/validators.py
+ create mode 100644 scripts/test_v9.2.0_phase2.sh
+==========================================
+  v9.2.0 Phase 2 Test Suite
+  Site: v2.sysmayal.cloud
+==========================================
+
+Test 1: Parser - Item Code Parsing
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Parsed: family=0227, attr=ORGANIC, flavor=NATURAL, pkg=1000L-IBC
+
+In [5]: Do you really want to exit ([y]/n)? 
+
+
+Test 2: Parser - Natural Language Parsing
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Parsed NL: family=0227, attr=ORGANIC, flavor=NATURAL, pkg=200L-DRUM
+
+In [5]: Do you really want to exit ([y]/n)? 
+
+
+Test 3: Template Loading
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Available families: ['0227', '0307']
+
+In [5]:    ...:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+Test 4: Business Rules Loading
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [3]: 
+In [4]: ✅ Loaded 6 business rules:
+
+In [5]:    ...:    ...: Do you really want to exit ([y]/n)? 
+
+
+Test 5: Data Contracts
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+In [1]: 
+In [2]: 
+In [3]: 
+In [4]: 
+In [5]: ✅ ParsedSpec.to_dict() works: ['family', 'attribute', 'flavor', 'mesh_size', 'packaging', 'target_uom', 'target_qty', 'raw_request', 'parsed_at']
+
+In [6]: Do you really want to exit ([y]/n)? 
+
+
+Test 6: API - Parse Product Spec
+{"success": true, "spec": {"family": "0227", "attribute": "ORGANIC", "flavor": "NATURAL", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "IBC", "target_qty": 1.0, "raw_request": "0227-ORGANIC-NATURAL-1000L-IBC", "parsed_at": "2026-02-17T15:24:10.527130"}}
+
+Test 7: API - List Available Families
+{"success": true, "families": ["0227", "0307"]}
+
+Test 8: API - Dry Run BOM Creation
+{"success": false, "spec": {"family": "0227", "attribute": "ORGANIC", "flavor": "NATURAL", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "IBC", "target_qty": 1.0, "raw_request": "0227-ORGANIC-NATURAL-1000L-IBC", "parsed_at": "2026-02-17T15:24:12.746774"}, "items_created": [], "items_reused": [], "boms_created": [], "boms_reused": [], "errors": [{"rule_id": "SYSTEM", "rule_name": "System Error", "message": "PlannedBOM.__init__() got an unexpected keyword argument 'process_type'", "severity": "ERROR", "context": {}}], "warnings": [], "dry_run": true, "execution_time_seconds": 0.1298506259918213, "plan": null}
+
+Test 9: API - Validate Item Code
+{"success": true, "valid": true, "errors": [], "parsed": {"family": "0227", "attribute": "ORGANIC", "flavor": "NATURAL", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "IBC", "target_qty": 1.0, "raw_request": "0227-ORGANIC-NATURAL-1000L-IBC", "parsed_at": "2026-02-17T15:24:14.209120"}}
+
+Test 10: API - Get Business Rules
+{"success": true, "rules": [{"id": "B1", "name": "Mandatory Steps for 0227", "description": "If family=0227, steps 1,2,3 ALL mandatory"}, {"id": "B2", "name": "Shared Concentrate SFG", "description": "Concentrate SFG SHARED across flavors (same family+attribute)"}, {"id": "B3", "name": "Yield Rules", "description": "Standard yield percentages by process"}, {"id": "B4", "name": "UOM Conversion", "description": "1000L = 1 IBC"}, {"id": "B5", "name": "SFG Item Group", "description": "All SFGs item_group = Semi Finished Goods"}, {"id": "B6", "name": "SFG Stock Item", "description": "All SFGs is_stock_item = 1"}]}
+
+==========================================
+  Phase 2 Tests Complete
+==========================================
+
+Next: If all tests pass, proceed to Phase 3
+      (actual BOM creation with dry_run=False)
+frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ 
