@@ -1,0 +1,169 @@
+{
+  "family": "0227",
+  "version": "1.0",
+  "meta": {
+    "name": "Aloe Vera Juice Line",
+    "description": "Master template for 0227 Aloe Vera juice production - 3-step process",
+    "created_date": "2026-02-17",
+    "item_group": "Semi Finished Goods",
+    "default_company": "Formulated",
+    "default_warehouse": "Work In Progress - F"
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "Concentration",
+      "operation_name": "Concentration",
+      "workstation": "Evaporator-01",
+      "input_items": [
+        {
+          "item_pattern": "RM-ALOE-{ATTRIBUTE}",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 1.05",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "RM-WATER-PURIFIED",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 0.10",
+          "uom": "Ltr",
+          "is_optional": false
+        }
+      ],
+      "output_item_pattern": "SFG-0227-STEP1-CONC-{ATTRIBUTE}",
+      "output_uom": "Kg",
+      "yield_percentage": 0.95,
+      "extra_to_wip_pct": 0.05,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 480,
+      "hourly_cost": 50,
+      "is_shared_sfg": true,
+      "sharing_key": "0227-{ATTRIBUTE}"
+    },
+    {
+      "step_number": 2,
+      "step_name": "Standardization",
+      "operation_name": "Standardization",
+      "workstation": "Mixing-Tank-01",
+      "input_items": [
+        {
+          "item_pattern": "SFG-0227-STEP1-CONC-{ATTRIBUTE}",
+          "item_type": "sfg",
+          "qty_formula": "base_qty * 1.02",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "RM-CITRIC-ACID",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 0.005",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "RM-FLAVOR-{FLAVOR}",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 0.02",
+          "uom": "Kg",
+          "is_optional": true
+        }
+      ],
+      "output_item_pattern": "SFG-0227-STEP2-STD-{ATTRIBUTE}-{FLAVOR}",
+      "output_uom": "Kg",
+      "yield_percentage": 0.98,
+      "extra_to_wip_pct": 0.02,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 240,
+      "hourly_cost": 35,
+      "is_shared_sfg": true,
+      "sharing_key": "0227-{ATTRIBUTE}-{FLAVOR}"
+    },
+    {
+      "step_number": 3,
+      "step_name": "Packing",
+      "operation_name": "Packing",
+      "workstation": "Packing-Line-01",
+      "input_items": [
+        {
+          "item_pattern": "SFG-0227-STEP2-STD-{ATTRIBUTE}-{FLAVOR}",
+          "item_type": "sfg",
+          "qty_formula": "base_qty * 1.01",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "PKG-{PACKAGING}",
+          "item_type": "packaging",
+          "qty_formula": "ceiling(base_qty / conversion_factor)",
+          "uom": "Nos",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "PKG-LABEL-{PRODUCT}",
+          "item_type": "packaging",
+          "qty_formula": "ceiling(base_qty / conversion_factor)",
+          "uom": "Nos",
+          "is_optional": false
+        }
+      ],
+      "output_item_pattern": "{FAMILY}-{ATTRIBUTE}-{FLAVOR}-{PACKAGING}",
+      "output_uom": "Nos",
+      "yield_percentage": 0.99,
+      "extra_to_wip_pct": 0.01,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 120,
+      "hourly_cost": 25,
+      "is_shared_sfg": false,
+      "sharing_key": null
+    }
+  ],
+  "variants": {
+    "attributes": ["ORGANIC", "CONVENTIONAL", "KOSHER", "KOSHER-ORGANIC"],
+    "flavors": ["NATURAL", "MANGO", "BERRY", "CITRUS", "PLAIN"],
+    "packaging": [
+      {"code": "1000L-IBC", "name": "1000L IBC Container", "uom": "Nos", "conversion_factor": 1000},
+      {"code": "200L-DRUM", "name": "200L Drum", "uom": "Nos", "conversion_factor": 200},
+      {"code": "20L-PAIL", "name": "20L Pail", "uom": "Nos", "conversion_factor": 20},
+      {"code": "5GAL", "name": "5 Gallon Container", "uom": "Nos", "conversion_factor": 18.93}
+    ]
+  },
+  "business_rules": [
+    {
+      "rule_id": "B1",
+      "description": "All 3 steps mandatory for 0227 family",
+      "condition": "family == '0227'",
+      "action": "require_steps([1, 2, 3])"
+    },
+    {
+      "rule_id": "B2",
+      "description": "Concentrate SFG shared across flavors within same attribute",
+      "condition": "step_number == 1",
+      "action": "share_sfg_by_key('0227-{ATTRIBUTE}')"
+    },
+    {
+      "rule_id": "B3",
+      "description": "Standardized SFG shared across packaging within same attribute+flavor",
+      "condition": "step_number == 2",
+      "action": "share_sfg_by_key('0227-{ATTRIBUTE}-{FLAVOR}')"
+    },
+    {
+      "rule_id": "B4",
+      "description": "Final FG is unique per attribute+flavor+packaging combination",
+      "condition": "step_number == 3",
+      "action": "create_unique_fg()"
+    },
+    {
+      "rule_id": "B5",
+      "description": "All SFGs must be stock items",
+      "condition": "output_item_pattern.startswith('SFG-')",
+      "action": "set_item_property('is_stock_item', 1)"
+    },
+    {
+      "rule_id": "B6",
+      "description": "All SFGs belong to Semi Finished Goods group",
+      "condition": "output_item_pattern.startswith('SFG-')",
+      "action": "set_item_property('item_group', 'Semi Finished Goods')"
+    }
+  ]
+}

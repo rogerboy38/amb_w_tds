@@ -1,0 +1,186 @@
+{
+  "family": "0307",
+  "version": "1.0",
+  "meta": {
+    "name": "Aloe Powder Line",
+    "description": "Master template for 0307 Aloe Vera powder production - 4-step process with spray drying",
+    "created_date": "2026-02-17",
+    "item_group": "Semi Finished Goods",
+    "default_company": "Formulated",
+    "default_warehouse": "Work In Progress - F"
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "Concentration",
+      "operation_name": "Concentration",
+      "workstation": "Evaporator-01",
+      "input_items": [
+        {
+          "item_pattern": "RM-ALOE-{ATTRIBUTE}",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 10.0",
+          "uom": "Kg",
+          "is_optional": false
+        }
+      ],
+      "output_item_pattern": "SFG-0307-STEP1-CONC-{ATTRIBUTE}",
+      "output_uom": "Kg",
+      "yield_percentage": 0.90,
+      "extra_to_wip_pct": 0.10,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 720,
+      "hourly_cost": 60,
+      "is_shared_sfg": true,
+      "sharing_key": "0307-{ATTRIBUTE}"
+    },
+    {
+      "step_number": 2,
+      "step_name": "Filtration",
+      "operation_name": "Filtration",
+      "workstation": "Filter-Press-01",
+      "input_items": [
+        {
+          "item_pattern": "SFG-0307-STEP1-CONC-{ATTRIBUTE}",
+          "item_type": "sfg",
+          "qty_formula": "base_qty * 1.05",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "CONS-FILTER-MEDIA",
+          "item_type": "consumable",
+          "qty_formula": "base_qty * 0.001",
+          "uom": "Kg",
+          "is_optional": false
+        }
+      ],
+      "output_item_pattern": "SFG-0307-STEP2-FILT-{ATTRIBUTE}",
+      "output_uom": "Kg",
+      "yield_percentage": 0.95,
+      "extra_to_wip_pct": 0.05,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 360,
+      "hourly_cost": 40,
+      "is_shared_sfg": true,
+      "sharing_key": "0307-{ATTRIBUTE}"
+    },
+    {
+      "step_number": 3,
+      "step_name": "Spray Drying",
+      "operation_name": "Spray Drying",
+      "workstation": "Spray-Dryer-01",
+      "input_items": [
+        {
+          "item_pattern": "SFG-0307-STEP2-FILT-{ATTRIBUTE}",
+          "item_type": "sfg",
+          "qty_formula": "base_qty * 3.0",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "RM-MALTODEXTRIN",
+          "item_type": "raw_material",
+          "qty_formula": "base_qty * 0.30",
+          "uom": "Kg",
+          "is_optional": true
+        }
+      ],
+      "output_item_pattern": "SFG-0307-STEP3-PWD-{ATTRIBUTE}-{MESH}",
+      "output_uom": "Kg",
+      "yield_percentage": 0.85,
+      "extra_to_wip_pct": 0.15,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 480,
+      "hourly_cost": 80,
+      "is_shared_sfg": true,
+      "sharing_key": "0307-{ATTRIBUTE}-{MESH}"
+    },
+    {
+      "step_number": 4,
+      "step_name": "Powder Packing",
+      "operation_name": "Powder Packing",
+      "workstation": "Powder-Packing-01",
+      "input_items": [
+        {
+          "item_pattern": "SFG-0307-STEP3-PWD-{ATTRIBUTE}-{MESH}",
+          "item_type": "sfg",
+          "qty_formula": "base_qty * 1.02",
+          "uom": "Kg",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "PKG-{PACKAGING}",
+          "item_type": "packaging",
+          "qty_formula": "ceiling(base_qty / conversion_factor)",
+          "uom": "Nos",
+          "is_optional": false
+        },
+        {
+          "item_pattern": "PKG-DESICCANT",
+          "item_type": "packaging",
+          "qty_formula": "ceiling(base_qty / 25)",
+          "uom": "Nos",
+          "is_optional": false
+        }
+      ],
+      "output_item_pattern": "{FAMILY}-{ATTRIBUTE}-{MESH}-{PACKAGING}",
+      "output_uom": "Nos",
+      "yield_percentage": 0.99,
+      "extra_to_wip_pct": 0.01,
+      "is_subcontracted": false,
+      "cycle_time_minutes": 90,
+      "hourly_cost": 20,
+      "is_shared_sfg": false,
+      "sharing_key": null
+    }
+  ],
+  "variants": {
+    "attributes": ["ORGANIC", "CONVENTIONAL", "KOSHER", "KOSHER-ORGANIC"],
+    "mesh_sizes": ["80-MESH", "100-MESH", "200-MESH"],
+    "packaging": [
+      {"code": "25KG-BAG", "name": "25Kg Bag", "uom": "Nos", "conversion_factor": 25},
+      {"code": "10KG-BAG", "name": "10Kg Bag", "uom": "Nos", "conversion_factor": 10},
+      {"code": "1KG-POUCH", "name": "1Kg Pouch", "uom": "Nos", "conversion_factor": 1},
+      {"code": "DRUM-50KG", "name": "50Kg Drum", "uom": "Nos", "conversion_factor": 50}
+    ]
+  },
+  "business_rules": [
+    {
+      "rule_id": "B1",
+      "description": "All 4 steps mandatory for 0307 powder family",
+      "condition": "family == '0307'",
+      "action": "require_steps([1, 2, 3, 4])"
+    },
+    {
+      "rule_id": "B2",
+      "description": "Concentration ratio 10:1 for powder production",
+      "condition": "step_number == 1 and family == '0307'",
+      "action": "set_input_ratio(10.0)"
+    },
+    {
+      "rule_id": "B3",
+      "description": "Spray drying SFG shared across packaging",
+      "condition": "step_number == 3",
+      "action": "share_sfg_by_key('0307-{ATTRIBUTE}-{MESH}')"
+    },
+    {
+      "rule_id": "B4",
+      "description": "Maltodextrin optional carrier for spray drying",
+      "condition": "step_number == 3",
+      "action": "allow_optional_input('RM-MALTODEXTRIN')"
+    },
+    {
+      "rule_id": "B5",
+      "description": "Desiccant required in all powder packaging",
+      "condition": "step_number == 4",
+      "action": "require_input('PKG-DESICCANT')"
+    },
+    {
+      "rule_id": "B6",
+      "description": "All SFGs must be stock items",
+      "condition": "output_item_pattern.startswith('SFG-')",
+      "action": "set_item_property('is_stock_item', 1)"
+    }
+  ]
+}
