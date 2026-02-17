@@ -1,0 +1,132 @@
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_status_manager.fix_inactive_defaults --kwargs '{"dry_run": False}'
+======================================================================
+BOM STATUS MANAGER - AUTO-FIX ENGINE
+Run Time: 2026-02-16 23:27:18.598960
+Mode: 🔴 LIVE MODE (applying fixes)
+Max Fixes: 50
+======================================================================
+
+📋 Running health check to identify issues...
+======================================================================
+BOM STATUS MANAGER - HEALTH CHECK
+Run Time: 2026-02-16 23:27:18.599044
+Company: Formulated
+======================================================================
+
+🔍 Checking: Circular References...
+   ✅ No issues found
+
+🔍 Checking: Orphaned BOMs...
+   ✅ No issues found
+
+🔍 Checking: Missing Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Multiple Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Inactive Default BOMs...
+   ⚠️  Found 12 issue(s)
+
+🔍 Checking: Cost Anomalies...
+   ⚠️  Found 2 issue(s)
+
+🔍 Checking: Missing Components...
+   ✅ No issues found
+
+======================================================================
+HEALTH CHECK SUMMARY
+======================================================================
+Total Issues: 14
+  🔴 Critical: 0
+  🟠 High: 0
+  🟡 Medium: 12
+  🔵 Low: 2
+
+By Type:
+  - INACTIVE_DEFAULT: 12
+  - COST_ANOMALY: 2
+
+🏥 Overall Health Status: WARNING
+======================================================================
+
+🎯 Found 12 auto-fixable issues
+   Target types: INACTIVE_DEFAULT
+
+==================================================
+[1/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0301-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0301-001
+
+==================================================
+[2/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001
+
+==================================================
+[3/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001
+
+==================================================
+[4/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0334-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0334-001
+
+==================================================
+[5/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0334009251-1-C1-20251116-014156
+
+==================================================
+[6/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0334009251-1-C1-2109 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0334009251-1-C1-2109
+
+==================================================
+[7/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001
+
+==================================================
+[8/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-A0303-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-A0303-001
+
+==================================================
+[9/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001
+
+==================================================
+[10/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001
+
+==================================================
+[11/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-ITEM_0227022211-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-ITEM_0227022211-001
+
+==================================================
+[12/12] Fixing: INACTIVE_DEFAULT
+Details: BOM BOM-ITEM_0227067241-001 is marked as default but is docstatus=0
+✅ Fixed: Removed default flag from inactive BOM BOM-ITEM_0227067241-001
+
+======================================================================
+AUTO-FIX SUMMARY
+======================================================================
+Mode: LIVE
+Total fixable issues: 12
+Fixed: 12
+Skipped: 0
+Failed: 0
+
+💾 Committing database changes...
+✅ Changes committed successfully
+
+======================================================================
+⚠️ Raven channel not found, skipping post
+📨 Posted report to Raven
+{"timestamp": "2026-02-16 23:27:18.658781", "company": "Formulated", "mode": "LIVE", "summary": {"total_fixable_issues": 12, "max_fixes_limit": 50, "fixes_applied": 12, "fixes_skipped": 0, "fixes_failed": 0, "success_rate": "100.0%", "by_type": {"INACTIVE_DEFAULT": 12}}, "applied": [{"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0301-001", "item": "0301", "message": "BOM BOM-0301-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0301-001", "details": "No alternative active BOM found for 0301"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "item": "0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "message": "BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "details": "No alternative active BOM found for 0334 -WTLB-25KG PAIL-NOPRCV-SPD-001"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001", "message": "BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001", "details": "No alternative active BOM found for 0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334-001", "item": "0334-TEMPLATE", "message": "BOM BOM-0334-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0334-001", "details": "No alternative active BOM found for 0334-TEMPLATE"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-20251116-014156", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0334009251-1-C1-20251116-014156", "details": "No alternative active BOM found for 0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-2109", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-2109 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0334009251-1-C1-2109", "details": "No alternative active BOM found for 0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001", "item": "0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20", "message": "BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001", "details": "No alternative active BOM found for 0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-001", "item": "A0303", "message": "BOM BOM-A0303-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-A0303-001", "details": "No alternative active BOM found for A0303"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "details": "No alternative active BOM found for A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "details": "No alternative active BOM found for A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227022211-001", "item": "ITEM_0227022211", "message": "BOM BOM-ITEM_0227022211-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-ITEM_0227022211-001", "details": "No alternative active BOM found for ITEM_0227022211"}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227067241-001", "item": "ITEM_0227067241", "message": "BOM BOM-ITEM_0227067241-001 is marked as default but is docstatus=0"}, "action": "Removed default flag from inactive BOM BOM-ITEM_0227067241-001", "details": "No alternative active BOM found for ITEM_0227067241"}], "skipped": [], "failed": []}
+(env) frappe@srv1345217:~/frappe-bench/apps/amb_w_tds$ 
