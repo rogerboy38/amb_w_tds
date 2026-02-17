@@ -1,0 +1,429 @@
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_fixer.run_live
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+
+======================================================================
+BOM FIXER - LIVE MODE
+======================================================================
+Timestamp: 2026-02-16T21:38:50.948692
+
+============================================================
+Fixing BOM-0307-006 (Self-reference bug)
+============================================================
+Current items: ['0307', 'LBL0307']
+DocStatus: 2, Is Active: 0, Is Default: 0
+❌ Error: Please select a Company first.
+
+============================================================
+Reviewing BOM-0301-001 (Missing parent verification)
+============================================================
+Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']
+⚠️ REVIEW NEEDED: Has 0227 variant but naming doesn't match expected hierarchy
+   Found: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL']
+   Expected: 0227-PERMEADO
+
+============================================================
+Reviewing BOM-0303-005 (Cost BOM structure)
+============================================================
+Current items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+DocStatus: 0, Is Active: 1
+⚠️ REVIEW NEEDED: This is a cost tracking BOM, not manufacturing
+   Contains: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+   Missing: Raw material (0227-NORMAL)
+
+============================================================
+Reviewing BOM-A0303-001 (Audit expectation correction)
+============================================================
+Current items: ['0303', 'M016', 'E004', 'E009', 'E008', '0712-LQE-CLRD-COSMETIC']
+✅ BOM structure is CORRECT
+   Has 0303 as sub-assembly (correct)
+   Audit expectation was wrong (expected 0227-NORMAL)
+
+======================================================================
+SUMMARY
+======================================================================
+Fixed: 0
+Would Fix (dry run): 0
+Review Needed: 2
+Already Correct: 1
+Errors: 1
+  ❌ BOM-0307-006: Please select a Company first....
+  ⚠️ BOM-0301-001: Has 0227 variant but not named 0227-PERMEADO. Manual verific...
+  ⚠️ BOM-0303-005: Cost BOM (utilities/labor only). May need separate manufactu...
+  ✓ BOM-A0303-001: BOM structure is CORRECT. Has 0303 as sub-assembly. Audit ex...
+📨 Posted to Raven: **BOM Fixer Results** (2026-02-16 21:38)
+
+Fixed: 0...
+[{"bom": "BOM-0307-006", "item": "0307", "status": "error", "action": "Please select a Company first."}, {"bom": "BOM-0301-001", "item": "0301", "status": "review_needed", "action": "Has 0227 variant but not named 0227-PERMEADO. Manual verification required. Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']"}, {"bom": "BOM-0303-005", "item": "0303", "status": "review_needed", "action": "Cost BOM (utilities/labor only). May need separate manufacturing BOM with 0227-NORMAL. Items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']"}, {"bom": "BOM-A0303-001", "item": "A0303", "status": "correct", "action": "BOM structure is CORRECT. Has 0303 as sub-assembly. Audit expected wrong parent (0227-NORMAL instead of 0303)."}]
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench/apps/amb_w_tds && git pull origin feature/v9.1.0-development
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 10 (delta 8), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (10/10), 1.18 KiB | 404.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.1.0-development -> FETCH_HEAD
+   802b5e3..02e5b46  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating 802b5e3..02e5b46
+Fast-forward
+ amb_w_tds/scripts/bom_fixer.py | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench/apps/amb_w_tds && git pull && bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_fixer.run_live
+Already up to date.
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+
+======================================================================
+BOM FIXER - LIVE MODE
+======================================================================
+Timestamp: 2026-02-16T21:43:04.904131
+
+============================================================
+Fixing BOM-0307-006 (Self-reference bug)
+============================================================
+Current items: ['0307', 'LBL0307']
+DocStatus: 2, Is Active: 0, Is Default: 0
+ℹ️ Using company: AMB-Wellness
+❌ Error: ('BOM', 'BOM-0307-006', IntegrityError(1062, "Duplicate entry 'BOM-0307-006' for key 'PRIMARY'"))
+
+============================================================
+Reviewing BOM-0301-001 (Missing parent verification)
+============================================================
+Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']
+⚠️ REVIEW NEEDED: Has 0227 variant but naming doesn't match expected hierarchy
+   Found: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL']
+   Expected: 0227-PERMEADO
+
+============================================================
+Reviewing BOM-0303-005 (Cost BOM structure)
+============================================================
+Current items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+DocStatus: 0, Is Active: 1
+⚠️ REVIEW NEEDED: This is a cost tracking BOM, not manufacturing
+   Contains: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+   Missing: Raw material (0227-NORMAL)
+
+============================================================
+Reviewing BOM-A0303-001 (Audit expectation correction)
+============================================================
+Current items: ['0303', 'M016', 'E004', 'E009', 'E008', '0712-LQE-CLRD-COSMETIC']
+✅ BOM structure is CORRECT
+   Has 0303 as sub-assembly (correct)
+   Audit expectation was wrong (expected 0227-NORMAL)
+
+======================================================================
+SUMMARY
+======================================================================
+Fixed: 0
+Would Fix (dry run): 0
+Review Needed: 2
+Already Correct: 1
+Errors: 1
+  ❌ BOM-0307-006: ('BOM', 'BOM-0307-006', IntegrityError(1062, "Duplicate entr...
+  ⚠️ BOM-0301-001: Has 0227 variant but not named 0227-PERMEADO. Manual verific...
+  ⚠️ BOM-0303-005: Cost BOM (utilities/labor only). May need separate manufactu...
+  ✓ BOM-A0303-001: BOM structure is CORRECT. Has 0303 as sub-assembly. Audit ex...
+📨 Posted to Raven: **BOM Fixer Results** (2026-02-16 21:43)
+
+Fixed: 0...
+[{"bom": "BOM-0307-006", "item": "0307", "status": "error", "action": "('BOM', 'BOM-0307-006', IntegrityError(1062, \"Duplicate entry 'BOM-0307-006' for key 'PRIMARY'\"))"}, {"bom": "BOM-0301-001", "item": "0301", "status": "review_needed", "action": "Has 0227 variant but not named 0227-PERMEADO. Manual verification required. Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']"}, {"bom": "BOM-0303-005", "item": "0303", "status": "review_needed", "action": "Cost BOM (utilities/labor only). May need separate manufacturing BOM with 0227-NORMAL. Items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']"}, {"bom": "BOM-A0303-001", "item": "A0303", "status": "correct", "action": "BOM structure is CORRECT. Has 0303 as sub-assembly. Audit expected wrong parent (0227-NORMAL instead of 0303)."}]
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench/apps/amb_w_tds && git pull && bench --site v2.sysmayal.cloud execute amb_w_tds.scripts.bom_fixer.run_live
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 10 (delta 8), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (10/10), 1.28 KiB | 218.00 KiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+   02e5b46..b5242ec  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating 02e5b46..b5242ec
+Fast-forward
+ amb_w_tds/scripts/bom_fixer.py | 38 +++++++++++++++++++++++++++-----------
+ 1 file changed, 27 insertions(+), 11 deletions(-)
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+
+======================================================================
+BOM FIXER - LIVE MODE
+======================================================================
+Timestamp: 2026-02-16T21:44:58.505773
+
+============================================================
+Fixing BOM-0307-006 (Self-reference bug)
+============================================================
+Current items: ['0307', 'LBL0307']
+DocStatus: 2, Is Active: 0, Is Default: 0
+ℹ️ Using company: AMB-Wellness
+✅ Deleted cancelled BOM-0307-006
+ℹ️ Active BOM BOM-0307-004 already exists, skipping creation
+
+============================================================
+Reviewing BOM-0301-001 (Missing parent verification)
+============================================================
+Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']
+⚠️ REVIEW NEEDED: Has 0227 variant but naming doesn't match expected hierarchy
+   Found: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL']
+   Expected: 0227-PERMEADO
+
+============================================================
+Reviewing BOM-0303-005 (Cost BOM structure)
+============================================================
+Current items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+DocStatus: 0, Is Active: 1
+⚠️ REVIEW NEEDED: This is a cost tracking BOM, not manufacturing
+   Contains: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']
+   Missing: Raw material (0227-NORMAL)
+
+============================================================
+Reviewing BOM-A0303-001 (Audit expectation correction)
+============================================================
+Current items: ['0303', 'M016', 'E004', 'E009', 'E008', '0712-LQE-CLRD-COSMETIC']
+✅ BOM structure is CORRECT
+   Has 0303 as sub-assembly (correct)
+   Audit expectation was wrong (expected 0227-NORMAL)
+
+======================================================================
+SUMMARY
+======================================================================
+Fixed: 0
+Would Fix (dry run): 0
+Review Needed: 2
+Already Correct: 1
+Errors: 0
+  ⏭️ BOM-0307-006: Active BOM BOM-0307-004 already exists for 0307...
+  ⚠️ BOM-0301-001: Has 0227 variant but not named 0227-PERMEADO. Manual verific...
+  ⚠️ BOM-0303-005: Cost BOM (utilities/labor only). May need separate manufactu...
+  ✓ BOM-A0303-001: BOM structure is CORRECT. Has 0303 as sub-assembly. Audit ex...
+📨 Posted to Raven: **BOM Fixer Results** (2026-02-16 21:44)
+
+Fixed: 0...
+[{"bom": "BOM-0307-006", "item": "0307", "status": "skipped", "action": "Active BOM BOM-0307-004 already exists for 0307"}, {"bom": "BOM-0301-001", "item": "0301", "status": "review_needed", "action": "Has 0227 variant but not named 0227-PERMEADO. Manual verification required. Current items: ['0227-30X- Fair Trade-CLRD-NOPRCV-LQE-ORGANIC-220L BRRL-0303-HDL', 'LBL4INX6INBL', 'E028', 'E030']"}, {"bom": "BOM-0303-005", "item": "0303", "status": "review_needed", "action": "Cost BOM (utilities/labor only). May need separate manufacturing BOM with 0227-NORMAL. Items: ['MAQ', 'TRANSP_LEAF', 'WATER', 'ELECTRIC', 'GAS', 'LABOR']"}, {"bom": "BOM-A0303-001", "item": "A0303", "status": "correct", "action": "BOM structure is CORRECT. Has 0303 as sub-assembly. Audit expected wrong parent (0227-NORMAL instead of 0303)."}]
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd ~/frappe-bench/apps/amb_w_tds && git pull
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 10 (delta 6), reused 7 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (10/10), 8.67 KiB | 1.45 MiB/s, done.
+From github.com:rogerboy38/amb_w_tds
+   b5242ec..bc2fa76  feature/v9.1.0-development -> origin/feature/v9.1.0-development
+Updating b5242ec..bc2fa76
+Fast-forward
+ amb_w_tds/scripts/BOM_PHASE3_COMPLETION_HANDOUT.md | 146 +++++++++++
+ amb_w_tds/scripts/bom_status_manager.py            | 700 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 846 insertions(+)
+ create mode 100644 amb_w_tds/scripts/BOM_PHASE3_COMPLETION_HANDOUT.md
+ create mode 100644 amb_w_tds/scripts/bom_status_manager.py
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ bench execute amb_w_tds.scripts.bom_status_manager.run_health_check
+bench execute amb_w_tds.scripts.bom_status_manager.run_health_check --kwargs '{"verbose": true}'
+bench execute amb_w_tds.scripts.bom_status_manager.get_bom_insights --kwargs '{"bom_name": "BOM-XXXX-XXX"}'
+bench execute amb_w_tds.scripts.bom_status_manager.get_repair_suggestions
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+======================================================================
+BOM STATUS MANAGER - HEALTH CHECK
+Run Time: 2026-02-16 22:21:45.525348
+Company: Formulated
+======================================================================
+
+🔍 Checking: Circular References...
+   ✅ No issues found
+
+🔍 Checking: Orphaned BOMs...
+   ✅ No issues found
+
+🔍 Checking: Missing Default BOMs...
+   ⚠️  Found 5 issue(s)
+
+🔍 Checking: Multiple Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Inactive Default BOMs...
+   ⚠️  Found 14 issue(s)
+
+🔍 Checking: Cost Anomalies...
+   ✅ No issues found
+
+🔍 Checking: Missing Components...
+   ✅ No issues found
+
+======================================================================
+HEALTH CHECK SUMMARY
+======================================================================
+Total Issues: 19
+  🔴 Critical: 0
+  🟠 High: 0
+  🟡 Medium: 19
+  🔵 Low: 0
+
+By Type:
+  - INACTIVE_DEFAULT: 14
+  - NO_DEFAULT_BOM: 5
+
+🏥 Overall Health Status: WARNING
+======================================================================
+{"timestamp": "2026-02-16 22:21:45.839678", "company": "Formulated", "health_status": "WARNING", "total_issues": 19, "severity_counts": {"MEDIUM": 19}, "type_counts": {"NO_DEFAULT_BOM": 5, "INACTIVE_DEFAULT": 14}, "issues": [{"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0303", "item_name": "0303 ALOE VERA NORMAL", "bom_count": 1, "message": "Item 0303 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0307", "item_name": "INNOVALOE ALOE VERA GEL SPRAY DRIED POWDER 200:1", "bom_count": 1, "message": "Item 0307 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0612", "item_name": "ALOE 70% + GOMA BB 30%", "bom_count": 1, "message": "Item 0612 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0705", "item_name": "INNOVALOE ALOE VERA GEL JUICE 1:1 ORGANIC", "bom_count": 1, "message": "Item 0705 has 1 active BOM(s) but none set as default"}, {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0712-LQE-CLRD-COSMETIC", "item_name": "INNOVALOE ALOE VERA GEL CONCENTRATE 30:1-LQE-CLRD-COSMETIC", "bom_count": 1, "message": "Item 0712-LQE-CLRD-COSMETIC has 1 active BOM(s) but none set as default"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0301-001", "item": "0301", "message": "BOM BOM-0301-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "item": "0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "message": "BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001", "message": "BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334-001", "item": "0334-TEMPLATE", "message": "BOM BOM-0334-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-20251116-014156", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-2109", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-2109 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0705-004", "item": "0705", "message": "BOM BOM-0705-004 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001", "item": "0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20", "message": "BOM BOM-0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-001", "item": "A0303", "message": "BOM BOM-A0303-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS LTH 1PPM-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001", "item": "A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM", "message": "BOM BOM-A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227022211-001", "item": "ITEM_0227022211", "message": "BOM BOM-ITEM_0227022211-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-ITEM_0227067241-001", "item": "ITEM_0227067241", "message": "BOM BOM-ITEM_0227067241-001 is marked as default but is docstatus=0"}, {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-TEST-20251116-120034", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-TEST-20251116-120034 is marked as default but is docstatus=0"}]}
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Traceback (most recent call last):
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+           ~~~~~~~~~~~~~~^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 273, in execute
+    fn_kwargs = eval(kwargs)
+  File "<string>", line 1, in <module>
+NameError: name 'true' is not defined. Did you mean: 'True'?
+
+name 'true' is not defined
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+
+📊 BOM INSIGHTS: BOM-XXXX-XXX
+======================================================================
+❌ BOM BOM-XXXX-XXX not found
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+
+🔧 BOM REPAIR ADVISOR
+======================================================================
+======================================================================
+BOM STATUS MANAGER - HEALTH CHECK
+Run Time: 2026-02-16 22:21:47.610030
+Company: Formulated
+======================================================================
+
+🔍 Checking: Circular References...
+   ✅ No issues found
+
+🔍 Checking: Orphaned BOMs...
+   ✅ No issues found
+
+🔍 Checking: Missing Default BOMs...
+   ⚠️  Found 5 issue(s)
+
+🔍 Checking: Multiple Default BOMs...
+   ✅ No issues found
+
+🔍 Checking: Inactive Default BOMs...
+   ⚠️  Found 14 issue(s)
+
+🔍 Checking: Cost Anomalies...
+   ✅ No issues found
+
+🔍 Checking: Missing Components...
+   ✅ No issues found
+
+======================================================================
+HEALTH CHECK SUMMARY
+======================================================================
+Total Issues: 19
+  🔴 Critical: 0
+  🟠 High: 0
+  🟡 Medium: 19
+  🔵 Low: 0
+
+By Type:
+  - INACTIVE_DEFAULT: 14
+  - NO_DEFAULT_BOM: 5
+
+🏥 Overall Health Status: WARNING
+======================================================================
+
+==================================================
+Issue: Item 0303 has 1 active BOM(s) but none set as default
+Severity: MEDIUM
+Action: Set BOM-0303-001 as default BOM
+Impact: MEDIUM - Production planning may use wrong BOM
+Auto-fixable: Yes
+
+==================================================
+Issue: Item 0307 has 1 active BOM(s) but none set as default
+Severity: MEDIUM
+Action: Set BOM-0307-004 as default BOM
+Impact: MEDIUM - Production planning may use wrong BOM
+Auto-fixable: Yes
+
+==================================================
+Issue: Item 0612 has 1 active BOM(s) but none set as default
+Severity: MEDIUM
+Action: Set BOM-0612-001 as default BOM
+Impact: MEDIUM - Production planning may use wrong BOM
+Auto-fixable: Yes
+
+==================================================
+Issue: Item 0705 has 1 active BOM(s) but none set as default
+Severity: MEDIUM
+Action: Set BOM-0705-002 as default BOM
+Impact: MEDIUM - Production planning may use wrong BOM
+Auto-fixable: Yes
+
+==================================================
+Issue: Item 0712-LQE-CLRD-COSMETIC has 1 active BOM(s) but none set as default
+Severity: MEDIUM
+Action: Set BOM-0712-LQE-CLRD-COSMETIC-001 as default BOM
+Impact: MEDIUM - Production planning may use wrong BOM
+Auto-fixable: Yes
+
+==================================================
+Issue: BOM BOM-0301-001 is marked as default but is docstatus=0
+Severity: MEDIUM
+Action: Either activate BOM BOM-0301-001 or remove default flag
+Impact: MEDIUM - Default BOM is not usable
+Auto-fixable: Yes
+
+==================================================
+Issue: BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0
+Severity: MEDIUM
+Action: Either activate BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 or remove default flag
+Impact: MEDIUM - Default BOM is not usable
+Auto-fixable: Yes
+
+==================================================
+Issue: BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0
+Severity: MEDIUM
+Action: Either activate BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 or remove default flag
+Impact: MEDIUM - Default BOM is not usable
+Auto-fixable: Yes
+
+==================================================
+Issue: BOM BOM-0334-001 is marked as default but is docstatus=0
+Severity: MEDIUM
+Action: Either activate BOM BOM-0334-001 or remove default flag
+Impact: MEDIUM - Default BOM is not usable
+Auto-fixable: Yes
+
+==================================================
+Issue: BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0
+Severity: MEDIUM
+Action: Either activate BOM BOM-0334009251-1-C1-20251116-014156 or remove default flag
+Impact: MEDIUM - Default BOM is not usable
+Auto-fixable: Yes
+
+======================================================================
+Total suggestions: 10
+[{"issue": {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0303", "item_name": "0303 ALOE VERA NORMAL", "bom_count": 1, "message": "Item 0303 has 1 active BOM(s) but none set as default"}, "recommended_action": "Set BOM-0303-001 as default BOM", "impact": "MEDIUM - Production planning may use wrong BOM", "auto_fixable": true}, {"issue": {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0307", "item_name": "INNOVALOE ALOE VERA GEL SPRAY DRIED POWDER 200:1", "bom_count": 1, "message": "Item 0307 has 1 active BOM(s) but none set as default"}, "recommended_action": "Set BOM-0307-004 as default BOM", "impact": "MEDIUM - Production planning may use wrong BOM", "auto_fixable": true}, {"issue": {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0612", "item_name": "ALOE 70% + GOMA BB 30%", "bom_count": 1, "message": "Item 0612 has 1 active BOM(s) but none set as default"}, "recommended_action": "Set BOM-0612-001 as default BOM", "impact": "MEDIUM - Production planning may use wrong BOM", "auto_fixable": true}, {"issue": {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0705", "item_name": "INNOVALOE ALOE VERA GEL JUICE 1:1 ORGANIC", "bom_count": 1, "message": "Item 0705 has 1 active BOM(s) but none set as default"}, "recommended_action": "Set BOM-0705-002 as default BOM", "impact": "MEDIUM - Production planning may use wrong BOM", "auto_fixable": true}, {"issue": {"type": "NO_DEFAULT_BOM", "severity": "MEDIUM", "item": "0712-LQE-CLRD-COSMETIC", "item_name": "INNOVALOE ALOE VERA GEL CONCENTRATE 30:1-LQE-CLRD-COSMETIC", "bom_count": 1, "message": "Item 0712-LQE-CLRD-COSMETIC has 1 active BOM(s) but none set as default"}, "recommended_action": "Set BOM-0712-LQE-CLRD-COSMETIC-001 as default BOM", "impact": "MEDIUM - Production planning may use wrong BOM", "auto_fixable": true}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0301-001", "item": "0301", "message": "BOM BOM-0301-001 is marked as default but is docstatus=0"}, "recommended_action": "Either activate BOM BOM-0301-001 or remove default flag", "impact": "MEDIUM - Default BOM is not usable", "auto_fixable": true}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "item": "0334 -WTLB-25KG PAIL-NOPRCV-SPD-001", "message": "BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 is marked as default but is docstatus=0"}, "recommended_action": "Either activate BOM BOM-0334 -WTLB-25KG PAIL-NOPRCV-SPD-001 or remove default flag", "impact": "MEDIUM - Default BOM is not usable", "auto_fixable": true}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001", "message": "BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 is marked as default but is docstatus=0"}, "recommended_action": "Either activate BOM BOM-0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC-001-001 or remove default flag", "impact": "MEDIUM - Default BOM is not usable", "auto_fixable": true}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334-001", "item": "0334-TEMPLATE", "message": "BOM BOM-0334-001 is marked as default but is docstatus=0"}, "recommended_action": "Either activate BOM BOM-0334-001 or remove default flag", "impact": "MEDIUM - Default BOM is not usable", "auto_fixable": true}, {"issue": {"type": "INACTIVE_DEFAULT", "severity": "MEDIUM", "bom": "BOM-0334009251-1-C1-20251116-014156", "item": "0334- Fair Trade-VLAM-30/70-10KG PAIL-NOPRCV-SPD-COSMETIC", "message": "BOM BOM-0334009251-1-C1-20251116-014156 is marked as default but is docstatus=0"}, "recommended_action": "Either activate BOM BOM-0334009251-1-C1-20251116-014156 or remove default flag", "impact": "MEDIUM - Default BOM is not usable", "auto_fixable": true}]
+frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ 
