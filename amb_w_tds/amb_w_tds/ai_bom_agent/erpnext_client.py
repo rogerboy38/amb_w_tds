@@ -58,7 +58,7 @@ class ItemAndBOMService:
         self,
         item_code: str,
         item_name: str,
-        item_group: str = "SFG Semi Finished Goods - AMB-W",
+        item_group: str = "AMBW - SFG Processing - AMB-W",
         stock_uom: str = "Kg",
         is_stock_item: int = 1,
         include_item_in_manufacturing: int = 1,
@@ -335,6 +335,6 @@ class ItemAndBOMService:
             SELECT item_code 
             FROM `tabItem` 
             WHERE item_code LIKE %s
-            AND item_group = 'SFG Semi Finished Goods - AMB-W'
+            AND item_group = 'AMBW - SFG Processing - AMB-W'
             AND disabled = 0
         """, pattern)
