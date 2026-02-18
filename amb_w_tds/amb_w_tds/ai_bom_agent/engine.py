@@ -285,12 +285,32 @@ class AgentCoreEngine:
     
     def _generate_fg_item(self, spec: ParsedSpec) -> Dict[str, Any]:
         """Generate finished goods item details."""
-        # FG naming: {FAMILY}-{ATTRIBUTE}-{FLAVOR}-{PACKAGING}
-        item_code = f"{spec.family}-{spec.attribute}-{spec.flavor}-{spec.packaging}"
+        # FG naming: Build from non-None parts
+        # Pattern: {FAMILY}-{CONCENTRATION}-{CERT}-{PACKAGING}
+        # Default cert: "Fair Trade" for organic products
+        parts = [spec.family]
+        
+        # Add concentration if available (e.g., "30X", "200X")
+        if spec.attribute:
+            parts.append(spec.attribute)
+        
+        # Add certification (default to "Fair Trade" if not specified)
+        cert = spec.flavor if spec.flavor else "Fair Trade"
+        parts.append(cert)
+        
+        # Add packaging
+        if spec.packaging:
+            parts.append(spec.packaging)
+        
+        item_code = "-".join(parts)
+        
+        # Build item name
+        name_parts = [p for p in [spec.family, spec.attribute, cert] if p]
+        item_name = " ".join(name_parts) + f" ({spec.packaging})" if spec.packaging else " ".join(name_parts)
         
         return {
             "item_code": item_code,
-            "item_name": f"{spec.family} {spec.attribute} {spec.flavor} ({spec.packaging})",
+            "item_name": item_name,
             "item_group": "Finished Goods",
             "stock_uom": spec.target_uom
         }
