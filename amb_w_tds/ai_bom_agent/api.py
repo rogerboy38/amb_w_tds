@@ -40,12 +40,12 @@ def create_multi_level_bom_from_spec(
     Example:
         # Via bench execute
         bench --site mysite execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec \\
-            --kwargs '{"request_text": "0227-ORGANIC-NATURAL-1000L-IBC", "dry_run": True}'
+            --kwargs '{"request_text": "0307", "dry_run": True}'
         
         # Via frappe.call
         frappe.call(
             "amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec",
-            request_text="0227-ORGANIC-NATURAL-1000L-IBC",
+            request_text="0307",
             dry_run=True
         )
     """
