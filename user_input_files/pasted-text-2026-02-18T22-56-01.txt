@@ -1,0 +1,172 @@
+(env) frappe@UbuntuVM:~/frappe-bench$ bench console
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, drive, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, crm_host
+
+   ...: print("=== Custom Fields on Item with 'plant' ===")
+   ...: custom_fields = frappe.get_all("Custom Field",
+   ...:     filters={"dt": "Item"},
+   ...:     fields=["fieldname", "label", "fieldtype", "options"]
+   ...: )
+   ...: for cf in custom_fields:
+   ...:     if "plant" in (cf.fieldname or "").lower() or "plant" in (cf.label o
+   ...: r "").lower():
+   ...:         print(f"  Field: {cf.fieldname}, Label: {cf.label}, Type: {cf.fi
+   ...: eldtype}, Options: {cf.options}")
+   ...: 
+   ...: # 2. Check linked DocTypes for available Plant records
+   ...: print("\n=== Production Plant AMB Records ===")
+   ...: plants = frappe.get_all("Production Plant AMB", fields=["name", "product
+   ...: ion_plant_name"])
+   ...: for p in plants:
+   ...:     print(f"  {p.name}: {p.production_plant_name}")
+   ...: 
+   ...: print("\n=== Plant Configuration Records ===")
+   ...: configs = frappe.get_all("Plant Configuration", fields=["name", "plant_n
+   ...: ame", "plant_code"])
+   ...: for c in configs:
+   ...:     print(f"  {c.name}: {c.plant_name} ({c.plant_code})")
+   ...: 
+=== Custom Fields on Item with 'plant' ===
+  Field: custom_manufacturing_plant, Label: Manufacturing Plant, Type: Link, Options: Warehouse
+  Field: custom_plant_code1, Label: Plant Code, Type: Link, Options: Plant Configuration
+
+=== Production Plant AMB Records ===
+---------------------------------------------------------------------------
+DoesNotExistError                         Traceback (most recent call last)
+Cell In[1], line 15
+     13 # 2. Check linked DocTypes for available Plant records
+     14 print("\n=== Production Plant AMB Records ===")
+---> 15 plants = frappe.get_all("Production Plant AMB", fields=["name", "production_plant_name"])
+     16 for p in plants:
+     17     print(f"  {p.name}: {p.production_plant_name}")
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1382, in get_all(doctype, *args, **kwargs)
+   1380 if "limit_page_length" not in kwargs:
+   1381 	kwargs["limit_page_length"] = 0
+-> 1382 return get_list(doctype, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1357, in get_list(doctype, *args, **kwargs)
+   1338 """List database query via `frappe.model.db_query`. Will also check for permissions.
+   1339 
+   1340 :param doctype: DocType on which query is to be made.
+   (...)
+   1353         frappe.get_list("ToDo", fields="*", filters = [["modified", ">", "2014-01-01"]])
+   1354 """
+   1355 import frappe.model.qb_query
+-> 1357 return frappe.model.qb_query.DatabaseQuery(doctype).execute(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/qb_query.py:124, in DatabaseQuery.execute(self, fields, filters, or_filters, group_by, order_by, limit, offset, limit_start, limit_page_length, as_list, with_childnames, debug, ignore_permissions, user, with_comment_count, join, distinct, start, page_length, ignore_ifnull, save_user_settings, save_user_settings_fields, update, user_settings, reference_doctype, run, strict, pluck, ignore_ddl, parent_doctype, ignore_user_permissions)
+    121 self.fields = fields
+    123 # Handle virtual doctypes before any other processing
+--> 124 if is_virtual_doctype(self.doctype):
+    125 	return self._handle_virtual_doctype(
+    126 		fields,
+    127 		filters,
+   (...)
+    141 		parent_doctype,
+    142 	)
+    144 # Handle deprecated parameters
+
+File ~/frappe-bench/apps/frappe/frappe/utils/caching.py:157, in site_cache.<locals>.time_cache_wrapper.<locals>.site_cache_wrapper(*args, **kwargs)
+    154 	with suppress(RuntimeError):
+    155 		function_cache.pop(next(iter(function_cache)), None)
+--> 157 result = func(*args, **kwargs)
+    158 function_cache[arguments_key] = result
+    160 return result
+
+File ~/frappe-bench/apps/frappe/frappe/model/utils/__init__.py:141, in is_virtual_doctype(doctype)
+    134 if frappe.flags.in_install or frappe.flags.in_migrate:
+    135 	return (
+    136 		frappe.db.get_value("DocType", doctype, "is_virtual")
+    137 		if frappe.db.has_column("DocType", "is_virtual")
+    138 		else False
+    139 	)
+--> 141 return getattr(frappe.get_meta(doctype), "is_virtual", False)
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:89, in get_meta(doctype, cached)
+     82 if (
+     83 	cached
+     84 	and isinstance(doctype, str)
+     85 	and (meta := frappe.client_cache.get_value(f"doctype_meta::{doctype}"))
+     86 ):
+     87 	return meta
+---> 89 meta = Meta(doctype)
+     91 key = f"doctype_meta::{meta.name}"
+     92 frappe.client_cache.set_value(key, meta)
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:153, in Meta.__init__(self, doctype)
+    151 	super().__init__(doctype.as_dict())
+    152 else:
+--> 153 	super().__init__("DocType", doctype)
+    155 self.process()
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:208, in Document.__init__(self, *args, **kwargs)
+    205 	# for_update is set in flags to avoid changing load_from_db signature
+    206 	# since it is used in virtual doctypes and inherited in child classes
+    207 	self.flags.for_update = kwargs.get("for_update", False)
+--> 208 	self.load_from_db()
+    209 	return
+    211 if isinstance(first_arg, dict):
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:159, in Meta.load_from_db(self)
+    157 def load_from_db(self):
+    158 	try:
+--> 159 		super().load_from_db()
+    160 	except frappe.DoesNotExistError:
+    161 		if self.doctype == "DocType" and self.name in self.special_doctypes:
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:276, in Document.load_from_db(self)
+    267 		d = frappe.db.get_value(
+    268 			doctype=self.doctype,
+    269 			filters=self.name,
+   (...)
+    272 			as_dict=True,
+    273 		)
+    275 	if not d:
+--> 276 		frappe.throw(
+    277 			_("{0} {1} not found").format(_(self.doctype), self.name),
+    278 			frappe.DoesNotExistError(doctype=self.doctype),
+    279 		)
+    281 	super().__init__(d)
+    282 self.flags.pop("ignore_children", None)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+    129 def throw(
+    130 	msg: str | Sequence[str],
+    131 	exc: type[Exception] | Exception = frappe.ValidationError,
+   (...)
+    136 	primary_action=None,
+    137 ) -> None:
+    138 	"""Throw execption and show message (`msgprint`).
+    139 
+    140 	:param msg: Message.
+   (...)
+    146 	:param primary_action: [optional] Bind a primary server/client side action.
+    147 	"""
+--> 148 	msgprint(
+    149 		msg,
+    150 		raise_exception=exc,
+    151 		title=title,
+    152 		indicator="red",
+    153 		is_minimizable=is_minimizable,
+    154 		wide=wide,
+    155 		as_list=as_list,
+    156 		primary_action=primary_action,
+    157 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+    107 else:
+    108 	frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+     56 if out.__frappe_exc_id:
+     57 	exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+DoesNotExistError: DocType Production Plant AMB not found
+
