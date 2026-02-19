@@ -7,10 +7,25 @@
 frappe.provide('frappe.ui');
 frappe.provide('amb.batch_widget');
 
-// Initialize when page loads
+// Initialize when page loads AND on Frappe SPA route changes
 $(document).ready(function() {
     initializeBatchWidget();
 });
+
+// Re-initialize on Frappe SPA page changes (route transitions)
+if (typeof frappe !== 'undefined' && frappe.router) {
+    frappe.router.on('change', function() {
+        setTimeout(function() {
+            if (frappe.session && frappe.session.user !== 'Guest' && !isWidgetHidden()) {
+                if ($('.batch-announcement-widget').length === 0) {
+                    console.log('\ud83d\udd04 SPA route change detected, re-initializing widget...');
+                    update_batch_announcements();
+                    addGlobalRefreshButton();
+                }
+            }
+        }, 2000);
+    });
+}
 
 // Enhanced Configuration
 amb.batch_widget.config = {
