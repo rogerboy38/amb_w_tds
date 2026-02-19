@@ -1,0 +1,295 @@
+Perfect. Here is the Phase 7 handout skeleton you can paste into MiniMax, including test plan and closure criteria.
+
+PHASE 7 HANDOUT: Mesh Sizes, Customer Naming, Batch Flags, Raven Chat Skill
+Branch: feature/v9.2.0-development
+Parent commit: 1d29b75 (Phase 6 HIGHPOL/ACETYPOL + organic sub‑certs complete, all tests green)
+​
+
+1. Context
+Phases 1–6 implemented and tested:
+
+Template engine and core BOM Agent (parser, engine, validators, templates, API, scripts).
+
+Variant parsing for concentration ratios and slash‑variants (0227, 0307, HIGHPOL, ACETYPOL).
+
+Certification parsing including ORG‑EU, ORG‑NOP, ORG‑KR, KOS‑ORG, COSMOS, etc.
+
+New product families HIGHPOL and ACETYPOL with spray‑dry templates and FG naming pattern {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}.
+
+The orchestrator report and Phase 6 notes identify the next priorities:
+
+Mesh size parsing for powders.
+
+Customer‑specific naming patterns.
+
+Batch/lot tracking integration hooks.
+
+Integrating the AI BOM Agent as a Raven skill so users can create BOMs via chat and get BOM answers in channels.
+
+2. Phase 7 Objectives
+Implement usability and traceability enhancements around powders and naming, then expose the agent through Raven:
+
+Mesh size parsing for powder families (0307, HIGHPOL, ACETYPOL).
+
+Customer‑specific naming patterns for FG items.
+
+Batch/lot flags on generated items for downstream batch tracking.
+
+Raven AI integration: expose the BOM Agent as a Raven skill, with human‑readable responses and ERPNext links.
+
+3. Detailed Tasks
+Task 7.1 – Mesh Size Parsing for Powders
+Goal: Support inputs like 0307 200:1 powder, 100 mesh or Highpol 20/25 100 mesh and capture mesh size.
+
+Implementation:
+
+Model / data_contracts
+
+Add optional field mesh_size: Optional[str] to ParsedSpec and propagate to PlannedItem/PlannedBOM if needed.
+​
+
+Parser – detection & normalization
+
+In ProductSpecificationParser (parser.py), add constant list MESH_PATTERNS, e.g.:
+
+r"\b(\d+)\s*mesh\b"
+
+r"\bmesh\s*(\d+)\b"
+
+Normalize to "{number}M" (e.g. 100M).
+
+Add _extract_mesh_size(text: str, family: str) -> Optional[str] that:
+
+Only runs for powder families: 0307, HIGHPOL, ACETYPOL.
+​
+
+Checks patterns in order; returns first valid normalized value.
+
+Valid values list can be configurable per family (e.g. 60, 80, 100).
+
+Integration into parsing flow
+
+Call _extract_mesh_size inside _parse_natural_language() and _parse_item_code() (if text includes mesh).
+
+Attach mesh_size to ParsedSpec and carry through engine to FG item attributes or description.
+
+No breaking change requirement
+
+If no mesh size is mentioned, behavior remains identical to Phase 6.
+
+Task 7.2 – Customer‑Specific Naming Patterns
+Goal: Allow FG naming rules per customer without breaking the global pattern:
+
+Config structure
+
+Introduce a simple config (JSON file in templates/ or a Python dict in e.g. config.py) for rules, e.g.:
+
+json
+{
+  "CUSTOMER_XYZ": {
+    "pattern": "{FAMILY}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}",
+    "customer_code": "XYZ",
+    "default_cert": "ORG-EU",
+    "default_packaging": "1000L-IBC"
+  }
+}
+Spec input
+
+Extend ParsedSpec to have an optional customer and customer_code.
+
+In _parse_natural_language, detect customer tags like "for customer XYZ" or "for XYZ" (simple regex or keyword map).
+
+Engine naming logic
+
+In engine.py _generate_fg_item() (where cert_names already exist), add a layer:
+
+If spec.customer_code (or spec.customer) is present and a rule exists:
+
+Build FG item_code and item_name using the rule’s pattern.
+
+Else fallback to existing {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING} pattern.
+
+Backward compatibility
+
+No change for existing requests without customer info.
+
+If customer specified but no rule exists, use fallback (and log a warning in the report).
+
+Task 7.3 – Batch/Lot Tracking Flags
+Goal: Ensure BOM‑generated items are compatible with Batch AMB and batch tracking:
+
+Item flags
+
+In ItemAndBOMService (erpnext_client.py), when creating Items for families 0227, 0307, HIGHPOL, ACETYPOL:
+
+Set has_batch_no = 1 (and any custom fields like amb_requires_batch_tracking = 1 used by Batch AMB).
+
+Report hints
+
+In GenerationReport, add a section batch_tracking summarizing:
+
+Whether the created items are batch‑enabled.
+
+Suggested golden number template (if already defined in your Batch AMB project).
+
+No direct Batch AMB modification
+
+Phase 7 does not modify Batch AMB logic; it only ensures BOM outputs are ready for it.
+
+Task 7.4 – Raven Integration (BOM Skill)
+Goal: Allow Raven chat users to call the BOM Agent and get answers with ERPNext links.
+
+Skill in raven_ai_agent
+
+Add a new skill module, e.g. agents/bom_creator_agent.py or similar structure already used.
+
+Skill accepts parameters:
+
+request_text: str
+
+dry_run: bool (default true)
+
+optional customer: str
+
+Skill calls ERPNext via REST or internal Frappe client to:
+
+amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec.
+
+Response format
+
+Return Markdown summary with:
+
+Family, certification, variant, packaging, mesh size (if any).
+
+List of created/impacted Items and BOMs.
+
+ERPNext links (/app/item/<name>, /app/bom/<name>).
+
+Channel integration
+
+Configure Raven triggers so that messages containing e.g. 0227, 0307, HIGHPOL, ACETYPOL, BOM, or create BOM suggest the skill.
+
+Docs
+
+Add a short usage section to docs/AI_BOM_AGENT_ORCHESTRATOR_REPORT.md explaining how to invoke this skill in chat.
+​
+
+4. Test Plan (Phase 7)
+Create a script scripts/test_v9.2.0_phase7.sh, similar to Phase 2/3 scripts, that runs a set of bench execute tests and asserts JSON fields.
+
+4.1 Parser & Engine Tests (Mesh, Naming, Batch)
+T7.1 – Mesh size parsing (HIGHPOL)
+
+Command:
+
+bash
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "Create HIGHPOL 20/25 100 mesh Aloe vera powder, fair trade, 25kg bags", "dry_run": true}'
+Expect in result JSON:
+
+family = "HIGHPOL"
+
+variant = "20/25"
+
+mesh_size = "100M"
+
+FG item code starts with HIGHPOL-FT-20/25-25KG-BAG (or customer rule variant, if any).
+
+T7.2 – Mesh size parsing (0307)
+
+Input: "0307 200:1 powder 100 mesh"
+
+Expect:
+
+family = "0307", variant = "200X", mesh_size = "100M".
+
+T7.3 – Customer naming rule
+
+Precondition: define a rule for CUSTOMER_XYZ as {FAMILY}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}.
+
+Command:
+
+bash
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227 EU organic 30:1 for customer XYZ in 1000L IBC", "dry_run": true}'
+Expect:
+
+certification_code = "ORG-EU" (from CERTIFICATION_MAP).
+
+FG item code matches pattern, e.g. 0227-XYZ-30X-1000L-IBC.
+
+T7.4 – Batch flag check
+
+Pick any Phase 7 test that creates an Item.
+
+After run, verify via separate script or inline:
+
+python
+item = frappe.get_doc("Item", "<FG-ITEM-NAME>")
+assert item.has_batch_no == 1
+Expect: all 0227/0307/HIGHPOL/ACETYPOL FGs created by the agent have batch flag enabled.
+
+4.2 Raven Skill Tests
+These are semi‑automated/manual:
+
+T7.5 – Direct skill call (dry run)
+
+Use Raven’s internal test harness or a curl POST to the skill endpoint with:
+
+json
+{
+  "request_text": "Create 0227 fair trade 30:1 in 1000L IBC",
+  "dry_run": true
+}
+Expect:
+
+HTTP 200 from Raven skill.
+
+Response body containing summary and ERPNext links.
+
+T7.6 – Chat invocation
+
+In a Raven channel on your ERPNext site, send:
+
+"@ai create BOM for 0227 EU organic 30:1 in 1000L IBC (dry run)"
+
+Expect:
+
+Skill is triggered.
+
+Bot replies with concise BOM summary and links; no stack traces or raw JSON shown.
+
+4.3 Regression
+Re‑run existing Phase 4/5/6 tests to ensure no regressions:
+
+Variant parsing for 0227/0307.
+
+Certification mapping including ORG‑EU, ORG‑NOP, ORG‑KR, COSMOS.
+
+Highpol/Acetypol family parsing and templates.
+
+5. Definition of Done (When Phase 7 is “Closed”)
+Phase 7 is considered complete when all of the following are true:
+
+Code & behavior
+
+Mesh size is parsed and normalized for powder families, without breaking existing variant/cert logic.
+
+Customer naming rules are applied when configured; fallback naming remains unchanged for others.
+
+Items generated for juice/powder families have batch tracking flags set and no errors when later used in batch workflows.
+
+A Raven BOM skill exists in raven_ai_agent and can call the Frappe BOM Agent API to produce human‑readable summaries and links.
+
+Tests
+
+scripts/test_v9.2.0_phase7.sh executes successfully on sandbox with all checks passing.
+
+Manual Raven chat tests T7.5–T7.6 succeed at least once each.
+
+Documentation
+
+docs/BOM_PHASE7_COMPLETION_HANDOUT.md created, summarizing: scope, code changes, commands, and test outcomes.
+
+docs/AI_BOM_AGENT_ORCHESTRATOR_REPORT.md updated with a new Phase 7 section describing Raven integration, mesh/naming/batch enhancements, and recommendations for future phases.
+​
+
+If you want, next step I can draft the exact scripts/test_v9.2.0_phase7.sh skeleton (bash + expected outputs) or the Raven skill signature and example payload.
