@@ -34,38 +34,49 @@ class ProductSpecificationParser:
     # Supported product families with their characteristics
     PRODUCT_FAMILIES = {
         "0227": {
-            "name": "Aloe Vera Gel Concentrate 30:1",
+            "name": "Aloe Vera Gel Concentrate",
             "type": "SFG",  # Sub-assembly
             "item_group": "Products Liquid",
-            "concentration": "30X",
+            "default_concentration": "30X",
             "has_variants": True,
+            "valid_variants": ["1X", "10X", "20X", "30X"],  # concentration ratios
             "uom": "Kg"
         },
         "0307": {
-            "name": "Aloe Vera Gel Spray Dried Powder 200:1",
+            "name": "Aloe Vera Gel Spray Dried Powder",
             "type": "FG",  # Finished Good
             "item_group": "Products Powder",
-            "concentration": "200X",
-            "has_variants": False,
+            "default_concentration": "200X",
+            "has_variants": True,
+            "valid_variants": ["100X", "200X"],  # powder ratios
             "uom": "Kg"
         },
         "0303": {
             "name": "Aloe Vera Normal (Powder)",
             "type": "SFG",
             "item_group": "Dry 200x",
-            "concentration": "200X",
+            "default_concentration": "200X",
             "has_variants": False,
+            "valid_variants": [],
             "uom": "Kg"
         },
         "0301": {
             "name": "Aloe Vera Powder Base",
             "type": "SFG",
             "item_group": "Products Powder",
-            "concentration": "200X",
+            "default_concentration": "200X",
             "has_variants": False,
+            "valid_variants": [],
             "uom": "Kg"
         }
     }
+    
+    # Concentration ratio patterns for parsing
+    RATIO_PATTERNS = [
+        (re.compile(r"(\d+):1", re.IGNORECASE), lambda m: f"{m.group(1)}X"),  # 30:1 -> 30X
+        (re.compile(r"(\d+)X", re.IGNORECASE), lambda m: f"{m.group(1)}X"),   # 30X -> 30X
+        (re.compile(r"(\d+)x", re.IGNORECASE), lambda m: f"{m.group(1)}X"),   # 30x -> 30X
+    ]
     
     SUPPORTED_FAMILIES = list(PRODUCT_FAMILIES.keys())
     
@@ -224,6 +235,47 @@ class ProductSpecificationParser:
             parsed_at=datetime.now()
         )
     
+    def _extract_variant(self, request_text: str, family: str) -> Optional[str]:
+        """
+        Extract concentration variant from request text.
+        
+        Supports formats: 30:1, 30X, 30x
+        Validates against family's valid_variants list.
+        Falls back to default_concentration if no match.
+        
+        Args:
+            request_text: Raw request text
+            family: Product family code (e.g., "0227")
+            
+        Returns:
+            Normalized variant string (e.g., "30X") or None
+        """
+        family_info = self.PRODUCT_FAMILIES.get(family, {})
+        valid_variants = family_info.get("valid_variants", [])
+        default = family_info.get("default_concentration")
+        
+        # Try each pattern to extract variant
+        for pattern, normalizer in self.RATIO_PATTERNS:
+            match = pattern.search(request_text)
+            if match:
+                normalized = normalizer(match)
+                # Validate against valid_variants if list exists
+                if valid_variants:
+                    if normalized in valid_variants:
+                        return normalized
+                    # Check if numeric part matches (e.g., "200X" matches "200X")
+                    for vv in valid_variants:
+                        if normalized.upper() == vv.upper():
+                            return vv
+                else:
+                    return normalized
+        
+        # Return default if family has variants
+        if family_info.get("has_variants") and default:
+            return default
+        
+        return None
+
     def _parse_natural_language(self, request_text: str) -> ParsedSpec:
         """
         Parse a natural language request.
@@ -232,6 +284,7 @@ class ProductSpecificationParser:
         - "Create BOM for 0227 concentrate in IBC"
         - "0307 powder 200:1"
         - "Aloe vera gel concentrate 30:1"
+        - "0227 10X in drums" -> variant=10X
         """
         text_upper = request_text.upper()
         
@@ -260,6 +313,9 @@ class ProductSpecificationParser:
         
         family_info = self.PRODUCT_FAMILIES[family]
         
+        # Extract variant (concentration ratio)
+        variant = self._extract_variant(request_text, family)
+        
         # Extract packaging
         packaging = None
         container_item = None
@@ -267,13 +323,13 @@ class ProductSpecificationParser:
         
         for pkg_key, pkg_info in self.PACKAGING_FORMATS.items():
             # Check various forms
-            variants = [
+            pkg_variants = [
                 pkg_key,
                 pkg_key.replace("-", " "),
                 pkg_key.replace("-", ""),
                 pkg_key.split("-")[-1]
             ]
-            for v in variants:
+            for v in pkg_variants:
                 if v in text_upper:
                     packaging = pkg_key
                     container_item = pkg_info.get("container_item")
@@ -295,7 +351,7 @@ class ProductSpecificationParser:
         return ParsedSpec(
             family=family,
             attribute=None,
-            variant=None,
+            variant=variant,
             mesh_size=None,
             packaging=packaging,
             target_uom=family_info["uom"],
