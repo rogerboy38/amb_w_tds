@@ -1,104 +1,116 @@
-# BOM Creator Agent - Next Session Handout
-**Date:** 2026-02-19
-**Status:** ✅ Production deployment successful
+# BOM Agent Development - Session Handout
+
+**Date:** 2026-02-19  
+**Branch:** `feature/v9.2.0-development`  
+**Latest Commit:** `6878869`  
+**Repository:** https://github.com/rogerboy38/amb_w_tds.git
 
 ---
 
-## Session Summary (2026-02-19 08:15)
+## Project Summary
 
-### Completed Tasks
-1. ✅ Fixed Plant Configuration data inconsistency on production
-2. ✅ BOM Creator Agent v9.2.0 successfully tested on production
-3. ✅ Item naming convention working correctly: `0307- Fair Trade-25KG-BAG`
-4. ✅ **Renamed `flavor` → `variant`** across all BOM agent files
-
-### Files Updated for flavor→variant rename:
-- `ai_bom_agent/data_contracts.py` - ParsedSpec field and methods
-- `ai_bom_agent/engine.py` - Pattern resolution and item naming
-- `ai_bom_agent/parser.py` - ParsedSpec instantiation
-- `ai_bom_agent/templates/business_rules.json` - Rule descriptions
-- `ai_bom_agent/templates/naming_conventions.md` - Examples
-- `ai_bom_agent/templates/template_schema.json` - Schema definition
-- `ai_bom_agent/validators.py` - Validation descriptions
-
-### Plant Configuration Fix Applied
-Fixed mismatched Plant Configuration records. Final state:
-
-| Name | Plant Name | Plant Code |
-|------|------------|------------|
-| 1 (Mix) | 1 (Mix) | 1 (MIX) |
-| 2 (Dry) | 2 (Dry) | 2 (DRY) |
-| 3 (Juice) | 3 (Juice) | 3 (JUICE) |
-| 4 (Laboratory) | 4 (Laboratory) | 4 (LABORATORY) |
-| 5 (Formulated) | 5 (Formulated) | 5 (FORMULATED) |
+AI-powered Bill of Materials (BOM) creation agent for AMB Wellness, an Aloe Vera products manufacturer. The agent parses natural language requests and generates multi-level BOMs in ERPNext/Frappe.
 
 ---
 
-## 🔴 ACTION ITEMS FOR NEXT SESSION
+## Completed Phases This Session
 
-### 1. Deploy Updated Code to Production
-```bash
-cd /home/frappe/frappe-bench/apps/amb_w_tds
-git pull origin feature/v9.2.0-development
-bench --site v2.sysmayal.cloud migrate
+### Phase 3: Flavor → Variant Refactor ✅
+- Renamed `flavor` field to `variant` across entire codebase
+- Updated `ParsedSpec` dataclass, engine, parser, templates
+- Commit: `eb44fb0`
+
+### Phase 3B: Documentation Cleanup ✅
+- Updated `naming_conventions.md` with real product codes
+- Removed MANGO/PLAIN examples, replaced with 30X/HIGHPOL
+- Commit: `64122f6`
+
+### Phase 4: Variant Parsing Logic ✅
+- Added `RATIO_PATTERNS` for parsing concentration ratios (30:1 → 30X)
+- Added `valid_variants` and `default_concentration` to `PRODUCT_FAMILIES`
+- Implemented `_extract_variant()` method
+- Commits: `840235d`, `a068c67`
+
+### Phase 5: Certification/Attribute Parsing ✅
+- Added `CERTIFICATION_MAP` with all AMB Wellness certifications
+- Implemented `_extract_certification()` method
+- Fixed FG naming pattern: `{FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}`
+- Commit: `6878869`
+
+---
+
+## Current FG Naming Pattern
+
+```
+{FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}
 ```
 
-### 2. Test the Agent with variant Parameter
-```bash
-bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0307", "dry_run": True}'
-```
+Examples:
+- `0227-FT-30X-1000L-IBC` (Fair Trade, 30:1 concentrate in IBC)
+- `0227-ORG-10X-1000L-IBC` (Organic, 10:1 concentrate)
+- `0307-KOS-200X-25KG-BAG` (Kosher, 200:1 powder)
+- `0307-KOS-ORG-200X-25KG-BAG` (Kosher Organic, powder)
 
-### 3. Test Additional Product Families
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `ai_bom_agent/parser.py` | Request parsing, variant/certification extraction |
+| `ai_bom_agent/engine.py` | BOM generation logic, FG item naming |
+| `ai_bom_agent/data_contracts.py` | ParsedSpec dataclass |
+| `ai_bom_agent/api.py` | API entry point |
+| `ai_bom_agent/templates/` | Business rules, naming conventions |
+
+---
+
+## Certification Codes
+
+| Input | Code |
+|-------|------|
+| ORGANIC | ORG |
+| CONVENTIONAL | CONV |
+| KOSHER | KOS |
+| KOSHER ORGANIC | KOS-ORG |
+| FAIR TRADE | FT (default) |
+| HALAL | HALAL |
+| IASC | IASC |
+| FSSC | FSSC |
+| COSMOS | COSMOS |
+
+---
+
+## Product Families
+
+| Family | Type | Default Variant | Valid Variants |
+|--------|------|-----------------|----------------|
+| 0227 | Gel Concentrate | 30X | 1X, 10X, 20X, 30X |
+| 0307 | Spray Dried Powder | 200X | 100X, 200X |
+| 0303 | Normal Powder | 200X | (none) |
+| 0301 | Powder Base | 200X | (none) |
+
+---
+
+## Test Command Template
+
 ```bash
-bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227", "dry_run": True}'
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227 organic 10:1", "dry_run": True}'
 ```
 
 ---
 
-## Production Test Results
+## Sandbox Access
 
-### Successful Test (2026-02-19)
-```bash
-bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0307", "dry_run": False}'
-```
-
-**Result:**
-```json
-{
-  "success": true,
-  "items_reused": ["SFG-0307-STEP1-SPRAY-DRYING", "0307- Fair Trade-25KG-BAG"],
-  "boms_reused": ["SFG-0307-STEP1-SPRAY-DRYING", "0307- Fair Trade-25KG-BAG"],
-  "errors": [],
-  "execution_time_seconds": 0.126
-}
-```
+- **Frappe Site:** v2.sysmayal.cloud
+- **GitHub PAT:** Configured in secrets
+- **SSH:** Available on sandbox
 
 ---
 
-## Environment Details
+## Potential Next Steps
 
-- **Production Site:** v2.sysmayal.cloud
-- **Sandbox Site:** v2.sysmayal.cloud (same)
-- **Branch:** feature/v9.2.0-development
-- **Agent Version:** v9.2.0
-
----
-
-## Quick Commands Reference
-
-### Dry Run Test
-```bash
-bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0307", "dry_run": True}'
-```
-
-### Live Run
-```bash
-bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0307", "dry_run": False}'
-```
-
-### Check Plant Configuration
-```python
-import frappe
-for p in frappe.get_all("Plant Configuration", fields=["name", "plant_name", "plant_code"]):
-    print(f"  {p.name} | {p.plant_name} | {p.plant_code}")
-```
+1. **Phase 6:** Mesh size parsing for powder products
+2. **Phase 7:** Customer-specific naming patterns
+3. **Phase 8:** Batch/lot tracking integration
+4. **Phase 9:** Frappe UI for variant selection

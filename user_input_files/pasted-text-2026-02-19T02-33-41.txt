@@ -1,0 +1,289 @@
+Here is the FULL Phase 6 Handout ready to paste into MiniMax Agent. It covers all 10 tasks, 12 dry-run tests, 8 grep verifications, and exact closure criteria.
+
+PHASE 6 HANDOUT: Highpol & Acetypol Product Families + Organic Sub-Certification Split
+Branch: feature/v9.2.0-development
+Parent commit: 6878869
+CONTEXT
+Phases 3-5 completed variant/certification parsing for families 0227 and 0307. But AMB Wellness has 5 product lines (see https://amb-wellness.com/our-products/), and the BOM agent only covers 2 finished product families (0227, 0307) and 2 intermediate families (0303, 0301).
+
+Missing product families:
+
+Highpol (specialty powder): polysaccharide ratios 10/15, 15/20, 20/25, 25/30, 30/35, 35/40
+
+Acetypol (specialty powder): acemannan ratios 10/15, 15/20, 20/25
+
+These use a slash-based variant format (NN/NN) instead of the concentration ratios (30X, 200X) currently supported. They are powders manufactured similarly to 0307 (spray drying) but are specialty/premium products with their own family codes.
+
+Missing organic sub-certifications:
+The CERTIFICATION_MAP currently maps all organic types to just "ORG". But AMB has distinct certifications:
+
+EU Organic (Ecocert) → code: ORG-EU
+
+NOP USA Organic (Ecocert) → code: ORG-NOP
+
+Korean Organic (KIWA) → code: ORG-KR
+These are different TDS datasheets and different customer requirements.
+
+TASK 1: Add Highpol family to PRODUCT_FAMILIES in parser.py
+Add to PRODUCT_FAMILIES dict in ProductSpecificationParser:
+
+python
+"HIGHPOL": {
+    "name": "Aloe Vera Highpol Powder",
+    "type": "FG",
+    "item_group": "Products Powder",
+    "default_concentration": "20/25",
+    "has_variants": True,
+    "valid_variants": ["10/15", "15/20", "20/25", "25/30", "30/35", "35/40"],
+    "uom": "Kg"
+},
+Also update SUPPORTED_FAMILIES — it's auto-derived from PRODUCT_FAMILIES.keys() so this should work automatically.
+
+TASK 2: Add Acetypol family to PRODUCT_FAMILIES in parser.py
+Add to PRODUCT_FAMILIES dict:
+
+python
+"ACETYPOL": {
+    "name": "Aloe Vera Acetypol Powder",
+    "type": "FG",
+    "item_group": "Products Powder",
+    "default_concentration": "15/20",
+    "has_variants": True,
+    "valid_variants": ["10/15", "15/20", "20/25"],
+    "uom": "Kg"
+},
+TASK 3: Add SLASH_RATIO_PATTERNS to parser.py
+Add a new class-level pattern list for slash-format variants used by Highpol/Acetypol:
+
+python
+SLASH_RATIO_PATTERNS = [
+    (re.compile(r"(\d+)/(\d+)", re.IGNORECASE), lambda m: f"{m.group(1)}/{m.group(2)}"),
+]
+TASK 4: Update _extract_variant() in parser.py
+Modify _extract_variant() to ALSO check SLASH_RATIO_PATTERNS for Highpol/Acetypol families.
+
+Logic:
+
+If family is HIGHPOL or ACETYPOL → check SLASH_RATIO_PATTERNS first, then RATIO_PATTERNS
+
+If family is 0227 or 0307 → check RATIO_PATTERNS only (existing behavior)
+
+Validate extracted variant against valid_variants list
+
+Fall back to default_concentration
+
+python
+def _extract_variant(self, request_text: str, family: str) -> Optional[str]:
+    family_info = self.PRODUCT_FAMILIES.get(family, {})
+    valid_variants = family_info.get("valid_variants", [])
+    default = family_info.get("default_concentration")
+
+    # For Highpol/Acetypol, try slash patterns first
+    if family in ("HIGHPOL", "ACETYPOL"):
+        for pattern, normalizer in self.SLASH_RATIO_PATTERNS:
+            match = pattern.search(request_text)
+            if match:
+                normalized = normalizer(match)
+                if valid_variants and normalized in valid_variants:
+                    return normalized
+    
+    # Try standard ratio patterns (30:1 -> 30X)
+    for pattern, normalizer in self.RATIO_PATTERNS:
+        match = pattern.search(request_text)
+        if match:
+            normalized = normalizer(match)
+            if valid_variants:
+                if normalized in valid_variants:
+                    return normalized
+                for vv in valid_variants:
+                    if normalized.upper() == vv.upper():
+                        return vv
+            else:
+                return normalized
+
+    # Return default if family has variants
+    if family_info.get("has_variants") and default:
+        return default
+
+    return None
+TASK 5: Update _parse_natural_language() in parser.py
+Add keyword detection for Highpol and Acetypol families:
+
+In the section that detects family from product description, add BEFORE the existing checks:
+
+python
+if not family:
+    if "HIGHPOL" in text_upper:
+        family = "HIGHPOL"
+    elif "ACETYPOL" in text_upper:
+        family = "ACETYPOL"
+    elif "CONCENTRATE" in text_upper or "30:1" in text_upper or "LIQUID" in text_upper:
+        family = "0227"
+    elif "POWDER" in text_upper or "200:1" in text_upper or "SPRAY" in text_upper:
+        family = "0307"
+    elif "GEL" in text_upper:
+        family = "0227"
+Also update the error message to include new family names:
+
+python
+f"Please specify: {self.SUPPORTED_FAMILIES} or use keywords like "
+f"'concentrate', 'powder', 'highpol', 'acetypol', '30:1', '200:1'"
+TASK 6: Update _parse_item_code() in parser.py
+The current ITEM_CODE_PATTERNS only match 4-digit numeric codes like 0227. Add a new pattern to match word-based family codes:
+
+python
+ITEM_CODE_PATTERNS = [
+    re.compile(r"^(\d{4})$"),
+    re.compile(r"^(\d{4})-(.+)$"),
+    re.compile(r"^[A]?(\d{4})-(.+)$", re.IGNORECASE),
+    re.compile(r"^(HIGHPOL|ACETYPOL)$", re.IGNORECASE),           # NEW
+    re.compile(r"^(HIGHPOL|ACETYPOL)-(.+)$", re.IGNORECASE),      # NEW
+]
+Also update _parse_item_code() to handle non-numeric family codes — the current family = groups[0] works fine since it extracts the matched group, but the SUPPORTED_FAMILIES check needs to work with uppercase:
+
+python
+family = groups[0].upper()
+TASK 7: Expand CERTIFICATION_MAP in parser.py
+Split organic into sub-certifications. Add these entries:
+
+python
+CERTIFICATION_MAP = {
+    # Organic sub-types (check longest first)
+    "KOSHER ORGANIC": "KOS-ORG",
+    "KOS-ORG": "KOS-ORG",
+    "EU ORGANIC": "ORG-EU",
+    "ORG-EU": "ORG-EU",
+    "NOP USA ORGANIC": "ORG-NOP",
+    "NOP ORGANIC": "ORG-NOP",
+    "NOP USA": "ORG-NOP",
+    "ORG-NOP": "ORG-NOP",
+    "KOREAN ORGANIC": "ORG-KR",
+    "ORG-KR": "ORG-KR",
+    "ORGANIC": "ORG",          # Generic organic (must be AFTER specific ones)
+    "ORG": "ORG",
+    "CONVENTIONAL": "CONV",
+    "CONV": "CONV",
+    "KOSHER": "KOS",
+    "KOS": "KOS",
+    "FAIR TRADE": "FT",
+    "FAIRTRADE": "FT",
+    "FT": "FT",
+    "HALAL": "HALAL",
+    "IASC": "IASC",
+    "FSSC 22000": "FSSC",
+    "FSSC": "FSSC",
+    "COSMOS ECOCERT": "COSMOS",
+    "COSMOS": "COSMOS",
+    "ECOCERT": "COSMOS",
+}
+The _extract_certification() already sorts by length descending, so "NOP USA ORGANIC" will match before "ORGANIC". No change needed to that method.
+
+TASK 8: Update _generate_fg_item() in engine.py
+Add Highpol/Acetypol to the cert_names mapping for human-readable item names:
+
+python
+cert_names = {
+    "FT": "Fair Trade",
+    "ORG": "Organic",
+    "ORG-EU": "EU Organic",
+    "ORG-NOP": "NOP USA Organic",
+    "ORG-KR": "Korean Organic",
+    "KOS": "Kosher",
+    "KOS-ORG": "Kosher Organic",
+    "CONV": "Conventional",
+    "HALAL": "Halal",
+    "IASC": "IASC",
+    "FSSC": "FSSC",
+    "COSMOS": "COSMOS",
+}
+No other changes needed — the FG naming pattern {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING} already works because parts = [spec.family] will use "HIGHPOL" or "ACETYPOL" as the family code.
+
+Example FG codes that will be generated:
+
+HIGHPOL-FT-20/25-25KG-BAG
+
+ACETYPOL-ORG-15/20-25KG-BAG
+
+0227-ORG-EU-30X-1000L-IBC
+
+TASK 9: Create template files for new families
+9A: Create templates/template_HIGHPOL_master.json
+Based on template_0307_master.json structure (both are spray-dried powders):
+
+json
+{
+  "family": "HIGHPOL",
+  "version": "1.0",
+  "meta": {
+    "name": "Aloe Vera Highpol Powder",
+    "description": "HIGHPOL - High Polysaccharide Aloe Vera Powder (FG)",
+    "item_group": "Products Powder",
+    "default_company": "AMB-Wellness",
+    "stock_uom": "Kg"
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "Spray Drying",
+      "process_type": "spray_drying",
+      "output_item_group": "SFG Semi Finished Goods",
+      "output_uom": "Kg",
+      "yield_percentage": 0.95,
+      "input_items": [
+        {"item_pattern": "0227", "qty": 1.0, "uom": "Kg"},
+        {"item_pattern": "WATER", "qty": 500.0, "uom": "Litre"},
+        {"item_pattern": "ELECTRIC", "qty": 150.0, "uom": "kWh"},
+        {"item_pattern": "GAS", "qty": 50.0, "uom": "Gigajoule"},
+        {"item_pattern": "LABOR", "qty": 8.0, "uom": "Hour"},
+        {"item_pattern": "M033", "qty": 0.083607, "uom": "Kg"},
+        {"item_pattern": "M004", "qty": 0.062551, "uom": "Kg"},
+        {"item_pattern": "M005", "qty": 0.021398, "uom": "Kg"},
+        {"item_pattern": "M006", "qty": 0.009789, "uom": "Kg"},
+        {"item_pattern": "M042", "qty": 0.198684, "uom": "Kg"},
+        {"item_pattern": "E001", "qty": 0.004351, "uom": "Piece"}
+      ]
+    }
+  ],
+  "containers": {
+    "25KG-BAG": {"item_code": "E002", "qty_per_kg": 0.04, "uom": "Piece"}
+  }
+}
+9B: Create templates/template_ACETYPOL_master.json
+Same structure as Highpol (identical manufacturing process):
+
+json
+{
+  "family": "ACETYPOL",
+  "version": "1.0",
+  "meta": {
+    "name": "Aloe Vera Acetypol Powder",
+    "description": "ACETYPOL - High Acemannan Aloe Vera Powder (FG)",
+    "item_group": "Products Powder",
+    "default_company": "AMB-Wellness",
+    "stock_uom": "Kg"
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "Spray Drying",
+      "process_type": "spray_drying",
+      "output_item_group": "SFG Semi Finished Goods",
+      "output_uom": "Kg",
+      "yield_percentage": 0.95,
+      "input_items": [
+        {"item_pattern": "0227", "qty": 1.0, "uom": "Kg"},
+        {"item_pattern": "WATER", "qty": 500.0, "uom": "Litre"},
+        {"item_pattern": "ELECTRIC", "qty": 150.0, "uom": "kWh"},
+        {"item_pattern": "GAS", "qty": 50.0, "uom": "Gigajoule"},
+        {"item_pattern": "LABOR", "qty": 8.0, "uom": "Hour"},
+        {"item_pattern": "M033", "qty": 0.083607, "uom": "Kg"},
+        {"item_pattern": "M004", "qty": 0.062551, "uom": "Kg"},
+        {"item_pattern": "M005", "qty": 0.021398, "uom": "Kg"},
+        {"item_pattern": "M006", "qty": 0.009789, "uom": "Kg"},
+        {"item_pattern": "M042", "qty": 0.198684, "uom": "Kg"},
+        {"item_pattern": "E001", "qty": 0.004351, "uom": "Piece"}
+      ]
+    }
+  ],
+  "containers": {
+    "25KG-BAG": {"item_code": "E
