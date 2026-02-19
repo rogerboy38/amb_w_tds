@@ -34,7 +34,7 @@
       "rule_id": "B003",
       "name": "Shared SFG Concentrate",
       "category": "mandatory",
-      "description": "Concentrate SFG must be shared across flavors within same family+attribute",
+      "description": "Concentrate SFG must be shared across variants within same family+attribute",
       "condition": "step_number == 1",
       "validation": "is_shared_sfg == true and sharing_key matches '{FAMILY}-{ATTRIBUTE}'",
       "error_message": "Step 1 concentrate must be a shared SFG keyed by family+attribute"

@@ -213,7 +213,7 @@ class ProductSpecificationParser:
         return ParsedSpec(
             family=family,
             attribute=variant.split("-")[0] if variant and "-" in variant else None,
-            flavor=None,  # Not used in real production
+            variant=None,  # Not used in real production
             mesh_size=None,
             packaging=packaging,
             target_uom=family_info["uom"],
@@ -295,7 +295,7 @@ class ProductSpecificationParser:
         return ParsedSpec(
             family=family,
             attribute=None,
-            flavor=None,
+            variant=None,
             mesh_size=None,
             packaging=packaging,
             target_uom=family_info["uom"],
