@@ -41,6 +41,12 @@ app_include_js = [
 
 doc_events = {
 
+    # ---- BOM validation hooks (Phase 5)
+    "BOM": {
+        "on_submit": "amb_w_tds.bom_hooks.on_bom_submit",
+        "on_update": "amb_w_tds.bom_hooks.on_bom_update",
+    },
+
     # ---- stock trace / costing / batch migrations
     "Stock Entry": {
         "on_submit": [
@@ -79,23 +85,25 @@ doc_events = {
 #  SCHEDULER EVENTS (background consistency)
 # ========================================
 #
-#scheduler_events = {
-#
-#    "hourly": [
-#        # ""amb_w_tds.migration.resume_unfinished_migration"",
-#        # ""amb_w_tds.api.agent.hourly_sync_agents""
-#    ],
-#
-#    "daily": [
-#        # ""amb_w_tds.api.audit.daily_quotation_amb_log_rotation"",
-#        # ""amb_w_tds.migration.verify_pending_documents""
-#    ],
-#
-#    "weekly": [
-#        # ""amb_w_tds.agent.performance.weekly_commission_reconciliation"",
-#        # ""amb_w_tds.migration.cleanup_stale_migration_state""
-#    ],
-#}
+scheduler_events = {
+
+    "hourly": [
+        # "amb_w_tds.migration.resume_unfinished_migration",
+        # "amb_w_tds.api.agent.hourly_sync_agents"
+    ],
+
+    "daily": [
+        # "amb_w_tds.api.audit.daily_quotation_amb_log_rotation",
+        # "amb_w_tds.migration.verify_pending_documents"
+    ],
+
+    "weekly": [
+        # BOM Health Check - runs weekly (Phase 5)
+        "amb_w_tds.scripts.scheduled_bom_health.run",
+        # "amb_w_tds.agent.performance.weekly_commission_reconciliation",
+        # "amb_w_tds.migration.cleanup_stale_migration_state"
+    ],
+}
 #
 # ========================================
 #  FIXTURES (sync mandatory custom fields)

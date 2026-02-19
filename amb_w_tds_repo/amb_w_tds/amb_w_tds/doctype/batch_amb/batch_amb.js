@@ -1769,3 +1769,158 @@ function generate_serials_l2(frm, count, prefix) {
     frappe.msgprint(__('Generating {0} serials with prefix {1}...', [count, prefix]));
 }
 
+// =============================================================================
+// QUICK ENTRY - Custom Quick Entry Form for Batch AMB
+// Implements cascading: Sales Order -> Work Order -> Item auto-populate
+// =============================================================================
+
+frappe.provide('frappe.ui.form');
+
+frappe.ui.form.BatchAMBQuickEntryForm = class BatchAMBQuickEntryForm extends frappe.ui.form.QuickEntryForm {
+    constructor(doctype, after_insert, init_callback, doc, force) {
+        super(doctype, after_insert, init_callback, doc, force);
+    }
+
+    get_variant_fields() {
+        // These fields appear in the Quick Entry popup
+        // The cascading logic: SO -> WO -> auto-fill item & dates
+        return [
+            {
+                fieldtype: 'Link',
+                fieldname: 'sales_order_related',
+                label: __('Sales Order'),
+                options: 'Sales Order',
+                get_query: () => {
+                    return {
+                        filters: {
+                            'docstatus': 1,
+                            'status': ['not in', ['Cancelled', 'Closed']]
+                        }
+                    };
+                },
+                onchange: () => {
+                    let so = this.dialog.get_value('sales_order_related');
+                    if (so) {
+                        this.load_work_orders_for_so(so);
+                    } else {
+                        this.dialog.fields_dict.work_order_ref.set_data([]);
+                        this.dialog.set_value('work_order_ref', '');
+                    }
+                }
+            },
+            {
+                fieldtype: 'Link',
+                fieldname: 'work_order_ref',
+                label: __('Work Order'),
+                options: 'Work Order',
+                reqd: 1,
+                get_query: () => {
+                    let so = this.dialog.get_value('sales_order_related');
+                    let filters = {
+                        'docstatus': ['!=', 2],
+                        'status': ['not in', ['Stopped', 'Cancelled']]
+                    };
+                    if (so) {
+                        filters['sales_order'] = so;
+                    }
+                    return { filters: filters };
+                },
+                onchange: () => {
+                    let wo = this.dialog.get_value('work_order_ref');
+                    if (wo) {
+                        this.load_work_order_defaults(wo);
+                    }
+                }
+            },
+            {
+                fieldtype: 'Section Break'
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'item_to_manufacture',
+                label: __('Item to Manufacture'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'wo_item_name',
+                label: __('Item Name'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Column Break'
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'production_plant_name',
+                label: __('Plant Code'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Link',
+                fieldname: 'company',
+                label: __('Company'),
+                options: 'Company',
+                reqd: 1,
+                default: frappe.defaults.get_user_default('Company')
+            }
+        ];
+    }
+
+    load_work_orders_for_so(sales_order) {
+        // Fetch Work Orders linked to the selected Sales Order
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_orders_for_sales_order',
+            args: { sales_order: sales_order },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    let wo_count = r.message.work_orders.length;
+                    let project = r.message.project || '';
+                    let msg = wo_count + ' Work Orders found';
+                    if (project) {
+                        msg += ' (Project: ' + project + ')';
+                    }
+                    frappe.show_alert({
+                        message: __(msg),
+                        indicator: 'blue'
+                    }, 3);
+                    // If only one WO, auto-select it
+                    if (wo_count === 1) {
+                        this.dialog.set_value('work_order_ref', r.message.work_orders[0].name);
+                    }
+                }
+            }
+        });
+    }
+
+    load_work_order_defaults(work_order_name) {
+        // Fetch all defaults from selected Work Order
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_quick_entry_defaults',
+            args: { work_order_name: work_order_name },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    let data = r.message;
+                    this.dialog.set_value('item_to_manufacture', data.production_item || '');
+                    this.dialog.set_value('wo_item_name', data.item_name || '');
+                    this.dialog.set_value('production_plant_name', data.plant_code || '');
+                    if (data.company) {
+                        this.dialog.set_value('company', data.company);
+                    }
+                    if (!this.dialog.get_value('sales_order_related') && data.sales_order) {
+                        this.dialog.set_value('sales_order_related', data.sales_order);
+                    }
+                    frappe.show_alert({
+                        message: __('Work Order details loaded: ' + data.production_item),
+                        indicator: 'green'
+                    }, 3);
+                }
+            }
+        });
+    }
+};
+
+// Register the custom Quick Entry form for Batch AMB
+frappe.ui.form.QuickEntryForm = frappe.ui.form.QuickEntryForm;
+frappe.ui.form['BatchAMBQuickEntryForm'] = frappe.ui.form.BatchAMBQuickEntryForm;
+
