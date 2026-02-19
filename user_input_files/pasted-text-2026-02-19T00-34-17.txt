@@ -1,0 +1,123 @@
+# PHASE 3B HANDOUT - Technical Specification, Test Plan & Completion Criteria
+
+## Context
+Phase 3 (BOM Hierarchy Audit) is COMPLETE. The ai_bom_agent code on branch `feature/v9.2.0-development` (27 commits ahead of v9.1.0) has been refactored. The key change: rename "flavor" to "variant" across the entire BOM agent codebase, because AMB Wellness is an aloe vera raw material supplier -- NOT a flavored product company.
+
+Our real products from https://amb-wellness.com/our-products/ are:
+- Innovaloe Aloe Vera Juice 1:1
+- Innovaloe Aloe Vera Concentrate (10:1, 20:1, 30:1)
+- Aloe Vera Spray Dried Powder (200:1, 100:1)
+- Acetypol (10/15, 15/20, 20/25)
+- Highpol (10/15, 15/20, 20/25, 25/30, 30/35, 35/40)
+
+Each product has certification variants: Organic, COSMOS ECOCERT, EU Organic, Fair Trade, Korean Organic KIWA, NOP USA Organic, FSSC 22000, Halal, IASC, Kosher.
+
+---
+
+## PART 1: TECHNICAL SPECIFICATION
+
+### 1.1 What Was Already Done (commit eb44fb0)
+The Python code refactor is COMPLETE across 7 files:
+- `data_contracts.py`: ParsedSpec.flavor -> ParsedSpec.variant (examples: HIGHPOL, ACETYPOL)
+- `engine.py`: {FLAVOR} placeholder -> {VARIANT}, spec.flavor -> spec.variant
+- `parser.py`: Both _parse_item_code and _parse_natural_language updated
+- `template_schema.json`: "flavors" array -> "variants"
+- `business_rules.json`: "shared across flavors" -> "shared across variants"
+- `validators.py`: "SHARED across flavors" -> "SHARED across variants"
+- `naming_conventions.md`: RM-FLAVOR-MANGO -> RM-ADDITIVE-ACEMANNAN
+
+Template `template_0227_master.json` already uses `"0227-{VARIANT}"` as output_item_pattern.
+
+### 1.2 What Still Needs Fixing (naming_conventions.md gaps)
+The documentation file `naming_conventions.md` still has 8 leftover references:
+
+1. SFG VARIANT description says "Optional variant (flavor, mesh size)" with example "MANGO, 200-MESH"
+   -> Change to: "Optional variant (concentration ratio, formulation type)" with examples "30X, HIGHPOL-20/25, 200MESH"
+
+2. FG Pattern still reads `{FAMILY}-{ATTRIBUTE}-{FLAVOR/MESH}-{PACKAGING}`
+   -> Change to: `{FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}`
+
+3. FG Components table has FLAVOR/MESH with examples "MANGO, PLAIN, 100MESH"
+   -> Change to: VARIANT with examples "30X, 10X, 200MESH, HIGHPOL-20/25"
+
+4. FG Example `0227-ORG-MANGO-IBC` -> `0227-ORG-30X-IBC`
+5. FG Example `0227-CONV-PLAIN-DRUM` -> `0227-CONV-10X-DRUM`
+6. SFG Example `SFG-0227-STEP2-STD-ORGANIC-MANGO` -> `SFG-0227-STEP2-STD-ORGANIC-30X`
+7. BOM Example `BOM-0227-ORG-MANGO-IBC-001` -> `BOM-0227-ORG-30X-IBC-001`
+8. Quick Reference Card FG example `0227-ORG-MANGO-IBC` -> `0227-ORG-30X-IBC`
+9. RM Categories table has `FLAVOR | Flavoring agents` -> Remove or change to `ADDITIVE | Additives and concentrates`
+
+### 1.3 Scope of Phase 3B Work
+- Fix ALL remaining naming_conventions.md references listed above
+- Verify NO other files in the repo still reference "flavor" or "MANGO" in the ai_bom_agent module
+- Save updated handout as `docs/BOM_PHASE3B_COMPLETION_HANDOUT.md`
+
+---
+
+## PART 2: PROMPT TEST PLAN
+
+After applying fixes, run these verification commands:
+
+### Test 1: Grep for leftover flavor references
+```
+grep -rni "flavor" amb_w_tds/ai_bom_agent/
+grep -rni "MANGO" amb_w_tds/ai_bom_agent/
+grep -rni "PLAIN" amb_w_tds/ai_bom_agent/
+```
+Expected: ZERO matches for "flavor" (case-insensitive), ZERO for "MANGO", and ZERO for "PLAIN" as a variant name.
+
+### Test 2: Verify variant is used consistently
+```
+grep -rni "variant" amb_w_tds/ai_bom_agent/data_contracts.py
+grep -rni "VARIANT" amb_w_tds/ai_bom_agent/engine.py
+grep -rni "variant" amb_w_tds/ai_bom_agent/templates/naming_conventions.md
+```
+Expected: All references use "variant" terminology.
+
+### Test 3: Verify naming_conventions.md examples match real products
+Check that:
+- FG pattern uses {VARIANT} not {FLAVOR/MESH}
+- All examples use real variant codes: 30X, 10X, 20X, 200MESH, 100MESH, HIGHPOL-20/25, ACETYPOL-10/15
+- RM categories do NOT include FLAVOR
+
+### Test 4: Verify template_schema.json
+```
+grep -ni "flavor" amb_w_tds/ai_bom_agent/templates/template_schema.json
+```
+Expected: ZERO matches.
+
+### Test 5: Verify business_rules.json
+```
+grep -ni "flavor" amb_w_tds/ai_bom_agent/templates/business_rules.json
+```
+Expected: ZERO matches.
+
+---
+
+## PART 3: COMPLETION CRITERIA
+
+Phase 3B is considered COMPLETE when ALL of the following are true:
+
+1. ZERO grep hits for "flavor" (case-insensitive) in amb_w_tds/ai_bom_agent/ directory
+2. ZERO grep hits for "MANGO" in amb_w_tds/ai_bom_agent/ directory
+3. naming_conventions.md FG Pattern uses {VARIANT} not {FLAVOR/MESH}
+4. naming_conventions.md has NO examples with MANGO or PLAIN as variant names
+5. naming_conventions.md RM Categories has NO FLAVOR category
+6. naming_conventions.md examples use real AMB product codes (30X, 10X, 200MESH, etc.)
+7. All 5 test commands above pass with expected results
+8. Completion handout saved at docs/BOM_PHASE3B_COMPLETION_HANDOUT.md
+
+### Files to Modify:
+- `amb_w_tds/ai_bom_agent/templates/naming_conventions.md` (primary - 8-9 changes needed)
+
+### Files Already Complete (DO NOT modify):
+- `data_contracts.py` - DONE in eb44fb0
+- `engine.py` - DONE in eb44fb0
+- `parser.py` - DONE in eb44fb0
+- `template_schema.json` - DONE in eb44fb0
+- `business_rules.json` - DONE in eb44fb0
+- `validators.py` - DONE in eb44fb0
+
+---
+
+Please execute Phase 3B: fix the naming_conventions.md file, run all 5 tests, and produce the completion handout. Save it to docs/BOM_PHASE3B_COMPLETION_HANDOUT.md when done.
