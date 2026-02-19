@@ -284,19 +284,27 @@ class AgentCoreEngine:
         }
     
     def _generate_fg_item(self, spec: ParsedSpec) -> Dict[str, Any]:
-        """Generate finished goods item details."""
-        # FG naming: Build from non-None parts
-        # Pattern: {FAMILY}-{CONCENTRATION}- {CERT}-{PACKAGING}
-        # Match variant pattern: 0227-30X- Fair Trade-...
+        """Generate finished goods item details.
+        
+        FG naming pattern: {FAMILY}-{VARIANT}- Fair Trade-{PACKAGING}
+        Examples:
+        - 0227-30X- Fair Trade-1000L-IBC
+        - 0227-10X- Fair Trade-200L-DRUM
+        - 0307-200X- Fair Trade-25KG-BAG
+        """
         parts = [spec.family]
         
-        # Add concentration if available (e.g., "30X", "200X")
-        if spec.attribute:
+        # Add variant (concentration ratio) if available
+        # This comes from parser's _extract_variant() method
+        if spec.variant:
+            parts.append(spec.variant)
+        elif spec.attribute:
+            # Fallback to attribute for backward compatibility
             parts.append(spec.attribute)
         
-        # Add certification with leading space (match variant pattern)
+        # Add certification with leading space (match existing ERPNext variant pattern)
         # Default: " Fair Trade" for organic products
-        cert = spec.variant if spec.variant else " Fair Trade"
+        cert = " Fair Trade"
         parts.append(cert)
         
         # Add packaging
@@ -305,10 +313,12 @@ class AgentCoreEngine:
         
         item_code = "-".join(parts)
         
-        # Build item name (clean, no leading spaces)
-        clean_cert = cert.strip()
-        name_parts = [p for p in [spec.family, spec.attribute, clean_cert] if p]
-        item_name = " ".join(name_parts) + f" ({spec.packaging})" if spec.packaging else " ".join(name_parts)
+        # Build item name (clean, human-readable)
+        variant_str = spec.variant or spec.attribute or ""
+        name_parts = [p for p in [spec.family, variant_str, "Fair Trade"] if p]
+        item_name = " ".join(name_parts)
+        if spec.packaging:
+            item_name += f" ({spec.packaging})"
         
         return {
             "item_code": item_code,
