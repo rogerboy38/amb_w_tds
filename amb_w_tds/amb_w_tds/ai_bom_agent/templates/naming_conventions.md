@@ -21,7 +21,7 @@ SFG-{FAMILY}-STEP{N}-{PROCESS}-{ATTRIBUTE}[-{VARIANT}]
 | `STEP{N}` | Process step number (1-9) | STEP1, STEP2, STEP3 |
 | `PROCESS` | 4-letter process abbreviation | CONC, STD, FILT, PWD |
 | `ATTRIBUTE` | Product attribute | ORGANIC, KOSHER, CONVENTIONAL |
-| `VARIANT` | Optional variant (flavor, mesh size) | MANGO, 200-MESH |
+| `VARIANT` | Optional variant (concentration ratio, formulation type) | 30X, HIGHPOL-20/25, 200MESH |
 
 ### Process Abbreviations
 | Code | Full Name | Family |
@@ -35,7 +35,7 @@ SFG-{FAMILY}-STEP{N}-{PROCESS}-{ATTRIBUTE}[-{VARIANT}]
 ### Examples
 ```
 SFG-0227-STEP1-CONC-ORGANIC        # Organic concentrated aloe juice
-SFG-0227-STEP2-STD-ORGANIC-MANGO   # Organic mango standardized juice
+SFG-0227-STEP2-STD-ORGANIC-30X     # Organic 30X standardized juice
 SFG-0307-STEP3-PWD-KOSHER-200MESH  # Kosher 200-mesh powder
 ```
 
@@ -45,7 +45,7 @@ SFG-0307-STEP3-PWD-KOSHER-200MESH  # Kosher 200-mesh powder
 
 ### Pattern
 ```
-{FAMILY}-{ATTRIBUTE}-{FLAVOR/MESH}-{PACKAGING}
+{FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}
 ```
 
 ### Components
@@ -53,7 +53,7 @@ SFG-0307-STEP3-PWD-KOSHER-200MESH  # Kosher 200-mesh powder
 |-----------|-------------|----------|
 | `FAMILY` | 4-digit product family code | 0227, 0307 |
 | `ATTRIBUTE` | Product attribute | ORG, CONV, KOS, KOS-ORG |
-| `FLAVOR/MESH` | Product variant | MANGO, PLAIN, 100MESH |
+| `VARIANT` | Product variant | 30X, 10X, 200MESH, HIGHPOL-20/25 |
 | `PACKAGING` | Package type code | IBC, DRUM, 25KG |
 
 ### Attribute Codes
@@ -76,8 +76,8 @@ SFG-0307-STEP3-PWD-KOSHER-200MESH  # Kosher 200-mesh powder
 
 ### Examples
 ```
-0227-ORG-MANGO-IBC      # Organic mango juice in IBC
-0227-CONV-PLAIN-DRUM    # Conventional plain juice in drum
+0227-ORG-30X-IBC        # Organic 30X concentrate in IBC
+0227-CONV-10X-DRUM      # Conventional 10X concentrate in drum
 0307-KOS-200MESH-25KG   # Kosher 200-mesh powder in 25kg bag
 ```
 
@@ -96,7 +96,7 @@ RM-{CATEGORY}-{NAME}[-{VARIANT}]
 | ALOE | Aloe vera base materials |
 | WATER | Water types |
 | ACID | Acids and preservatives |
-| FLAVOR | Flavoring agents |
+| ADDITIVE | Additives and concentrates |
 | CARRIER | Carrier materials (maltodextrin) |
 
 ### Examples
@@ -138,7 +138,7 @@ BOM-{ITEM_CODE}-{SEQUENCE}
 
 ### Examples
 ```
-BOM-0227-ORG-MANGO-IBC-001      # First BOM for organic mango IBC
+BOM-0227-ORG-30X-IBC-001        # First BOM for organic 30X IBC
 BOM-SFG-0227-STEP1-CONC-ORG-001 # First BOM for SFG concentrate
 ```
 
@@ -162,13 +162,13 @@ BOM-SFG-0227-STEP1-CONC-ORG-001 # First BOM for SFG concentrate
 | Item Type | Pattern | Example |
 |-----------|---------|---------|
 | SFG | `SFG-{FAM}-STEP{N}-{PROC}-{ATTR}` | `SFG-0227-STEP1-CONC-ORGANIC` |
-| FG | `{FAM}-{ATTR}-{VAR}-{PKG}` | `0227-ORG-MANGO-IBC` |
+| FG | `{FAM}-{ATTR}-{VAR}-{PKG}` | `0227-ORG-30X-IBC` |
 | RM | `RM-{CAT}-{NAME}` | `RM-ALOE-ORGANIC` |
 | PKG | `PKG-{TYPE}-{SIZE}` | `PKG-DRUM-200L` |
-| BOM | `BOM-{ITEM}-{SEQ}` | `BOM-0227-ORG-MANGO-IBC-001` |
+| BOM | `BOM-{ITEM}-{SEQ}` | `BOM-0227-ORG-30X-IBC-001` |
 
 ---
 
 *Document Version: 1.0*
-*Last Updated: 2026-02-17*
+*Last Updated: 2026-02-19*
 *Author: BOM_Creator_Agent v9.2.0*
