@@ -1,0 +1,23 @@
+{
+  "XYZ": {
+    "customer_code": "XYZ",
+    "pattern": "{FAMILY}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}",
+    "default_cert": "ORG-EU",
+    "default_packaging": "1000L-IBC",
+    "description": "Customer XYZ - Special naming pattern with customer code"
+  },
+  "ABC": {
+    "customer_code": "ABC",
+    "pattern": "{FAMILY}-{ATTRIBUTE}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}",
+    "default_cert": "FT",
+    "default_packaging": "25KG-BAG",
+    "description": "Customer ABC - Includes certification in code"
+  },
+  "ACME": {
+    "customer_code": "ACME",
+    "pattern": "{CUSTOMER_CODE}-{FAMILY}-{VARIANT}",
+    "default_cert": "CONV",
+    "default_packaging": "200L-DRUM",
+    "description": "ACME Corp - Customer code prefix pattern"
+  }
+}

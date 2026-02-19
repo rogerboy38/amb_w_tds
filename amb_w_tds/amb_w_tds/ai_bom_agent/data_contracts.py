@@ -14,7 +14,7 @@ class ParsedSpec:
     family: str  # e.g., "0227", "0307"
     attribute: str  # e.g., "ORGANIC", "CONVENTIONAL", "KOSHER"
     variant: Optional[str] = None  # e.g., "HIGHPOL", "ACETYPOL", concentration ratios
-    mesh_size: Optional[str] = None  # e.g., "200-MESH" (for 0307)
+    mesh_size: Optional[str] = None  # e.g., "100M" (for powder families)
     packaging: str = ""  # e.g., "1000L-IBC", "25KG-BAG"
     target_uom: str = "Kg"
     target_qty: float = 1.0
@@ -22,6 +22,9 @@ class ParsedSpec:
     container_qty_per_kg: float = 0.0  # Fraction of container per Kg (e.g., 0.000926 for IBC)
     raw_request: str = ""
     parsed_at: datetime = field(default_factory=datetime.now)
+    # Phase 7: Customer-specific naming
+    customer: Optional[str] = None  # e.g., "XYZ"
+    customer_code: Optional[str] = None  # e.g., "XYZ"
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -35,7 +38,9 @@ class ParsedSpec:
             "container_item": self.container_item,
             "container_qty_per_kg": self.container_qty_per_kg,
             "raw_request": self.raw_request,
-            "parsed_at": self.parsed_at.isoformat() if self.parsed_at else None
+            "parsed_at": self.parsed_at.isoformat() if self.parsed_at else None,
+            "customer": self.customer,
+            "customer_code": self.customer_code
         }
     
     def get_variant(self) -> str:
@@ -62,6 +67,8 @@ class PlannedItem:
     already_exists: bool = False
     step_number: Optional[int] = None
     item_type: str = "sfg"  # sfg, fg, rm, pkg
+    # Phase 7: Batch tracking flags
+    has_batch_no: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -75,7 +82,8 @@ class PlannedItem:
             "is_sales_item": self.is_sales_item,
             "already_exists": self.already_exists,
             "step_number": self.step_number,
-            "item_type": self.item_type
+            "item_type": self.item_type,
+            "has_batch_no": self.has_batch_no
         }
 
 
@@ -202,6 +210,8 @@ class GenerationReport:
     dry_run: bool = False
     execution_time_seconds: float = 0.0
     plan: Optional[GenerationPlan] = None
+    # Phase 7: Batch tracking summary
+    batch_tracking: Dict[str, Any] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -215,7 +225,8 @@ class GenerationReport:
             "warnings": self.warnings,
             "dry_run": self.dry_run,
             "execution_time_seconds": self.execution_time_seconds,
-            "plan": self.plan.to_dict() if self.plan else None
+            "plan": self.plan.to_dict() if self.plan else None,
+            "batch_tracking": self.batch_tracking
         }
     
     def summary(self) -> str:
