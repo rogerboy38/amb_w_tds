@@ -315,6 +315,9 @@ class AgentCoreEngine:
         cert_names = {
             "FT": "Fair Trade",
             "ORG": "Organic",
+            "ORG-EU": "EU Organic",
+            "ORG-NOP": "NOP USA Organic",
+            "ORG-KR": "Korean Organic",
             "KOS": "Kosher",
             "KOS-ORG": "Kosher Organic",
             "CONV": "Conventional",

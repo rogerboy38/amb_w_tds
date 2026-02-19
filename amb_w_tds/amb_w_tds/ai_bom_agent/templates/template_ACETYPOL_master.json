@@ -1,0 +1,37 @@
+{
+  "family": "ACETYPOL",
+  "version": "1.0",
+  "meta": {
+    "name": "Aloe Vera Acetypol Powder",
+    "description": "ACETYPOL - High Acemannan Aloe Vera Powder (FG)",
+    "item_group": "Products Powder",
+    "default_company": "AMB-Wellness",
+    "stock_uom": "Kg"
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "Spray Drying",
+      "process_type": "spray_drying",
+      "output_item_group": "SFG Semi Finished Goods",
+      "output_uom": "Kg",
+      "yield_percentage": 0.95,
+      "input_items": [
+        {"item_pattern": "0227", "qty": 1.0, "uom": "Kg"},
+        {"item_pattern": "WATER", "qty": 500.0, "uom": "Litre"},
+        {"item_pattern": "ELECTRIC", "qty": 150.0, "uom": "kWh"},
+        {"item_pattern": "GAS", "qty": 50.0, "uom": "Gigajoule"},
+        {"item_pattern": "LABOR", "qty": 8.0, "uom": "Hour"},
+        {"item_pattern": "M033", "qty": 0.083607, "uom": "Kg"},
+        {"item_pattern": "M004", "qty": 0.062551, "uom": "Kg"},
+        {"item_pattern": "M005", "qty": 0.021398, "uom": "Kg"},
+        {"item_pattern": "M006", "qty": 0.009789, "uom": "Kg"},
+        {"item_pattern": "M042", "qty": 0.198684, "uom": "Kg"},
+        {"item_pattern": "E001", "qty": 0.004351, "uom": "Piece"}
+      ]
+    }
+  ],
+  "containers": {
+    "25KG-BAG": {"item_code": "E002", "qty_per_kg": 0.04, "uom": "Piece"}
+  }
+}

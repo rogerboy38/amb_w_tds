@@ -1,0 +1,62 @@
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ # Pull latest
+cd /home/frappe/frappe-bench/apps/amb_w_tds
+git pull origin feature/v9.2.0-development
+
+# Test 1 - HIGHPOL with 10/15 ratio -> HPL-10-15
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "HIGHPOL 10/15 organic", "dry_run": True}'
+
+# Test 2 - ACETYPOL with 5/20 ratio -> APL-5-20
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "ACETYPOL 5/20", "dry_run": True}' 
+
+# Test 3 - Organic EU certification -> ORG-EU
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227 EU organic", "dry_run": True}'
+
+# Test 4 - NOP USA organic -> ORG-NOP
+bench --site v2.sysmayal.cloud execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227 NOP organic", "dry_run": True}'
+
+True}'om_from_spec --kwargs '{"request_text": "0227 korean organic", "dry_run": 
+remote: Enumerating objects: 18, done.
+remote: Counting objects: 100% (18/18), done.
+remote: Compressing objects: 100% (3/3), done.
+Unpacking objects: 100% (11/11), 3.93 KiB | 1.31 MiB/s, done.
+remote: Total 11 (delta 8), reused 11 (delta 8), pack-reused 0 (from 0)
+From github.com:rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+   6878869..1d29b75  feature/v9.2.0-development -> origin/feature/v9.2.0-development
+Updating 6878869..1d29b75
+Fast-forward
+ amb_w_tds/ai_bom_agent/engine.py                   |   3 +
+ amb_w_tds/ai_bom_agent/parser.py                   |  78 +++++++++--
+ .../templates/template_ACETYPOL_master.json        |  37 +++++
+ .../templates/template_HIGHPOL_master.json         |  37 +++++
+ docs/BOM_PHASE6_COMPLETION_HANDOUT.md              | 150 +++++++++++++++++++++
+ 5 files changed, 293 insertions(+), 12 deletions(-)
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_ACETYPOL_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_HIGHPOL_master.json
+ create mode 100644 docs/BOM_PHASE6_COMPLETION_HANDOUT.md
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": true, "spec": {"family": "HIGHPOL", "attribute": "ORG", "variant": "10/15", "mesh_size": null, "packaging": "25KG-BAG", "target_uom": "Kg", "target_qty": 1.0, "container_item": null, "container_qty_per_kg": 0.0, "raw_request": "HIGHPOL 10/15 organic", "parsed_at": "2026-02-18T20:44:26.065470"}, "items_created": ["SFG-HIGHPOL-STEP1-SPRAY-DRYING", "HIGHPOL-ORG-10/15-25KG-BAG"], "items_reused": [], "boms_created": ["SFG-HIGHPOL-STEP1-SPRAY-DRYING", "HIGHPOL-ORG-10/15-25KG-BAG"], "boms_reused": [], "errors": [], "warnings": [], "dry_run": true, "execution_time_seconds": 0.02039790153503418, "plan": null}
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": true, "spec": {"family": "ACETYPOL", "attribute": "FT", "variant": "15/20", "mesh_size": null, "packaging": "25KG-BAG", "target_uom": "Kg", "target_qty": 1.0, "container_item": null, "container_qty_per_kg": 0.0, "raw_request": "ACETYPOL 5/20", "parsed_at": "2026-02-18T20:44:26.708132"}, "items_created": ["SFG-ACETYPOL-STEP1-SPRAY-DRYING", "ACETYPOL-FT-15/20-25KG-BAG"], "items_reused": [], "boms_created": ["SFG-ACETYPOL-STEP1-SPRAY-DRYING", "ACETYPOL-FT-15/20-25KG-BAG"], "boms_reused": [], "errors": [], "warnings": [], "dry_run": true, "execution_time_seconds": 0.028177976608276367, "plan": null}
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": true, "spec": {"family": "0227", "attribute": "ORG-EU", "variant": "30X", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "Kg", "target_qty": 1.0, "container_item": "E011", "container_qty_per_kg": 0.000926, "raw_request": "0227 EU organic", "parsed_at": "2026-02-18T20:44:27.354145"}, "items_created": ["0227-ORG-EU-30X-1000L-IBC"], "items_reused": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING"], "boms_created": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING", "0227-ORG-EU-30X-1000L-IBC"], "boms_reused": [], "errors": [], "warnings": [], "dry_run": true, "execution_time_seconds": 0.0238039493560791, "plan": null}
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": true, "spec": {"family": "0227", "attribute": "ORG-NOP", "variant": "30X", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "Kg", "target_qty": 1.0, "container_item": "E011", "container_qty_per_kg": 0.000926, "raw_request": "0227 NOP organic", "parsed_at": "2026-02-18T20:44:28.005015"}, "items_created": ["0227-ORG-NOP-30X-1000L-IBC"], "items_reused": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING"], "boms_created": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING", "0227-ORG-NOP-30X-1000L-IBC"], "boms_reused": [], "errors": [], "warnings": [], "dry_run": true, "execution_time_seconds": 0.023850679397583008, "plan": null}
+✅ App Migrator commands loaded safely
+✅ Payment Security Migrator added to commands
+✅ Payment Gateway Migrator added to commands
+✅ App Migrator Enterprise v9.0.0 ready!
+{"success": true, "spec": {"family": "0227", "attribute": "ORG-KR", "variant": "30X", "mesh_size": null, "packaging": "1000L-IBC", "target_uom": "Kg", "target_qty": 1.0, "container_item": "E011", "container_qty_per_kg": 0.000926, "raw_request": "0227 korean organic", "parsed_at": "2026-02-18T20:44:28.666508"}, "items_created": ["0227-ORG-KR-30X-1000L-IBC"], "items_reused": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING"], "boms_created": ["SFG-0227-STEP1-CONCENTRATION", "SFG-0227-STEP2-STANDARDIZATION", "SFG-0227-STEP3-PACKING", "0227-ORG-KR-30X-1000L-IBC"], "boms_reused": [], "errors": [], "warnings": [], "dry_run": true, "execution_time_seconds": 0.03621029853820801, "plan": null}
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ 
