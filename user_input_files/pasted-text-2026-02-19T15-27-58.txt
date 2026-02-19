@@ -1,0 +1,63 @@
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb$ nano batch_amb.py
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb$ cd ,,
+bash: cd: ,,: No such file or directory
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb$ ls
+batch_amb-bak10.js                   batch_amb.json.backup                batch_amb_tree.js
+batch_amb.js                         batch_amb.js.original                fix_duplicates.py
+batch_amb.js.backup_20251118_115054  batch_amb.js.updated                 __init__.py
+batch_amb.js.backup_20251118_115814  batch_amb.py                         __pycache__
+batch_amb.js.backup_manufacturing    batch_amb.py.backup_20251118_193239  test_batch_amb.py
+batch_amb.json                       batch_amb.py.backup_20251118_201423
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype$ ls
+amb_kpi_factors           bom_version                 distribution_organization  product_development_project
+animal_trial              certification_document      formulation                production_plant_amb
+barrel                    coa_amb                     __init__.py                __pycache__
+batch_amb                 coa_amb2                    intended_purpose           quotation_amb
+batch_amb_item            coa_quality_test_parameter  juice_conversion_config    quotation_amb_sales_partner
+batch_processing_history  container_barrels           kpi_cost_breakdown         rnd_parent_doctype
+bom_enhancement           container_selection         lote_amb                   tds_product_specification
+bom_formula               container_sync_log          market_entry_plan          tds_product_specification_v2
+bom_formula_amino_acid    container_type_rule         market_research            tds_settings
+bom_template              country_regulation          plant_configuration        third_party_api
+bom_template_item         distribution_contact        product_compliance
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds$ ls
+add_phase_b_fields.py  doctype   __init__.py  page    __pycache__   stock_entry_hooks.py
+api                    fixtures  migrations   public  repositories
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds$ ls
+agent         config               migration     patches.txt  services              validate_batch_migration.py
+ai_bom_agent  fixtures             migration.py  public       setup
+amb_w_tds     hooks.py             migrations    __pycache__  stock_entry_hooks.py
+api           __init__.py          modules.txt   raven        templates
+bom_hooks.py  migrate_coa_data.py  orchestrator  scripts      tests
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds$ cd public/
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public$ ls
+js
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public$ cd js/
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public/js$ ls
+2  batch_widget_bak1.js  batch_widget.js  work_order_list.js
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public/js$ nano batch_widget.js
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public/js$ nano +151 batch_widget.js
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public/js$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds/public$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/amb_w_tds$ cd ..
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ ls
+ai_bom_agent  doctype      push_to_git_plus.sh  scripts                  v9.1.0_RELEASE_NOTES.md
+amb_w_tds     hooks.py     pyproject.toml       v8.6.0_RELEASE_NOTES.md  version.txt
+docs          license.txt  README.md            v8.7.0_RELEASE_NOTES.md
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd doc
+bash: cd: doc: No such file or directory
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ cd doctype
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/doctype$ ls
+batch_amb
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/doctype$ cd batch_amb
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/doctype/batch_amb$ ls
+batch_amb-bak10.js                   batch_amb.json.backup                batch_amb_tree.js
+batch_amb.js                         batch_amb.js.original                fix_duplicates.py
+batch_amb.js.backup_20251118_115054  batch_amb.js.updated                 __init__.py
+batch_amb.js.backup_20251118_115814  batch_amb.py                         __pycache__
+batch_amb.js.backup_manufacturing    batch_amb.py.backup_20251118_193239  test_batch_amb.py
+batch_amb.json                       batch_amb.py.backup_20251118_201423
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds/doctype/batch_amb$ 
