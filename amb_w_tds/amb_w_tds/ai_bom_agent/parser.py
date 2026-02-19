@@ -78,6 +78,31 @@ class ProductSpecificationParser:
         (re.compile(r"(\d+)x", re.IGNORECASE), lambda m: f"{m.group(1)}X"),   # 30x -> 30X
     ]
     
+    # Certification codes for AMB Wellness products
+    # Maps various input forms to standard certification codes
+    CERTIFICATION_MAP = {
+        "ORGANIC": "ORG",
+        "ORG": "ORG",
+        "CONVENTIONAL": "CONV",
+        "CONV": "CONV",
+        "KOSHER ORGANIC": "KOS-ORG",  # Must be before KOSHER
+        "KOS-ORG": "KOS-ORG",
+        "KOSHER": "KOS",
+        "KOS": "KOS",
+        "FAIR TRADE": "FT",
+        "FAIRTRADE": "FT",
+        "FT": "FT",
+        "HALAL": "HALAL",
+        "IASC": "IASC",
+        "FSSC 22000": "FSSC",
+        "FSSC": "FSSC",
+        "COSMOS": "COSMOS",
+        "ECOCERT": "COSMOS",
+    }
+    
+    # Default certification when none specified
+    DEFAULT_CERTIFICATION = "FT"  # Fair Trade
+    
     SUPPORTED_FAMILIES = list(PRODUCT_FAMILIES.keys())
     
     # Container definitions - Items NOT UOMs
@@ -225,9 +250,12 @@ class ProductSpecificationParser:
         # For families with has_variants=True, always populate variant
         concentration = self._extract_variant(item_code, family)
         
+        # Extract certification (e.g., ORG, FT, KOS)
+        certification = self._extract_certification(item_code)
+        
         return ParsedSpec(
             family=family,
-            attribute=variant.split("-")[0] if variant and "-" in variant else None,
+            attribute=certification,
             variant=concentration,
             mesh_size=None,
             packaging=packaging,
@@ -280,6 +308,35 @@ class ProductSpecificationParser:
         
         return None
 
+    def _extract_certification(self, request_text: str) -> str:
+        """
+        Extract certification code from request text.
+        
+        Searches for certification keywords and returns the standard code.
+        Falls back to DEFAULT_CERTIFICATION ("FT") if none found.
+        
+        Args:
+            request_text: Raw request text
+            
+        Returns:
+            Certification code (e.g., "ORG", "FT", "KOS-ORG")
+        """
+        text_upper = request_text.upper()
+        
+        # Sort by length descending to match longer phrases first
+        # e.g., "KOSHER ORGANIC" before "KOSHER"
+        sorted_certs = sorted(
+            self.CERTIFICATION_MAP.keys(),
+            key=len,
+            reverse=True
+        )
+        
+        for cert_key in sorted_certs:
+            if cert_key in text_upper:
+                return self.CERTIFICATION_MAP[cert_key]
+        
+        return self.DEFAULT_CERTIFICATION
+
     def _parse_natural_language(self, request_text: str) -> ParsedSpec:
         """
         Parse a natural language request.
@@ -320,6 +377,9 @@ class ProductSpecificationParser:
         # Extract variant (concentration ratio)
         variant = self._extract_variant(request_text, family)
         
+        # Extract certification (e.g., ORG, FT, KOS)
+        certification = self._extract_certification(request_text)
+        
         # Extract packaging
         packaging = None
         container_item = None
@@ -354,7 +414,7 @@ class ProductSpecificationParser:
         
         return ParsedSpec(
             family=family,
-            attribute=None,
+            attribute=certification,
             variant=variant,
             mesh_size=None,
             packaging=packaging,

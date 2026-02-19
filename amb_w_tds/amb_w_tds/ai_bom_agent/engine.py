@@ -286,26 +286,23 @@ class AgentCoreEngine:
     def _generate_fg_item(self, spec: ParsedSpec) -> Dict[str, Any]:
         """Generate finished goods item details.
         
-        FG naming pattern: {FAMILY}-{VARIANT}- Fair Trade-{PACKAGING}
+        FG naming pattern: {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}
+        Where ATTRIBUTE = certification code (ORG, FT, KOS, etc.)
+        
         Examples:
-        - 0227-30X- Fair Trade-1000L-IBC
-        - 0227-10X- Fair Trade-200L-DRUM
-        - 0307-200X- Fair Trade-25KG-BAG
+        - 0227-FT-30X-1000L-IBC
+        - 0227-ORG-10X-200L-DRUM
+        - 0307-KOS-200X-25KG-BAG
         """
         parts = [spec.family]
         
-        # Add variant (concentration ratio) if available
-        # This comes from parser's _extract_variant() method
-        if spec.variant:
-            parts.append(spec.variant)
-        elif spec.attribute:
-            # Fallback to attribute for backward compatibility
+        # Add certification/attribute (e.g., FT, ORG, KOS)
+        if spec.attribute:
             parts.append(spec.attribute)
         
-        # Add certification with leading space (match existing ERPNext variant pattern)
-        # Default: " Fair Trade" for organic products
-        cert = " Fair Trade"
-        parts.append(cert)
+        # Add variant (concentration ratio, e.g., 30X, 200X)
+        if spec.variant:
+            parts.append(spec.variant)
         
         # Add packaging
         if spec.packaging:
@@ -314,8 +311,22 @@ class AgentCoreEngine:
         item_code = "-".join(parts)
         
         # Build item name (clean, human-readable)
-        variant_str = spec.variant or spec.attribute or ""
-        name_parts = [p for p in [spec.family, variant_str, "Fair Trade"] if p]
+        # Map codes back to readable names for item_name
+        cert_names = {
+            "FT": "Fair Trade",
+            "ORG": "Organic",
+            "KOS": "Kosher",
+            "KOS-ORG": "Kosher Organic",
+            "CONV": "Conventional",
+            "HALAL": "Halal",
+            "IASC": "IASC",
+            "FSSC": "FSSC",
+            "COSMOS": "COSMOS",
+        }
+        cert_name = cert_names.get(spec.attribute, spec.attribute) if spec.attribute else ""
+        variant_str = spec.variant or ""
+        
+        name_parts = [p for p in [spec.family, cert_name, variant_str] if p]
         item_name = " ".join(name_parts)
         if spec.packaging:
             item_name += f" ({spec.packaging})"
