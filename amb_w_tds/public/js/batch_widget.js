@@ -533,9 +533,10 @@ function show_navbar_widget(html_content, count, stats = {}) {
         </div>
     ` : '';
     
+    // Default position: bottom-left, above the user avatar (approximately 60px from bottom)
     let positionStyles = savedPosition 
         ? `bottom: ${savedPosition.bottom}px; left: ${savedPosition.left}px;`
-        : 'bottom: 20px; left: 20px;';
+        : 'bottom: 60px; left: 10px;';
     
     let widget = $(`
         <div class="batch-announcement-widget" style="
@@ -888,7 +889,7 @@ window.reset_batch_widget_position = function() {
     localStorage.removeItem(amb.batch_widget.config.positionKey);
     const widget = $('.batch-announcement-widget');
     if (widget.length) {
-        widget.css({ 'bottom': '20px', 'left': '20px', 'top': 'auto', 'right': 'auto' });
+        widget.css({ 'bottom': '60px', 'left': '10px', 'top': 'auto', 'right': 'auto' });
     }
 };
 
