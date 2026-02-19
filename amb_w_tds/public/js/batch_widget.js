@@ -550,7 +550,7 @@ function show_navbar_widget(html_content, count, stats = {}) {
             border: 2px solid #28a745;
             border-radius: 8px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-            animation: slideInRight 0.3s ease-out;
+            animation: slideInUp 0.3s ease-out;
         ">
             <div class="widget-drag-handle" style="
                 display: flex; 
@@ -613,9 +613,9 @@ function show_navbar_widget(html_content, count, stats = {}) {
     if (!$('#batch-widget-styles').length) {
         $('head').append(`
             <style id="batch-widget-styles">
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
+                @keyframes slideInUp {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
                 }
                 .batch-announcement-widget::-webkit-scrollbar {
                     width: 6px;
