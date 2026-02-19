@@ -324,8 +324,7 @@ function update_batch_announcements() {
             if (r.message && r.message.success) {
                 console.log('✅ API call successful');
                 amb.batch_widget.state.cache = r.message;
-                amb.batch_widget.state.cacheTimestamp = Date.now();
-                process_api_response(r.message);
+function createStarterPill()                process_api_response(r.message);
             } else {
                 console.warn('⚠️ API returned unsuccessful response:', r.message);
                 handle_api_error(r.message || {error: 'Unknown API error'});
@@ -355,6 +354,9 @@ function process_api_response(response) {
             show_no_batches_message(response.message);
         }
         update_last_refresh_time();
+
+		            // Update starter pill status if it exists
+            updateStarterPillStatus(response);
     } catch (error) {
         console.error('Error processing API response:', error);
         show_error_message('Error displaying batch data');
@@ -1014,6 +1016,61 @@ function createStarterPill() {
 
     $('body').append(pill);
     console.log('[BatchWidget] Starter pill created');
+
+	    // Auto-fetch status on pill creation (don't wait for click)
+    setTimeout(function() {
+        var autoStatusEl = $('#batch-amb-status');
+        if (autoStatusEl.length && autoStatusEl.text() === 'Click to run') {
+            autoStatusEl.text('Loading...');
+            frappe.call({
+                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_running_batch_announcements',
+                args: { include_companies: true, include_plants: true, include_quality: true },
+                callback: function(r) {
+                    if (r.message && r.message.success) {
+                        var count = r.message.stats ? r.message.stats.total : 0;
+                        if (count > 0) {
+                            autoStatusEl.text(count + ' active').css('color', '#27ae60');
+                            pill.css('background', 'linear-gradient(135deg, #27ae60, #2ecc71)');
+                        } else {
+                            autoStatusEl.text('No batches').css('color', '#95a5a6');
+                            pill.css('background', 'linear-gradient(135deg, #95a5a6, #7f8c8d)');
+                        }
+                    } else {
+                        autoStatusEl.text('Click to run').css('color', '#2c3e50');
+                    }
+                },
+                error: function() {
+                    autoStatusEl.text('Offline').css('color', '#e74c3c');
+                },
+                freeze: false
+            });
+        }
+    }, 2000);
+}
+
+// =============================================================================
+// STARTER PILL STATUS UPDATER - Called by process_api_response()
+// =============================================================================
+function updateStarterPillStatus(response) {
+    var pillStatus = $('#batch-amb-status');
+    var pill = $('.batch-starter-pill');
+    if (!pillStatus.length || !pill.length) return;
+
+    var total = 0;
+    if (response && response.stats && response.stats.total) {
+        total = response.stats.total;
+    } else if (response && response.announcements) {
+        total = response.announcements.length;
+    }
+
+    if (total > 0) {
+        pillStatus.text(total + ' active').css('color', '#27ae60');
+        pill.css('background', 'linear-gradient(135deg, #27ae60, #2ecc71)');
+    } else {
+        pillStatus.text('No batches').css('color', '#95a5a6');
+        pill.css('background', 'linear-gradient(135deg, #95a5a6, #7f8c8d)');
+    }
+    console.log('[BatchWidget] Pill status updated: ' + (total > 0 ? total + ' active' : 'No batches'));
 }
 
 // Export starter pill function
