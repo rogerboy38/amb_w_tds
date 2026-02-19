@@ -4,6 +4,8 @@ Agent Core Engine for BOM Creator Agent v9.2.0
 Main orchestration engine for multi-level BOM generation.
 """
 
+import os
+import json
 import time
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -289,26 +291,41 @@ class AgentCoreEngine:
         FG naming pattern: {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}
         Where ATTRIBUTE = certification code (ORG, FT, KOS, etc.)
         
+        Phase 7: Customer-specific naming pattern support.
+        If customer_code is set and a rule exists, use the rule's pattern.
+        
         Examples:
         - 0227-FT-30X-1000L-IBC
         - 0227-ORG-10X-200L-DRUM
         - 0307-KOS-200X-25KG-BAG
+        - 0227-XYZ-30X-1000L-IBC (customer XYZ pattern)
         """
-        parts = [spec.family]
+        # Phase 7: Check for customer-specific naming rule
+        customer_rule = self._get_customer_naming_rule(spec.customer_code)
         
-        # Add certification/attribute (e.g., FT, ORG, KOS)
-        if spec.attribute:
-            parts.append(spec.attribute)
-        
-        # Add variant (concentration ratio, e.g., 30X, 200X)
-        if spec.variant:
-            parts.append(spec.variant)
-        
-        # Add packaging
-        if spec.packaging:
-            parts.append(spec.packaging)
-        
-        item_code = "-".join(parts)
+        if customer_rule:
+            item_code = self._apply_customer_pattern(spec, customer_rule)
+        else:
+            # Default naming pattern
+            parts = [spec.family]
+            
+            # Add certification/attribute (e.g., FT, ORG, KOS)
+            if spec.attribute:
+                parts.append(spec.attribute)
+            
+            # Add variant (concentration ratio, e.g., 30X, 200X)
+            if spec.variant:
+                parts.append(spec.variant)
+            
+            # Phase 7: Add mesh size for powder products
+            if spec.mesh_size:
+                parts.append(spec.mesh_size)
+            
+            # Add packaging
+            if spec.packaging:
+                parts.append(spec.packaging)
+            
+            item_code = "-".join(parts)
         
         # Build item name (clean, human-readable)
         # Map codes back to readable names for item_name
@@ -328,11 +345,14 @@ class AgentCoreEngine:
         }
         cert_name = cert_names.get(spec.attribute, spec.attribute) if spec.attribute else ""
         variant_str = spec.variant or ""
+        mesh_str = spec.mesh_size or ""
         
-        name_parts = [p for p in [spec.family, cert_name, variant_str] if p]
+        name_parts = [p for p in [spec.family, cert_name, variant_str, mesh_str] if p]
         item_name = " ".join(name_parts)
         if spec.packaging:
             item_name += f" ({spec.packaging})"
+        if spec.customer:
+            item_name += f" [Customer: {spec.customer}]"
         
         return {
             "item_code": item_code,
@@ -340,6 +360,65 @@ class AgentCoreEngine:
             "item_group": "Finished Goods",
             "stock_uom": spec.target_uom
         }
+    
+    def _get_customer_naming_rule(self, customer_code: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        Phase 7: Get customer-specific naming rule if exists.
+        
+        Args:
+            customer_code: Customer code to look up
+            
+        Returns:
+            Customer rule dict or None
+        """
+        if not customer_code:
+            return None
+        
+        # Try to load customer rules
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "customer_naming_rules.json"),
+            os.path.join(os.path.dirname(__file__), "templates", "customer_naming_rules.json"),
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        rules = json.load(f)
+                        return rules.get(customer_code)
+                except Exception:
+                    pass
+        
+        return None
+    
+    def _apply_customer_pattern(self, spec: ParsedSpec, rule: Dict[str, Any]) -> str:
+        """
+        Phase 7: Apply customer-specific naming pattern.
+        
+        Args:
+            spec: Parsed specification
+            rule: Customer naming rule
+            
+        Returns:
+            Item code generated from pattern
+        """
+        pattern = rule.get("pattern", "{FAMILY}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}")
+        
+        # Replace placeholders
+        item_code = pattern
+        item_code = item_code.replace("{FAMILY}", spec.family or "")
+        item_code = item_code.replace("{ATTRIBUTE}", spec.attribute or "")
+        item_code = item_code.replace("{VARIANT}", spec.variant or "")
+        item_code = item_code.replace("{MESH_SIZE}", spec.mesh_size or "")
+        item_code = item_code.replace("{PACKAGING}", spec.packaging or "")
+        item_code = item_code.replace("{CUSTOMER_CODE}", rule.get("customer_code", spec.customer_code or ""))
+        
+        # Clean up multiple dashes
+        while "--" in item_code:
+            item_code = item_code.replace("--", "-")
+        item_code = item_code.strip("-")
+        
+        return item_code
     
     def _plan_bom_items(
         self,

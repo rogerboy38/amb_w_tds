@@ -17,6 +17,8 @@ Containers (Items, NOT UOMs):
 """
 
 import re
+import os
+import json
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from .data_contracts import ParsedSpec
@@ -100,6 +102,22 @@ class ProductSpecificationParser:
     SLASH_RATIO_PATTERNS = [
         (re.compile(r"(\d+)/(\d+)", re.IGNORECASE), lambda m: f"{m.group(1)}/{m.group(2)}"),
     ]
+    
+    # Phase 7: Mesh size patterns for powder families
+    MESH_PATTERNS = [
+        re.compile(r"(\d+)\s*mesh", re.IGNORECASE),  # "100 mesh" or "100mesh"
+        re.compile(r"mesh\s*(\d+)", re.IGNORECASE),  # "mesh 100"
+    ]
+    
+    # Valid mesh sizes per powder family
+    VALID_MESH_SIZES = {
+        "0307": [60, 80, 100, 120, 200],
+        "HIGHPOL": [60, 80, 100, 120],
+        "ACETYPOL": [60, 80, 100, 120],
+    }
+    
+    # Powder families that support mesh size
+    POWDER_FAMILIES = ["0307", "HIGHPOL", "ACETYPOL"]
     
     # Certification codes for AMB Wellness products
     # Maps various input forms to standard certification codes
@@ -212,6 +230,16 @@ class ProductSpecificationParser:
         # Word-based family codes: HIGHPOL, ACETYPOL
         re.compile(r"^(HIGHPOL|ACETYPOL)$", re.IGNORECASE),
         re.compile(r"^(HIGHPOL|ACETYPOL)-(.+)$", re.IGNORECASE),
+    ]
+    
+    # Phase 7: Customer naming patterns config file path
+    CUSTOMER_RULES_FILE = "customer_naming_rules.json"
+    
+    # Phase 7: Customer detection patterns
+    CUSTOMER_PATTERNS = [
+        re.compile(r"for\s+customer\s+(\w+)", re.IGNORECASE),
+        re.compile(r"for\s+(\w+)\s+customer", re.IGNORECASE),
+        re.compile(r"customer[:\s]+(\w+)", re.IGNORECASE),
     ]
     
     def parse(self, request_text: str) -> ParsedSpec:
@@ -387,6 +415,92 @@ class ProductSpecificationParser:
         
         return self.DEFAULT_CERTIFICATION
 
+    def _extract_mesh_size(self, request_text: str, family: str) -> Optional[str]:
+        """
+        Phase 7: Extract mesh size from request text for powder families.
+        
+        Supports formats:
+        - "100 mesh" or "100mesh"
+        - "mesh 100"
+        
+        Validates against VALID_MESH_SIZES for the family.
+        
+        Args:
+            request_text: Raw request text
+            family: Product family code
+            
+        Returns:
+            Normalized mesh size (e.g., "100M") or None
+        """
+        # Only process for powder families
+        if family not in self.POWDER_FAMILIES:
+            return None
+        
+        valid_sizes = self.VALID_MESH_SIZES.get(family, [])
+        
+        for pattern in self.MESH_PATTERNS:
+            match = pattern.search(request_text)
+            if match:
+                mesh_value = int(match.group(1))
+                # Validate against valid mesh sizes
+                if mesh_value in valid_sizes:
+                    return f"{mesh_value}M"
+                # If not in valid list but still a reasonable mesh size, accept it with warning
+                if 40 <= mesh_value <= 400:
+                    return f"{mesh_value}M"
+        
+        return None
+
+    def _extract_customer(self, request_text: str) -> tuple:
+        """
+        Phase 7: Extract customer identifier from request text.
+        
+        Supports formats:
+        - "for customer XYZ"
+        - "for XYZ customer"
+        - "customer: XYZ"
+        
+        Args:
+            request_text: Raw request text
+            
+        Returns:
+            Tuple of (customer_name, customer_code) or (None, None)
+        """
+        for pattern in self.CUSTOMER_PATTERNS:
+            match = pattern.search(request_text)
+            if match:
+                customer = match.group(1).upper()
+                # Load customer rules to get customer_code
+                rules = self._load_customer_rules()
+                if customer in rules:
+                    return customer, rules[customer].get("customer_code", customer)
+                return customer, customer
+        
+        return None, None
+
+    def _load_customer_rules(self) -> Dict[str, Any]:
+        """
+        Phase 7: Load customer naming rules from config file.
+        
+        Returns:
+            Dict of customer rules, or empty dict if file not found
+        """
+        # Try multiple locations
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), self.CUSTOMER_RULES_FILE),
+            os.path.join(os.path.dirname(__file__), "templates", self.CUSTOMER_RULES_FILE),
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        return json.load(f)
+                except Exception:
+                    pass
+        
+        return {}
+
     def _parse_natural_language(self, request_text: str) -> ParsedSpec:
         """
         Parse a natural language request.
@@ -431,8 +545,14 @@ class ProductSpecificationParser:
         # Extract variant (concentration ratio)
         variant = self._extract_variant(request_text, family)
         
+        # Phase 7: Extract mesh size for powder families
+        mesh_size = self._extract_mesh_size(request_text, family)
+        
         # Extract certification (e.g., ORG, FT, KOS)
         certification = self._extract_certification(request_text)
+        
+        # Phase 7: Extract customer info
+        customer, customer_code = self._extract_customer(request_text)
         
         # Extract packaging
         packaging = None
@@ -470,14 +590,16 @@ class ProductSpecificationParser:
             family=family,
             attribute=certification,
             variant=variant,
-            mesh_size=None,
+            mesh_size=mesh_size,
             packaging=packaging,
             target_uom=family_info["uom"],
             target_qty=1.0,
             container_item=container_item,
             container_qty_per_kg=container_qty_per_kg,
             raw_request=request_text,
-            parsed_at=datetime.now()
+            parsed_at=datetime.now(),
+            customer=customer,
+            customer_code=customer_code
         )
     
     def get_family_info(self, family: str) -> Dict[str, Any]:

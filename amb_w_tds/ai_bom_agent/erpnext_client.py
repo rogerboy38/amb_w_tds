@@ -16,6 +16,9 @@ class ItemAndBOMService:
     All methods are idempotent - safe to call multiple times.
     """
     
+    # Phase 7: Families that require batch tracking
+    BATCH_TRACKING_FAMILIES = ["0227", "0307", "HIGHPOL", "ACETYPOL"]
+    
     def __init__(self, company: Optional[str] = None):
         """
         Initialize the service.
@@ -64,6 +67,7 @@ class ItemAndBOMService:
         include_item_in_manufacturing: int = 1,
         default_warehouse: Optional[str] = None,
         description: Optional[str] = None,
+        has_batch_no: int = 0,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -78,6 +82,7 @@ class ItemAndBOMService:
             include_item_in_manufacturing: Include in MRP (default: 1)
             default_warehouse: Default warehouse
             description: Item description
+            has_batch_no: Enable batch tracking (Phase 7)
             **kwargs: Additional item fields
             
         Returns:
@@ -94,6 +99,11 @@ class ItemAndBOMService:
         item.stock_uom = stock_uom
         item.is_stock_item = is_stock_item
         item.include_item_in_manufacturing = include_item_in_manufacturing
+        
+        # Phase 7: Set batch tracking flag
+        # Auto-enable for batch-tracked families
+        if has_batch_no or self._should_enable_batch_tracking(item_code):
+            item.has_batch_no = 1
         
         # Set mandatory custom fields for Mexico compliance
         item.product_key = kwargs.pop("product_key", item_code)
@@ -342,3 +352,21 @@ class ItemAndBOMService:
             AND item_group = 'SFG Semi Finished Goods'
             AND disabled = 0
         """, pattern)
+
+    def _should_enable_batch_tracking(self, item_code: str) -> bool:
+        """
+        Phase 7: Determine if an item should have batch tracking enabled.
+        
+        Returns True if item_code starts with a batch-tracked family code.
+        
+        Args:
+            item_code: Item code to check
+            
+        Returns:
+            True if batch tracking should be enabled
+        """
+        item_upper = item_code.upper()
+        for family in self.BATCH_TRACKING_FAMILIES:
+            if item_upper.startswith(family) or item_upper.startswith(f"SFG-{family}"):
+                return True
+        return False
