@@ -221,10 +221,14 @@ class ProductSpecificationParser:
             elif "Powder" in family_info["item_group"]:
                 packaging = "25KG-BAG"
         
+        # Extract concentration variant (e.g., 30X, 200X)
+        # For families with has_variants=True, always populate variant
+        concentration = self._extract_variant(item_code, family)
+        
         return ParsedSpec(
             family=family,
             attribute=variant.split("-")[0] if variant and "-" in variant else None,
-            variant=None,  # Not used in real production
+            variant=concentration,
             mesh_size=None,
             packaging=packaging,
             target_uom=family_info["uom"],
