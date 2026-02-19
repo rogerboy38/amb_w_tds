@@ -1,0 +1,134 @@
+# PHASE 4 HANDOUT - Product-Aligned Variant Support & Template Expansion
+
+## Context
+Phase 3B is COMPLETE (commit 64122f6). The flavor-to-variant rename is fully done. BOM agent tests pass for 0227 and 0307. But the agent currently has GAPS vs our real product catalog.
+
+## CURRENT STATE ANALYSIS
+
+### What the parser.py supports (4 families):
+- 0227: Aloe Vera Gel Concentrate 30:1 (SFG, liquid, has_variants=True)
+- 0307: Aloe Vera Gel Spray Dried Powder 200:1 (FG, powder)
+- 0303: Aloe Vera Normal/Powder (SFG, intermediate)
+- 0301: Aloe Vera Powder Base (SFG)
+
+### What templates exist:
+- template_0227_master.json (323 lines, detailed, 3 steps: Concentration -> Standardization -> Packing)
+- template_0307_master.json (39 lines, basic, 1 step: Spray Drying)
+
+### What is MISSING vs real AMB products:
+Our real product catalog (https://amb-wellness.com/our-products/) has 5 product lines:
+1. Innovaloe Juice 1:1 - NO dedicated template (could be a 0227 variant)
+2. Innovaloe Concentrate 10:1, 20:1, 30:1 - ONLY 30:1 template exists
+3. Spray Dried Powder 200:1, 100:1 - ONLY 200:1 template exists  
+4. Acetypol 10/15, 15/20, 20/25 - NO template
+5. Highpol 10/15 through 35/40 - NO template
+
+### Phase 3 Deferred Items:
+- Item 0302: Requires 0227-RETENIDO item first
+- BOM-0301-001: Has 0227 variant but naming mismatch
+- BOM-0303-005: Cost tracking BOM only (no raw materials)
+
+---
+
+## PART 1: TECHNICAL SPECIFICATION
+
+### Task 4A: Add Variant Parsing Support
+Update `parser.py` to parse variant specifications from requests like:
+- "0227 10X organic IBC" -> family=0227, variant=10X, attribute=ORGANIC, packaging=1000L-IBC
+- "0227 30X fair-trade drum" -> family=0227, variant=30X, packaging=200L-DRUM
+- "Highpol 20/25 organic 25kg" -> recognize as specialty product
+- "Acetypol 15/20 kosher drum" -> recognize as specialty product
+
+Add to PRODUCT_FAMILIES in parser.py:
+```python
+"0227": {
+    ...
+    "valid_variants": ["1X", "10X", "20X", "30X"],  # concentration ratios
+},
+"0307": {
+    ...
+    "valid_variants": ["100X", "200X"],  # powder ratios
+},
+```
+
+### Task 4B: Add Variant to ParsedSpec Population  
+When parser detects a concentration ratio in the request text (e.g., "10:1", "30X", "200:1"), set `spec.variant` accordingly:
+- "10:1" or "10X" -> variant="10X"
+- "20:1" or "20X" -> variant="20X"  
+- "30:1" or "30X" -> variant="30X"
+- "100:1" or "100X" -> variant="100X"
+- "200:1" or "200X" -> variant="200X"
+
+### Task 4C: Update template_0227 to Support Multiple Concentrations
+The current template_0227_master.json is hardcoded for 30:1. Update the meta section to list all valid concentrations and make the template parameterizable by concentration ratio.
+
+### Task 4D: Update Engine FG Naming
+Currently `_generate_fg_item` defaults cert to " Fair Trade" when spec.variant is None. This should be:
+- If spec.variant is set: use it in the FG code (e.g., 0227-30X-ORGANIC-IBC)
+- If spec.variant is None AND family has variants: default to the family default concentration
+
+---
+
+## PART 2: TEST PLAN
+
+### Test 1: Parse variant from natural language
+```python
+parser = ProductSpecificationParser()
+spec = parser.parse("0227 30X organic IBC")
+assert spec.variant == "30X"
+assert spec.family == "0227"
+assert spec.attribute == "ORGANIC" or "ORG" in str(spec.attribute)
+```
+
+### Test 2: Parse variant from item code
+```python
+spec = parser.parse("0227")
+assert spec.family == "0227"
+assert spec.variant is None  # No variant specified = ok
+```
+
+### Test 3: Verify valid_variants are defined
+```python
+assert "valid_variants" in parser.PRODUCT_FAMILIES["0227"]
+assert "30X" in parser.PRODUCT_FAMILIES["0227"]["valid_variants"]
+assert "200X" in parser.PRODUCT_FAMILIES["0307"]["valid_variants"]
+```
+
+### Test 4: Dry-run BOM generation with variant
+```
+bench --site mysite execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0227 30X organic IBC", "dry_run": true}'
+```
+Expected: Success, variant=30X in spec output, FG item code contains 30X.
+
+### Test 5: Dry-run BOM generation without variant (backward compatible)
+```
+bench --site mysite execute amb_w_tds.ai_bom_agent.api.create_multi_level_bom_from_spec --kwargs '{"request_text": "0307", "dry_run": true}'
+```
+Expected: Success, variant=null (same as Phase 3B test result).
+
+---
+
+## PART 3: COMPLETION CRITERIA
+
+Phase 4 is COMPLETE when:
+1. parser.py PRODUCT_FAMILIES has valid_variants for 0227 and 0307
+2. Parser correctly extracts variant from "0227 30X organic IBC" -> variant="30X"
+3. Parser handles ratio formats: "30:1" -> "30X", "200:1" -> "200X"
+4. Backward compatibility: "0307" alone still works (variant=null)
+5. Dry-run test with variant shows variant in spec output
+6. No regressions: existing Phase 3B tests still pass
+7. Changes committed and pushed to feature/v9.2.0-development
+8. Handout saved at docs/BOM_PHASE4_COMPLETION_HANDOUT.md
+
+### Files to Modify:
+- `amb_w_tds/ai_bom_agent/parser.py` (add valid_variants, variant extraction)
+- `amb_w_tds/ai_bom_agent/engine.py` (update FG naming for variant support)
+
+### Files to NOT Modify:
+- data_contracts.py (already has variant field)
+- naming_conventions.md (already updated in Phase 3B)
+- template_schema.json, business_rules.json, validators.py
+
+---
+
+Execute Phase 4: update parser.py with variant parsing, update engine.py FG naming, run all tests, commit and push. Save handout to docs/BOM_PHASE4_COMPLETION_HANDOUT.md.
