@@ -128,7 +128,7 @@
           "items": { "type": "string" },
           "description": "List of variant attributes (ORGANIC, KOSHER, etc.)"
         },
-        "flavors": {
+        "variants": {
           "type": "array",
           "items": { "type": "string" }
         },

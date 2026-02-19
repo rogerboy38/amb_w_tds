@@ -49,7 +49,7 @@ class ValidationRulesEngine:
         {
             "id": "B2",
             "name": "Shared Concentrate SFG",
-            "description": "Concentrate SFG SHARED across flavors (same family+attribute)",
+            "description": "Concentrate SFG SHARED across variants (same family+attribute)",
             "type": "shared_sfg",
             "step": 1,
             "sharing_keys": ["family", "attribute"]

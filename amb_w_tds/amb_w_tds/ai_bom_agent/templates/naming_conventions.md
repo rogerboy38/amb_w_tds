@@ -105,7 +105,7 @@ RM-ALOE-ORGANIC         # Organic raw aloe
 RM-ALOE-CONVENTIONAL    # Conventional raw aloe
 RM-WATER-PURIFIED       # Purified water
 RM-CITRIC-ACID          # Citric acid
-RM-FLAVOR-MANGO         # Mango flavoring
+RM-ADDITIVE-ACEMANNAN   # Acemannan concentrate
 RM-MALTODEXTRIN         # Maltodextrin carrier
 ```
 

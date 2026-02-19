@@ -296,7 +296,7 @@ class AgentCoreEngine:
         
         # Add certification with leading space (match variant pattern)
         # Default: " Fair Trade" for organic products
-        cert = spec.flavor if spec.flavor else " Fair Trade"
+        cert = spec.variant if spec.variant else " Fair Trade"
         parts.append(cert)
         
         # Add packaging
@@ -372,7 +372,7 @@ class AgentCoreEngine:
         resolved = pattern
         resolved = resolved.replace("{FAMILY}", spec.family or "")
         resolved = resolved.replace("{ATTRIBUTE}", spec.attribute or "")
-        resolved = resolved.replace("{FLAVOR}", spec.flavor or "")
+        resolved = resolved.replace("{VARIANT}", spec.variant or "")
         resolved = resolved.replace("{PACKAGING}", spec.packaging or "")
         
         # Remove wildcards for now (could do lookup in future)

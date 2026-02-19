@@ -13,7 +13,7 @@ class ParsedSpec:
     """Parsed product specification from user request"""
     family: str  # e.g., "0227", "0307"
     attribute: str  # e.g., "ORGANIC", "CONVENTIONAL", "KOSHER"
-    flavor: Optional[str] = None  # e.g., "MANGO", "PLAIN" (for 0227)
+    variant: Optional[str] = None  # e.g., "HIGHPOL", "ACETYPOL", concentration ratios
     mesh_size: Optional[str] = None  # e.g., "200-MESH" (for 0307)
     packaging: str = ""  # e.g., "1000L-IBC", "25KG-BAG"
     target_uom: str = "Kg"
@@ -27,7 +27,7 @@ class ParsedSpec:
         return {
             "family": self.family,
             "attribute": self.attribute,
-            "flavor": self.flavor,
+            "variant": self.variant,
             "mesh_size": self.mesh_size,
             "packaging": self.packaging,
             "target_uom": self.target_uom,
@@ -39,8 +39,8 @@ class ParsedSpec:
         }
     
     def get_variant(self) -> str:
-        """Get variant identifier (flavor for juice, mesh for powder)"""
-        return self.flavor or self.mesh_size or "PLAIN"
+        """Get variant identifier (variant for juice, mesh for powder)"""
+        return self.variant or self.mesh_size or "PLAIN"
     
     def get_fg_code(self) -> str:
         """Generate finished good item code"""
