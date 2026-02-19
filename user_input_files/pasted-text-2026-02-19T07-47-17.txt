@@ -1,0 +1,81 @@
+git pull origin feature/v9.2.0-development
+From https://github.com/rogerboy38/amb_w_tds
+ * branch            feature/v9.2.0-development -> FETCH_HEAD
+Updating 76c1f13..ad53ec3
+Fast-forward
+ ai_bom_agent/business_rules.json                               |  77 ++++
+ amb_w_tds/__init__.py                                          |   2 +-
+ amb_w_tds/ai_bom_agent/__init__.py                             | 101 +++++
+ amb_w_tds/ai_bom_agent/api.py                                  | 231 +++++++++++
+ amb_w_tds/ai_bom_agent/customer_naming_rules.json              |  23 ++
+ amb_w_tds/ai_bom_agent/data_contracts.py                       | 246 +++++++++++
+ amb_w_tds/ai_bom_agent/engine.py                               | 558 +++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/erpnext_client.py                       | 372 +++++++++++++++++
+ amb_w_tds/ai_bom_agent/parser.py                               | 649 +++++++++++++++++++++++++++++
+ amb_w_tds/ai_bom_agent/templates.py                            | 245 +++++++++++
+ amb_w_tds/ai_bom_agent/templates/business_rules.json           | 151 +++++++
+ amb_w_tds/ai_bom_agent/templates/naming_conventions.md         | 174 ++++++++
+ amb_w_tds/ai_bom_agent/templates/operations_mapping.json       | 158 +++++++
+ amb_w_tds/ai_bom_agent/templates/template_0227_master.json     | 323 +++++++++++++++
+ amb_w_tds/ai_bom_agent/templates/template_0307_master.json     |  39 ++
+ amb_w_tds/ai_bom_agent/templates/template_ACETYPOL_master.json |  37 ++
+ amb_w_tds/ai_bom_agent/templates/template_HIGHPOL_master.json  |  37 ++
+ amb_w_tds/ai_bom_agent/templates/template_schema.json          | 162 ++++++++
+ amb_w_tds/ai_bom_agent/templates/uom_conversions.json          | 156 +++++++
+ amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json         | 133 ++++++
+ amb_w_tds/ai_bom_agent/validators.py                           | 360 ++++++++++++++++
+ amb_w_tds/hooks.py                                             |   2 +-
+ amb_w_tds/raven/RAVEN_COMMANDS_HELP.md                         |  59 ++-
+ amb_w_tds/raven/__init__.py                                    |   5 +-
+ amb_w_tds/raven/bom_creator_agent.py                           | 342 ++++++++++++++++
+ amb_w_tds/raven/config.py                                      |  21 +-
+ docs/AI_BOM_AGENT_ORCHESTRATOR_REPORT.md                       | 199 +++++++++
+ docs/AI_BOM_AGENT_SOP.md                                       | 673 ++++++++++++++++++++++++++++++
+ docs/BOM_CREATOR_AGENT_KNOWLEDGE_BASE.md                       | 952 +++++++++++++++++++++++++++++++++++++++++++
+ docs/BOM_PHASE4_COMPLETION_HANDOUT.md                          |  82 ++++
+ docs/BOM_PHASE5_COMPLETION_HANDOUT.md                          | 131 ++++++
+ docs/BOM_PHASE6_COMPLETION_HANDOUT.md                          | 150 +++++++
+ docs/BOM_PHASE7_COMPLETION_HANDOUT.md                          | 235 +++++++++++
+ docs/PHASE7_SANDBOX_TEST_REPORT.md                             | 162 ++++++++
+ docs/PHASE7_TEST_REPORT.txt                                    |  70 ++++
+ push_to_git_plus.sh                                            | 528 ++++++++++++++++++++++++
+ scripts/test_v9.2.0_phase2.sh                                  |  99 +++++
+ scripts/test_v9.2.0_phase3_mrp.sh                              |  59 +++
+ scripts/test_v9.2.0_phase7.sh                                  | 211 ++++++++++
+ version.txt                                                    |   2 +-
+ 40 files changed, 8206 insertions(+), 10 deletions(-)
+ create mode 100644 ai_bom_agent/business_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/__init__.py
+ create mode 100644 amb_w_tds/ai_bom_agent/api.py
+ create mode 100644 amb_w_tds/ai_bom_agent/customer_naming_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/data_contracts.py
+ create mode 100644 amb_w_tds/ai_bom_agent/engine.py
+ create mode 100644 amb_w_tds/ai_bom_agent/erpnext_client.py
+ create mode 100644 amb_w_tds/ai_bom_agent/parser.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates.py
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/business_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/naming_conventions.md
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/operations_mapping.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0227_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_0307_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_ACETYPOL_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_HIGHPOL_master.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/template_schema.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/uom_conversions.json
+ create mode 100644 amb_w_tds/ai_bom_agent/templates/yield_loss_rules.json
+ create mode 100644 amb_w_tds/ai_bom_agent/validators.py
+ create mode 100644 amb_w_tds/raven/bom_creator_agent.py
+ create mode 100644 docs/AI_BOM_AGENT_ORCHESTRATOR_REPORT.md
+ create mode 100644 docs/AI_BOM_AGENT_SOP.md
+ create mode 100644 docs/BOM_CREATOR_AGENT_KNOWLEDGE_BASE.md
+ create mode 100644 docs/BOM_PHASE4_COMPLETION_HANDOUT.md
+ create mode 100644 docs/BOM_PHASE5_COMPLETION_HANDOUT.md
+ create mode 100644 docs/BOM_PHASE6_COMPLETION_HANDOUT.md
+ create mode 100644 docs/BOM_PHASE7_COMPLETION_HANDOUT.md
+ create mode 100644 docs/PHASE7_SANDBOX_TEST_REPORT.md
+ create mode 100644 docs/PHASE7_TEST_REPORT.txt
+ create mode 100755 push_to_git_plus.sh
+ create mode 100644 scripts/test_v9.2.0_phase2.sh
+ create mode 100644 scripts/test_v9.2.0_phase3_mrp.sh
+ create mode 100644 scripts/test_v9.2.0_phase7.sh
+(env) frappe@UbuntuVM:~/frappe-bench/apps/amb_w_tds$ 
