@@ -1,0 +1,70 @@
+# Source URL: https://gist.githubusercontent.com/rogerboy38/fcb6de01e0cdd27a74d03604075c3de3/raw/4c9dc9a30152ae88658f49bc5ba555fe9620a810/AI%2520Agent%2520Technical%2520Specification:%2520Hierarchical%2520BOM%2520Creator%2520.md
+# Content Length: 8530 characters
+# Extracted at: 2026-02-19 14:23:37
+#============================================================
+
+AI Agent Technical Specification: Hierarchical BOM Creator (Revised for ERPNext v16 MRP)
+Version: 1.1
+Date: February 14, 2026
+Based on: BOM Hierarchical Implementation Report (Jan 14 2026), BOM-0227022253-Structure Example, and ERPNext v16 MRP Features.
+1. Executive Summary
+This specification outlines an AI agent to automate the creation and management of multi-level Bills of Materials (BOMs) within the ERPNext v16 system. The primary goal is to transition from the current flat BOM structure to a hierarchical one, accurately reflecting the multi-stage manufacturing process for products like the "0227" juice line, which involves several Semi-Finished Goods (SFGs). The agent will ensure consistency, prevent errors, and significantly speed up the BOM creation process. Critically, it is designed to leverage the enhanced Material Requirements Planning (MRP) engine in ERPNext v16 to enable dynamic, accurate, and automated planning of raw material and sub-assembly procurement based on the newly created complex BOMs.
+2. Core Business Objective
+To automate the instantiation of complex, up-to-6-level BOMs from a master template or product specifications, ensuring that all intermediate SFGs are correctly created and linked before final assembly. The agent's output will be structured to feed directly into the ERPNext v16 MRP engine, enabling automated generation of purchase requests for raw materials and work orders for SFGs and FGs, thereby eliminating manual data entry errors and enforcing manufacturing process standards.
+3. Key Functional Requirements
+3.1. Multi-level BOM Decomposition
+Input: The agent shall accept a top-level Finished Good (FG) item code (e.g., 0227-30X-...) or a product specification document.
+Process: It must recursively traverse the required manufacturing steps, creating or referencing SFG items at each level as defined in a master process template.
+Output: A fully linked, multi-level BOM structure in the database, where each SFG has its own active BOM composed of either raw materials or lower-level SFGs. This structure is essential for the MRP engine to perform multi-level explosion .
+3.2. Item Creation and Management
+The agent must be able to create new Item records for SFGs based on naming conventions (e.g., SFG-0227-STEP2-CONC).
+It should check for existing SFG items before creating new ones to prevent duplicates.
+For each new SFG, it must assign the correct Item Group, UOM (e.g., Kg, L), and default settings based on the product family.
+3.3. BOM Creation and Linking
+The agent shall create a new BOM record for each SFG and the final FG.
+It must correctly link child items in the BOM, using the bom\_no field to point to the BOM of a sub-assembly (SFG) when required.
+It must set the appropriate is\_active and is\_default flags, typically activating only the final, approved versions.
+It should define yield percentages or loss rates at each BOM level to feed into MRP calculations for accurate gross requirements.
+3.4. Operation and Routing Integration
+As indicated in your Google Doc, the agent must be able to create or assign Operations (e.g., "Mixing", "Concentration", "Pasteurization") to each BOM level.
+It should link these operations to the correct Workstations and define standard operating costs and cycle times. This enables the tracking of semi-finished goods via Job Cards, a key v16 feature for WIP monitoring .
+3.5. Data Source and Logic
+Master Template BOMs: The agent's primary logic will be derived from a set of master template BOMs (like the 0227 Master BOM), which define the standard multi-step process.
+Rules Engine: It will apply business rules, such as:
+"If item group is 'Juice 0227', then BOM structure must include steps 1 (Concentrate), 2 (Standardize), and 3 (Packing)."
+"Yield percentages: Step 1 output = 95% of input volume."
+"UOM conversion: 1000L of liquid = 1 IBC."
+4. Technical Architecture
+The following diagram has been updated to show the agent's role in populating the data structures that the MRP engine consumes.
+5. Agent Workflow Example (for Juice 0227)
+Trigger: User inputs request: "Create BOM for new FG: 0227-ORGANIC-VANILLA-1000L IBC".
+Parse: Agent identifies base product 0227, attribute ORGANIC, flavor VANILLA, packaging 1000L IBC.
+Retrieve Template: Agent loads master template BOM-0227-MASTER, which defines a 3-level process:
+Level 3 (Raw): Raw Aloe, Processing agents.
+Level 2 (SFG): 0227-ORGANIC-CONCENTRATE-30X (BOM of Level 3 items).
+Level 1 (FG): Final product (BOM of Level 2 SFG + Flavor + Packaging).
+Create/Check SFGs:
+Checks if 0227-ORGANIC-CONCENTRATE-30X exists. If not, creates it.
+Creates BOM for the Concentrate using raw materials from the template.
+Build Final BOM:
+Creates final FG item 0227-ORGANIC-VANILLA-1000L IBC.
+Creates its BOM, adding the SFG 0227-ORGANIC-CONCENTRATE-30X, VANILLA flavor item, and 1000L IBC packaging item.
+In the BOM, for the SFG row, it correctly populates the bom\_no field with the BOM of the concentrate.
+Add Operations: Attaches operations "Concentration" to the SFG BOM and "Mixing & Packaging" to the final FG BOM.
+Validate & Activate: Runs validation rules (e.g., checks for duplicate BOMs, ensures all items exist) and sets the new BOMs as active.
+MRP Integration (New): When a Sales Order for this new FG is entered, the ERPNext v16 MRP engine automatically performs a multi-level explosion using the BOMs created by the agent. It calculates the gross requirements for raw aloe, concentrate, vanilla, and packaging, nets against existing stock, and generates Material Requests for procurement and Work Orders for the "Concentration" and "Mixing & Packaging" steps .
+6. Success Metrics
+Time Reduction: 90% reduction in time to create a complete multi-level BOM for a new SKU.
+Accuracy: 100% of BOMs created by the agent pass the validation rules.
+MRP Efficiency: 100% of new product introductions for families with master templates result in correctly generated MRP plans, with no manual intervention required to define material dependencies.
+Adoption: All new product introductions for families with defined master templates use the agent-generated BOMs.
+7. Integration with ERPNext v16 MRP Engine (New Section)
+This section details how the AI agent leverages the specific MRP enhancements in ERPNext v16.
+ERPNext v16 MRP Feature How the AI Agent Enables It Business Impact
+Multi-level BOM Explosion The agent creates the complete, nested BOM structure (FG -> SFG -> Raw Materials) that the MRP engine requires to calculate requirements at all levels. Accurate planning for raw materials and all intermediate production steps. No manual calculation of dependent demand.
+Stock Reservation for Production By defining the precise BOM structure, the agent allows the MRP system to reserve raw materials for planned Work Orders for SFGs and FGs. Prevents stock from being accidentally consumed by other orders, ensuring materials are available when production starts.
+Track Semi-Finished Goods via Job Cards The agent's definition of SFG items and their BOMs allows the creation of Work Orders for these SFGs. Progress is tracked against these orders using Job Cards at each operation. Real-time visibility into Work In Progress (WIP) inventory and production status at each stage of the multi-level process (e.g., "Concentration" step complete).
+"Transfer Extra Raw Materials to WIP" The agent can define standard yield percentages or loss rates within the BOM. This can be used to configure the new v16 setting that allows transferring an extra percentage of materials to WIP to account for damage or waste. Reduces production stoppages due to material shortages caused by normal process waste.
+Subcontracting Integration If a production step (e.g., concentrating) is outsourced, the agent can flag the relevant SFG item for subcontracting. The MRP engine can then generate Subcontracted Purchase Orders instead of internal Work Orders for that step. Seamlessly integrates outsourced operations into the overall material plan, with full tracking of provided materials.
+Landed Cost for Manufacturing The agent can associate overhead costs (e.g., energy, labor) with operations. The new v16 landed cost feature can then allocate these costs to the manufactured SFGs and FGs. More accurate product costing, reflecting the true cost of each production stage.
+This integrated approach ensures that the AI agent doesn't just create static documents, but builds the foundational data structure for a dynamic, intelligent, and automated manufacturing planning system.
