@@ -68,6 +68,24 @@ class ProductSpecificationParser:
             "has_variants": False,
             "valid_variants": [],
             "uom": "Kg"
+        },
+        "HIGHPOL": {
+            "name": "Aloe Vera Highpol Powder",
+            "type": "FG",
+            "item_group": "Products Powder",
+            "default_concentration": "20/25",
+            "has_variants": True,
+            "valid_variants": ["10/15", "15/20", "20/25", "25/30", "30/35", "35/40"],
+            "uom": "Kg"
+        },
+        "ACETYPOL": {
+            "name": "Aloe Vera Acetypol Powder",
+            "type": "FG",
+            "item_group": "Products Powder",
+            "default_concentration": "15/20",
+            "has_variants": True,
+            "valid_variants": ["10/15", "15/20", "20/25"],
+            "uom": "Kg"
         }
     }
     
@@ -78,15 +96,31 @@ class ProductSpecificationParser:
         (re.compile(r"(\d+)x", re.IGNORECASE), lambda m: f"{m.group(1)}X"),   # 30x -> 30X
     ]
     
+    # Slash ratio patterns for Highpol/Acetypol (polysaccharide/acemannan ratios)
+    SLASH_RATIO_PATTERNS = [
+        (re.compile(r"(\d+)/(\d+)", re.IGNORECASE), lambda m: f"{m.group(1)}/{m.group(2)}"),
+    ]
+    
     # Certification codes for AMB Wellness products
     # Maps various input forms to standard certification codes
+    # Sorted by length descending in _extract_certification() for longest-match-first
     CERTIFICATION_MAP = {
-        "ORGANIC": "ORG",
+        # Organic sub-types (longer phrases first)
+        "KOSHER ORGANIC": "KOS-ORG",
+        "KOS-ORG": "KOS-ORG",
+        "EU ORGANIC": "ORG-EU",
+        "ORG-EU": "ORG-EU",
+        "NOP USA ORGANIC": "ORG-NOP",
+        "NOP ORGANIC": "ORG-NOP",
+        "NOP USA": "ORG-NOP",
+        "ORG-NOP": "ORG-NOP",
+        "KOREAN ORGANIC": "ORG-KR",
+        "ORG-KR": "ORG-KR",
+        "ORGANIC": "ORG",  # Generic organic (after specific ones)
         "ORG": "ORG",
+        # Other certifications
         "CONVENTIONAL": "CONV",
         "CONV": "CONV",
-        "KOSHER ORGANIC": "KOS-ORG",  # Must be before KOSHER
-        "KOS-ORG": "KOS-ORG",
         "KOSHER": "KOS",
         "KOS": "KOS",
         "FAIR TRADE": "FT",
@@ -96,6 +130,7 @@ class ProductSpecificationParser:
         "IASC": "IASC",
         "FSSC 22000": "FSSC",
         "FSSC": "FSSC",
+        "COSMOS ECOCERT": "COSMOS",
         "COSMOS": "COSMOS",
         "ECOCERT": "COSMOS",
     }
@@ -166,14 +201,17 @@ class ProductSpecificationParser:
     }
     
     # Item code patterns - Real AMB-Wellness format
-    # Examples: 0227, 0307, 0303, A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM
+    # Examples: 0227, 0307, 0303, HIGHPOL, ACETYPOL
     ITEM_CODE_PATTERNS = [
         # Simple numeric: 0227, 0307, 0303
         re.compile(r"^(\d{4})$"),
         # With variant suffix: 0227-XXXXX
         re.compile(r"^(\d{4})-(.+)$"),
         # Extended format: A0303-ORGANIC-AS NC-...
-        re.compile(r"^[A]?(\d{4})-(.+)$", re.IGNORECASE)
+        re.compile(r"^[A]?(\d{4})-(.+)$", re.IGNORECASE),
+        # Word-based family codes: HIGHPOL, ACETYPOL
+        re.compile(r"^(HIGHPOL|ACETYPOL)$", re.IGNORECASE),
+        re.compile(r"^(HIGHPOL|ACETYPOL)-(.+)$", re.IGNORECASE),
     ]
     
     def parse(self, request_text: str) -> ParsedSpec:
@@ -210,7 +248,7 @@ class ProductSpecificationParser:
         - Extended: A0303-ORGANIC-AS NC-NMT3%PS-SPD-Aloin NMT 20 PPM
         """
         groups = match.groups()
-        family = groups[0]
+        family = groups[0].upper()  # Normalize to uppercase for HIGHPOL/ACETYPOL
         variant = groups[1] if len(groups) > 1 else None
         
         if family not in self.SUPPORTED_FAMILIES:
@@ -271,22 +309,34 @@ class ProductSpecificationParser:
         """
         Extract concentration variant from request text.
         
-        Supports formats: 30:1, 30X, 30x
+        Supports formats:
+        - 30:1, 30X, 30x for standard products (0227, 0307)
+        - NN/NN for Highpol/Acetypol (e.g., 20/25, 15/20)
+        
         Validates against family's valid_variants list.
         Falls back to default_concentration if no match.
         
         Args:
             request_text: Raw request text
-            family: Product family code (e.g., "0227")
+            family: Product family code (e.g., "0227", "HIGHPOL")
             
         Returns:
-            Normalized variant string (e.g., "30X") or None
+            Normalized variant string (e.g., "30X", "20/25") or None
         """
         family_info = self.PRODUCT_FAMILIES.get(family, {})
         valid_variants = family_info.get("valid_variants", [])
         default = family_info.get("default_concentration")
         
-        # Try each pattern to extract variant
+        # For Highpol/Acetypol, try slash patterns first
+        if family in ("HIGHPOL", "ACETYPOL"):
+            for pattern, normalizer in self.SLASH_RATIO_PATTERNS:
+                match = pattern.search(request_text)
+                if match:
+                    normalized = normalizer(match)
+                    if valid_variants and normalized in valid_variants:
+                        return normalized
+        
+        # Try standard ratio patterns (30:1 -> 30X)
         for pattern, normalizer in self.RATIO_PATTERNS:
             match = pattern.search(request_text)
             if match:
@@ -358,7 +408,11 @@ class ProductSpecificationParser:
         
         # Try to detect family from product description
         if not family:
-            if "CONCENTRATE" in text_upper or "30:1" in text_upper or "LIQUID" in text_upper:
+            if "HIGHPOL" in text_upper:
+                family = "HIGHPOL"
+            elif "ACETYPOL" in text_upper:
+                family = "ACETYPOL"
+            elif "CONCENTRATE" in text_upper or "30:1" in text_upper or "LIQUID" in text_upper:
                 family = "0227"
             elif "POWDER" in text_upper or "200:1" in text_upper or "SPRAY" in text_upper:
                 family = "0307"
@@ -369,7 +423,7 @@ class ProductSpecificationParser:
             raise ValueError(
                 f"Could not determine product family. "
                 f"Please specify: {self.SUPPORTED_FAMILIES} or use keywords like "
-                f"'concentrate', 'powder', '30:1', '200:1'"
+                f"'concentrate', 'powder', 'highpol', 'acetypol', '30:1', '200:1'"
             )
         
         family_info = self.PRODUCT_FAMILIES[family]
