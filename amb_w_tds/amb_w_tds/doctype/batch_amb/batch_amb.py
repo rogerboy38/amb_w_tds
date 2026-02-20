@@ -27,6 +27,7 @@ class BatchAMB(NestedSet):
 		self.set_item_details()
 		self.validate_processing_dates()
 		self.calculate_yield_percentage()
+		self.decompose_golden_number()
     
 	def before_save(self):
 		"""Before save hook"""
@@ -85,8 +86,8 @@ class BatchAMB(NestedSet):
 			return
         
 		for idx, container in enumerate(self.container_barrels, 1):
-			if not container.container_id:
-				container.container_id = f"CNT-{self.name}-{idx:03d}"
+			if not container.barrel_serial_number:
+				container.barrel_serial_number = f"CNT-{self.name}-{idx:03d}"
     
 	def validate_batch_level_hierarchy(self):
 		"""Validate batch level hierarchy"""
@@ -1320,15 +1321,9 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
 			# Make sure we include ALL mandatory fields
 			row_data = {
 				"barrel_serial_number": serial,
-				"status": "Empty",
-				"packaging_type": batch.default_packaging_type or "",
-				"batch_amb": batch_name,
-				"item_code": batch.item_to_manufacture or batch.current_item_code or "",
-				"created_date": frappe.utils.nowdate(),
-				"parent": batch.name,
-				"parentfield": "container_barrels",
-				"parenttype": "Batch AMB"
-			}
+				"status": "New",
+				"packaging_type": batch.default_packaging_type or "Barrel"
+						}
             
 			batch.append("container_barrels", row_data)
         
@@ -1381,8 +1376,8 @@ def integrate_serial_tracking(batch_name):
 		# Default quantity for integration
 		default_qty = batch.planned_qty or 5
         
-		# Call the fixed function
-		result = fixed_generate_serial_numbers(
+		# Call generate_serial_numbers
+		result = generate_serial_numbers(
 			batch_name=batch_name,
 			quantity=default_qty,
 			prefix="BRL" if batch.custom_batch_level == '4' else None
