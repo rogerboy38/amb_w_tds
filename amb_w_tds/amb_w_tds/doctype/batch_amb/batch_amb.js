@@ -1259,6 +1259,18 @@ function display_announcements(frm, announcements) {
     
     let html = '<div class="announcement-list">';
     announcements.forEach(announcement => {
+					// FIX: Enrich announcement with missing fields for display
+			if (!announcement.batch_name) announcement.batch_name = announcement.name;
+			if (!announcement.work_order) {
+				// Fallback: if this is the current batch, use frm.doc
+				if (announcement.name === frm.doc.name) {
+					announcement.work_order = frm.doc.work_order_ref || frm.doc.work_order || 'N/A';
+					announcement.plant = frm.doc.production_plant_name || frm.doc.custom_plant_code || 'N/A';
+					announcement.golden_number = frm.doc.custom_golden_number || '';
+				}
+			}
+			if (!announcement.plant) announcement.plant = announcement.company || 'N/A';
+			if (!announcement.golden_number) announcement.golden_number = announcement.title || '';
         html += `
             <div class="announcement-item">
                 <strong>${announcement.batch_name || announcement.name}</strong>
@@ -1472,17 +1484,18 @@ function fetch_work_order_data(frm) {
             args: { work_order: frm.doc.work_order_ref },
             callback: function(r) {
                 if (r.message) {
-                    // FIX: Actually populate batch fields from WO data
+                    // Process work order data for batch generation
                     console.log('Work order data loaded:', r.message);
-                    var d = r.message;
-                    if (d.production_item) frm.set_value('item_to_manufacture', d.production_item);
-                    if (d.item_name) frm.set_value('wo_item_name', d.item_name);
-                    if (d.qty) frm.set_value('planned_qty', d.qty);
-                    if (d.planned_start_date) frm.set_value('wo_start_date', d.planned_start_date);
-                    if (d.company) frm.set_value('company', d.company);
-                    if (d.custom_plant_code) frm.set_value('production_plant_name', d.custom_plant_code);
-                    if (d.sales_order) frm.set_value('sales_order_related', d.sales_order);
-                    frappe.show_alert({message: __('Work Order data loaded'), indicator: 'green'});
+											// FIX: Actually populate batch fields from WO data
+						var d = r.message;
+						if (d.production_item) frm.set_value('item_to_manufacture', d.production_item);
+						if (d.item_name) frm.set_value('wo_item_name', d.item_name);
+						if (d.qty) frm.set_value('planned_qty', d.qty);
+						if (d.planned_start_date) frm.set_value('wo_start_date', d.planned_start_date);
+						if (d.company) frm.set_value('company', d.company);
+						if (d.custom_plant_code) frm.set_value('production_plant_name', d.custom_plant_code);
+						if (d.sales_order) frm.set_value('sales_order_related', d.sales_order);
+						frappe.show_alert({message: __('Work Order data loaded'), indicator: 'green'});
                 }
             }
         });
