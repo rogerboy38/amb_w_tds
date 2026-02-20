@@ -6,7 +6,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate, now_datetime, get_datetime, cstr
 import json
-import re
 from datetime import datetime
 
 from frappe.utils.nestedset import NestedSet
@@ -297,6 +296,13 @@ class BatchAMB(NestedSet):
                         if plant_type.lower() in plant_name.lower():
                             plant_code = code
                             break
+                    
+                    # Fallback: extract plant_code from production_plant_name (e.g. "3 (Juice)")
+                    if plant_code == "1" and plant_name:
+                        import re
+                        plant_match = re.match(r'(\d+)', str(plant_name))
+                        if plant_match:
+                            plant_code = plant_match.group(1)
             except Exception:
                 plant_mapping = {
                     'Mix': '1',
@@ -310,19 +316,20 @@ class BatchAMB(NestedSet):
                         plant_code = code
                         break
 
-                                # Fallback: extract plant_code from production_plant_name (e.g. "3 (Juice)")
-        if plant_code == "1" and self.production_plant_name:
-            plant_match = re.match(r'(\d+)', str(self.production_plant_name))
-            if plant_match:
-                plant_code = plant_match.group(1)
+                # Fallback: extract plant_code from production_plant_name (e.g. "3 (Juice)")
+                if plant_code == "1" and self.production_plant_name:
+                    import re
+                    plant_match = re.match(r'(\d+)', str(self.production_plant_name))
+                    if plant_match:
+                        plant_code = plant_match.group(1)
         
         base_golden_number = f"{product_code}{consecutive}{year}{plant_code}"
         
         self.custom_golden_number = base_golden_number
         self.custom_generated_batch_name = base_golden_number
         self.title = base_golden_number
-
-                # Decompose golden number into component fields
+        
+        # Decompose golden number into component fields
         self.custom_product_family = product_code  # PP (first 4 digits)
         self.custom_consecutive = consecutive  # AAA (3 digits from WO)
         self.custom_subfamily = year + plant_code  # SS (year + plant)
@@ -946,7 +953,8 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
                 'wo_item_name', 'quality_status', 'target_plant',
                 'production_plant_name', 'custom_plant_code',
                 'custom_batch_level', 'barrel_count', 'total_net_weight',
-                'wo_start_date', 'modified', 'creation'
+                'wo_start_date', 'modified', 'creation',
+                'work_order_ref', 'custom_golden_number'
             ],
             order_by='modified desc',
             limit=50
@@ -981,7 +989,11 @@ def get_running_batch_announcements(include_companies=True, include_plants=True,
                 'content': f"Item: {batch.wo_item_name or batch.item_code or 'N/A'}\nPlant: {batch.custom_plant_code or 'N/A'}\nWeight: {batch.total_net_weight or 0}\nBarrels: {batch.barrel_count or 0}",
                 'message': f"Level {batch.custom_batch_level or '?'} batch in production",
                 'modified': str(batch.modified) if batch.modified else '',
-                'creation': str(batch.creation) if batch.creation else ''
+                'creation': str(batch.creation) if batch.creation else '',
+                'batch_name': batch.name,
+                'work_order': batch.work_order_ref or 'N/A',
+                'plant': batch.custom_plant_code or batch.production_plant_name or 'N/A',
+                'golden_number': batch.custom_golden_number or ''
             }
             
             announcements.append(announcement)
@@ -1201,7 +1213,7 @@ def get_work_order_data(work_order):
             "company": wo.company,
             "status": wo.status,
             "planned_start_date": wo.planned_start_date,
-                        "item_name": wo.item_name,
+            "item_name": wo.item_name,
             "custom_plant_code": getattr(wo, 'custom_plant_code', ''),
             "sales_order": getattr(wo, 'sales_order', ''),
             "project": getattr(wo, 'project', '')
@@ -1245,7 +1257,7 @@ def complete_batch_processing(batch_name, processed_quantity=None):
         batch.processed_quantity = processed_quantity
     batch.save()
     return {"status": "success", "message": f"Batch {batch_name} completed"}
-#
+
 @frappe.whitelist()
 def generate_serial_numbers(batch_name, quantity=1, prefix=None):
     """Generate serial numbers for batch and add to container_barrels table"""
