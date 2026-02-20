@@ -343,7 +343,7 @@ class BatchAMB(NestedSet):
             container.idx = idx
 
     def decompose_golden_number(self):
-        Golden Number format: PPPPAAAYYX
+        		"""Golden Number format: PPPPAAAYYX
           PPPP = product_code (first 4 chars of item_to_manufacture)
           AAA  = consecutive (3 digits from WO)
           YY   = year (2 digits)
