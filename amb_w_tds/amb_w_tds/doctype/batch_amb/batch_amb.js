@@ -1472,8 +1472,17 @@ function fetch_work_order_data(frm) {
             args: { work_order: frm.doc.work_order_ref },
             callback: function(r) {
                 if (r.message) {
-                    // Process work order data for batch generation
+                    // FIX: Actually populate batch fields from WO data
                     console.log('Work order data loaded:', r.message);
+                    var d = r.message;
+                    if (d.production_item) frm.set_value('item_to_manufacture', d.production_item);
+                    if (d.item_name) frm.set_value('wo_item_name', d.item_name);
+                    if (d.qty) frm.set_value('planned_qty', d.qty);
+                    if (d.planned_start_date) frm.set_value('wo_start_date', d.planned_start_date);
+                    if (d.company) frm.set_value('company', d.company);
+                    if (d.custom_plant_code) frm.set_value('production_plant_name', d.custom_plant_code);
+                    if (d.sales_order) frm.set_value('sales_order_related', d.sales_order);
+                    frappe.show_alert({message: __('Work Order data loaded'), indicator: 'green'});
                 }
             }
         });

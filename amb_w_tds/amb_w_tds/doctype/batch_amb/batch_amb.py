@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate, now_datetime, get_datetime, cstr
 import json
+import re
 from datetime import datetime
 
 from frappe.utils.nestedset import NestedSet
@@ -308,12 +309,23 @@ class BatchAMB(NestedSet):
                     if plant_type.lower() in (self.production_plant or "").lower():
                         plant_code = code
                         break
+
+                                # Fallback: extract plant_code from production_plant_name (e.g. "3 (Juice)")
+        if plant_code == "1" and self.production_plant_name:
+            plant_match = re.match(r'(\d+)', str(self.production_plant_name))
+            if plant_match:
+                plant_code = plant_match.group(1)
         
         base_golden_number = f"{product_code}{consecutive}{year}{plant_code}"
         
         self.custom_golden_number = base_golden_number
         self.custom_generated_batch_name = base_golden_number
         self.title = base_golden_number
+
+                # Decompose golden number into component fields
+        self.custom_product_family = product_code  # PP (first 4 digits)
+        self.custom_consecutive = consecutive  # AAA (3 digits from WO)
+        self.custom_subfamily = year + plant_code  # SS (year + plant)
         
         print(f"✅ Generated Golden Number: {base_golden_number}")
     
@@ -1188,7 +1200,11 @@ def get_work_order_data(work_order):
             "bom_no": wo.bom_no,
             "company": wo.company,
             "status": wo.status,
-            "planned_start_date": wo.planned_start_date
+            "planned_start_date": wo.planned_start_date,
+                        "item_name": wo.item_name,
+            "custom_plant_code": getattr(wo, 'custom_plant_code', ''),
+            "sales_order": getattr(wo, 'sales_order', ''),
+            "project": getattr(wo, 'project', '')
         }
     except Exception as e:
         frappe.log_error(f"Work Order Data Error: {str(e)}")
