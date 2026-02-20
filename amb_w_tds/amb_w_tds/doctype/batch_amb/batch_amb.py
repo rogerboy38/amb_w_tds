@@ -341,6 +341,24 @@ class BatchAMB(NestedSet):
 		"""Update container sequence"""
 		for idx, container in enumerate(self.container_barrels, 1):
 			container.idx = idx
+
+		def decompose_golden_number(self):
+		"""Decompose golden number into component fields.
+		Golden Number format: PPPPAAAYYX
+		  PPPP = product_code (first 4 chars of item_to_manufacture)
+		  AAA  = consecutive (3 digits from WO)
+		  YY   = year (2 digits)
+		  X    = plant_code (1+ digits)
+		"""
+		gn = self.custom_golden_number
+		if not gn or len(gn) < 8:
+			return
+		try:
+			self.custom_product_family = gn[:4]
+			self.custom_consecutive = gn[4:7]
+			self.custom_subfamily = gn[7:]
+		except Exception:
+			pass
     
 	def sync_with_lote_amb(self):
 		"""Sync with Lote AMB"""
