@@ -333,7 +333,7 @@ class BatchAMB(NestedSet):
         # Decompose golden number into component fields
         self.custom_product_family = product_code  # PP (first 4 digits)
         self.custom_consecutive = consecutive  # AAA (3 digits from WO)
-        self.custom_subfamily = year + plant_code  # SS (year + plant)
+        self.custom_subfamily = year  # YY (2-digit year only)
         
         print(f"✅ Generated Golden Number: {base_golden_number}")
     
@@ -355,7 +355,7 @@ class BatchAMB(NestedSet):
         try:
             self.custom_product_family = gn[:4]
             self.custom_consecutive = gn[4:7]
-            self.custom_subfamily = gn[7:]
+            self.custom_subfamily = gn[7:9]  # YY (2-digit year)
         except Exception:
             pass
     
