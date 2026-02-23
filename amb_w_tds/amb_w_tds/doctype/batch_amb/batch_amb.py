@@ -1,4 +1,3 @@
-cat ~/frappe-bench/apps/amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.py
 # Copyright (c) 2024, AMB and contributors
 # For license information, please see license.txt
 
