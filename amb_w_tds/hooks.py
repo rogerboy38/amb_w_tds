@@ -145,3 +145,9 @@ default_mail_footer = """
 override_whitelisted_methods = {
 	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
 }
+
+
+# ================================================
+# POST-MIGRATE HOOK (protect amb_w_tds DocTypes)
+# ================================================
+after_migrate = ["amb_w_tds.install.after_migrate"]
