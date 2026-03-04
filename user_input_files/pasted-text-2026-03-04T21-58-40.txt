@@ -1,0 +1,185 @@
+Raven AI Agent Project — Complete Resume
+Date: March 4, 2026 | Site: erp.sysmayal2.cloud | Company: AMB-Wellness (MXN, USD sales)
+
+1. What We Built
+A multi-agent system inside Raven Chat (ERPNext's chat app) that responds to @ai mentions and routes to specialized agents:
+
+Agent	File	What It Does
+ManufacturingAgent	manufacturing_agent.py	Creates Work Orders, manages BOMs, tracks production
+PaymentAgent	payment_agent.py	Handles payment entries, reconciliation, outstanding invoices
+WorkflowOrchestrator	workflow_orchestrator.py	Multi-step workflows (SO→WO→DN→SI→PE)
+SalesOrderFollowUpAgent	sales_order_followup_agent.py	Follows up on sales orders, sends reminders
+RnDAgent (in __init__.py)	__init__.py	R&D queries
+Router Patch	router_patch.py	Patches Raven's router to add new bot routes
+Test Plan	TEST_PLAN.md	Full test scenarios for all agents
+Entry point: raven_ai_agent.api.agent.handle_raven_message (line ~1180 of agent.py)
+
+2. GitHub Repository
+Repo: rogerboy38/raven_ai_agent | Branch: main
+
+Commit History (chronological):
+6bd7286 — Initial push: all 7 files (agents + test plan)
+
+c5963ab — Fix: RndAgent → RnDAgent (class name mismatch)
+
+3c48191 — Add @manufacturing/@payment/@workflow routing to agent.py handle_raven_message
+
+8528ee8 — Add @ai intent detection using regex (BROKEN — JSON double-escaping issue)
+
+bff8e33 — Fix: replace regex with keyword matching for intent detection
+
+77a53f0 — Fix: smart warehouse resolution in manufacturing_agent.py ← NOT YET DEPLOYED
+
+3. Architecture — How Routing Works
+text
+User types "@ai create work order for 0307 qty 150"
+    ↓
+Raven Hook → handle_raven_message() in agent.py (line ~1180)
+    ↓
+Intent Detection (keyword matching, NOT regex):
+  - mfg_keywords: "work order", "bom", "production", "manufacture", "wip" → ManufacturingAgent
+  - pay_keywords: "payment", "pay", "invoice", "reconcil", "outstanding" → PaymentAgent  
+  - orch_keywords: "workflow", "orchestrat", "end to end", "full process" → WorkflowOrchestrator
+  - Default fallback → existing sales_order_bot / RaymondLucyAgent
+    ↓
+Agent processes request → calls frappe.get_doc/frappe.new_doc → responds in Raven chat
+CRITICAL: ALL bots triggered via @ai mention only. No separate Raven Bot entries for manufacturing/payment/workflow. The registered Raven Bots are: Executive Insights, sales_order_follow_up, rnd_bot, sales_order_bot.
+
+4. Deployment Details
+Docker Containers (ALL must be restarted together):
+bash
+docker restart erpnext-backend-1 erpnext-queue-short-1 erpnext-queue-long-1 erpnext-scheduler-1 erpnext-websocket-1
+WARNING: bench restart inside container does NOT reload Python modules. MUST use docker restart from HOST.
+
+Git Pull (inside Docker):
+bash
+docker exec -it erpnext-backend-1 bash
+cd /home/frappe/frappe-bench/apps/raven_ai_agent
+git pull upstream main
+exit
+# Then from HOST:
+docker restart erpnext-backend-1 erpnext-queue-short-1 erpnext-queue-long-1 erpnext-scheduler-1 erpnext-websocket-1
+No bench build needed for Python-only changes (only for JS/CSS).
+5. Current Status — What Works & What Doesn't
+✅ Working:
+All 3 new agents load and respond correctly in console tests
+
+Intent detection via keyword matching routes correctly
+
+@ai messages reach handle_raven_message and get routed
+
+ManufacturingAgent receives "create work order" commands
+
+❌ Pending Fix (commit 77a53f0 — NOT DEPLOYED):
+Warehouse resolution bug: manufacturing_agent.py was looking for default_wip_warehouse field on Manufacturing Settings, which doesn't exist.
+
+Fix: Smart warehouse resolution that tries: (1) BOM's fg_warehouse, (2) Item default warehouse, (3) Company default warehouse, (4) first "Stores" warehouse, (5) first WIP warehouse
+
+⚠️ Known Issue (not yet fixed):
+is_confirm bug: In old RaymondLucyAgent.execute_workflow_command() at line ~874. If a query falls through to the default handler and hits this code path, it crashes with NameError: name 'is_confirm' is not defined. The new routing should bypass it, but it's a landmine.
+
+6. Test Command (Pilot)
+In Raven Chat:
+
+text
+@ai create work order for 0307 qty 150 bom BOM-0307-005
+Item: 0307
+
+Qty: 150 Kg
+
+BOM hierarchy: Sales BOM (-001) → Mix BOM (-005) → Full BOM (-006)
+
+Related SO: SO-00752-LEGOSAN AB
+
+7. Next Steps — Immediate
+Step A: Deploy commit 77a53f0 (warehouse fix)
+SSH into server
+
+docker exec -it erpnext-backend-1 bash
+
+cd /home/frappe/frappe-bench/apps/raven_ai_agent && git pull upstream main
+
+Exit container
+
+docker restart erpnext-backend-1 erpnext-queue-short-1 erpnext-queue-long-1 erpnext-scheduler-1 erpnext-websocket-1
+
+Test in Raven: @ai create work order for 0307 qty 150 bom BOM-0307-005
+
+Step B: Fix the is_confirm bug
+In agent.py, RaymondLucyAgent.execute_workflow_command() around line 874
+
+Either define is_confirm or remove the code path
+
+8. Next Steps — Intelligence Upgrade (Research Phase)
+User wants the agent to be SMARTER:
+
+Ask clarifying questions when it has doubts (not just fail silently)
+
+Use conversational threads for multi-step interactions
+
+Compare to OpenClaw framework architecture
+
+Raven v2 Native Capabilities (from ravenchat.ai):
+AI Agents with threads — maintain context of complex multistep tasks
+
+Dynamic instructions (Jinja templates) — personalize per user/context
+
+Functions — call ERPNext functions to fetch/create documents
+
+Tools — file search, vision, code interpreter
+
+Built-in support for exactly what we need
+
+OpenClaw Architecture (from research):
+Gateway + LLM + Tools + Memory + Heartbeat/Cron
+
+Persistent daemon, multi-channel, model-agnostic
+
+Proactive scheduling (heartbeat/cron for autonomous actions)
+
+More complex than what we need — Raven v2 already provides the infrastructure
+
+Key Insight:
+We don't need to build OpenClaw. Raven v2's AI Agent framework already supports threads, functions, and tools natively. We should leverage Raven's built-in AI Agent features rather than reinvent the wheel. The path forward:
+
+Register agents as proper Raven AI Agents (not just hook-based routing)
+
+Use Raven threads for multi-turn conversations (clarifying questions, confirmations)
+
+Define functions that agents can call (create_work_order, get_bom, etc.)
+
+Add conversational logic: When agent lacks required info, ASK in the thread instead of failing
+
+9. File Locations
+Workspace Files:
+File	Path
+All 7 original files	/home/user/workspace/raven_ai_agent_files/
+Patched agent.py	/home/user/workspace/agent_patched.py
+OpenClaw research	/home/user/workspace/tool_calls/search_web/output_mmckpd2h.json
+Server Files (inside Docker):
+text
+/home/frappe/frappe-bench/apps/raven_ai_agent/
+├── raven_ai_agent/
+│   ├── api/
+│   │   └── agent.py          ← Main entry point (handle_raven_message at line ~1180)
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── manufacturing_agent.py
+│   │   ├── payment_agent.py
+│   │   ├── sales_order_followup_agent.py
+│   │   └── workflow_orchestrator.py
+│   └── ...
+10. Important Rules Learned
+No import frappe in Server Scripts — causes ImportError
+
+bench restart doesn't reload Python — must use docker restart from host
+
+Git remote is upstream not origin — use git pull upstream main
+
+Regex breaks in JSON — double-escaping kills patterns; use keyword matching instead
+
+No bench build needed for Python-only changes
+
+All bots use @ai — single entry point, internal routing by keywords
+
+This document is the complete state of the project as of March 4, 2026 3:54 PM CST.
