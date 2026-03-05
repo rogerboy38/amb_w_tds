@@ -27,7 +27,7 @@
 ## Active Work
 - Quotation SAL-QTN-2024-00753 (GREENTECH, 0334, 1800 Kg)
 - Work Order MFG-WO-04126 (created, submitted, materials available)
-- Latest local commit: 7bc7841 (Intelligent sweep - is_confirm passthrough)
+- Latest local commit: 1860d43 (Deployed and working!)
 - GitHub commits:
   - 7bc7841 - Intelligent sweep: fix is_confirm passthrough, broaden command matching
   - 16a5dba - Fix: !submit bom handles standard BOM doctype
@@ -39,7 +39,7 @@
 - SO-00753 Sync: @ai !sync SO → 5 fixes applied ✅
 - Manufacturing complete: @ai transfer materials + @ai manufacture MFG-WO-04126 ✅
 - SO-00753 Step 3 (Submit SO): ✅ Submitted
-- BOM-0334-006: Draft, needs submit before Step 4
+- BOM-0334-006: ✅ Submitted (via @ai !submit bom)
 
 ## Critical Bugs
 - is_confirm bug in manufacturing.py: method uses is_confirm in 8 places but never receives it as parameter
