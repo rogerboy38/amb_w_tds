@@ -30,6 +30,8 @@
 - Latest deployed commit: 1bb7360 (task_validator sync/fix ready)
 - GitHub commits: 50e33b2 (task_validator), 1bb7360 (sync keywords)
 - Pipeline Diagnosis working: @ai diagnose SAL-QTN-2024-00753 ✅
+- SO-00753 Sync: @ai !sync SO → 5 fixes applied ✅
+- Manufacturing complete: @ai transfer materials + @ai manufacture MFG-WO-04126 ✅
 
 ## Architecture & Design
 - Agent routing: keyword-based, @ai entry point
