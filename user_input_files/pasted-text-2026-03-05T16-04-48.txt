@@ -1,0 +1,175 @@
+Raven AI Agent — Parallel Development Team Handoff
+Date: March 5, 2026, 10:00 AM CST | Prepared by: Perplexity Computer Agent
+Repo: rogerboy38/raven_ai_agent | Branch: main
+Site: erp.sysmayal2.cloud | Company: AMB-Wellness (ERPNext v16)
+
+1. What This Is
+A multi-agent system running inside Raven Chat (ERPNext's built-in messaging) that responds to @ai commands. It manages a full Sales-to-Payment pipeline: Quotation → SO → Manufacturing WO → Stock Entry → Delivery Note → Sales Invoice → Payment Entry.
+
+Entry point: raven_ai_agent.api.agent.handle_raven_message (registered in hooks.py)
+
+2. Architecture Overview
+text
+User sends "@ai <message>" in Raven Chat
+         │
+         ▼
+    agent.py → handle_raven_message()
+         │
+         ├─ validator keywords? → task_validator.py (diagnose, sync, fix, audit)
+         ├─ orchestrator keywords? → workflow_orchestrator.py (pipeline status, run full cycle)
+         ├─ manufacturing keywords? → manufacturing_agent.py (work order, manufacture, transfer)
+         ├─ payment keywords? → payment_agent.py (payment, reconcile, outstanding)
+         └─ default fallback → RaymondLucyAgent (inline in agent.py)
+                                 ├─ inherits ManufacturingMixin (handlers/manufacturing.py)
+                                 ├─ inherits BOMMixin (handlers/bom.py)
+                                 ├─ inherits WebSearchMixin (handlers/web_search.py)
+                                 ├─ inherits SalesMixin (handlers/sales.py)
+                                 └─ inherits QuotationMixin (handlers/quotation.py)
+Key Files
+File	Lines	Purpose
+api/agent.py	~1162	Core engine — RaymondLucyAgent class, routing, LLM calls, memory
+api/handlers/manufacturing.py	~606	ManufacturingMixin — WO, stock entries, SOP
+api/handlers/sales.py	~477	SalesMixin — submit SO, create DN/SI
+api/handlers/quotation.py	~415	QuotationMixin — fix/submit/update quotations
+api/handlers/bom.py	~267	BOMMixin — BOM commands, label fixer
+api/handlers/task_validator.py		Diagnose pipelines, validate SO vs QTN, sync
+api/handlers/base.py		⚠️ DEAD CODE — never imported at runtime
+agents/manufacturing_agent.py		Standalone MFG agent (WO + stock entries)
+agents/payment_agent.py		Payment entries
+agents/workflow_orchestrator.py		Multi-step pipeline orchestration
+3. RaymondLucyAgent — Intelligence Engine
+The core agent uses 4 named protocols:
+
+Protocol	Name	What It Does
+Raymond	Anti-Hallucination	NEVER fabricate ERPNext data — always query DB first, cite doc names, express confidence (HIGH/MED/LOW)
+Memento	Persistent Memory	tattoo_fact() stores facts to AI Memory doctype with optional vector embeddings
+Lucy	Context Continuity	get_morning_briefing() loads memories + last session summary at start; end_session() saves summary
+Karpathy	Autonomy Slider	L1=read-only, L2=modify-with-confirm, L3=dangerous-ops. ! prefix = force mode
+LLM: OpenAI GPT-4o-mini, temperature 0.3
+Settings cascade: AI Agent Settings doctype → Raven Settings → frappe.conf
+Custom Doctypes: AI Memory (persistent facts/summaries), AI Agent Settings (config)
+
+4. Current Pipeline State — SO-00753-GREENTECH SA
+Step	Action	Document	Status
+0	Quotation (truth source)	SAL-QTN-2024-00753	📝 Draft — 0334, 1800 Kg, USD 187,200
+1	Manufacturing WO (Mix)	MFG-WO-04126	✅ Completed
+2	Stock Entries	MAT-STE-2026-00328 + 00329	✅ 1800 Kg of 0334 produced
+3	Submit Sales Order	SO-00753-GREENTECH SA	✅ Submitted
+4	Sales WO from SO (Packaging)	—	⏳ Next — needs BOM-0334-006 submitted first
+5	Stock Entry (Sales Manufacture)	—	⏳ Pending
+6	Delivery Note	—	⏳ Pending
+7	Sales Invoice	—	⏳ Pending
+8	Payment Entry	—	⏳ Pending
+BOM-0334-006 (Sales/Packaging BOM): Draft, contains 25 Kg of 0334 + 1 PZA of LBL0334. Must be submitted before Step 4.
+
+5. Git Status — What's Deployed vs Not
+Deployed (through 33de58d):
+All SO regex fixes across 6 files, manufacturing WO make_stock_entry v16 fix, intelligent task validator.
+
+NOT Deployed (3 commits + 1 uncommitted):
+Commit	Description	Risk
+08fc721	Broaden WO-from-SO matching in manufacturing_agent	Low — adds more keyword triggers
+16a5dba	Fix !submit bom to handle standard BOM (not just BOM Creator)	Medium — new code path
+7bc7841	Intelligent sweep: is_confirm passthrough to sales handler, broader DN/SI matching, base.py dead code comment	Medium — changes routing
+Uncommitted	is_confirm passthrough to quotation handler in agent.py line 1048	Low — 1-line change
+Deployment Commands (from Docker host):
+bash
+docker exec erpnext-backend-1 bash -c "cd /home/frappe/frappe-bench/apps/raven_ai_agent && git pull upstream main"
+docker restart erpnext-backend-1 erpnext-queue-short-1 erpnext-queue-long-1 erpnext-scheduler-1 erpnext-websocket-1
+Critical rules:
+
+Git remote is upstream (not origin)
+
+bench restart does NOT reload Python — must use docker restart
+
+No bench build needed for Python-only changes
+
+6. Active Bugs & Technical Debt
+🔴 Critical — is_confirm Bug in manufacturing.py
+_handle_manufacturing_commands(self, query, query_lower) uses is_confirm in 8 places (lines 61, 147, 179, 237, 291, 328, 436, 505) but:
+
+Never receives it as a parameter
+
+Never defines it locally
+
+agent.py calls it at line 1028 as self._handle_manufacturing_commands(query, query_lower) — no is_confirm passed
+
+Result: Any code path hitting those 8 if not is_confirm: checks → NameError: name 'is_confirm' is not defined
+
+Fix needed: Either add is_confirm=False as default param + pass from agent.py, OR compute it internally from query (check for ! prefix).
+
+🟡 Medium — base.py Is Dead Code
+api/handlers/base.py (BaseMixin) is never imported by any runtime code. agent.py has its own execute_workflow_command() at line ~862 that overrides/shadows base.py's version. Any fix to base.py alone has zero effect.
+
+Action: Either consolidate into base.py and import, or delete base.py. Currently marked with dead-code comment in commit 7bc7841.
+
+🟡 Medium — Duplicate execute_workflow_command()
+Both agent.py (line ~862) and base.py define this method. Only agent.py's version executes at runtime. Any regex/routing fix must go in agent.py.
+
+🟢 Low — Missing Pipeline Steps as Standalone Commands
+Steps 4-5 (Sales WO from SO + Sales Stock Entry) only work via the orchestrator's run full cycle. No standalone @ai work order from SO-XXXXX command exists yet in the default fallback agent (manufacturing_agent.py has it, but routing may miss it).
+
+7. Hard-Won Rules (Read Before Coding)
+#	Rule	Why
+1	No import frappe in Server Scripts	ERPNext sandbox pre-injects frappe; explicit import → ImportError
+2	bench restart ≠ Python reload	Must use docker restart for Python changes to take effect
+3	Git remote is upstream	git pull upstream main — origin doesn't exist or points elsewhere
+4	Regex breaks in JSON payloads	Double-escaping kills \d → \\d. Use keyword matching for intent detection
+5	ERPNext v16 make_stock_entry()	Returns frappe._dict, not Document — wrap with frappe.get_doc("Stock Entry", result.get("name"))
+6	SO names have spaces	SO-00753-GREENTECH SA — regex must use negative lookahead: r'(SO-[\w\-]+(?:\s+(?!from\b|to\b|...\b)[\w\.]+)*|SAL-ORD-\d+-\d+)'
+7	Fix agent.py, not base.py	base.py is dead code — agent.py execute_workflow_command() is what runs
+8	Quotation = truth source	SO must be validated/synced against quotation, especially payment terms
+9	All bots use @ai prefix	Single entry point; internal routing by keyword matching
+10	! prefix = force mode	Skips confirmation dialogs (like sudo)
+8. BOM Structure (Standard for All Migrations)
+Every finished item (e.g., 0334) has this BOM hierarchy:
+
+BOM Suffix	Level	Default	Qty	Purpose
+-001	Sales	YES	25 Kg	Used in quotations/SO — what sales sees
+-004	Full Production	No	1 Kg	Complete 40+ raw material BOM
+-005	Mix Manufacturing	YES	1 Kg	Used by Mix plant WO
+-006	Sales Packaging	No	25 Kg	Packaging WO (submittable version of -001)
+Full guide: BOM_MIGRATION_GUIDE.md in workspace.
+
+9. Credentials
+Resource	Value
+GitHub PAT	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
+ERPNext Site	erp.sysmayal2.cloud
+Login	fcrm@amb-wellness.com
+Password	Aloe246!
+Company	AMB-Wellness
+10. Reference Pipeline (SO-00752 LEGOSAN — Completed Through Step 7)
+Step	Document	Status
+0	SAL-QTN-2024-00752	✅ Submitted
+1	MFG-WO-03726	✅ Completed
+2	MAT-STE-2026-00327	✅ Submitted
+3	SO-00752-LEGOSAN AB	✅ Submitted (To Bill)
+6	MAT-DN-2026-00002	✅ Submitted
+7	ACC-SINV-2026-00001	✅ Submitted (Unpaid)
+4-5, 8	Sales WO, Sales SE, Payment	⏳ Pending
+11. Immediate Next Steps (for whoever picks this up)
+Commit the uncommitted change — is_confirm passthrough to quotation handler (1-line diff in agent.py)
+
+Fix manufacturing.py is_confirm bug — Add is_confirm=False param to _handle_manufacturing_commands + pass from agent.py line 1028
+
+Deploy all 3 undeployed commits — git pull upstream main + docker restart
+
+Submit BOM-0334-006 — @ai !submit bom BOM-0334-006
+
+Create Sales WO from SO — @ai work order from SO-00753-GREENTECH SA bom BOM-0334-006
+
+Continue Steps 5-8 — manufacture, deliver, invoice, pay
+
+12. User Preferences (Communication Style)
+Prefers the agent to be proactive and intelligent — don't just report problems, offer to fix them
+
+Wants conversational intelligence — if in doubt, ask a question in chat
+
+Emphasizes comprehensive sweeps over incremental one-fix-at-a-time approach
+
+RaymondLucyAgent features (memory, anti-hallucination) should be propagated to all agents
+
+Bilingual context: company operates in Mexico (MXN/USD, EN/ES)
+
+Generated from PROJECT_RESUME.md v3 + live git state analysis.
+Supporting docs: PIPELINE_COVERAGE_REVIEW.md, BOM_MIGRATION_GUIDE.md
