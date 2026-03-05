@@ -27,11 +27,24 @@
 ## Active Work
 - Quotation SAL-QTN-2024-00753 (GREENTECH, 0334, 1800 Kg)
 - Work Order MFG-WO-04126 (created, submitted, materials available)
-- Latest deployed commit: 3c22f5d (make_stock_entry fix)
-- GitHub commits: 33de58d (SO regex all files), 3c22f5d (stock_entry), cba3330, 1bb7360, 50e33b2
+- Latest local commit: 7bc7841 (Intelligent sweep - is_confirm passthrough)
+- GitHub commits:
+  - 7bc7841 - Intelligent sweep: fix is_confirm passthrough, broaden command matching
+  - 16a5dba - Fix: !submit bom handles standard BOM doctype
+  - 08fc721 - Fix: broaden WO-from-SO command matching
+  - 33de58d - SO regex all files
+  - 3c22f5d - make_stock_entry fix
+  - cba3330, 1bb7360, 50e33b2
 - Pipeline Diagnosis working: @ai diagnose SAL-QTN-2024-00753 ✅
 - SO-00753 Sync: @ai !sync SO → 5 fixes applied ✅
 - Manufacturing complete: @ai transfer materials + @ai manufacture MFG-WO-04126 ✅
+- SO-00753 Step 3 (Submit SO): ✅ Submitted
+- BOM-0334-006: Draft, needs submit before Step 4
+
+## Critical Bugs
+- is_confirm bug in manufacturing.py: method uses is_confirm in 8 places but never receives it as parameter
+- base.py is DEAD CODE - agent.py execute_workflow_command() is what actually runs
+- Duplicate code: agent.py has its own execute_workflow_command() that shadows base.py
 
 ## Architecture & Design
 - Agent routing: keyword-based, @ai entry point
