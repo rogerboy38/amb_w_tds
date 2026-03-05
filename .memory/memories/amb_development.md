@@ -42,6 +42,13 @@
 - SO-00753 Step 3 (Submit SO): ✅ Submitted
 - BOM-0334-006: ✅ Submitted (via @ai !submit bom)
 - Work Order MFG-WO-04226: ✅ Created via @ai work order from SO-00753-GREENTECH SA bom BOM-0334-006
+- Pipeline Status (2026-03-05):
+  - Quotation SAL-QTN-2024-00753: Draft ✅
+  - Sales Order SO-00753-GREENTECH SA: To Deliver and Bill ✅
+  - Work Order MFG-WO-04226: Completed ✅
+  - Delivery Note: Pending
+- Stock Issue: WIP in Concentrate - AMB-W shows -1800 (corrupt SLE issue from partial manufacturing submission)
+- Recommendation: Stock Reconciliation or Cancel & Resubmit Stock Entries
 
 ## Critical Bugs
 - is_confirm bug in manufacturing.py: method uses is_confirm in 8 places but never receives it as parameter
