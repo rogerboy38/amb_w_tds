@@ -1,0 +1,210 @@
+# Pipeline Coverage Review — Complete Analysis
+## SO-00752 (LEGOSAN, reference) vs SO-00753 (GREENTECH, current)
+
+Generated: 2026-03-05
+
+---
+
+## 1. The Complete 8-Step Pipeline (Truth Source)
+
+| Step | Action | Document Type | SO-00752 LEGOSAN Status | SO-00753 GREENTECH Status |
+|------|--------|--------------|------------------------|--------------------------|
+| 0 | Quotation (Truth Source) | Quotation | SAL-QTN-2024-00752 ✅ Submitted | SAL-QTN-2024-00753 📝 Draft |
+| 1 | Manufacturing WO (Mix) | Work Order | MFG-WO-03726 ✅ Completed | MFG-WO-04126 📝 Submitted, Not Started |
+| 2 | Stock Entry (Manufacture) | Stock Entry | MAT-STE-2026-00327 ✅ Submitted | ⏳ Pending (blocked by Step 1) |
+| 3 | Sales Order Submit | Sales Order | SO-00752-LEGOSAN AB ✅ Submitted (To Bill) | SO-00753-GREENTECH SA 📝 Draft (6 issues vs QTN) |
+| 4 | Sales WO from SO (Labeling) | Work Order | ⏳ Pending | ⏳ Pending (blocked by BOM + Step 3) |
+| 5 | Stock Entry (Manufacture for Sales) | Stock Entry | ⏳ Pending | ⏳ Pending (blocked) |
+| 6 | Delivery Note | Delivery Note | MAT-DN-2026-00002 ✅ Submitted | ⏳ Pending |
+| 7 | Sales Invoice | Sales Invoice | ACC-SINV-2026-00001 ✅ Submitted (Unpaid) | ⏳ Pending |
+| 8 | Payment Entry | Payment Entry | ⏳ Pending (preview tested) | ⏳ Pending |
+
+---
+
+## 2. Agent/Handler Coverage Map
+
+### Which agent handles what:
+
+| Step | Pipeline Stage | Handler/Agent | @ai Command | Status |
+|------|---------------|---------------|-------------|--------|
+| 0 | **Quotation** | `quotation.py` (QuotationMixin) | `@ai !fix quotation`, `@ai !submit quotation`, `@ai !update quotation` | ✅ Working |
+| 0→3 | **QTN → SO Creation** | `sales.py` (SalesMixin) | `@ai !sales order SAL-QTN-XXXX` | ✅ Working |
+| 0→3 | **QTN → SO Validation** | `task_validator.py` (TaskValidatorMixin) | `@ai diagnose SAL-QTN-XXXX` | ✅ Working (deployed) |
+| 0→3 | **SO Sync from QTN** | `task_validator.py` (TaskValidatorMixin) | `@ai !sync SO XXX from quotation` | 🔧 Code ready, NOT deployed |
+| 1 | **Create Manufacturing WO** | `manufacturing.py` (ManufacturingMixin) | `@ai create work order for ITEM qty QTY` | ✅ Working |
+| 1 | **Submit WO** | `manufacturing.py` | `@ai submit work order MFG-WO-XXXXX` | ✅ Working |
+| 2 | **Stock Entry (Manufacture)** | `manufacturing.py` | `@ai transfer materials MFG-WO-XXXXX` | ✅ Working |
+| 2 | **Complete Manufacture** | `manufacturing.py` | `@ai finish work order MFG-WO-XXXXX` | ✅ Working |
+| 3 | **Submit SO** | `sales.py` | `@ai !submit sales order SO-XXXXX` | ✅ Working |
+| 4 | **Sales WO from SO** | `workflow_orchestrator.py` | `@ai run SO-XXXXX` (Step 4 auto) | ⚠️ Via orchestrator only |
+| 5 | **SE Manufacture (Sales)** | `workflow_orchestrator.py` | `@ai run SO-XXXXX` (Step 5 auto) | ⚠️ Via orchestrator only |
+| 6 | **Delivery Note** | `sales.py` | `@ai !delivery SO-XXXXX` | ✅ Working |
+| 7 | **Sales Invoice** | `sales.py` | `@ai !invoice SO-XXXXX` | ✅ Working |
+| 8 | **Payment Entry** | `payment_agent.py` (legacy) | `@ai create payment ACC-SINV-XXXX` | ⚠️ Exists but not tested recently |
+
+### Cross-Cutting Intelligence:
+
+| Tool | Handler | Commands | Status |
+|------|---------|----------|--------|
+| **Pipeline Diagnosis** | `task_validator.py` | `@ai diagnose SAL-QTN-XXXX`, `@ai diagnose SO-XXXXX`, `@ai diagnose MFG-WO-XXXXX` | ✅ Deployed |
+| **SO Validation** | `task_validator.py` | `@ai validate SO-XXXXX`, `@ai validate SAL-QTN-XXXX` | ✅ Deployed |
+| **Payment Check** | `task_validator.py` | `@ai check payments SAL-QTN-XXXX` | ✅ Deployed |
+| **Pipeline Dashboard** | `workflow_orchestrator.py` | `@ai pipeline status SO-XXXXX` | ✅ Working |
+| **Full Cycle Run** | `workflow_orchestrator.py` | `@ai run full cycle SO-XXXXX` | ⚠️ Works but needs BOM intelligence |
+| **SO Sync/Fix** | `task_validator.py` | `@ai !sync SO XXX from quotation` | 🔧 NOT deployed yet |
+
+---
+
+## 3. Gap Analysis — What's Missing
+
+### CRITICAL GAPS (blocks SO-00753 pipeline):
+
+#### Gap 1: Task Validator Sync NOT Deployed
+- **What:** `task_validator.py` has intelligent sync + actionable recommendations, pushed to GitHub (commits `50e33b2` + `1bb7360`)
+- **Why it matters:** SO-00753 has 6 issues vs Quotation. Cannot fix them without deployment.
+- **Fix:** `git pull upstream main` + `docker restart` on server
+- **Blocker:** Need SSH access or bench console (Server Scripts can't run subprocess)
+
+#### Gap 2: No "Step 0" in Orchestrator
+- **What:** The orchestrator's `get_pipeline_status()` starts from Sales Order. It doesn't show Quotation status or QTN→SO validation.
+- **Why it matters:** For SO-00753, the first issue is the QTN is still Draft + SO has 6 mismatches. The orchestrator misses these pre-conditions.
+- **Fix:** Add Step 0 (Quotation) to the orchestrator pipeline dashboard and link to task_validator's diagnose.
+
+#### Gap 3: BOM Resolution for 0334
+- **What:** Orchestrator auto-resolves BOMs via `is_default=1` and `is_default=0` flags, but 0334 BOMs may not have correct default flags set.
+- **Current BOMs for 0334:**
+  - BOM-0334-001 (= Sales BOM, like 0307-001/006)
+  - BOM-0334-004 (42-item production/mix BOM, Draft)
+  - BOM-0334-005 (Submitted)
+  - BOM-0334-006 (25 Kg cuñete + label, Draft)
+- **Fix:** Ensure BOM-0334-006 (sales) is default=1, BOM-0334-005 (mix) is default=0, both Submitted.
+
+### MEDIUM GAPS (nice to have):
+
+#### Gap 4: No Standalone "Sales WO from SO" Command
+- Steps 4-5 (Sales WO + Manufacture) only run inside `run_full_cycle`. No standalone command like `@ai create sales work order SO-XXXXX`.
+- **Fix:** Add to manufacturing.py: `@ai sales work order SO-XXXXX` → create WO linked to SO.
+
+#### Gap 5: Quality Inspection Handling
+- DN creation requires Quality Inspection for item 0307 (learned from SO-00752).
+- Not handled by any agent — DN step fails silently if QI required.
+- **Fix:** Add QI check in delivery note creation, or auto-create QI, or skip for export items.
+
+#### Gap 6: CFDI/E-Invoice Intelligence  
+- Sales Invoice creation works, but CFDI fields (mx_cfdi_use, SAT payment condition, payment mode) are not auto-populated.
+- Learned from SO-00752: G03 for uso, PPD for payment condition, Wire Transfer for mode.
+- **Fix:** Add CFDI field defaults to invoice creation.
+
+#### Gap 7: Payment Entry Not Fully Tested
+- PaymentAgent exists but hasn't been exercised end-to-end recently.
+- SO-00752 Step 8 was "preview tested" but never completed.
+
+---
+
+## 4. Current Routing Architecture
+
+```
+User sends "@ai <message>" in Raven Chat
+         │
+         ▼
+agent.py handle_raven_message()  ← hooks.py entry point
+         │
+         ├─ validator_keywords? ──→ task_validator.py (TaskValidatorMixin)
+         │   diagnose, validate, sync, fix, audit, check payment
+         │
+         ├─ orch_keywords? ──→ workflow_orchestrator.py (WorkflowOrchestrator)
+         │   pipeline status, run full cycle, dry run
+         │
+         ├─ mfg_keywords? ──→ manufacturing_agent.py (ManufacturingAgent)
+         │   work order, manufacture, transfer material, mfg-wo
+         │
+         ├─ pay_keywords? ──→ payment_agent.py (PaymentAgent)
+         │   payment, outstanding, unpaid, reconcile
+         │
+         └─ default ──→ sales_order_bot (RaymondLucyAgent)
+             quotation commands, sales commands, etc.
+```
+
+### Keyword Routing in agent.py (line 1209):
+```python
+validator_keywords = ["diagnose", "diagnosis", "validate ", "audit pipeline", 
+                      "check payment", "check pago", "pipeline health", 
+                      "verify so", "verify sales order",
+                      "sync so", "fix so", "sync sales order", "fix sales order",
+                      "!sync", "!fix"]  # ← NEW: pushed but not deployed
+
+mfg_keywords = ["work order", "create wo", "submit wo", "manufacture", 
+                "transfer material", "check material", "mfg-wo"]
+
+pay_keywords = ["payment", "outstanding", "unpaid", "reconcile", 
+                "acc-sinv", "acc-pay", "sinv-"]
+
+orch_keywords = ["pipeline status", "run full cycle", "run pipeline", 
+                 "dry run", "validate so"]
+```
+
+---
+
+## 5. SO-00753 GREENTECH — Action Plan
+
+### Current State:
+- **Quotation:** SAL-QTN-2024-00753 | GREENTECH S.A | 0334 | 1800 Kg | USD 187,200 | Draft
+- **Sales Order:** SO-00753-GREENTECH SA | Draft | 6 issues vs quotation
+- **Work Order:** MFG-WO-04126 | Submitted, Not Started | 0334 qty 1800
+- **BOMs:** 0334-001 (exists), 0334-004 (42 items, Draft), 0334-005 (Submitted), 0334-006 (Draft)
+
+### Execution Sequence:
+
+```
+ Pre-pipeline (Step 0):
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ 1. Deploy code: git pull + docker restart                       │
+ │ 2. @ai diagnose SAL-QTN-2024-00753  → shows 6 issues + fix cmd │
+ │ 3. @ai !sync SO SO-00753-GREENTECH SA from quotation → auto-fix│
+ │ 4. @ai diagnose SAL-QTN-2024-00753  → confirm 0 issues         │
+ └─────────────────────────────────────────────────────────────────┘
+
+ BOM Preparation:
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ 5. Submit BOM-0334-004 (production/mix BOM, 42 items)           │
+ │ 6. Submit BOM-0334-006 (sales BOM, 25 Kg + label)              │
+ │ 7. Set default flags: 0334-006=default, 0334-005=non-default    │
+ └─────────────────────────────────────────────────────────────────┘
+
+ Pipeline Steps 1-2 (Manufacturing):
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ 8. @ai transfer materials MFG-WO-04126  → Material Transfer SE  │
+ │ 9. Complete manufacture → Produces 1800 Kg of 0334              │
+ └─────────────────────────────────────────────────────────────────┘
+
+ Pipeline Steps 3-5 (SO + Sales WO):
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ 10. @ai !submit sales order SO-00753-GREENTECH SA               │
+ │ 11. Create Sales WO from SO (labeling step)                     │
+ │ 12. Complete Sales WO manufacture                               │
+ └─────────────────────────────────────────────────────────────────┘
+
+ Pipeline Steps 6-8 (Delivery + Billing):
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ 13. @ai !delivery SO-00753-GREENTECH SA  → DN                   │
+ │ 14. @ai !invoice SO-00753-GREENTECH SA   → SI with CFDI         │
+ │ 15. @ai create payment ACC-SINV-XXXX     → PE                   │
+ └─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Deployment Needed
+
+### Files ready on GitHub (NOT deployed):
+1. `task_validator.py` — commit `50e33b2` — intelligent actions + sync SO
+2. `agent.py` — commit `1bb7360` — sync/fix keywords in routing
+
+### Deploy commands (SSH to server):
+```bash
+docker exec erpnext-backend-1 bash -c "cd /home/frappe/frappe-bench/apps/raven_ai_agent && git pull upstream main"
+docker restart erpnext-backend-1 erpnext-queue-short-1 erpnext-queue-long-1 erpnext-scheduler-1 erpnext-websocket-1
+```
+
+### Cannot deploy via Server Script (safe_exec blocks subprocess/os).
+### Need: SSH access or bench console.
