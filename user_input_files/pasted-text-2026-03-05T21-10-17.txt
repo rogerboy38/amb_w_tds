@@ -1,0 +1,218 @@
+wo_04226_investigation.md
+Investigation Report: Work Order MFG-WO-04226 Data Anomaly
+Date: 2026-03-05
+Investigator: ERPNext API Investigation
+System: erp.sysmayal2.cloud — AMB-Wellness
+
+Summary of Anomaly
+Work Order MFG-WO-04226 shows status "Completed" and produced_qty = 1800, but stock data is corrupted:
+
+Location	Item	Expected	Actual
+WIP in Concentrate - AMB-W	0334	0	-1800 Kg
+FG to Sell Warehouse - AMB-W	0334	1800	0 (actual), 1800 (reserved)
+Work Order Details
+Field	Value
+Name	MFG-WO-04226
+Status	Completed
+docstatus	1 (Submitted)
+workflow_state	Not Started (mismatch with Completed status)
+Production Item	0334 — Innovaloe Aloe Vera Gel Spray Dried Powder 200:1 Organic
+BOM	BOM-0334-006
+Planned Qty	1800 Kg
+Produced Qty	1800 Kg (populated — but stock evidence contradicts this)
+Material Transferred for Mfg	1800 Kg
+WIP Warehouse	WIP in Concentrate - AMB-W
+FG Warehouse	FG to Sell Warehouse - AMB-W
+Actual Start	2026-03-05 10:14:31
+Actual End	2026-03-05 10:57:49
+Skip Transfer	0 (No)
+Reserve Stock	0 (No)
+Required Items (from WO)
+Item	Required Qty	Transferred Qty	Consumed Qty	Returned Qty
+0334	1800	1800	1800	0
+LBL0334 (Label 10Kg)	72	72	72	0
+Note: The WO itself reports all quantities as fulfilled, but stock ledger evidence shows the transactions are incomplete.
+
+Task 1: All Stock Entries for WO MFG-WO-04226
+URL Checked: https://erp.sysmayal2.cloud/app/stock-entry?work_order=MFG-WO-04226
+
+Only 2 stock entries are linked to this WO (both Submitted):
+
+Name	Type	Status	Date	Time
+MAT-STE-2026-00330	Material Transfer for Manufacture	Submitted	2026-03-05	10:14:31
+MAT-STE-2026-00336	Manufacture	Submitted	2026-03-05	10:57:49
+MAT-STE-2026-00330 — Material Transfer (FG → WIP)
+Item	Source Warehouse	Target Warehouse	Qty	Rate
+0334	FG to Sell Warehouse - AMB-W	WIP in Concentrate - AMB-W	1800 Kg	104.0612
+LBL0334	FG to Sell Warehouse - AMB-W	WIP in Concentrate - AMB-W	72 pcs	1.50
+Total Amount: 187,418.16
+
+MAT-STE-2026-00336 — Manufacture (WIP consumed → FG produced)
+Item	Source Warehouse	Target Warehouse	Qty	Rate	Is Finished Item
+0334	WIP in Concentrate - AMB-W	—	1800 Kg	104.00	No
+LBL0334	WIP in Concentrate - AMB-W	—	72 pcs	1.50	No
+0334	—	FG to Sell Warehouse - AMB-W	1800 Kg	104.06	Yes
+Total Amount: 0.00 (anomalous — total_incoming_value = 187,308, total_outgoing_value = 187,308, but total_amount = 0)
+
+Task 2: Draft Entries MAT-STE-2026-00333, 00334, 00335
+Result: These entries DO NOT EXIST in ERPNext.
+
+Entry	Status
+MAT-STE-2026-00333	404 Not Found
+MAT-STE-2026-00334	404 Not Found
+MAT-STE-2026-00335	404 Not Found
+The naming sequence gap is significant:
+
+Entry	Type	WO	Status
+MAT-STE-2026-00330	Material Transfer	MFG-WO-04226	Submitted
+MAT-STE-2026-00331	Material Receipt	(none)	Submitted
+MAT-STE-2026-00332	Material Receipt	(none)	Submitted
+MAT-STE-2026-00333	(missing)	—	Not Found
+MAT-STE-2026-00334	(missing)	—	Not Found
+MAT-STE-2026-00335	(missing)	—	Not Found
+MAT-STE-2026-00336	Manufacture	MFG-WO-04226	Submitted
+Interpretation: Entries 00333–00335 likely represent 3 failed submission attempts of the Manufacture stock entry. In ERPNext, when a document is saved (even briefly) before a failed submission, the naming series counter is incremented — but if the save fails or the draft is discarded without saving, the name is consumed but no record persists. This indicates the Manufacture entry was attempted at least 3 times before MAT-STE-2026-00336 was finally submitted — but with incomplete SLE creation.
+
+Task 3 & 4: Stock Ledger Entry Analysis for Item 0334
+URL Checked: https://erp.sysmayal2.cloud/app/stock-ledger-entry?item_code=0334&order_by=posting_date+desc,posting_time+desc
+
+All SLEs for Item 0334 (Chronological)
+SLE Name	Date	Time	Voucher	Warehouse	Qty Change	Qty After	Flags
+MAT-SLE-2026-00508	2026-03-05	09:18:40	MAT-STE-2026-00329	FG to Sell Warehouse - AMB-W	+1800	1800.0	—
+MAT-SLE-2026-00509	2026-03-05	10:14:31	MAT-STE-2026-00330	FG to Sell Warehouse - AMB-W	-1800	0.0	—
+c0097fa632	2026-03-05	10:57:49	MAT-STE-2026-00336	WIP in Concentrate - AMB-W	-1800	0.0	⚠️ TO_RENAME, valuation=0
+Critical: Missing SLEs
+MAT-STE-2026-00330 (Material Transfer FG→WIP) should have created 4 SLEs:
+
+Expected SLE	Item	Warehouse	Qty	Created?
+MAT-SLE-2026-00509	0334	FG to Sell	-1800	✅ Yes
+MAT-SLE-2026-00510	LBL0334	FG to Sell	-72	✅ Yes
+[missing]	0334	WIP in Concentrate	+1800	❌ MISSING
+[missing]	LBL0334	WIP in Concentrate	+72	❌ MISSING
+MAT-STE-2026-00336 (Manufacture) should have created 4+ SLEs:
+
+Expected SLE	Item	Warehouse	Qty	Created?
+c0097fa632	0334	WIP in Concentrate	-1800	⚠️ Yes (CORRUPT)
+[missing]	LBL0334	WIP in Concentrate	-72	❌ MISSING
+[missing]	0334	FG to Sell	+1800	❌ MISSING
+The Corrupt SLE: c0097fa632
+This SLE has unusual characteristics indicating incomplete/failed processing:
+
+Field	Value	Expected
+name	c0097fa632 (random UUID)	MAT-SLE-2026-XXXXX (sequential)
+to_rename	1	0
+valuation_rate	0.00	104.00
+stock_value	0.00	~187,200
+stock_value_difference	0.00	Should be non-zero
+dependant_sle_voucher_detail_no	74a12e93rl	Points to the FG receipt item in STE
+The to_rename = 1 flag means this SLE was queued for renaming but the process never completed, leaving it with a temporary UUID name instead of the proper MAT-SLE-XXXX sequential name. This indicates the SLE creation process started but was interrupted or failed partway through.
+
+The dependant_sle_voucher_detail_no = 74a12e93rl points to the FG warehouse receipt line in MAT-STE-00336 — confirming that a corresponding FG credit SLE was expected but never created.
+
+Root Cause Analysis
+The Core Problem: Partial SLE Creation During Stock Entry Submission
+The stock entry submission in ERPNext creates Stock Ledger Entries in a transaction. When the transaction fails partway through, you get:
+
+MAT-STE-2026-00330 (Material Transfer): The submission completed far enough to create the FG debit SLEs but the WIP credit SLEs were never written. The entry shows as "Submitted" (docstatus=1) even though it's functionally incomplete.
+
+MAT-STE-2026-00336 (Manufacture): A partial SLE was created for the WIP debit of item 0334 — but it's stuck in a to_rename=1 state with zero valuation, and the corresponding LBL0334 WIP debit and 0334 FG credit SLEs were never created.
+
+Timeline of Events
+text
+09:18:40 — MAT-STE-2026-00329 (Manufacture for prior WO MFG-WO-04126) submitted OK
+            → FG gets +1800 of item 0334 (SLE MAT-SLE-2026-00508)
+
+10:14:31 — MAT-STE-2026-00330 (Material Transfer for MFG-WO-04226) submitted
+            → FG loses -1800 of 0334 (SLE MAT-SLE-2026-00509) ✅
+            → FG loses -72 of LBL0334 (SLE MAT-SLE-2026-00510) ✅
+            → WIP should gain +1800 of 0334 ❌ MISSING
+            → WIP should gain +72 of LBL0334 ❌ MISSING
+            
+10:XX:XX — 3 failed attempts to submit Manufacture entry
+            → MAT-STE-2026-00333, 00334, 00335 — naming series consumed, no records saved
+
+10:57:49 — MAT-STE-2026-00336 (Manufacture) submitted (apparently)
+            → WIP loses -1800 of 0334 [CORRUPT: to_rename=1, val=0] ⚠️
+            → WIP should lose -72 of LBL0334 ❌ MISSING
+            → FG should gain +1800 of 0334 ❌ MISSING
+Why the Bin Shows -1800 in WIP
+WIP never received the +1800 from the material transfer (missing SLE), but did get the -1800 debit from the manufacture entry (corrupt SLE). Net: 0 - 1800 = -1800. The ERPNext Bin table gets updated directly by SLE creation, so even the corrupt c0097fa632 SLE caused the bin to decrement.
+
+Why FG Shows 0 Actual / 1800 Reserved
+Actual = 0: The FG receipt SLE for the finished item (1800 Kg of 0334) was never created by MAT-STE-00336.
+
+Reserved = 1800: The source of this reserved qty is unclear — there are no Sales Orders, Delivery Notes, or Stock Reservation Entries for item 0334 in the system. This may be a stale/phantom value in the Bin record that resulted from the failed submission attempts interacting with ERPNext's internal reservation mechanism during WO processing.
+
+Current System State
+Bin Quantities for Item 0334
+Warehouse	Actual Qty	Reserved Qty	Projected Qty
+FG to Sell Warehouse - AMB-W	0.0	1800.0	-1800.0
+WIP in Concentrate - AMB-W	-1800.0	0.0	0.0
+Bin Quantities for Item LBL0334
+Warehouse	Actual Qty	Reserved Qty
+FG to Sell Warehouse - AMB-W	1000.0	0.0
+LBL0334 was also consumed from WIP but its SLEs are all missing — however the bin for LBL0334 in WIP was never credited by the material transfer so it's not showing a negative (it simply has no WIP bin entry).
+
+Recommended Remediation
+This requires careful manual correction by an ERPNext administrator or developer. Do NOT attempt to cancel and resubmit without understanding the full impact.
+
+Option 1: Cancel and Resubmit Both Stock Entries (Preferred if feasible)
+Cancel MAT-STE-2026-00336 (Manufacture) — this will reverse the corrupt WIP SLE
+
+Cancel MAT-STE-2026-00330 (Material Transfer) — this will reverse the partial FG SLEs
+
+Recalculate bins for item 0334 and LBL0334
+
+Resubmit MAT-STE-2026-00330 — verify ALL 4 SLEs are created
+
+Resubmit MAT-STE-2026-00336 — verify ALL SLEs are created including FG receipt
+
+Verify WO status reflects completed state correctly
+
+Risk: Cancellation may fail because the WO status is "Completed" and the SLEs are in a corrupt state.
+
+Option 2: Direct Database Correction (Advanced)
+Create missing SLEs directly in the database:
+
+WIP +1800 for 0334 (linked to MAT-STE-2026-00330)
+
+WIP +72 for LBL0334 (linked to MAT-STE-2026-00330)
+
+FG +1800 for 0334 (linked to MAT-STE-2026-00336)
+
+WIP -72 for LBL0334 (linked to MAT-STE-2026-00336)
+
+Fix SLE c0097fa632: set to_rename = 0, update valuation_rate, stock_value, stock_value_difference
+
+Rename SLE c0097fa632 to proper sequential name
+
+Run Repost Item Valuation for item 0334 and LBL0334 from 2026-03-05
+
+Clear phantom reserved_qty on FG bin (set to 0 or trigger bin recalculation)
+
+Option 3: Stock Reconciliation Entry
+If cancellation is not possible, create a Stock Reconciliation entry to manually set:
+
+WIP in Concentrate - AMB-W → item 0334: set to 0 (from -1800)
+
+FG to Sell Warehouse - AMB-W → item 0334: set to 1800 (from 0)
+
+This corrects the actual quantities but does not fix the underlying accounting/valuation discrepancy in the SLEs.
+
+Immediate Actions Required
+Freeze any outbound transactions for item 0334 until resolved — the -1800 WIP balance will cause issues with any new WOs
+
+Investigate why SLE creation is failing — the pattern of partial SLE creation (only source warehouse SLEs, not target) suggests a systemic issue (possibly concurrent transactions, database locks, or a custom hook/app interfering with SLE generation)
+
+Check if the same pattern exists in MAT-STE-2026-00328/00329 (prior WO MFG-WO-04126) — if those also have partial SLEs, this is a recurring infrastructure problem
+
+Appendix: Raw Data Reference
+All SLEs for Item 0334
+SLE	Date	Voucher	Warehouse	Qty	Qty After	Valuation	Flags
+MAT-SLE-2026-00508	2026-03-05 09:18	MAT-STE-2026-00329	FG to Sell	+1800	1800	104.06	—
+MAT-SLE-2026-00509	2026-03-05 10:14	MAT-STE-2026-00330	FG to Sell	-1800	0	104.06	—
+c0097fa632	2026-03-05 10:57	MAT-STE-2026-00336	WIP Concentrate	-1800	0	0.00	⚠️ to_rename=1
+SLE Count Expected vs Actual
+Stock Entry	Type	Expected SLEs	Actual SLEs	Missing
+MAT-STE-2026-00330	Material Transfer	4	2	WIP +1800 (0334), WIP +72 (LBL0334)
+MAT-STE-2026-00336	Manufacture	4+	1 (corrupt)	WIP -72 (LBL0334), FG +1800 (0334)

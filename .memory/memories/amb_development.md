@@ -27,19 +27,21 @@
 ## Active Work
 - Quotation SAL-QTN-2024-00753 (GREENTECH, 0334, 1800 Kg)
 - Work Order MFG-WO-04126 (created, submitted, materials available)
-- Latest local commit: 1860d43 (Deployed and working!)
+- Latest local commit: 5173902 (Fix SO regex - added bom/qty/quantity/item/warehouse/wh to stop words)
 - GitHub commits:
+  - 5173902 - Fix SO regex: add bom/qty/quantity/item/warehouse/wh to stop words
+  - 1860d43 - is_confirm passthrough
   - 7bc7841 - Intelligent sweep: fix is_confirm passthrough, broaden command matching
   - 16a5dba - Fix: !submit bom handles standard BOM doctype
   - 08fc721 - Fix: broaden WO-from-SO command matching
   - 33de58d - SO regex all files
   - 3c22f5d - make_stock_entry fix
-  - cba3330, 1bb7360, 50e33b2
 - Pipeline Diagnosis working: @ai diagnose SAL-QTN-2024-00753 ✅
 - SO-00753 Sync: @ai !sync SO → 5 fixes applied ✅
 - Manufacturing complete: @ai transfer materials + @ai manufacture MFG-WO-04126 ✅
 - SO-00753 Step 3 (Submit SO): ✅ Submitted
 - BOM-0334-006: ✅ Submitted (via @ai !submit bom)
+- Work Order MFG-WO-04226: ✅ Created via @ai work order from SO-00753-GREENTECH SA bom BOM-0334-006
 
 ## Critical Bugs
 - is_confirm bug in manufacturing.py: method uses is_confirm in 8 places but never receives it as parameter
