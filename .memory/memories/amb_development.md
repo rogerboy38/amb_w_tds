@@ -27,7 +27,9 @@
 ## Active Work
 - Quotation SAL-QTN-2024-00753 (GREENTECH, 0334, 1800 Kg)
 - Work Order MFG-WO-04126 (created, submitted, materials available)
-- Latest deployed commit: 3af2381
+- Latest deployed commit: 1bb7360 (task_validator sync/fix ready)
+- GitHub commits: 50e33b2 (task_validator), 1bb7360 (sync keywords)
+- Pipeline Diagnosis working: @ai diagnose SAL-QTN-2024-00753 ✅
 
 ## Architecture & Design
 - Agent routing: keyword-based, @ai entry point
