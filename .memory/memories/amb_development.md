@@ -1,5 +1,34 @@
 # AMB-Wellness ERPNext Development - Persistent Memory
 
+## Parallel Development Team Report (March 6, 2026)
+### Project: AMB Wellness ERPNext Migration
+**Owner:** Rogelio Pedroza
+
+### Infrastructure
+- Production VPS: root@72.62.131.198 (Aloe123&Agro123&)
+- Test VPS: root@187.77.2.74 (Aloe123&Agro123&)
+- ERPNext: erp.sysmayal2.cloud
+- Login: fcrm@amb-wellness.com / Aloe246!
+- GitHub PAT: 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
+
+### Migration Stats
+- Total Sales Orders: 1,057
+- Failed: 2
+- Discrepancies: 71 (fixed 45 IVA, 17 false positives, 9 remaining)
+
+### Key Learnings
+- Truth Hierarchy: PO > Quotation > Sales Order
+- IVA 16% pattern: QTN * 1.16 = SO (most common issue)
+- Tax rows need mexico_tax_type (IVA) and cost_center
+- No import frappe in Server Scripts
+- ! prefix = execute, no ! = preview/dry-run
+
+### Active Work
+- 9 remaining cases need PO PDF matching
+- SO-00762 AJE MEX: 8.5% diff (PO 134702 attached)
+- SO-00971 LORAND: -25.7% diff
+- SO-00982 Calipso: 188.6% diff (likely Italian company)
+
 ## Deployment Rules
 - Docker restart required (not bench restart) for Python module reloading
 - No "import frappe" in Server Scripts - causes ImportError
