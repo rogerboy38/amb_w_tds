@@ -1,0 +1,199 @@
+AMB Wellness ERPNext Migration Project — Full Resume
+Last Updated: March 6, 2026
+Project Owner: Rogelio Pedroza (rogelio.pedroza.d@gmail.com)
+Company: AMB Wellness (Agromayal Botanica)
+
+1. Project Overview
+Migration of Sales Orders, Quotations, and related data from legacy system (Microsip) to ERPNext on frappe.cloud. The project involves syncing ~1,057 Sales Orders, validating data integrity between Quotations (QTN) and Sales Orders (SO), and fixing discrepancies found during migration.
+
+2. Infrastructure & Credentials
+Resource	Details
+Production VPS	root@72.62.131.198 — password: Aloe123&Agro123&
+Test VPS	root@187.77.2.74 — password: Aloe123&Agro123&
+Sandbox→Production	ssh -o IdentityAgent=none hostinger-vpp
+Sandbox→Test	ssh -o IdentityAgent=none hostinger-vpt
+ERPNext URL	erp.sysmayal2.cloud
+ERPNext Login	fcrm@amb-wellness.com / Aloe246!
+GitHub PAT	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
+GitHub Repo	rogerboy38/raven_ai_agent, branch: main
+Docker volume path	/var/lib/docker/volumes/frappe_docker_sites/_data/erp.sysmayal2.cloud/
+3. Critical User Rules (MUST Follow Always)
+3.1 Truth Hierarchy
+PO (Customer Purchase Order) > Quotation > Sales Order
+
+The purchase order has true data over quotation
+
+On sales at quotations, the item to sell is the item on quotation (human reviewed)
+
+3.2 ERPNext / Frappe Rules
+No import frappe in Server Scripts — causes ImportError
+
+For all fixing: deep research, look for best practices on frappe.cloud docs, try to use RichardLucy
+
+Review double check everything
+
+3.3 Payment Terms Logic (PUE/PPD)
+PUE depends on the terms: if 30 days or another type of credit → PPD
+
+If pay on advance → PUE
+
+3.4 Account Coding
+Use ACTUALLY Microsip SAT-like accounts (COA)
+
+3.5 Raven Chat Behavior
+Channel_id isolation: link is only to the last user command; can't mix commands and confirms across users
+
+! prefix = execute, no ! = preview/dry-run (draft)
+
+Remember to make refresh to get output in Raven chat
+
+3.6 Address Naming
+"We are AMB WELLNESS not a customer" — Address naming issue recurrent from migration tool
+
+3.7 Agent Behavior
+If the agent has doubts, ask a question or use threads
+
+Think more deep and add more intelligent actions
+
+Handle things in an intelligent manner
+
+4. ERPNext API Key Learnings
+4.1 Tax Configuration
+Sales Taxes child table requires mexico_tax_type (value "IVA" for 16% tax) — mandatory custom field
+
+cost_center required on tax rows — default: 25000 - Main - AMB-W
+
+Tax template: Mexico Tax - AMB-W, account: IVA - AMB-W
+
+Tax Type doctype values: IVA, IEPS, ISR, IVA 0%
+
+4.2 API Update Gotchas
+When updating items via PUT, must send ALL existing fields or ERPNext resets missing ones
+
+Broken Address links cause LinkValidationError — must clear them before saving
+
+InvalidQtyError if qty fields are missing or zero
+
+4.3 IVA Pattern (13.8%)
+Formula: QTN_total * 1.16 = SO_total (i.e., QTN has no IVA, SO has 16% IVA added)
+
+This was the most common discrepancy pattern (45 out of 71 cases)
+
+5. Migration Progress Summary
+5.1 Overall Stats
+Metric	Count
+Total Sales Orders synced	1,057
+Failed (Submitted status)	2
+Discrepancies found	71 (human review)
+Private files restored	17,066
+Public files restored	50
+Public files still missing	5 (never existed in test backup)
+5.2 Discrepancy Classification (71 cases)
+Category	Count	Status	Description
+FALSE_POSITIVE	17	✅ Dismissed	2025 QTN (00001-00019) incorrectly matched to old migrated SO
+IVA_NO_PO	45	✅ Fixed	QTN had no IVA, SO had 16% IVA. Auto-fixed all 45 (44 success + 1 already done)
+NEEDS_PO	8	🔄 In Progress	Significant rate/total differences; need PO PDF to determine truth
+QTN_EMPTY	1	🔄 In Progress	QTN has $0 total; need PO for truth
+5.3 IVA Fix Details
+Script: /home/user/workspace/iva_fix_v3.py
+
+Results: /home/user/workspace/iva_fix_v3_results.json
+
+Three rounds of ERPNext errors overcome: InvalidQtyError → LinkValidationError → MandatoryError (mexico_tax_type)
+
+All 45 grand totals match QTN exactly after fix
+
+6. Remaining 9 Cases (NEEDS_PO + QTN_EMPTY)
+NEEDS_PO (8 cases):
+SO	Customer	QTN Total	SO Total	Diff %	PO Info
+SO-00762	AJE MEX	11,225.32	10,346.00	8.5%	PO 134702 attached
+SO-00797	HSH Chemie SK s.r.o.	346.66	236.13	46.8%	—
+SO-00870	CEMSA	2,880.40	2,772.40	3.9%	—
+SO-00911	ALBAFLOR	2,508.66	2,389.20	5.0%	—
+SO-00912	BARENTZ FRANCE SARL	924.41	773.35	19.5%	—
+SO-00971	LORAND LABORATORIES	63,931.20	86,020.80	-25.7%	—
+SO-00981	NATURAL MITCH	154.28	142.24	8.5%	—
+SO-00982	Calipso s.r.l	368,686.08	127,733.76	188.6%	—
+QTN_EMPTY (1 case):
+SO	Customer	QTN Total	SO Total	PO Info
+SO-00763	LORAND LABORATORIES	0.00	107,884.42	PO 2024-1 shows $376,341 for 2,100 KG
+7. PO Files Available
+Source: User uploaded 2024B.zip (29MB, 225 PDFs)
+
+Extracted to: /home/user/workspace/po_files_2024/2024B/ (224 files)
+
+Key PO files for matching:
+
+134702_Orden-Compra-134702-AJEMEX_05-01-26.pdf → SO-00762 AJE MEX
+
+PO_20241_LORAND_LABORATORIES_LLC_12260.pdf → SO-00763/SO-00971 LORAND
+
+3242500811_Barentz-France-SARLBarentz-France-SARL_05-01-26.pdf → SO-00912 BARENTZ FRANCE
+
+Files with Our-VAT-number-IT05015600967 → likely Calipso s.r.l (Italian company)
+
+8. Key Workspace Files
+File	Purpose
+/home/user/workspace/po_truth_analysis_v2.json	All 71 cases with categories and details
+/home/user/workspace/po_truth_analysis_v2.py	Analysis script with PO parsing
+/home/user/workspace/po_truth_report.xlsx	Comprehensive Excel report (shared with user)
+/home/user/workspace/iva_fix_v3.py	IVA fix script (45 cases)
+/home/user/workspace/iva_fix_v3_results.json	Fix results: 44 success + 1 skipped
+/home/user/workspace/migration_discrepancies.json	Full scan (1,132 pairs, 71 human-review)
+/home/user/workspace/2024B.zip	User's PO files (225 PDFs)
+/home/user/workspace/po_files_2024/2024B/	Extracted PO PDFs directory
+9. Next Steps (Active Task)
+Match PO PDFs to the 9 remaining cases (8 NEEDS_PO + 1 QTN_EMPTY) by customer name, PO number, or amount
+
+Extract truth data from matched POs: rate, qty, total, payment terms
+
+Compare PO truth vs QTN vs SO for each case
+
+Apply fixes to those 9 Sales Orders based on PO truth hierarchy
+
+Final validation — all 1,057 SOs should be clean
+
+10. Session History (Chronological)
+Full migration scan completed — 1,132 QTN-SO pairs analyzed, 71 flagged for human review
+
+PO truth analysis — classified 71 cases into 4 categories (FALSE_POSITIVE, IVA_NO_PO, NEEDS_PO, QTN_EMPTY)
+
+Fixed PO PDF parsing regex (AJE MEX rate corrected from 548.32 to 96.77)
+
+Built comprehensive Excel report (po_truth_report.xlsx) — shared with user
+
+Auto-fixed 45 IVA cases — all 45/45 grand totals match QTN exactly
+
+17 false positives dismissed (2025 QTN/old SO collisions)
+
+User provided LORAND quotation link, went to desktop to look for PO files
+
+User shared 2024B.zip via Google Drive then direct upload — 225 PO PDFs extracted
+
+Current: Ready to match PO PDFs to remaining 9 cases and apply fixes
+
+11. Patterns & Lessons Learned
+Migration Patterns
+IVA 16% pattern: Most common issue — QTN without IVA vs SO with IVA. Formula: QTN * 1.16 ≈ SO
+
+False positives from 2025 QTNs: QTN numbering SAL-QTN-2024-00001 through 00019 were actually 2025 quotations incorrectly matched to old migrated SOs
+
+Address naming: Recurrent error from migration tool where addresses get named as customer instead of "AMB WELLNESS"
+
+ERPNext API Patterns
+Always send complete item data on PUT (ERPNext resets missing fields)
+
+Clear broken address links before saving
+
+Tax rows need both mexico_tax_type and cost_center
+
+Use /api/resource/Sales Order/{name} for CRUD operations
+
+Authentication: token-based with api_key:api_secret
+
+Debugging Approach
+Three-round error resolution is normal: fix one error, reveal the next
+
+Always check what ERPNext actually saved vs what was sent
+
+Grand total recalculation happens server-side after item/tax changes
