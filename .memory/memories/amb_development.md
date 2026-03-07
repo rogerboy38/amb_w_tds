@@ -30,7 +30,27 @@
 - 4 Work Orders to create (from 4 invoices: F2534, F2398, F2422, F2451)
 - 9 remaining SO discrepancy cases (on hold for this test)
 
-### Parallel Team Q&A (Saved for Reference)
+### Incident Report: MFG-WO-04226 Stock Corruption (March 6, 2026)
+
+**Problem:** MFG-WO-04226 had corrupted SLEs from failed manufacture attempts due to missing Valuation Rate on Item 0334
+
+**Root Cause:** No Valuation Rate set in Item 0334 master
+
+**Resolution Steps:**
+1. Cancel both stock entries (MAT-STE-2026-00336, MAT-STE-2026-00330)
+2. Set valuation rate to 104.00 on Item 0334
+3. Re-run transfer & finish commands
+
+**4 Lessons Learned:**
+1. Verify valuation rate before manufacturing
+2. Cancel order matters (child before parent)
+3. Silent failures need timeout handling
+4. Pre-flight checks needed
+
+**3 Action Items for raven_ai_agent:**
+1. Add valuation rate pre-check
+2. Timeout error responses
+3. Manufacture audit logging
 
 **Q1: BOM Hierarchy for Item 0803**
 For 0803 (LORAND project), we need 3 BOM configurations:
