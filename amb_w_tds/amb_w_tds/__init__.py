@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # amb_w_tds package
 __version__ = "9.2.0"
 
@@ -28,3 +29,6 @@ after_install = "amb_w_tds.setup.setup_pages.after_install"
 # from .agent import performance
 # from .raven import utils
 
+=======
+__version__ = "1.0.0"
+>>>>>>> 14c524d5cbaf02ef44ebf9fa733940547d2a0088

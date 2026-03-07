@@ -24,10 +24,18 @@
 - ! prefix = execute, no ! = preview/dry-run
 
 ### Active Work
-- 9 remaining cases need PO PDF matching
-- SO-00762 AJE MEX: 8.5% diff (PO 134702 attached)
-- SO-00971 LORAND: -25.7% diff
-- SO-00982 Calipso: 188.6% diff (likely Italian company)
+- LORAND MASTER DEGREE TEST PROJECT
+- Quotation: SAL-QTN-2024-00763 (Draft) - Item 0803, 2435 Kg
+- Sales Order: SO-00763-LORAND LABORATORIES (Draft)
+- 4 Work Orders to create (from 4 invoices: F2534, F2398, F2422, F2451)
+- 9 remaining SO discrepancy cases (on hold for this test)
+
+### Batch AMB Structure (from amb_w_tds)
+- Level 1: Parent batch from Work Order
+- Level 2: Sub-lots (by packaging type: 1Kg, 10Kg)
+- Level 3: Containers (individual drums/bags)
+- Links: Work Order, Sales Order, BOM
+- Lot format: 0803[YY][MM][DD][XXX]
 
 ## Deployment Rules
 - Docker restart required (not bench restart) for Python module reloading
