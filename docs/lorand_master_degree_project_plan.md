@@ -44,17 +44,29 @@ This project tests the complete manufacturing and sales pipeline using:
 
 ---
 
-## 2. Work Order Planning
+## 2. Work Order Planning (Corrected)
 
-### WO Breakdown by Invoice
-| WO | Source Invoice | Total Qty | 1 Kg Bags | 10 Kg Bags | Samples |
-|----|----------------|-----------|-----------|------------|---------|
-| WO1 | F2534 | 1055 Kg | ~264 Kg (263 x 1Kg) | ~791 Kg | 263 x 20 = 5,260 |
-| WO2 | F2398 | 600 Kg | 150 Kg (150 x 1Kg) | 450 Kg | 150 x 20 = 3,000 |
-| WO3 | F2422 | 300 Kg | 50 Kg (50 x 1Kg) | 250 Kg | 50 x 20 = 1,000 |
-| WO4 | F2451 | 480 Kg | ~120 Kg (119 x 1Kg) | ~361 Kg | 119 x 20 = 2,380 |
+### Sample Calculation Logic
+- **Mix Lot Size:** 700 Kg max per lot
+- **Sample Rule:** 1 Kg per mix lot → 20 bags × 50g
+- **50% Split:** For >700 Kg, split 50/50 between 2 mix lots
 
-**Note:** WO1 and WO4 have special "25% rule" - reduce 1 Kg from each to create 50g samples.
+### WO Breakdown by Invoice (v2)
+| WO | Invoice | Total Qty | Mix Lots | Mix Split | Sample Qty | 50g Bags | For Sale | 10 Kg Bags |
+|----|---------|-----------|----------|-----------|------------|----------|-----------|-------------|
+| **WO1** | F2534 | 1055 Kg | 2 | 527.5 + 527.5 | **2 Kg** | 40 bags | 1053 Kg | 105 + 3 |
+| **WO2** | F2398 | 600 Kg | 1 | 600 | **1 Kg** | 20 bags | 599 Kg | 59 + 9 |
+| **WO3** | F2422 | 300 Kg | 1 | 300 | **1 Kg** | 20 bags | 299 Kg | 29 + 9 |
+| **WO4** | F2451 | 480 Kg | 1 | 480 | **1 Kg** | 20 bags | 479 Kg | 47 + 9 |
+| **TOTAL** | | **2435 Kg** | **5** | | **5 Kg** | **100 bags** | **2430 Kg** | **240 + 30** |
+
+### Summary
+| Metric | Value |
+|--------|-------|
+| Total Mix Lots | 5 |
+| Total Sample Qty | 5 Kg (100 bags × 50g) |
+| Total For Sale | 2430 Kg |
+| 10 Kg Bags | 240 full bags + 30 Kg leftover |
 
 ---
 
@@ -291,6 +303,144 @@ Verify in ERPNext:
 3. **Container Serial Generation**
    - Format: [LOT]-[CONTAINER_NUMBER]
    - Example: 08032603001-001, 08032603001-002, etc.
+
+---
+
+## 4.3 Intelligent AI Agent Enhancements
+
+### Smart Commands for raven_ai_agent
+
+**1. Auto-Calculate WO Breakdown**
+```
+Command: @ai plan work orders for SO-00763-LORAND
+Output: Intelligent breakdown showing:
+- 4 Work Orders with correct quantities
+- Mix lots calculation per WO
+- Sample requirements per mix lot
+- Packaging split (1Kg vs 10Kg bags)
+```
+
+**2. Smart Manufacturing with Auto-Split**
+```
+Command: @ai !manufacture WO-04226 with split
+Auto-detects:
+- Total qty: 1055 Kg
+- Mix lots: 2 (527.5 each)
+- Sample qty: 2 Kg (40 × 50g bags)
+- Creates 2 sub-WOs automatically
+```
+
+**3. Batch AMB Auto-Creation Hook**
+```
+Trigger: On Stock Entry (Manufacture) submit
+Action:
+- Parse WO qty and calculate mix lots
+- Generate lot numbers automatically
+- Create Level 1: Parent Batch AMB
+- Create Level 2: Sub-lots (by packaging type)
+- Create Level 3: Containers (drums/bags)
+- Link to WO, SO, BOM
+```
+
+**4. Intelligent Sample Tracking**
+```
+Command: @ai track samples for LOT-0803034251
+Shows:
+- Sample qty generated: 1 Kg
+- 50g bags created: 20
+- Assigned to: [Customer/Internal]
+- Expiry date: [Calculated]
+```
+
+**5. Container Serial Automation**
+```
+Auto-generate on Level 3 creation:
+Format: [LOT]-[CONTAINER_TYPE]-[SEQ]
+Example:
+- 08032603001-DRUM-001
+- 08032603001-DRUM-002
+- 08032603001-BAG-001 (for 1Kg bags)
+```
+
+### amb_w_tds Smart Features
+
+**1. Mix Lot Calculator**
+```
+Input: Total Qty (1055 Kg)
+Calculation:
+- If qty ≤ 700: 1 mix lot
+- If qty > 700: ceil(qty/700) mix lots
+- Sample qty = mix lots × 1 Kg
+Output: {mix_lots: 2, sample_qty: 2, for_sale: 1053}
+```
+
+**2. Packaging Optimizer**
+```
+Input: For Sale Qty (1053 Kg)
+Calculation:
+- Full 10Kg bags: floor(qty/10)
+- Remainder: qty % 10
+Output: {full_bags: 105, remainder: 3}
+```
+
+**3. Quality Status Flow**
+```
+Level 1 (Parent): Quality Check → Passed → Auto-progress
+Level 2 (Sub-lot): QC per packaging type
+Level 3 (Container): QC per drum/bag → Generate COA
+```
+
+**4. Traceability Chain**
+```
+Full traceability from:
+Invoice → Delivery Note → Stock Entry → WO → Batch AMB → Raw Materials
+```
+
+### 4.4 Proposed Agent Prompts
+
+**Manufacturing Planning Agent Prompt:**
+```
+You are a Manufacturing Planning Agent for AMB-Wellsness.
+
+For a given Sales Order with total quantity:
+1. Calculate number of mix lots (max 700 Kg per lot)
+2. Calculate sample requirements (1 Kg per mix lot = 20 × 50g bags)
+3. Split packaging: 1Kg bags for samples, 10Kg bags for sale
+4. Generate WO breakdown with quantities
+5. Recommend BOMs to use
+
+Example:
+Input: SO-00763-LORAND, 1055 Kg
+Output:
+- WO1: 1055 Kg (2 mix lots, 2 Kg samples, 1053 for sale)
+- Mix Lot 1: 527.5 Kg → 1 Kg samples + 526.5 Kg sale
+- Mix Lot 2: 527.5 Kg → 1 Kg samples + 526.5 Kg sale
+```
+
+**Batch AMB Creation Agent Prompt:**
+```
+You are a Batch AMB Creation Agent for AMB-Wellsness.
+
+When a Work Order is completed:
+1. Read WO quantity and item code
+2. Calculate mix lots and samples
+3. Generate lot numbers using format: [ITEM][YY][MM][DD][SEQ]
+4. Create Batch AMB hierarchy:
+   - Level 1: Parent batch (full qty)
+   - Level 2: Sub-lots (one per mix lot)
+   - Level 3: Containers (one per drum/bag)
+5. Generate container serials
+6. Link to WO, SO, BOM
+7. Set initial QC status
+
+Example:
+Input: WO MFG-WO-04226, Item 0803, Qty 1055 Kg
+Output:
+- LOTE-00001 (Parent): 1055 Kg, linked to WO
+- LOTE-00001-001 (Sub-lot 1): 527.5 Kg
+- LOTE-00001-002 (Sub-lot 2): 527.5 Kg
+- Containers: 105 × 10Kg drums, 40 × 1Kg bags
+```
 
 ---
 
