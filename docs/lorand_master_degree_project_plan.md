@@ -673,3 +673,451 @@ This test plan focuses on evaluating the **intelligence** of our AI agents, not 
 *Document Version: 1.0*
 *Created: 2026-03-07*
 *Project Owner: Rogelio Pedroza*
+
+
+---
+
+# Raven AI Agent — Manufacturing Intelligence Requirements Report
+
+**Version:** 1.0  
+**Date:** March 7, 2026  
+**Author:** Computer (Perplexity) — Commissioned by Rogelio Pedroza  
+**Test Case:** LORAND MASTER DEGREE TEST (SO-00763, Item 0803 Variant)  
+**Repository:** `rogerboy38/raven_ai_agent` (branch: main)  
+**Target Files:**
+- `raven_ai_agent/api/handlers/manufacturing.py` (619 lines — ManufacturingMixin)
+- `raven_ai_agent/agents/manufacturing_agent.py` (765 lines — ManufacturingAgent)
+- `raven_ai_agent/agents/workflow_orchestrator.py` (692 lines — WorkflowOrchestrator)
+
+---
+
+## Executive Summary
+
+During the LORAND MASTER DEGREE TEST (variant item `0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20` from SO-00763), we completed the full manufacturing cycle: 6 BOMs created (3 template + 3 variant), 4 Work Orders (MFG-WO-04726 through MFG-WO-05026) — all reaching Completed status. However, **critical gaps** were uncovered that prevented full Raven-native execution and required manual API intervention.
+
+This report documents **7 critical gaps, 5 enhancements, and 4 architectural recommendations** for the parallel development team to implement.
+
+---
+
+## 1. CRITICAL GAPS (Blockers Found During Test)
+
+### GAP-01: Batch/Lote Handling in Material Transfer & Manufacture
+
+**Severity:** CRITICAL — Blocks `transfer materials` and `finish work order` for batch-tracked items  
+**Files Affected:** `manufacturing_handler.py` (lines 280-306, 308-338), `manufacturing_agent.py` (lines 325-376, 262-323)  
+**Error Observed:** `SerialNoRequiredError: "Serial No / Batch No are mandatory for Item [item_code]"`
+
+**Current State:**
+- `manufacturing_handler.py` lines 433-453 (Material Receipt) already has batch logic — it looks up existing batches or creates new ones.
+- But `issue materials` (line 280) and `finish work order` (line 308) both call `make_stock_entry()` from ERPNext core and do NOT set `batch_no` on the resulting items.
+- `manufacturing_agent.py` `create_material_transfer()` (line 325) and `create_stock_entry_manufacture()` (line 262) have the same omission.
+
+**Required Changes:**
+
+```python
+# After calling make_stock_entry(), iterate over items and set batch_no:
+se_dict = make_stock_entry(wo_name, purpose, qty)
+se = frappe.get_doc(se_dict)
+
+for item in se.items:
+    if frappe.db.get_value("Item", item.item_code, "has_batch_no"):
+        # Check if a specific batch was requested (from WO custom field or command parameter)
+        requested_batch = get_requested_batch(wo_name, item.item_code)  # NEW
+        if requested_batch:
+            item.batch_no = requested_batch
+        else:
+            # Fallback: find existing batch with available qty
+            batch = find_batch_with_qty(item.item_code, item.s_warehouse, item.qty)
+            if batch:
+                item.batch_no = batch
+            else:
+                # Auto-create batch if item.create_new_batch == 1
+                if frappe.db.get_value("Item", item.item_code, "create_new_batch"):
+                    new_batch = create_batch(item.item_code)
+                    item.batch_no = new_batch
+                # else: allow_negative_stock may still permit submission
+```
+
+**Acceptance Criteria:**
+1. `@ai transfer materials MFG-WO-XXXXX` works for items with `has_batch_no=1`
+2. `@ai !finish work order MFG-WO-XXXXX` correctly assigns batch on the FG item row
+3. Both commands accept optional `batch [BATCH-NAME]` parameter
+4. If no batch specified, auto-select most recent batch with available qty
+5. If `create_new_batch=1` on item, auto-create a new batch
+
+---
+
+### GAP-02: Variant Item BOM Resolution
+
+**Severity:** CRITICAL — Bot cannot find BOMs for variant items  
+**Files Affected:** `manufacturing_handler.py` (line 57), `manufacturing_agent.py` (lines 72-80)
+
+**Current State:**
+- BOM lookup uses: `frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1}, "name")`
+- For variant items (e.g. `0803- KOSHER-ORGANIC-LAS3-HADS NMT 2 PPM-ACM 15/20`), the default BOM must be set ON THE VARIANT specifically, not on the template `0803`.
+- The current code does NOT fall back to the template item's BOM.
+
+**Required Changes:**
+
+```python
+def resolve_bom(item_code):
+    """Smart BOM resolution: variant → template fallback"""
+    # 1. Try direct BOM on item
+    bom = frappe.db.get_value("BOM",
+        {"item": item_code, "is_active": 1, "is_default": 1, "docstatus": 1}, "name")
+    if bom:
+        return bom
+    
+    # 2. Try any active BOM on item (non-default)
+    bom = frappe.db.get_value("BOM",
+        {"item": item_code, "is_active": 1, "docstatus": 1}, "name")
+    if bom:
+        return bom
+    
+    # 3. If variant, try template item's BOM
+    variant_of = frappe.db.get_value("Item", item_code, "variant_of")
+    if variant_of:
+        bom = frappe.db.get_value("BOM",
+            {"item": variant_of, "is_active": 1, "is_default": 1, "docstatus": 1}, "name")
+        if bom:
+            return bom
+    
+    return None
+```
+
+**Acceptance Criteria:**
+1. `@ai create work order for [VARIANT_ITEM]` finds BOM even if BOM is on template
+2. Bot suggests linking BOM if no BOM found
+3. Command shows which BOM was resolved in confirmation
+
+---
+
+### GAP-03: Work Order Auto-Creation from SO Lines
+
+**Severity:** MEDIUM — Inefficient for complex manufacturing scenarios  
+**Files Affected:** `manufacturing_handler.py` (lines 40-80), `workflow_orchestrator.py`
+
+**Current State:**
+- `@ai work order from [SO]` creates ONE WO per SO line item
+- For LORAND, the SO had 3 lines (2096, 334, 5 kg) but we needed 4 WOs based on historical lot split
+- Bot does NOT allow customizing WO qty/batch during creation from SO
+
+**Required Changes:**
+- Add `!wo from [SO] split by [FIELD]` — support splitting by:
+  - `lote_real` (custom field on SO lines)
+  - `warehouse`
+  - `delivery_date`
+- Add `!wo from [SO] each [QTY]` — create multiple WOs with specified qty
+
+**Acceptance Criteria:**
+1. `@ai work order from SO-00763 each 500kg` creates 5 WOs of 500kg each
+2. `@ai work order from SO-00763 split by lote_real` creates WOs based on SO line batch numbers
+3. Confirmation shows all WO names before creation
+
+---
+
+### GAP-04: Valuation Rate Missing Pre-Check
+
+**Severity:** CRITICAL — Causes stock corruption  
+**Files Affected:** `manufacturing_agent.py`, `manufacturing_handler.py`
+
+**Current State:**
+- When creating stock entries via `make_stock_entry()`, ERPNext may fail to compute valuation rate if:
+  - Item has no standard rate
+  - No purchase receipt exists for the batch
+  - BOM costs not computed
+- This causes `ValidationError` or silent failures leading to stock corruption
+
+**Required Changes:**
+- Before any stock entry creation, validate:
+  ```python
+  def validate_valuation_rate(item_code, warehouse):
+      """Pre-flight check for manufacturing"""
+      # Check if item has valuation rate
+      bin_doc = frappe.get_doc("Bin", {"item_code": item_code, "warehouse": warehouse})
+      if not bin_doc.valuation_rate or bin_doc.valuation_rate == 0:
+          # Try to get from last purchase receipt
+          last_pr = frappe.get_all("Purchase Receipt Item",
+              filters={"item_code": item_code},
+              order_by="creation desc", limit=1)
+          if last_pr:
+              return last_pr[0].rate
+          # Try from BOM
+          bom = get_default_bom(item_code)
+          if bom:
+              return bom.total_cost / bom.quantity
+          raise ValidationError(f"Cannot proceed: {item_code} has no valuation rate in {warehouse}")
+  ```
+
+**Acceptance Criteria:**
+1. `@ai transfer materials` fails fast with clear message if valuation rate missing
+2. Error message suggests fixing valuation rate
+3. Prevents stock corruption from zero-value entries
+
+---
+
+### GAP-05: Silent Failures and Timeout Handling
+
+**Severity:** MEDIUM — User unaware of failures  
+**Files Affected:** All agents
+
+**Current State:**
+- Some ERPNext operations (especially background jobs) may silently fail
+- API calls may timeout without clear error message
+- User sees "processing" but operation never completes
+
+**Required Changes:**
+- Add timeout wrapper:
+  ```python
+  @frappe.whitelist()
+  def execute_with_timeout(method, timeout=30):
+      import signal
+      def timeout_handler(signum, frame):
+          raise TimeoutError(f"Operation timed out after {timeout}s")
+      signal.signal(signal.SIGALRM, timeout_handler)
+      signal.alarm(timeout)
+      try:
+          result = method()
+          signal.alarm(0)
+          return result
+      except TimeoutError:
+          frappe.publish_realtime("raven_error",
+              {"message": "Operation timed out", "method": method.__name__})
+          raise
+  ```
+- Add explicit success/failure responses for ALL operations
+
+**Acceptance Criteria:**
+1. All bot commands return explicit success or failure message
+2. Timeout errors are caught and reported to user
+3. Long operations show progress indicator
+
+---
+
+### GAP-06: Stock Reservation Not Implemented
+
+**Severity:** MEDIUM — Manufacturing blocked without stock  
+**Files Affected:** `manufacturing_handler.py` (lines 86-120)
+
+**Current State:**
+- `@ai reserve stock [WO]` only CHECKS availability, does NOT reserve
+- No implementation of ERPNext's Stock Reservation Entry
+- Manufacturing may proceed without actual materials available
+
+**Required Changes:**
+- Implement Stock Reservation Entry creation:
+  ```python
+  def create_stock_reservation(wo_name):
+      wo = frappe.get_doc("Work Order", wo_name)
+      sre = frappe.get_doc({
+          "doctype": "Stock Reservation Entry",
+          "company": wo.company,
+          "reservation_type": "Manufaturing"
+      })
+      for item in wo.required_items:
+          sre.append("items", {
+              "item_code": item.item_code,
+              "warehouse": item.source_warehouse,
+              "qty_to_reserve": item.required_qty
+          })
+      sre.insert()
+      sre.submit()
+  ```
+
+**Acceptance Criteria:**
+1. `@ai reserve stock [WO]` creates Stock Reservation Entry
+2. Stock is properly reserved in system
+3. MRP considers reserved stock
+
+---
+
+### GAP-07: No Support for Manufacturing Settings Defaults
+
+**Severity:** LOW — Inconvenience  
+**Files Affected:** `manufacturing_handler.py` (lines 72-73)
+
+**Current State:**
+- Code hardcodes: `frappe.db.get_single_value("Manufacturing Settings", "default_wip_warehouse")`
+- But Manufacturing Settings may be misconfigured (as we saw — pointed to Juice plant, not Mix)
+- No fallback or validation of warehouse existence
+
+**Required Changes:**
+- Add validation: verify warehouse exists before using
+- Add `@ai check manufacturing settings` command
+- Support manual warehouse override in commands
+
+**Acceptance Criteria:**
+1. Commands work even if Manufacturing Settings has wrong defaults
+2. User can override warehouse in command: `@ai create wo for X qty Y wip_warehouse Z`
+
+---
+
+## 2. ENHANCEMENTS (Improvements)
+
+### ENH-01: Real-Time Progress Updates
+
+**Description:** Manufacturing takes time. User should see progress.
+
+**Required Changes:**
+- Use Frappe's `frappe.publish_realtime()` to push updates
+- Show progress bars in UI for:
+  - Material transfer progress
+  - Manufacture entry progress
+  - Delivery note creation
+
+**Example:**
+```python
+frappe.publish_realtime("raven_progress",
+    {"wo": wo_name, "step": "transfer", "progress": 50})
+```
+
+---
+
+### ENH-02: Manufacturing Dashboard Command
+
+**Description:** Single command to show all manufacturing status
+
+**Required Changes:**
+- `@ai manufacturing status` or `@ai mfg dashboard`
+- Shows:
+  - All active WOs with progress
+  - Pending material transfers
+  - Pending quality inspections
+  - Stock levels for WIP materials
+
+---
+
+### ENH-03: WO History and Audit Trail
+
+**Description:** Track all bot actions on Work Orders
+
+**Required Changes:**
+- Create custom DocType `Raven Manufacturing Log`
+- Log every command execution:
+  ```python
+  frappe.get_doc({
+      "doctype": "Raven Manufacturing Log",
+      "work_order": wo_name,
+      "command": "transfer materials",
+      "user": frappe.session.user,
+      "result": "success"
+  }).insert()
+  ```
+
+---
+
+### ENH-04: Rollback/Cancel Commands
+
+**Description:** Ability to undo operations
+
+**Required Changes:**
+- `@ai cancel stock entry [SE-XXXXX]`
+- `@ai cancel work order [WO-XXXXX]`
+- Proper cancellation order (child docs before parent)
+
+---
+
+### ENH-05: Multi-WO Batch Operations
+
+**Description:** Process multiple WOs at once
+
+**Required Changes:**
+- `@ai transfer materials for WO-1,WO-2,WO-3`
+- `@ai finish work order for all from SO-XXXXX`
+- Bulk operations with progress tracking
+
+---
+
+## 3. ARCHITECTURAL RECOMMENDATIONS
+
+### ARCH-01: Unified Agent Architecture
+
+**Current State:** Three separate codebases handle manufacturing:
+- `manufacturing_handler.py` — Chat commands
+- `manufacturing_agent.py` — API-level operations
+- `workflow_orchestrator.py` — Pipeline coordination
+
+**Recommendation:** Consolidate into single `ManufacturingAgent` class with:
+- `handle_chat_command()` — for Raven chat
+- `handle_api_call()` — for external API
+- `handle_workflow()` — for orchestrator
+
+---
+
+### ARCH-02: Event-Driven Manufacturing
+
+**Current State:** Polling-based status checks
+
+**Recommendation:** Implement webhooks:
+- `on_work_order_submit` → trigger material availability check
+- `on_stock_entry_submit` → trigger next manufacturing step
+- `on_quality_inspection_complete` → trigger delivery note creation
+
+---
+
+### ARCH-03: Configuration-Driven Behavior
+
+**Current State:** Hardcoded logic, business rules in code
+
+**Recommendation:** Create `Raven Manufacturing Config` DocType:
+- Default warehouses by company
+- Auto-approve thresholds
+- Batch creation rules
+- Valuation rate sources
+
+---
+
+### ARCH-04: Testing Framework
+
+**Current State:** Manual testing only
+
+**Recommendation:** Implement `pytest` tests:
+- `test_bom_resolution.py`
+- `test_batch_creation.py`
+- `test_material_transfer.py`
+- Mock ERPNext API for fast execution
+
+---
+
+## 4. ACCEPTANCE CRITERIA SUMMARY
+
+| Gap ID | Feature | Criteria |
+|--------|---------|----------|
+| GAP-01 | Batch Handling | Transfer + Finish work for batch-tracked items |
+| GAP-02 | Variant BOM | Resolve BOM from template for variants |
+| GAP-03 | WO Split | Create multiple WOs from single SO |
+| GAP-04 | Valuation Check | Fail fast if no valuation rate |
+| GAP-05 | Timeout Handling | Explicit success/failure messages |
+| GAP-06 | Stock Reservation | Create Stock Reservation Entries |
+| GAP-07 | Warehouse Validation | Use existing warehouses only |
+
+---
+
+## 5. IMPLEMENTATION PRIORITY
+
+### Phase 1: Critical (Week 1)
+1. GAP-01: Batch Handling
+2. GAP-04: Valuation Rate Check
+3. GAP-02: Variant BOM Resolution
+
+### Phase 2: Important (Week 2)
+4. GAP-03: WO Split by Lote
+5. GAP-05: Timeout Handling
+6. ENH-01: Real-Time Progress
+
+### Phase 3: Nice-to-Have (Week 3+)
+7. GAP-06: Stock Reservation
+8. GAP-07: Warehouse Validation
+9. Remaining Enhancements
+
+---
+
+## 6. CONCLUSION
+
+The LORAND MASTER DEGREE TEST successfully validated the core manufacturing pipeline but exposed critical gaps in **batch handling**, **BOM resolution for variants**, and **valuation rate validation**. These must be addressed before the system can handle real-world manufacturing scenarios autonomously.
+
+The parallel development team should prioritize GAP-01, GAP-04, and GAP-02 in Week 1, as these are blockers for basic operation.
+
+---
+
+*Report generated from analysis of raven_ai_agent codebase. All code samples are for illustration and require integration testing.*
