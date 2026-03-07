@@ -29,8 +29,12 @@
 - LORAND MASTER DEGREE TEST PROJECT
 - Quotation: SAL-QTN-2024-00763 (Draft) - Item 0803, 2435 Kg
 - Sales Order: SO-00763-LORAND LABORATORIES (Submitted)
-- 4 Work Orders to create (from 4 invoices: F2534, F2398, F2422, F2451)
-- 9 remaining SO discrepancy cases (on hold for this test)
+- 4 Work Orders Created (Draft):
+  - MFG-WO-04726 - 1055 Kg - Lote 0803034251
+  - MFG-WO-04826 - 600 Kg - Lote 0803080241
+  - MFG-WO-04926 - 300 Kg - Lote 0803084241
+  - MFG-WO-05026 - 480 Kg - Lote 0803194241
+- Next Step: Submit WOs and Create Stock Entries
 
 ### Incident Report: MFG-WO-04226 Stock Corruption (March 6, 2026)
 
