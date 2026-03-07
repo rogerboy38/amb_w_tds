@@ -859,7 +859,7 @@ class RaymondLucyAgent(
         # Default to Level 1 (read-only)
         return 1
     
-    def execute_workflow_command(self, query: str) -> Optional[Dict]:
+    def execute_workflow_command(self, query: str, channel_id: str = "") -> Optional[Dict]:
         """Parse and execute workflow commands"""
         frappe.logger().info(f"[Workflow] Checking query: {query}, WORKFLOWS_ENABLED: {WORKFLOWS_ENABLED}")
         
@@ -870,8 +870,22 @@ class RaymondLucyAgent(
         query_lower = query.lower()
         executor = WorkflowExecutor(self.user)
         
-        # Check for confirmation
+        # ---- Confirmation state management (Redis-backed) ----
+        # When a preview is shown, we store the original command.
+        # When user says "confirm", we replay the stored command with is_confirm=True.
+        cache_key = f"pending_confirm:{self.user}:{channel_id}"
+        
         is_confirm = any(word in query_lower for word in ["confirm", "yes", "proceed", "do it", "execute"])
+        
+        # If user said "confirm" and we have a pending command, replay it
+        if is_confirm and query_lower.strip() in ["confirm", "yes", "proceed", "do it", "execute", "si", "confirmar"]:
+            pending_cmd = frappe.cache().get_value(cache_key)
+            if pending_cmd:
+                frappe.cache().delete_value(cache_key)
+                frappe.logger().info(f"[Workflow] Replaying pending command: {pending_cmd}")
+                query = pending_cmd
+                query_lower = query.lower()
+                # is_confirm stays True
         
         # Force mode with ! prefix (like sudo)
         is_force = query.startswith("!")
@@ -880,11 +894,19 @@ class RaymondLucyAgent(
             query = query.lstrip("!").strip()
             query_lower = query.lower()
         
-        # Auto-confirm for privileged users (Sales Manager, etc.)
-        privileged_roles = ["Sales Manager", "Manufacturing Manager", "Stock Manager", "Accounts Manager", "System Manager"]
-        user_roles = frappe.get_roles(self.user)
-        if any(role in user_roles for role in privileged_roles):
-            is_confirm = True
+        # Auto-confirm for privileged users ONLY on explicit confirm words,
+        # NOT on initial commands. Without !, always show preview first.
+        # This lets privileged users do:
+        #   "invoice from SO-XXX"  → preview (dry run)
+        #   "!invoice from SO-XXX" → execute immediately
+        #   "confirm"              → execute (after preview)
+        if not is_force:
+            privileged_roles = ["Sales Manager", "Manufacturing Manager", "Stock Manager", "Accounts Manager", "System Manager"]
+            user_roles = frappe.get_roles(self.user)
+            if any(role in user_roles for role in privileged_roles):
+                # Only auto-confirm if user said an explicit confirm word
+                # Don't auto-confirm the initial command
+                pass  # is_confirm stays as-is from keyword check above
         
         # Quotation patterns
         qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
@@ -1051,7 +1073,7 @@ class RaymondLucyAgent(
 
         return None
 
-    def process_query(self, query: str, conversation_history: List[Dict] = None) -> Dict:
+    def process_query(self, query: str, conversation_history: List[Dict] = None, channel_id: str = "") -> Dict:
         """Main processing function"""
         
         query_lower = query.lower()
@@ -1069,9 +1091,13 @@ class RaymondLucyAgent(
         suggested_autonomy = self.determine_autonomy(query)
         
         # Try workflow command first (Level 2/3 operations)
-        workflow_result = self.execute_workflow_command(query)
+        workflow_result = self.execute_workflow_command(query, channel_id=channel_id)
         if workflow_result:
             if workflow_result.get("requires_confirmation"):
+                # Store the original command for later "confirm" replay
+                cache_key = f"pending_confirm:{self.user}:{channel_id}"
+                frappe.cache().set_value(cache_key, query, expires_in_sec=300)  # 5 min TTL
+                frappe.logger().info(f"[Workflow] Stored pending command for confirm: {query}")
                 return {
                     "success": True,
                     "response": f"[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]\n\n{workflow_result['preview']}",
@@ -1379,11 +1405,11 @@ def handle_raven_message(doc, method):
                     else:
                         # Fallback to general agent
                         agent = RaymondLucyAgent(user)
-                        result = agent.process_query(query)
+                        result = agent.process_query(query, channel_id=doc.channel_id)
                 except ImportError:
                     frappe.logger().warning("[AI Agent] SkillRouter not available, using default agent")
                     agent = RaymondLucyAgent(user)
-                    result = agent.process_query(query)
+                    result = agent.process_query(query, channel_id=doc.channel_id)
         finally:
             frappe.flags.ignore_permissions = original_ignore
         

@@ -11,6 +11,310 @@ from typing import Optional, Dict, List
 class SalesMixin:
     """Mixin for _handle_sales_commands"""
 
+    @staticmethod
+    def _discover_mx_cfdi_fields(source_doc):
+        """Intelligently discover Mexico CFDI fields for Sales Invoice.
+        
+        Reads payment terms from the source document (SO or DN) to determine:
+        - mx_payment_option: PUE (advance/immediate) vs PPD (credit/deferred)
+        - mx_cfdi_use: From customer's last invoice, or G01 (goods) default
+        - mode_of_payment: From customer's last invoice, or Wire Transfer default
+        
+        Returns dict of field:value to set on the SI before insert.
+        """
+        cfdi = {}
+        
+        # --- 1. Payment Option: PUE vs PPD based on payment terms ---
+        payment_terms = getattr(source_doc, 'payment_terms_template', '') or ''
+        pt_lower = payment_terms.lower()
+        
+        # PUE = advance, immediate, anticipado, contado, cash
+        # PPD = credit, days, parcialidades, diferido
+        pue_keywords = ['advance', 'anticipad', 'contado', 'cash', 'immediate', 'inmediato', 'pue']
+        ppd_keywords = ['days', 'dias', 'credit', 'credito', 'net ', 'parcialidad', 'diferido', 'ppd']
+        
+        if any(kw in pt_lower for kw in pue_keywords):
+            cfdi['mx_payment_option'] = 'PUE'
+        elif any(kw in pt_lower for kw in ppd_keywords):
+            cfdi['mx_payment_option'] = 'PPD'
+        else:
+            # Check payment_schedule for credit_days > 0
+            schedule = getattr(source_doc, 'payment_schedule', [])
+            has_credit = any(getattr(row, 'credit_days', 0) > 0 for row in schedule)
+            cfdi['mx_payment_option'] = 'PPD' if has_credit else 'PUE'
+        
+        # --- 2. Discover CFDI Use + Mode of Payment from customer's last invoice ---
+        customer = getattr(source_doc, 'customer', None)
+        if customer:
+            try:
+                last_si = frappe.get_all(
+                    'Sales Invoice',
+                    filters={'customer': customer, 'docstatus': 1},
+                    fields=['mx_cfdi_use', 'mode_of_payment'],
+                    order_by='posting_date desc',
+                    limit_page_length=1
+                )
+                if last_si:
+                    if last_si[0].get('mx_cfdi_use'):
+                        cfdi['mx_cfdi_use'] = last_si[0]['mx_cfdi_use']
+                    if last_si[0].get('mode_of_payment'):
+                        cfdi['mode_of_payment'] = last_si[0]['mode_of_payment']
+            except Exception:
+                pass  # Discovery is best-effort, defaults below
+        
+        # --- 3. Smart defaults for anything not discovered ---
+        # G01 = Adquisición de mercancías (goods purchase) — most common for product sales
+        # G03 = Gastos en general — fallback for services
+        if 'mx_cfdi_use' not in cfdi:
+            cfdi['mx_cfdi_use'] = 'G01'
+        
+        if 'mode_of_payment' not in cfdi:
+            cfdi['mode_of_payment'] = 'Wire Transfer'
+        
+        return cfdi
+
+    @staticmethod
+    def _discover_conversion_rate(si_doc):
+        """Set the correct Banxico FIX T-1 exchange rate on a Sales Invoice.
+        
+        SAT/CFDI Rule (Anexo 20 Guía de Llenado):
+          - TipoCambio on CFDI de ingresos must be the FIX rate
+          - FIX is determined by Banxico at noon, published in DOF next business day
+          - For invoice date T: use FIX from T-1 (previous business day)
+        
+        If Banxico API is not available (no token configured), falls back to
+        ERPNext's Currency Exchange table or the rate already on the doc.
+        
+        Args:
+            si_doc: The Sales Invoice doc (before insert)
+        
+        Returns:
+            dict with rate info, or None if no change needed
+        """
+        currency = getattr(si_doc, 'currency', None)
+        company = getattr(si_doc, 'company', None)
+        posting_date = str(getattr(si_doc, 'posting_date', None) or '')
+        
+        if not currency or not company or not posting_date:
+            return None
+        
+        # Only applies to foreign currency invoices
+        company_currency = frappe.db.get_value('Company', company, 'default_currency') or 'MXN'
+        if currency == company_currency:
+            return None  # MXN invoice, no conversion needed
+        
+        # Try Banxico FIX T-1
+        try:
+            from raven_ai_agent.api.banxico_fx import get_fix_for_invoice
+            rate, rate_date = get_fix_for_invoice(posting_date)
+            if rate:
+                old_rate = getattr(si_doc, 'conversion_rate', None)
+                si_doc.conversion_rate = rate
+                return {
+                    'source': 'banxico_fix',
+                    'rate': rate,
+                    'rate_date': rate_date,
+                    'old_rate': old_rate,
+                    'posting_date': posting_date
+                }
+        except Exception:
+            pass  # Banxico API not available, fall through
+        
+        # Fallback: check ERPNext Currency Exchange table for T-1
+        try:
+            from datetime import datetime, timedelta
+            dt = datetime.strptime(posting_date, "%Y-%m-%d")
+            for days_back in range(1, 10):
+                check_date = (dt - timedelta(days=days_back)).strftime("%Y-%m-%d")
+                ce_rate = frappe.db.get_value(
+                    'Currency Exchange',
+                    {'date': check_date, 'from_currency': currency, 'to_currency': company_currency},
+                    'exchange_rate'
+                )
+                if ce_rate:
+                    old_rate = getattr(si_doc, 'conversion_rate', None)
+                    si_doc.conversion_rate = float(ce_rate)
+                    return {
+                        'source': 'currency_exchange_table',
+                        'rate': float(ce_rate),
+                        'rate_date': check_date,
+                        'old_rate': old_rate,
+                        'posting_date': posting_date
+                    }
+        except Exception:
+            pass
+        
+        return None  # Keep whatever rate ERPNext assigned
+
+    @staticmethod
+    def _discover_debit_to(si_doc):
+        """Intelligently discover the correct debit_to (receivable) account.
+        
+        Follows Microsip/SAT per-customer account convention:
+        - 1105.1.x = NACIONALES (ALL MXN) — domestic customers
+        - 1105.2.x = EXTRANJEROS (ALL MXN) — international customers
+        
+        CRITICAL: ALL 1105.x accounts are in MXN (company currency).
+        Even for USD invoices, the receivable account is MXN.
+        ERPNext with "Allow Multi-Currency" enabled handles the conversion:
+        - Invoice in USD → GL entries in MXN using conversion_rate
+        - party_account_currency must be MXN (account currency), NOT invoice currency
+        - When payment arrives at different exchange rate → exchange gain/loss
+        
+        This function also sets party_account_currency on the si_doc to match
+        the resolved account's currency, preventing InvalidAccountCurrency errors.
+        
+        Resolution order:
+        1. Search for a per-customer Microsip sub-account matching customer name
+        2. Fall back to ERPNext get_party_account (canonical)
+        3. Validate current debit_to is a valid Receivable ledger
+        4. Search any Receivable ledger in the company
+        5. Check customer's last submitted SI
+        
+        Args:
+            si_doc: The Sales Invoice doc (before insert)
+        
+        Returns:
+            str: The correct debit_to account name, or None if current is fine
+        """
+        current_debit_to = getattr(si_doc, 'debit_to', None)
+        company = getattr(si_doc, 'company', None)
+        customer = getattr(si_doc, 'customer', None)
+        currency = getattr(si_doc, 'currency', None) or 'USD'
+        
+        def _is_valid_ledger(account_name):
+            """Check if account is a valid non-group Receivable ledger."""
+            try:
+                info = frappe.db.get_value(
+                    'Account', account_name,
+                    ['is_group', 'account_currency', 'account_type'], as_dict=True
+                )
+                if not info or info.is_group:
+                    return False
+                if info.account_type != 'Receivable':
+                    return False
+                return info
+            except Exception:
+                return False
+        
+        def _set_party_account_currency(account_name):
+            """Set party_account_currency on si_doc to match the account's currency.
+            
+            This is CRITICAL: party_account_currency must match the debit_to account's
+            currency, NOT the invoice currency. For MXN Microsip accounts receiving
+            USD invoices, party_account_currency = MXN.
+            """
+            try:
+                acct_currency = frappe.db.get_value('Account', account_name, 'account_currency')
+                if acct_currency:
+                    si_doc.party_account_currency = acct_currency
+            except Exception:
+                pass
+        
+        # --- Strategy 1: Microsip/SAT per-customer sub-account ---
+        # Convention: 1105.1.x = NACIONALES, 1105.2.x = EXTRANJEROS
+        # ALL accounts under 1105 are MXN — even EXTRANJEROS
+        # Each customer has their own ledger account named after them
+        if customer and company:
+            try:
+                company_currency = frappe.db.get_value('Company', company, 'default_currency') or 'MXN'
+                
+                if currency != company_currency:
+                    # Foreign currency invoice → search EXTRANJEROS first, then NACIONALES
+                    parent_groups = ['1105.2 - EXTRANJEROS', '1105.1 - NACIONALES']
+                else:
+                    # Domestic currency invoice → search NACIONALES first, then EXTRANJEROS
+                    parent_groups = ['1105.1 - NACIONALES', '1105.2 - EXTRANJEROS']
+                
+                # Clean customer name for matching — strip legal suffixes
+                customer_clean = customer.upper().strip()
+                for suffix in [' SA DE CV', ' S DE RL DE CV', ' S.A.', ' SA', ' AB',
+                               ' LLC', ' INC', ' LTD', ' GMBH', ' SRL', ' SPR']:
+                    customer_clean = customer_clean.replace(suffix, '')
+                customer_clean = customer_clean.strip()
+                
+                for parent_prefix in parent_groups:
+                    sub_accounts = frappe.get_all(
+                        'Account',
+                        filters={
+                            'company': company,
+                            'account_type': 'Receivable',
+                            'is_group': 0,
+                            'parent_account': ['like', f'{parent_prefix}%']
+                        },
+                        fields=['name', 'account_currency'],
+                        limit_page_length=0
+                    )
+                    
+                    # Exact-ish match: customer name appears in account name
+                    for acct in sub_accounts:
+                        acct_upper = acct.name.upper()
+                        if customer_clean in acct_upper or customer.upper() in acct_upper:
+                            _set_party_account_currency(acct.name)
+                            return acct.name
+                    
+                    # Fuzzy: first significant word of customer name (min 4 chars)
+                    words = [w for w in customer_clean.split() if len(w) >= 4]
+                    if words:
+                        primary_word = words[0]
+                        for acct in sub_accounts:
+                            if primary_word in acct.name.upper():
+                                _set_party_account_currency(acct.name)
+                                return acct.name
+            except Exception:
+                pass
+        
+        # --- Strategy 2: Use ERPNext's get_party_account (canonical) ---
+        try:
+            from erpnext.accounts.party import get_party_account
+            resolved = get_party_account('Customer', customer, company)
+            if resolved and _is_valid_ledger(resolved):
+                _set_party_account_currency(resolved)
+                return resolved
+        except Exception:
+            pass
+        
+        # --- Strategy 3: Validate current debit_to ---
+        if current_debit_to and _is_valid_ledger(current_debit_to):
+            _set_party_account_currency(current_debit_to)
+            return None  # Current is fine, but ensure party_account_currency is set
+        
+        # --- Strategy 4: Find any Receivable ledger in the company ---
+        try:
+            accounts = frappe.get_all(
+                'Account',
+                filters={
+                    'company': company,
+                    'account_type': 'Receivable',
+                    'is_group': 0
+                },
+                fields=['name', 'account_currency'],
+                order_by='account_currency asc',  # Prefer company currency (MXN)
+                limit_page_length=5
+            )
+            if accounts:
+                _set_party_account_currency(accounts[0].name)
+                return accounts[0].name
+        except Exception:
+            pass
+        
+        # --- Strategy 5: Look at customer's last submitted SI ---
+        if customer:
+            try:
+                last_si = frappe.db.get_value(
+                    'Sales Invoice',
+                    {'customer': customer, 'docstatus': 1},
+                    'debit_to',
+                    order_by='posting_date desc'
+                )
+                if last_si and _is_valid_ledger(last_si):
+                    _set_party_account_currency(last_si)
+                    return last_si
+            except Exception:
+                pass
+        
+        return None  # Could not resolve — let ERPNext handle it
+
     def _handle_sales_commands(self, query: str, query_lower: str, is_confirm: bool = False) -> Optional[Dict]:
         """Dispatched from execute_workflow_command"""
         # ==================== SALES-TO-PURCHASE CYCLE SOP ====================
@@ -427,64 +731,104 @@ class SalesMixin:
                 return {"success": False, "error": str(e)}
         
         # Create Sales Invoice from SO or DN
+        # Uses ERPNext's make_sales_invoice() which properly copies currency,
+        # conversion_rate, taxes, payment_terms, debit_to, and all linked fields.
+        # Then applies intelligent Mexico CFDI field discovery.
+        #
+        # POSTING DATE SUPPORT (migration):
+        #   "invoice SO-XXXX date 2024-01-15" → sets posting_date to 2024-01-15
+        #   Without date → defaults to today (nowdate)
+        #   The posting_date drives the FIX T-1 exchange rate lookup.
+        #   set_posting_time=1 tells ERPNext to respect our date instead of overriding.
         dn_match = re.search(r'(MAT-DN-\d+-\d+|DN-[^\s]+)', query, re.IGNORECASE)
-        if (so_match or dn_match) and ("create sales invoice" in query_lower or "factura de venta" in query_lower or "invoice customer" in query_lower or "!invoice" in query_lower or "sales invoice" in query_lower or "create invoice" in query_lower):
+        if (so_match or dn_match) and ("invoice" in query_lower or "factura" in query_lower):
             try:
+                # --- Parse optional posting_date from command ---
+                # Supports: "date 2024-01-15", "fecha 2024-01-15", "posting_date 2024-01-15"
+                date_match = re.search(r'(?:date|fecha|posting_date)\s+(\d{4}-\d{2}-\d{2})', query, re.IGNORECASE)
+                custom_posting_date = date_match.group(1) if date_match else None
+                
                 if dn_match:
                     dn_name = dn_match.group(1)
                     dn = frappe.get_doc("Delivery Note", dn_name)
+                    # Discover CFDI fields from the DN (or its linked SO)
+                    cfdi_fields = self._discover_mx_cfdi_fields(dn)
                     
                     if not is_confirm:
+                        currency = dn.currency or "USD"
+                        cfdi_info = f"\n  🇲🇽 CFDI: {cfdi_fields.get('mx_payment_option','?')} | Use: {cfdi_fields.get('mx_cfdi_use','?')} | Pay: {cfdi_fields.get('mode_of_payment','?')}"
+                        date_info = f"\n  📅 Posting Date: {custom_posting_date}" if custom_posting_date else ""
                         return {
                             "requires_confirmation": True,
-                            "preview": f"🧾 CREATE SALES INVOICE FROM {dn_name}?\n\n  Customer: {dn.customer}\n  Total: ${dn.grand_total:,.2f}\n\nSay 'confirm' to proceed."
+                            "preview": f"🧾 CREATE SALES INVOICE FROM {dn_name}?\n\n  Customer: {dn.customer}\n  Currency: {currency}\n  Total: {currency} {dn.grand_total:,.2f}{cfdi_info}{date_info}\n\nSay 'confirm' to proceed."
                         }
                     
-                    si = frappe.get_doc({
-                        "doctype": "Sales Invoice",
-                        "customer": dn.customer,
-                        "items": [{
-                            "item_code": item.item_code,
-                            "qty": item.qty,
-                            "rate": item.rate,
-                            "warehouse": item.warehouse,
-                            "delivery_note": dn_name,
-                            "dn_detail": item.name
-                        } for item in dn.items]
-                    })
+                    from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
+                    si_dict = make_sales_invoice(dn_name)
+                    si = frappe.get_doc(si_dict)
+                    # Apply discovered Mexico CFDI fields
+                    for field, value in cfdi_fields.items():
+                        si.set(field, value)
+                    # Apply custom posting_date if provided (migration scenario)
+                    if custom_posting_date:
+                        si.set_posting_time = 1
+                        si.posting_date = custom_posting_date
+                    # Fix debit_to: ensure it's a ledger matching SI currency
+                    correct_debit_to = self._discover_debit_to(si)
+                    if correct_debit_to:
+                        si.debit_to = correct_debit_to
+                    # Apply Banxico FIX T-1 exchange rate (uses posting_date for lookup)
+                    fx_info = self._discover_conversion_rate(si)
                     si.insert()
                     site_name = frappe.local.site
+                    fx_msg = ""
+                    if fx_info:
+                        fx_msg = f"\n  💱 TC: {fx_info['rate']} ({fx_info['source']}, FIX {fx_info.get('rate_date','')})"
+                    date_msg = f"\n  📅 Date: {si.posting_date}" if custom_posting_date else ""
                     return {
                         "success": True,
-                        "message": f"✅ Sales Invoice created: [{si.name}](https://{site_name}/app/sales-invoice/{si.name})"
+                        "message": f"✅ Sales Invoice created: [{si.name}](https://{site_name}/app/sales-invoice/{si.name})\n  Customer: {si.customer}\n  Currency: {si.currency}\n  Total: {si.currency} {si.grand_total:,.2f}{date_msg}\n  🇲🇽 CFDI: {si.mx_payment_option} | Use: {si.mx_cfdi_use} | Pay: {si.mode_of_payment}{fx_msg}"
                     }
                 elif so_match:
                     so_name = so_match.group(1)
                     so = frappe.get_doc("Sales Order", so_name)
+                    # Discover CFDI fields from the SO
+                    cfdi_fields = self._discover_mx_cfdi_fields(so)
                     
                     if not is_confirm:
+                        currency = so.currency or "USD"
+                        cfdi_info = f"\n  🇲🇽 CFDI: {cfdi_fields.get('mx_payment_option','?')} | Use: {cfdi_fields.get('mx_cfdi_use','?')} | Pay: {cfdi_fields.get('mode_of_payment','?')}"
+                        date_info = f"\n  📅 Posting Date: {custom_posting_date}" if custom_posting_date else ""
                         return {
                             "requires_confirmation": True,
-                            "preview": f"🧾 CREATE SALES INVOICE FROM {so_name}?\n\n  Customer: {so.customer}\n  Total: ${so.grand_total:,.2f}\n\nSay 'confirm' to proceed."
+                            "preview": f"🧾 CREATE SALES INVOICE FROM {so_name}?\n\n  Customer: {so.customer}\n  Currency: {currency}\n  Total: {currency} {so.grand_total:,.2f}{cfdi_info}{date_info}\n\nSay 'confirm' to proceed."
                         }
                     
-                    si = frappe.get_doc({
-                        "doctype": "Sales Invoice",
-                        "customer": so.customer,
-                        "items": [{
-                            "item_code": item.item_code,
-                            "qty": item.qty,
-                            "rate": item.rate,
-                            "warehouse": item.warehouse,
-                            "sales_order": so_name,
-                            "so_detail": item.name
-                        } for item in so.items]
-                    })
+                    from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+                    si_dict = make_sales_invoice(so_name)
+                    si = frappe.get_doc(si_dict)
+                    # Apply discovered Mexico CFDI fields
+                    for field, value in cfdi_fields.items():
+                        si.set(field, value)
+                    # Apply custom posting_date if provided (migration scenario)
+                    if custom_posting_date:
+                        si.set_posting_time = 1
+                        si.posting_date = custom_posting_date
+                    # Fix debit_to: ensure it's a ledger matching SI currency
+                    correct_debit_to = self._discover_debit_to(si)
+                    if correct_debit_to:
+                        si.debit_to = correct_debit_to
+                    # Apply Banxico FIX T-1 exchange rate (uses posting_date for lookup)
+                    fx_info = self._discover_conversion_rate(si)
                     si.insert()
                     site_name = frappe.local.site
+                    fx_msg = ""
+                    if fx_info:
+                        fx_msg = f"\n  💱 TC: {fx_info['rate']} ({fx_info['source']}, FIX {fx_info.get('rate_date','')})"
+                    date_msg = f"\n  📅 Date: {si.posting_date}" if custom_posting_date else ""
                     return {
                         "success": True,
-                        "message": f"✅ Sales Invoice created: [{si.name}](https://{site_name}/app/sales-invoice/{si.name})"
+                        "message": f"✅ Sales Invoice created: [{si.name}](https://{site_name}/app/sales-invoice/{si.name})\n  Customer: {si.customer}\n  Currency: {si.currency}\n  Total: {si.currency} {si.grand_total:,.2f}{date_msg}\n  🇲🇽 CFDI: {si.mx_payment_option} | Use: {si.mx_cfdi_use} | Pay: {si.mode_of_payment}{fx_msg}"
                     }
             except Exception as e:
                 return {"success": False, "error": str(e)}
