@@ -305,6 +305,28 @@ class ManufacturingMixin:
                     "fg_completed_qty": wo.qty
                 })
                 se.get_items()
+                
+                # Add batch handling for batch-tracked items
+                for item in se.items:
+                    if item.item_code:
+                        has_batch = frappe.db.get_value("Item", item.item_code, "has_batch_no")
+                        if has_batch and not item.batch_no:
+                            existing_batches = frappe.get_all("Batch",
+                                filters={"item": item.item_code},
+                                fields=["name"],
+                                order_by="creation desc",
+                                limit=1
+                            )
+                            if existing_batches:
+                                item.batch_no = existing_batches[0]["name"]
+                            else:
+                                batch = frappe.get_doc({
+                                    "doctype": "Batch",
+                                    "item": item.item_code
+                                })
+                                batch.insert(ignore_permissions=True)
+                                item.batch_no = batch.name
+                
                 se.insert()
                 se.submit()
                 
@@ -341,6 +363,28 @@ class ManufacturingMixin:
                     "fg_completed_qty": remaining
                 })
                 se.get_items()
+                
+                # Add batch handling for batch-tracked items
+                for item in se.items:
+                    if item.item_code:
+                        has_batch = frappe.db.get_value("Item", item.item_code, "has_batch_no")
+                        if has_batch and not item.batch_no:
+                            existing_batches = frappe.get_all("Batch",
+                                filters={"item": item.item_code},
+                                fields=["name"],
+                                order_by="creation desc",
+                                limit=1
+                            )
+                            if existing_batches:
+                                item.batch_no = existing_batches[0]["name"]
+                            else:
+                                batch = frappe.get_doc({
+                                    "doctype": "Batch",
+                                    "item": item.item_code
+                                })
+                                batch.insert(ignore_permissions=True)
+                                item.batch_no = batch.name
+                
                 se.insert()
                 se.submit()
                 
