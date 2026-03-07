@@ -444,6 +444,120 @@ Output:
 
 ---
 
+## 6. Agent Evaluation Test Plan (Focused on AI Intelligence)
+
+### 6.1 Test Philosophy
+This test plan focuses on evaluating the **intelligence** of our AI agents, not just basic functionality. We test whether agents can:
+- Make intelligent decisions
+- Ask clarifying questions when needed
+- Handle edge cases gracefully
+- Provide smart suggestions
+- Learn from context
+
+---
+
+### 6.2 Agent Intelligence Tests
+
+#### Test Category A: Manufacturing Planning Intelligence
+
+| Test ID | Agent | Capability | Test Scenario | Success Criteria | Points |
+|---------|-------|------------|---------------|------------------|--------|
+| **AI-1** | raven_ai_agent | Smart Calculation | `@ai plan work orders for SO-00763-LORAND` | Agent correctly calculates: 4 WOs, 5 mix lots, 5Kg samples | 10 |
+| **AI-2** | raven_ai_agent | Context Awareness | After SO has 1055Kg, ask "how many samples?" | Agent responds with "2 Kg (40 bags of 50g)" without re-entering qty | 10 |
+| **AI-3** | raven_ai_agent | Packaging Optimization | Ask "what packaging needed for 600Kg?" | Agent suggests: 59×10Kg bags + 9Kg, 1 mix lot, 1Kg samples | 10 |
+| **AI-4** | raven_ai_agent | Missing Data Handling | Ask "plan WOs" without specifying SO | Agent asks "Which Sales Order?" or "Please provide SO name" | 10 |
+| **AI-5** | raven_ai_agent | Error Prevention | Try to create WO with 8000Kg (exceeds reason) | Agent warns: "Maximum recommended 700Kg per mix lot. Consider splitting." | 10 |
+
+#### Test Category B: Work Order Execution Intelligence
+
+| Test ID | Agent | Capability | Test Scenario | Success Criteria | Points |
+|---------|-------|------------|---------------|------------------|--------|
+| **AI-6** | raven_ai_agent | Smart WO Creation | `@ai work order from SO-00763` | Agent auto-links correct item (0803), suggests BOM | 10 |
+| **AI-7** | raven_ai_agent | Confirmation Intelligence | Create WO without `!` | Agent shows preview/draft before executing | 10 |
+| **AI-8** | raven_ai_agent | Error Recovery | Try to create WO without BOM | Agent asks "Which BOM should I use?" with suggestions | 10 |
+| **AI-9** | raven_ai_agent | Dependency Awareness | Submit WO before raw materials available | Agent warns or shows available qty | 10 |
+| **AI-10** | raven_ai_agent | Multi-Step Execution | `@ai transfer materials MFG-WO-04226` then `@ai manufacture` | Agent executes in correct sequence | 10 |
+
+#### Test Category C: Batch AMB Intelligence
+
+| Test ID | Agent | Capability | Test Scenario | Success Criteria | Points |
+|---------|-------|------------|---------------|------------------|--------|
+| **AI-11** | amb_w_tds | Auto Hierarchy | WO completed (1055Kg) | System auto-creates: 1 Parent + 2 Sub-lots + Containers | 15 |
+| **AI-12** | amb_w_tds | Lot Number Gen | After WO completion | Lot numbers follow format: 0803[YY][MM][DD]### | 10 |
+| **AI-13** | amb_w_tds | Container Tracking | Check Level 3 | All drums/bags have serial numbers | 10 |
+| **AI-14** | amb_w_tds | Linkage | Verify Batch AMB | Links to WO, SO, BOM all correct | 10 |
+| **AI-15** | amb_w_tds | Traceability | Query "trace LOT-0803XXXXX" | Shows full chain: Invoice → DN → SE → WO → Batch → Raw | 15 |
+
+#### Test Category D: Sales Pipeline Intelligence
+
+| Test ID | Agent | Capability | Test Scenario | Success Criteria | Points |
+|---------|-------|------------|---------------|------------------|--------|
+| **AI-16** | raven_ai_agent | Pipeline Diagnosis | `@ai diagnose SAL-QTN-2024-00763` | Shows complete pipeline: QTN → SO → WOs → Delivery → Invoice | 10 |
+| **AI-17** | raven_ai_agent | Issue Detection | Run diagnose on broken pipeline | Identifies missing steps, suggests fixes | 10 |
+| **AI-18** | raven_ai_agent | Smart Suggestion | Pipeline shows WO pending | Suggests: "Ready to manufacture? Say '@ai transfer materials MFG-WO-XXXX'" | 10 |
+| **AI-19** | raven_ai_agent | Data Sync | `@ai sync SO from quotation` | Intelligent sync, handles missing fields gracefully | 10 |
+| **AI-20** | raven_ai_agent | Conversational Context | Ask "what's the status?" after diagnose | Agent remembers previous context, doesn't repeat full diagnose | 10 |
+
+#### Test Category E: Edge Case & Error Handling
+
+| Test ID | Agent | Capability | Test Scenario | Success Criteria | Points |
+|---------|-------|------------|---------------|------------------|--------|
+| **AI-21** | raven_ai_agent | Invalid Input | `@ai work order from INVALID-SO` | Agent responds: "Sales Order 'INVALID-SO' not found" | 5 |
+| **AI-22** | raven_ai_agent | Ambiguous Command | `@ai make stuff` | Agent asks clarifying question | 10 |
+| **AI-23** | raven_ai_agent | Partial Info | `@ai create WO` without SO/qty | Agent requests missing info intelligently | 10 |
+| **AI-24** | All | System Resilience | Cancel mid-operation | No data corruption, proper cleanup | 15 |
+| **AI-25** | All | Logging | Any command | Full audit trail in logs | 5 |
+
+---
+
+### 6.3 Scoring Rubric
+
+| Score Range | Grade | Description |
+|-------------|-------|-------------|
+| 90-100% | 🏆 **Excellent** | Production ready, exceeds expectations |
+| 75-89% | ✅ **Good** | Production ready, minor improvements |
+| 60-74% | ⚠️ **Needs Work** | Usable but needs fixes |
+| 40-59% | 🔧 **Development** | Requires significant work |
+| 0-39% | ❌ **Failed** | Not ready for testing |
+
+**Passing Score:** 70% (175 points)
+
+---
+
+### 6.4 Test Execution Protocol
+
+**Phase 1: Pre-Flight**
+- [ ] Verify ERPNext is accessible
+- [ ] Verify raven_ai_agent is deployed
+- [ ] Verify amb_w_tds is installed
+- [ ] Clear test data from previous runs
+
+**Phase 2: Execute Tests**
+- [ ] Run tests in order (AI-1 to AI-25)
+- [ ] Record actual response for each test
+- [ ] Screenshot key interactions
+- [ ] Note any errors or unexpected behavior
+
+**Phase 3: Evaluation**
+- [ ] Calculate score per category
+- [ ] Identify failed tests
+- [ ] Document root causes
+- [ ] Create fix tickets
+
+---
+
+### 6.5 Success Criteria Summary
+
+| Category | Weight | Pass Threshold |
+|----------|--------|----------------|
+| Manufacturing Planning | 25% | 70% |
+| Work Order Execution | 25% | 70% |
+| Batch AMB Intelligence | 25% | 70% |
+| Sales Pipeline | 15% | 60% |
+| Edge Cases | 10% | 60% |
+
+---
+
 ## 5. Test Plan
 
 ### Phase 1 Tests: Data Preparation
