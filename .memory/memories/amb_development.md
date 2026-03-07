@@ -26,9 +26,52 @@
 ### Active Work
 - LORAND MASTER DEGREE TEST PROJECT
 - Quotation: SAL-QTN-2024-00763 (Draft) - Item 0803, 2435 Kg
-- Sales Order: SO-00763-LORAND LABORATORIES (Draft)
+- Sales Order: SO-00763-LORAND LABORATORIES (Submitted)
 - 4 Work Orders to create (from 4 invoices: F2534, F2398, F2422, F2451)
 - 9 remaining SO discrepancy cases (on hold for this test)
+
+### Parallel Team Q&A (Saved for Reference)
+
+**Q1: BOM Hierarchy for Item 0803**
+For 0803 (LORAND project), we need 3 BOM configurations:
+- BOM-0803-10KG-PAI: 10 Kg bags in Pail (for 10Kg bag containers)
+- BOM-0803-1KG-PAI: 1 Kg bags in Pail (for 1Kg bag containers)
+- BOM-0803-SAMPLE: 50g bags × 20 = 1Kg (for sample containers)
+These are PACKAGING BOMs, not multi-level manufacturing BOMs. The 0803 is already processed powder.
+
+**Q2: "lote_real" — Batch AMB**
+4 lot numbers from invoices:
+- F2534: Lote 0803034251 (1055 Kg) → WO1
+- F2398: Lote 0803080241 (600 Kg) → WO2
+- F2422: Lote 0803084241 (300 Kg) → WO3
+- F2451: Lote 0803194241 (480 Kg) → WO4
+We create NEW Batch AMB records for this manufacturing run. Each WO links to its lote_real.
+
+**Q3: Warehouses for Item 0803**
+- Source (WIP): "WIP in Concentrate - AMB-W"
+- Target (FG): "FG to Sell Warehouse - AMB-W"
+
+**Q4: Manufacturing Route for 0803**
+0803 is already processed powder (not raw juice). Simplified path:
+- Level 4: Mix/Bag (BOM-0803-10KG-PAI or BOM-0803-1KG-PAI) → produces FG
+- Level 5: Sales (add labeling, if needed)
+Skip Levels 1-3 (Juice Plant, Dry Plant, Formulation) since raw material exists.
+
+**Q5: Router - Option A Preferred**
+Option A: Extend existing sales_order_bot router to call new agents (manufacturing_agent, payment_agent, workflow_orchestrator) for pipeline commands. This is least disruptive.
+
+**Q6: Code Access**
+GitHub push/pull workflow. Repos:
+- raven_ai_agent (main agent code)
+- amb_w_tds (custom DocTypes: Batch AMB, BOM Formula)
+
+**Q7: Country-Region DocType**
+This is a custom DocType from amb_w_tds. Check if batch_amb.json includes it. If missing, either:
+- Create the DocType, OR
+- Set mx_tax_regime directly via API for now
+
+**Q8: Test Scope**
+Option A: Full realistic pipeline with actual quantities (2435 Kg total, split across 4 WOs)
 
 ### Batch AMB Structure (from amb_w_tds)
 - Level 1: Parent batch from Work Order
