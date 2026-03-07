@@ -9,6 +9,8 @@
 - Test VPS: root@187.77.2.74 (Aloe123&Agro123&)
 - ERPNext: erp.sysmayal2.cloud
 - Login: fcrm@amb-wellness.com / Aloe246!
+- API Key: 46f1208a5275572
+- API Secret: 7ccbed0c82eaf00
 - GitHub PAT: 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
 
 ### Migration Stats
