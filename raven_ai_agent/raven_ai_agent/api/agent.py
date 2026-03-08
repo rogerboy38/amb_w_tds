@@ -957,10 +957,14 @@ class RaymondLucyAgent(
         if so_match and any(word in query_lower for word in ["delivery", "ship", "deliver"]):
             return executor.create_delivery_note_from_sales_order(so_match.group(1).upper(), confirm=is_confirm)
         
-        # Invoice from Delivery Note
+        # Invoice from Delivery Note (direct DN reference)
         dn_match = re.search(r'(MAT-DN-\d+-\d+|DN-\d+)', query, re.IGNORECASE)
         if dn_match and "invoice" in query_lower:
             return executor.create_invoice_from_delivery_note(dn_match.group(1).upper(), confirm=is_confirm)
+        
+        # Invoice from Sales Order (finds linked DN, then creates invoice)
+        if so_match and any(word in query_lower for word in ["invoice", "factura", "bill"]):
+            return executor.create_invoice_from_sales_order(so_match.group(1).upper(), confirm=is_confirm)
         
         # Workflow status
         if "workflow status" in query_lower or "track" in query_lower:
@@ -1254,7 +1258,7 @@ def handle_raven_message(doc, method):
             query = plain_text[3:].strip()
             # Detect intent to route to specialized agents
             q_lower = query.lower()
-            mfg_keywords = ["work order", "create wo", "submit wo", "manufacture", "transfer material", "check material", "mfg-wo", "wo plan", "create batch", "show work order", "list work order", "mis ordenes", "show wo"]
+            mfg_keywords = ["work order", "create wo", "submit wo", "manufacture", "transfer material", "check material", "mfg-wo", "wo plan", "create batch", "show work order", "list work order", "mis ordenes", "show wo", "mfg status", "mfg dashboard", "manufacturing status", "manufacturing dashboard", "finish", "!finish", "no_transfer"]
             pay_keywords = ["payment", "outstanding", "unpaid", "reconcile", "acc-sinv", "acc-pay", "sinv-"]
             orch_keywords = ["pipeline status", "run full cycle", "run pipeline", "dry run", "validate so"]
             validator_keywords = ["diagnose", "diagnosis", "validate ", "audit pipeline", "check payment", "check pago", "pipeline health", "verify so", "verify sales order", "sync so", "fix so", "sync sales order", "fix sales order", "!sync", "!fix"]
