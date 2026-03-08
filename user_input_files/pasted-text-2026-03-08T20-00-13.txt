@@ -1,0 +1,115 @@
+root@srv1415373:~# docker exec -it erpnext-backend-1 bash 
+frappe@e9538cf6e4a4:~/frappe-bench$ bench --site erp.sysmayal2.cloud console
+Apps in this namespace:
+frappe, email_delivery_service, erpnext, hrms, raven, telephony, amb_print, erpnext_mexico_compliance, mexico_einvoice, payments, rnd_warehouse_management, rnd_nutrition, amb_w_tds, raven_ai_agent, print_designer
+
+In [1]: import frappe
+   ...: frappe.init(site='erp.sysmayal2.cloud', sites_path='/home/frappe/frappe-
+   ...: bench/sites')
+   ...: frappe.connect()
+   ...: 
+   ...: # Add a test user to general channel
+   ...: member = frappe.new_doc('Raven Channel Member')
+   ...: member.channel_id = 'Raven-general'
+   ...: member.user_id = 'daniel@amb-wellness.com'
+   ...: member.add_to_channel = 1
+   ...: member.save()
+   ...: frappe.db.commit()
+   ...: print('Added daniel to general channel')
+---------------------------------------------------------------------------
+DuplicateEntryError                       Traceback (most recent call last)
+Cell In[1], line 10
+      8 member.user_id = 'daniel@amb-wellness.com'
+      9 member.add_to_channel = 1
+---> 10 member.save()
+     11 frappe.db.commit()
+     12 print('Added daniel to general channel')
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:518, in Document.save(self, *args, **kwargs)
+    516 def save(self, *args, **kwargs) -> "Self":
+    517 	"""Wrapper for _save"""
+--> 518 	return self._save(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:540, in Document._save(self, ignore_permissions, ignore_version)
+    537 self.flags.ignore_version = frappe.in_test if ignore_version is None else ignore_version
+    539 if self.get("__islocal") or not self.get("name"):
+--> 540 	return self.insert()
+    542 self.check_if_locked()
+    543 self._set_defaults()
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:441, in Document.insert(self, ignore_permissions, ignore_links, ignore_if_duplicate, ignore_mandatory, set_name, set_child_names)
+    439 self.check_if_latest()
+    440 self._validate_links()
+--> 441 self.run_method("before_insert")
+    442 self.set_new_name(set_name=set_name, set_child_names=set_child_names)
+    443 self.set_parent_in_children()
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1181, in Document.run_method(self, method, *args, **kwargs)
+   1178 		return method_object(*args, **kwargs)
+   1180 fn.__name__ = str(method)
+-> 1181 out = Document.hook(fn)(self, *args, **kwargs)
+   1183 self.run_notifications(method)
+   1184 run_webhooks(self, method)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1578, in Document.hook.<locals>.composer(self, *args, **kwargs)
+   1575 	hooks.append(frappe.get_attr(handler))
+   1577 composed = compose(f, *hooks)
+-> 1578 return composed(self, method, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1556, in Document.hook.<locals>.compose.<locals>.runner(self, method, *args, **kwargs)
+   1555 def runner(self, method, *args, **kwargs):
+-> 1556 	add_to_return_value(self, fn(self, *args, **kwargs))
+   1557 	for f in hooks:
+   1558 		try:
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1178, in Document.run_method.<locals>.fn(self, *args, **kwargs)
+   1175 # Cannot have a field with same name as method
+   1176 # If method found in __dict__, expect it to be callable
+   1177 if method in self.__dict__ or callable(method_object):
+-> 1178 	return method_object(*args, **kwargs)
+
+File ~/frappe-bench/apps/raven/raven/raven_channel_management/doctype/raven_channel_member/raven_channel_member.py:67, in RavenChannelMember.before_insert(self)
+     63 # 1. A user cannot be a member of a channel more than once
+     64 if frappe.db.exists(
+     65 	"Raven Channel Member", {"channel_id": self.channel_id, "user_id": self.user_id}
+     66 ):
+---> 67 	frappe.throw(_("You are already a member of this channel"), frappe.DuplicateEntryError)
+     68 # if there are no members in the channel, then the member becomes admin
+     69 if frappe.db.count("Raven Channel Member", {"channel_id": self.channel_id}) == 0:
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+    129 def throw(
+    130 	msg: str | Sequence[str],
+    131 	exc: type[Exception] | Exception = frappe.ValidationError,
+   (...)
+    136 	primary_action=None,
+    137 ) -> None:
+    138 	"""Throw execption and show message (`msgprint`).
+    139 
+    140 	:param msg: Message.
+   (...)
+    146 	:param primary_action: [optional] Bind a primary server/client side action.
+    147 	"""
+--> 148 	msgprint(
+    149 		msg,
+    150 		raise_exception=exc,
+    151 		title=title,
+    152 		indicator="red",
+    153 		is_minimizable=is_minimizable,
+    154 		wide=wide,
+    155 		as_list=as_list,
+    156 		primary_action=primary_action,
+    157 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+    107 else:
+    108 	frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+     56 if out.__frappe_exc_id:
+     57 	exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+DuplicateEntryError: You are already a member of this channel
+
