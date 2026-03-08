@@ -71,3 +71,18 @@ All 6 critical GAPs identified during LORAND Master Degree Test have been resolv
 - @ai !delivery from SO-00763
 - @ai !invoice from SO-00763
 - @ai plan work orders for SO-00763
+
+---
+
+## Latest Changes (March 8, 2026)
+
+### Plant Code Migration Complete
+- Custom Field Item-custom_plant_code1 changed from Link to Select type
+- New options: Mix, Dry, Juice, Laboratory, Formulated
+- All items migrated from old codes (1, 2, 3, 4, 5) to new names
+
+### Code Updates Pushed
+- Added PLANT_CODE_MAP and get_plant_name() in reader.py
+- Updated parse_golden_number() to return plant names
+- Updated tests.py to expect new plant names
+- Fixed regex patterns in manufacturing_agent.py
