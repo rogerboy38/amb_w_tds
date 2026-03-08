@@ -1,0 +1,136 @@
+---------------------------------------------------------------------------
+WrongOptionsDoctypeLinkError              Traceback (most recent call last)
+Cell In[3], line 14
+      6 # Fix the options - remove duplicates and set clean values
+      7 cf.options = "\n".join([
+      8     "Mix",
+      9     "Dry",
+   (...)
+     12     "Formulated"
+     13 ])
+---> 14 cf.save()
+     15 frappe.db.commit()
+     16 print("Updated successfully!")
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:518, in Document.save(self, *args, **kwargs)
+    516 def save(self, *args, **kwargs) -> "Self":
+    517 	"""Wrapper for _save"""
+--> 518 	return self._save(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:572, in Document._save(self, ignore_permissions, ignore_version)
+    570 self.update_children()
+    571 self.reset_computed_child_tables()
+--> 572 self.run_post_save_methods()
+    574 # clear unsaved flag
+    575 if hasattr(self, "__unsaved"):
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1375, in Document.run_post_save_methods(self)
+   1367 """Run standard methods after `INSERT` or `UPDATE`. Standard Methods are:
+   1368 
+   1369 - `on_update` for **Save**.
+   1370 - `on_update`, `on_submit` for **Submit**.
+   1371 - `on_cancel` for **Cancel**
+   1372 - `update_after_submit` for **Update after Submit**"""
+   1374 if self._action == "save":
+-> 1375 	self.run_method("on_update")
+   1376 elif self._action == "submit":
+   1377 	self.run_method("on_update")
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1181, in Document.run_method(self, method, *args, **kwargs)
+   1178 		return method_object(*args, **kwargs)
+   1180 fn.__name__ = str(method)
+-> 1181 out = Document.hook(fn)(self, *args, **kwargs)
+   1183 self.run_notifications(method)
+   1184 run_webhooks(self, method)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1578, in Document.hook.<locals>.composer(self, *args, **kwargs)
+   1575 	hooks.append(frappe.get_attr(handler))
+   1577 composed = compose(f, *hooks)
+-> 1578 return composed(self, method, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1556, in Document.hook.<locals>.compose.<locals>.runner(self, method, *args, **kwargs)
+   1555 def runner(self, method, *args, **kwargs):
+-> 1556 	add_to_return_value(self, fn(self, *args, **kwargs))
+   1557 	for f in hooks:
+   1558 		try:
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1178, in Document.run_method.<locals>.fn(self, *args, **kwargs)
+   1175 # Cannot have a field with same name as method
+   1176 # If method found in __dict__, expect it to be callable
+   1177 if method in self.__dict__ or callable(method_object):
+-> 1178 	return method_object(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/custom/doctype/custom_field/custom_field.py:211, in CustomField.on_update(self)
+    208 if not self.flags.ignore_validate:
+    209 	from frappe.core.doctype.doctype.doctype import validate_fields_for_doctype
+--> 211 	validate_fields_for_doctype(self.dt)
+    213 # clear cache and update the schema
+    214 if not frappe.flags.in_create_custom_fields:
+
+File ~/frappe-bench/apps/frappe/frappe/core/doctype/doctype/doctype.py:1257, in validate_fields_for_doctype(doctype)
+   1255 meta = frappe.get_meta(doctype, cached=False)
+   1256 validate_links_table_fieldnames(meta)
+-> 1257 validate_fields(meta)
+
+File ~/frappe-bench/apps/frappe/frappe/core/doctype/doctype/doctype.py:1736, in validate_fields(meta)
+   1734 if not frappe.flags.in_migrate or in_ci:
+   1735 	check_unique_fieldname(meta.get("name"), d.fieldname)
+-> 1736 	check_link_table_options(meta.get("name"), d)
+   1737 	check_illegal_mandatory(meta.get("name"), d)
+   1738 	check_dynamic_link_options(d)
+
+File ~/frappe-bench/apps/frappe/frappe/core/doctype/doctype/doctype.py:1343, in validate_fields.<locals>.check_link_table_options(docname, d)
+   1341 options = frappe.db.get_value("DocType", d.options, "name")
+   1342 if not options:
+-> 1343 	frappe.throw(
+   1344 		_("{0}: Options must be a valid DocType for field {1} in row {2}").format(
+   1345 			docname, d.label, d.idx
+   1346 		),
+   1347 		WrongOptionsDoctypeLinkError,
+   1348 	)
+   1349 elif options != d.options:
+   1350 	frappe.throw(
+   1351 		_("{0}: Options {1} must be the same as doctype name {2} for the field {3}").format(
+   1352 			docname, d.options, options, d.label
+   1353 		),
+   1354 		DoctypeLinkError,
+   1355 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+    129 def throw(
+    130 	msg: str | Sequence[str],
+    131 	exc: type[Exception] | Exception = frappe.ValidationError,
+   (...)
+    136 	primary_action=None,
+    137 ) -> None:
+    138 	"""Throw execption and show message (`msgprint`).
+    139 
+    140 	:param msg: Message.
+   (...)
+    146 	:param primary_action: [optional] Bind a primary server/client side action.
+    147 	"""
+--> 148 	msgprint(
+    149 		msg,
+    150 		raise_exception=exc,
+    151 		title=title,
+    152 		indicator="red",
+    153 		is_minimizable=is_minimizable,
+    154 		wide=wide,
+    155 		as_list=as_list,
+    156 		primary_action=primary_action,
+    157 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+    107 else:
+    108 	frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+     56 if out.__frappe_exc_id:
+     57 	exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+WrongOptionsDoctypeLinkError: Item: Options must be a valid DocType for field Plant Code in row 16
+
+In [4]: 
+
