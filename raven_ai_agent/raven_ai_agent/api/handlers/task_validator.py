@@ -13,6 +13,27 @@ import frappe
 import json
 import re
 from typing import Optional, Dict, List, Tuple
+
+
+def _resolve_so_name(query: str):
+    """BUG15 fix: Match SO-NNNNN prefix and resolve full name via DB.
+    Customer names can contain (), commas, dots — regex can't match them.
+    Returns a match-like object with group() returning the full SO name, or None.
+    """
+    m = re.search(r'(SAL-ORD-\d+-\d+|SO-\d{3,5})', query, re.IGNORECASE)
+    if not m:
+        return None
+    prefix = m.group(1).upper()
+    full_name = frappe.db.get_value("Sales Order",
+        {"name": ["like", f"{prefix}%"], "docstatus": ["!=", 2]}, "name")
+    if full_name:
+        class SOMatch:
+            def __init__(self, name):
+                self._name = name
+            def group(self, n=0):
+                return self._name
+        return SOMatch(full_name)
+    return m  # fallback to partial match
 from datetime import datetime
 
 
@@ -68,7 +89,7 @@ class TaskValidatorMixin:
         # @ai sync sales order SO-XXXXX
         # ═══════════════════════════════════════════════════════════
         if any(kw in query_lower for kw in ["sync so", "sync sales order", "fix so", "fix sales order"]):
-            so_match = re.search(r'(SO-[\w\-]+(?:\s+(?!from\b|to\b|pipeline\b|status\b|check\b|audit\b|validate\b|diagnose\b|bom\b|qty\b|quantity\b|item\b|warehouse\b|wh\b)[\w\.]+)*|SAL-ORD-\d+-\d+)', query, re.IGNORECASE)
+            so_match = _resolve_so_name(query)
             if so_match:
                 is_force = query.strip().startswith("!") or "!fix" in query_lower or "!sync" in query_lower
                 return self._sync_so_from_quotation(so_match.group(1), confirm=is_force)
@@ -81,7 +102,7 @@ class TaskValidatorMixin:
         # ═══════════════════════════════════════════════════════════
         if "diagnose" in query_lower or "diagnosis" in query_lower:
             qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
-            so_match = re.search(r'(SAL-ORD-\d+-\d+|SO-[\w\-]+(?:\s+(?!from\b|to\b|pipeline\b|status\b|check\b|audit\b|validate\b|diagnose\b|bom\b|qty\b|quantity\b|item\b|warehouse\b|wh\b)[\w\.]+)*)', query, re.IGNORECASE)
+            so_match = _resolve_so_name(query)
             wo_match = re.search(r'(MFG-WO-\d+)', query, re.IGNORECASE)
             
             if qtn_match:
@@ -98,11 +119,68 @@ class TaskValidatorMixin:
                 }
 
         # ═══════════════════════════════════════════════════════════
+        # VALIDATE BOM: Check and fix BOM issues
+        # @ai validate BOM-XXXX
+        # @ai audit bom BOM-XXXX
+        # @ai check bom BOM-XXXX
+        # ═══════════════════════════════════════════════════════════
+        if ("validate" in query_lower or "audit" in query_lower or "check" in query_lower) and "bom" in query_lower and "pipeline" not in query_lower:
+            bom_match = re.search(r'(BOM-[^\s]+)', query, re.IGNORECASE)
+            item_match = re.search(r'(?:for|item)\s+(\d{4})', query, re.IGNORECASE)
+            
+            if bom_match:
+                bom_name = bom_match.group(1)
+                try:
+                    from raven_ai_agent.api.bom_helpers import validate_and_fix_bom
+                    result = validate_and_fix_bom(bom_name, auto_fix=True)
+                    if result.get("success"):
+                        msg = f"✅ **BOM Validation: {bom_name}**\n\n"
+                        msg += result.get("message", "Validation complete.")
+                        if result.get("fixes"):
+                            msg += "\n\n**Fixes Applied:**\n"
+                            for fix in result["fixes"]:
+                                msg += f"  - {fix}\n"
+                        if result.get("warnings"):
+                            msg += "\n\n**Warnings:**\n"
+                            for w in result["warnings"]:
+                                msg += f"  - ⚠️ {w}\n"
+                        return {"success": True, "message": msg}
+                    else:
+                        return {"success": False, "error": result.get("error", "BOM validation failed")}
+                except ImportError:
+                    return {"success": False, "error": "BOM validation module not available"}
+                except Exception as e:
+                    return {"success": False, "error": f"BOM validation error: {str(e)}"}
+            elif item_match:
+                item_code = item_match.group(1)
+                # Find default BOM for item
+                try:
+                    default_bom = frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1, "docstatus": 1}, "name")
+                    if not default_bom:
+                        default_bom = frappe.db.get_value("BOM", {"item": ["like", f"%{item_code}%"], "is_active": 1, "docstatus": 1}, "name")
+                    
+                    if default_bom:
+                        from raven_ai_agent.api.bom_helpers import validate_and_fix_bom
+                        result = validate_and_fix_bom(default_bom, auto_fix=True)
+                        msg = f"✅ **BOM Validation for Item {item_code}** (BOM: {default_bom})\n\n"
+                        msg += result.get("message", "Validation complete.")
+                        return {"success": True, "message": msg}
+                    else:
+                        return {"success": False, "error": f"No active BOM found for item {item_code}"}
+                except Exception as e:
+                    return {"success": False, "error": f"BOM lookup error: {str(e)}"}
+            else:
+                return {
+                    "success": False,
+                    "error": "**Usage:** `@ai validate BOM-XXXX` or `@ai validate bom for 0302`"
+                }
+
+        # ═══════════════════════════════════════════════════════════
         # VALIDATE: Check SO against source quotation
         # @ai validate SO-XXXXX
         # ═══════════════════════════════════════════════════════════
         if "validate" in query_lower and "pipeline" not in query_lower:
-            so_match = re.search(r'(SAL-ORD-\d+-\d+|SO-[\w\-]+(?:\s+(?!from\b|to\b|pipeline\b|status\b|check\b|audit\b|validate\b|diagnose\b|bom\b|qty\b|quantity\b|item\b|warehouse\b|wh\b)[\w\.]+)*)', query, re.IGNORECASE)
+            so_match = _resolve_so_name(query)
             qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
             
             if so_match:
@@ -136,7 +214,7 @@ class TaskValidatorMixin:
         # ═══════════════════════════════════════════════════════════
         if "check" in query_lower and ("payment" in query_lower or "pago" in query_lower):
             qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
-            so_match = re.search(r'(SAL-ORD-\d+-\d+|SO-[\w\-]+(?:\s+(?!from\b|to\b|pipeline\b|status\b|check\b|audit\b|validate\b|diagnose\b|bom\b|qty\b|quantity\b|item\b|warehouse\b|wh\b)[\w\.]+)*)', query, re.IGNORECASE)
+            so_match = _resolve_so_name(query)
             
             doc_name = None
             doc_type = None

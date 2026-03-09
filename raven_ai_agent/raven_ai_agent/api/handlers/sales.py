@@ -13,63 +13,31 @@ class SalesMixin:
 
     @staticmethod
     def _discover_mx_cfdi_fields(source_doc):
-        """Intelligently discover Mexico CFDI fields for Sales Invoice.
+        """Discover Mexico CFDI fields — delegates to truth_hierarchy (R1/R4).
         
-        Reads payment terms from the source document (SO or DN) to determine:
-        - mx_payment_option: PUE (advance/immediate) vs PPD (credit/deferred)
-        - mx_cfdi_use: From customer's last invoice, or G01 (goods) default
-        - mode_of_payment: From customer's last invoice, or Wire Transfer default
+        BUG19 completion: Replaced inline 3-tier PUE/PPD logic (~60 lines) with
+        single call to truth_hierarchy.resolve_mx_cfdi_fields(). This ensures:
+        - Single source of truth for PUE/PPD, CFDI Use, and mode_of_payment
+        - R7 audit logging works for this code path too
+        - Any future fix to truth_hierarchy propagates here automatically
+        
+        Keeps: Banxico FX rate, debit_to, posting_date, mx_product_service_key
+        (those are sales.py-specific post-processing, not CFDI resolution).
         
         Returns dict of field:value to set on the SI before insert.
         """
-        cfdi = {}
+        from raven_ai_agent.api.truth_hierarchy import resolve_mx_cfdi_fields
         
-        # --- 1. Payment Option: PUE vs PPD based on payment terms ---
-        payment_terms = getattr(source_doc, 'payment_terms_template', '') or ''
-        pt_lower = payment_terms.lower()
-        
-        # PUE = advance, immediate, anticipado, contado, cash
-        # PPD = credit, days, parcialidades, diferido
-        pue_keywords = ['advance', 'anticipad', 'contado', 'cash', 'immediate', 'inmediato', 'pue']
-        ppd_keywords = ['days', 'dias', 'credit', 'credito', 'net ', 'parcialidad', 'diferido', 'ppd']
-        
-        if any(kw in pt_lower for kw in pue_keywords):
-            cfdi['mx_payment_option'] = 'PUE'
-        elif any(kw in pt_lower for kw in ppd_keywords):
-            cfdi['mx_payment_option'] = 'PPD'
-        else:
-            # Check payment_schedule for credit_days > 0
-            schedule = getattr(source_doc, 'payment_schedule', [])
-            has_credit = any(getattr(row, 'credit_days', 0) > 0 for row in schedule)
-            cfdi['mx_payment_option'] = 'PPD' if has_credit else 'PUE'
-        
-        # --- 2. Discover CFDI Use + Mode of Payment from customer's last invoice ---
         customer = getattr(source_doc, 'customer', None)
-        if customer:
-            try:
-                last_si = frappe.get_all(
-                    'Sales Invoice',
-                    filters={'customer': customer, 'docstatus': 1},
-                    fields=['mx_cfdi_use', 'mode_of_payment'],
-                    order_by='posting_date desc',
-                    limit_page_length=1
-                )
-                if last_si:
-                    if last_si[0].get('mx_cfdi_use'):
-                        cfdi['mx_cfdi_use'] = last_si[0]['mx_cfdi_use']
-                    if last_si[0].get('mode_of_payment'):
-                        cfdi['mode_of_payment'] = last_si[0]['mode_of_payment']
-            except Exception:
-                pass  # Discovery is best-effort, defaults below
+        cfdi = resolve_mx_cfdi_fields(
+            source_doc=source_doc,
+            customer=customer,
+            payment_terms_template=getattr(source_doc, 'payment_terms_template', '') or '',
+            payment_schedule=getattr(source_doc, 'payment_schedule', []) or []
+        )
         
-        # --- 3. Smart defaults for anything not discovered ---
-        # G01 = Adquisición de mercancías (goods purchase) — most common for product sales
-        # G03 = Gastos en general — fallback for services
-        if 'mx_cfdi_use' not in cfdi:
-            cfdi['mx_cfdi_use'] = 'G01'
-        
-        if 'mode_of_payment' not in cfdi:
-            cfdi['mode_of_payment'] = 'Wire Transfer'
+        # Remove internal _audit key — not needed for SI field injection
+        cfdi.pop('_audit', None)
         
         return cfdi
 
@@ -377,7 +345,19 @@ class SalesMixin:
                     return {"success": False, "error": str(e)}
         
         # Check Inventory for Sales Order
-        so_match = re.search(r'(SAL-ORD-\d+-\d+|SO-[\w\-]+(?:\s+(?!from\b|to\b|pipeline\b|status\b|check\b|audit\b|validate\b|diagnose\b|bom\b|qty\b|quantity\b|item\b|warehouse\b|wh\b)[\w\.]+)*)', query, re.IGNORECASE)
+        # BUG15 fix: match SO-NNNNN prefix, resolve full name via DB
+        so_match = re.search(r'(SAL-ORD-\d+-\d+|SO-\d{3,5})', query, re.IGNORECASE)
+        if so_match:
+            _so_prefix = so_match.group(1).upper()
+            _so_full = frappe.db.get_value("Sales Order",
+                {"name": ["like", f"{_so_prefix}%"], "docstatus": ["!=", 2]}, "name")
+            if _so_full:
+                class SOMatch:
+                    def __init__(self, name):
+                        self._name = name
+                    def group(self, n=0):
+                        return self._name
+                so_match = SOMatch(_so_full)
         if so_match and ("check inventory" in query_lower or "verificar inventario" in query_lower or "disponibilidad" in query_lower):
             try:
                 so_name = so_match.group(1)
@@ -765,10 +745,16 @@ class SalesMixin:
                     
                     from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
                     si_dict = make_sales_invoice(dn_name)
+                    # Inject CFDI fields into dict BEFORE creating doc
+                    # (si.set() on custom Link fields can silently fail)
+                    if hasattr(si_dict, 'update'):
+                        si_dict.update(cfdi_fields)
+                    elif isinstance(si_dict, dict):
+                        si_dict.update(cfdi_fields)
                     si = frappe.get_doc(si_dict)
-                    # Apply discovered Mexico CFDI fields
+                    # Belt-and-suspenders: also set via attribute assignment
                     for field, value in cfdi_fields.items():
-                        si.set(field, value)
+                        setattr(si, field, value)
                     # Apply custom posting_date if provided (migration scenario)
                     if custom_posting_date:
                         si.set_posting_time = 1
@@ -779,6 +765,12 @@ class SalesMixin:
                         si.debit_to = correct_debit_to
                     # Apply Banxico FIX T-1 exchange rate (uses posting_date for lookup)
                     fx_info = self._discover_conversion_rate(si)
+                    # Set mx_product_service_key per item (CFDI 4.0 mandatory)
+                    for item in si.items:
+                        if not item.get("mx_product_service_key"):
+                            psk = frappe.db.get_value("Item", item.item_code, "mx_product_service_key")
+                            if psk:
+                                item.mx_product_service_key = psk
                     si.insert()
                     site_name = frappe.local.site
                     fx_msg = ""
@@ -806,10 +798,16 @@ class SalesMixin:
                     
                     from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
                     si_dict = make_sales_invoice(so_name)
+                    # Inject CFDI fields into dict BEFORE creating doc
+                    # (si.set() on custom Link fields can silently fail)
+                    if hasattr(si_dict, 'update'):
+                        si_dict.update(cfdi_fields)
+                    elif isinstance(si_dict, dict):
+                        si_dict.update(cfdi_fields)
                     si = frappe.get_doc(si_dict)
-                    # Apply discovered Mexico CFDI fields
+                    # Belt-and-suspenders: also set via attribute assignment
                     for field, value in cfdi_fields.items():
-                        si.set(field, value)
+                        setattr(si, field, value)
                     # Apply custom posting_date if provided (migration scenario)
                     if custom_posting_date:
                         si.set_posting_time = 1
@@ -820,6 +818,12 @@ class SalesMixin:
                         si.debit_to = correct_debit_to
                     # Apply Banxico FIX T-1 exchange rate (uses posting_date for lookup)
                     fx_info = self._discover_conversion_rate(si)
+                    # Set mx_product_service_key per item (CFDI 4.0 mandatory)
+                    for item in si.items:
+                        if not item.get("mx_product_service_key"):
+                            psk = frappe.db.get_value("Item", item.item_code, "mx_product_service_key")
+                            if psk:
+                                item.mx_product_service_key = psk
                     si.insert()
                     site_name = frappe.local.site
                     fx_msg = ""
@@ -836,3 +840,4 @@ class SalesMixin:
         # ==================== END SALES-TO-PURCHASE CYCLE SOP ====================
 
         return None
+
