@@ -1,0 +1,821 @@
+# Source URL: https://github.com/TI-Sin-Problemas/erpnext_mexico_compliance
+# Content Length: 22260 characters
+# Extracted at: 2026-03-11 10:52:41
+#============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GitHub - TI-Sin-Problemas/erpnext\_mexico\_compliance: ERPNext app to serve as base to comply with Mexican Rules and Regulations · GitHub
+
+
+
+
+
+
+
+
+
+
+
+
+[Skip to content](#start-of-content)
+
+
+
+
+
+Navigation Menu
+---------------
+
+Toggle navigation
+
+ 
+
+
+
+
+
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance)
+ 
+
+
+Appearance settings
+
+
+
+
+
+
+
+
+* Platform
+  + AI CODE CREATION
+    - [GitHub CopilotWrite better code with AI](https://github.com/features/copilot)
+    - [GitHub SparkBuild and deploy intelligent apps](https://github.com/features/spark)
+    - [GitHub ModelsManage and compare prompts](https://github.com/features/models)
+    - [MCP RegistryNewIntegrate external tools](https://github.com/mcp)
+  + DEVELOPER WORKFLOWS
+    - [ActionsAutomate any workflow](https://github.com/features/actions)
+    - [CodespacesInstant dev environments](https://github.com/features/codespaces)
+    - [IssuesPlan and track work](https://github.com/features/issues)
+    - [Code ReviewManage code changes](https://github.com/features/code-review)
+  + APPLICATION SECURITY
+    - [GitHub Advanced SecurityFind and fix vulnerabilities](https://github.com/security/advanced-security)
+    - [Code securitySecure your code as you build](https://github.com/security/advanced-security/code-security)
+    - [Secret protectionStop leaks before they start](https://github.com/security/advanced-security/secret-protection)
+  + EXPLORE
+    - [Why GitHub](https://github.com/why-github)
+    - [Documentation](https://docs.github.com)
+    - [Blog](https://github.blog)
+    - [Changelog](https://github.blog/changelog)
+    - [Marketplace](https://github.com/marketplace)[View all features](https://github.com/features)
+* Solutions
+  + BY COMPANY SIZE
+    - [Enterprises](https://github.com/enterprise)
+    - [Small and medium teams](https://github.com/team)
+    - [Startups](https://github.com/enterprise/startups)
+    - [Nonprofits](https://github.com/solutions/industry/nonprofits)
+  + BY USE CASE
+    - [App Modernization](https://github.com/solutions/use-case/app-modernization)
+    - [DevSecOps](https://github.com/solutions/use-case/devsecops)
+    - [DevOps](https://github.com/solutions/use-case/devops)
+    - [CI/CD](https://github.com/solutions/use-case/ci-cd)
+    - [View all use cases](https://github.com/solutions/use-case)
+  + BY INDUSTRY
+    - [Healthcare](https://github.com/solutions/industry/healthcare)
+    - [Financial services](https://github.com/solutions/industry/financial-services)
+    - [Manufacturing](https://github.com/solutions/industry/manufacturing)
+    - [Government](https://github.com/solutions/industry/government)
+    - [View all industries](https://github.com/solutions/industry)[View all solutions](https://github.com/solutions)
+* Resources
+  + EXPLORE BY TOPIC
+    - [AI](https://github.com/resources/articles?topic=ai)
+    - [Software Development](https://github.com/resources/articles?topic=software-development)
+    - [DevOps](https://github.com/resources/articles?topic=devops)
+    - [Security](https://github.com/resources/articles?topic=security)
+    - [View all topics](https://github.com/resources/articles)
+  + EXPLORE BY TYPE
+    - [Customer stories](https://github.com/customer-stories)
+    - [Events & webinars](https://github.com/resources/events)
+    - [Ebooks & reports](https://github.com/resources/whitepapers)
+    - [Business insights](https://github.com/solutions/executive-insights)
+    - [GitHub Skills](https://skills.github.com)
+  + SUPPORT & SERVICES
+    - [Documentation](https://docs.github.com)
+    - [Customer support](https://support.github.com)
+    - [Community forum](https://github.com/orgs/community/discussions)
+    - [Trust center](https://github.com/trust-center)
+    - [Partners](https://github.com/partners)[View all resources](https://github.com/resources)
+* Open Source
+  + COMMUNITY
+    - [GitHub SponsorsFund open source developers](https://github.com/sponsors)
+  + PROGRAMS
+    - [Security Lab](https://securitylab.github.com)
+    - [Maintainer Community](https://maintainers.github.com)
+    - [Accelerator](https://github.com/accelerator)
+    - [Archive Program](https://archiveprogram.github.com)
+  + REPOSITORIES
+    - [Topics](https://github.com/topics)
+    - [Trending](https://github.com/trending)
+    - [Collections](https://github.com/collections)
+* Enterprise
+  + ENTERPRISE SOLUTIONS
+    - [Enterprise platformAI-powered developer platform](https://github.com/enterprise)
+  + AVAILABLE ADD-ONS
+    - [GitHub Advanced SecurityEnterprise-grade security features](https://github.com/security/advanced-security)
+    - [Copilot for BusinessEnterprise-grade AI features](https://github.com/features/copilot/copilot-business)
+    - [Premium SupportEnterprise-grade 24/7 support](https://github.com/premium-support)
+* [Pricing](https://github.com/pricing)
+
+
+
+Search or jump to...
+
+
+
+
+Search code, repositories, users, issues, pull requests...
+==========================================================
+
+ 
+Search
+
+
+
+
+Clear
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+[Search syntax tips](https://docs.github.com/search-github/github-code-search/understanding-github-code-search-syntax) 
+
+
+
+
+
+
+
+Provide feedback
+================
+
+
+
+
+
+ 
+
+We read every piece of feedback, and take your input very seriously.
+
+
+
+Include my email address so I can be contacted
+
+
+  Cancel
+
+ Submit feedback
+
+
+
+Saved searches
+==============
+
+Use saved searches to filter your results more quickly
+------------------------------------------------------
+
+
+
+
+
+ 
+
+Name
+
+
+
+
+Query
+
+To see all available qualifiers, see our [documentation](https://docs.github.com/search-github/github-code-search/understanding-github-code-search-syntax).
+
+ 
+
+
+
+
+  Cancel
+
+ Create saved search
+
+
+
+
+
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance)
+
+[Sign up](/signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E&source=header-repo&source_repo=TI-Sin-Problemas%2Ferpnext_mexico_compliance)
+ 
+
+
+Appearance settings
+
+
+
+
+
+Resetting focus
+
+
+
+
+
+You signed in with another tab or window. Reload to refresh your session.
+You signed out in another tab or window. Reload to refresh your session.
+You switched accounts on another tab or window. Reload to refresh your session.
+ 
+
+
+Dismiss alert
+
+
+
+{{ message }}
+
+
+
+
+
+[TI-Sin-Problemas](/TI-Sin-Problemas) 
+/
+**[erpnext\_mexico\_compliance](/TI-Sin-Problemas/erpnext_mexico_compliance)**
+Public
+
+
+* [Notifications](/login?return_to=%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance) You must be signed in to change notification settings
+* [Fork
+  9](/login?return_to=%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance)
+* [Star
+   12](/login?return_to=%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance)
+
+
+
+* [Code](/TI-Sin-Problemas/erpnext_mexico_compliance)
+* [Issues
+  0](/TI-Sin-Problemas/erpnext_mexico_compliance/issues)
+* [Pull requests
+  2](/TI-Sin-Problemas/erpnext_mexico_compliance/pulls)
+* [Actions](/TI-Sin-Problemas/erpnext_mexico_compliance/actions)
+* [Projects](/TI-Sin-Problemas/erpnext_mexico_compliance/projects)
+* [Security
+  0](/TI-Sin-Problemas/erpnext_mexico_compliance/security)
+* [Insights](/TI-Sin-Problemas/erpnext_mexico_compliance/pulse)
+
+ 
+ 
+
+
+Additional navigation options
+ 
+
+* [Code](/TI-Sin-Problemas/erpnext_mexico_compliance)
+* [Issues](/TI-Sin-Problemas/erpnext_mexico_compliance/issues)
+* [Pull requests](/TI-Sin-Problemas/erpnext_mexico_compliance/pulls)
+* [Actions](/TI-Sin-Problemas/erpnext_mexico_compliance/actions)
+* [Projects](/TI-Sin-Problemas/erpnext_mexico_compliance/projects)
+* [Security](/TI-Sin-Problemas/erpnext_mexico_compliance/security)
+* [Insights](/TI-Sin-Problemas/erpnext_mexico_compliance/pulse)
+
+
+ 
+
+
+
+   
+
+TI-Sin-Problemas/erpnext\_mexico\_compliance
+============================================
+
+
+ main[Branches](/TI-Sin-Problemas/erpnext_mexico_compliance/branches)[Tags](/TI-Sin-Problemas/erpnext_mexico_compliance/tags)Go to fileCodeOpen more actions menu
+
+Folders and files
+-----------------
+
+| Name | Name | Last commit message | Last commit date |
+| --- | --- | --- | --- |
+| Latest commit History[724 Commits](/TI-Sin-Problemas/erpnext_mexico_compliance/commits/main/)724 Commits |
+| [.github](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/.github) | [.github](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/.github) |  |  |
+| [assets](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/assets) | [assets](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/assets) |  |  |
+| [docker](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/docker) | [docker](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/docker) |  |  |
+| [erpnext\_mexico\_compliance](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/erpnext_mexico_compliance) | [erpnext\_mexico\_compliance](/TI-Sin-Problemas/erpnext_mexico_compliance/tree/main/erpnext_mexico_compliance) |  |  |
+| [.dockerignore](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.dockerignore) | [.dockerignore](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.dockerignore) |  |  |
+| [.gitignore](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.gitignore) | [.gitignore](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.gitignore) |  |  |
+| [.prettierrc](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.prettierrc) | [.prettierrc](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/.prettierrc) |  |  |
+| [MANIFEST.in](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/MANIFEST.in) | [MANIFEST.in](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/MANIFEST.in) |  |  |
+| [README.md](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/README.md) | [README.md](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/README.md) |  |  |
+| [apps.json](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/apps.json) | [apps.json](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/apps.json) |  |  |
+| [crowdin.yml](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/crowdin.yml) | [crowdin.yml](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/crowdin.yml) |  |  |
+| [license.txt](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/license.txt) | [license.txt](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/license.txt) |  |  |
+| [pyproject.toml](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/pyproject.toml) | [pyproject.toml](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/pyproject.toml) |  |  |
+| [setup.py](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/setup.py) | [setup.py](/TI-Sin-Problemas/erpnext_mexico_compliance/blob/main/setup.py) |  |  |
+| View all files |
+
+Repository files navigation
+---------------------------
+
+* [README](#)
+* [MIT license](#)
+
+ERPNext Mexico Compliance
+=========================
+
+ERPNext app to comply with Mexican Rules and Regulations
+
+Introduction
+------------
+
+ERPNext Mexico Compliance has been designed to adapt ERPNext business logic to comply with the Rules and Regulations of Mexican authorities.
+
+It is built on top of [ERPNext](https://github.com/frappe/erpnext) and [Frappe Framework](https://github.com/frappe/frappe)
+
+For more details see [the documentation](https://tisinproblemas.com/mexico-compliance/introduccion)
+
+Installation
+------------
+
+The installation steps assumes you have [Frappe Framework](https://github.com/frappe/frappe) and [ERPNext](https://github.com/frappe/erpnext) already installed.
+
+### Frappe Cloud
+
+Signup with [Frappe Cloud](https://frappecloud.com/) and refer to the [Installing an app](https://frappecloud.com/docs/installing-an-app) documentation
+
+### Self Hosting
+
+
+```
+# Download app
+bench get-app https://github.com/TI-Sin-Problemas/erpnext_mexico_compliance.git --branch version-15
+
+# Install app
+bench --site site_name install-app erpnext_mexico_compliance
+```
+
+### CFDI Stamping setup
+
+To enable the CFDI Stamping feature, you will need:
+
+* A package of stamps. To buy a package of stamps please contact us by sending an email to [info@tisinproblemas.com](mailto:info@tisinproblemas.com)
+* An API Key and API Secret. You will get your API Key and API Secret whith your package of stamps.
+* A valid Digital Signing Certificate (CSD) issued by the Mexican Tax Administration Service (SAT)
+
+Once you have all the requirements, on your ERPNext instance follow the steps below:
+
+1. Go to Desktop -> Mexico Compliance -> Digital Signing Certificate
+2. Add a Digital Signing Certificate:
+   
+   1. Click on *Add Digital Signing Certificate*
+   2. Select your Company
+   3. Attach your certificate file (.cer)
+   4. Attach your certificate key file (.key)
+   5. Enter the Certificate key password
+   6. Click on *Save*
+3. Go to Desktop -> Mexico Compliance -> CFDI Stamping Settings:
+   
+   1. Enter your API Key & API Secret
+   2. Uncheck the Test mode checkbox in your production environment
+   3. Click on *Save*
+
+You can check the total amount of available credits/stamps in the CFDI Stamping Settings by clicking on the *Available Credits* button
+
+Features
+--------
+
+
+### CFDI Stamping
+
+The CFDI Stamping feature allows you to create and stamp CFDI documents for **Sales Invoices** and **Payment Entries** as required by Mexican authorities.
+
+#### Sales invoice stamping
+
+Please be aware that in order to successfully stamp a Sales Invoices, some requirements must be met.
+
+* There must be at least 1 Digital Signing Certificate for the Company issuing the Sales Invoice
+* You must have available credits/stamps
+* The Address of the Company must have a Zip Code
+* The Customer must have a valid Tax Id (RFC)
+* The Customer must have a Tax Regime
+* The Customer's address must have a Zip Code
+* The Invoice Items must have a SAT Product or Service Key
+* The UOM of the Invoice Items must have a SAT UOM Key
+* The Mode of Payment of the invoice must have a SAT Payment Method
+* The invoice must have a SAT Payment Option
+
+To stamp a Sales Invoice, a **Stamp CFDI** button will be available on the **Sales Invoice** form once it has being submitted.
+
+#### Payment Entry stamping
+
+Please be aware that in order to successfully stamp a Payment Entry, some requirements must be met.
+
+* There must be at least 1 Digital Signing Certificate for the Company issuing the Payment Entry
+* You must have available credits/stamps
+* The Address of the Company must have a Zip Code
+* All the Reference Items must have being stamped
+
+### Mexican authorities catalogs
+
+Some of the Mexican authorities catalogs are added as Doctypes
+
+| Doctype | Catalog (in spanish) |
+| --- | --- |
+| Cancellation reason | Motivo de cancelación SAT |
+| SAT CFDI Use | Uso de CFDI SAT |
+| SAT Payment Method | Forma de pago SAT |
+| SAT Payment Option | Método de pago SAT |
+| SAT Product Or Service Key | Clave de producto/servicio SAT |
+| SAT Tax Regime | Régimen fiscal SAT |
+| SAT UOM Key | Clave de unidad de medida SAT |
+
+
+### Compliance fields
+
+New fields are created for the following Doctypes
+
+#### Account Doctype
+
+
+| Field | Description |
+| --- | --- |
+| Tax Type | Type of Tax for Tax Accounts (IVA, ISR, IEPS) |
+
+
+#### Bank Account
+
+
+| Field | Description |
+| --- | --- |
+| CLABE | CLABE (Clave Bancaria Estandarizada) for Bank Accounts |
+
+
+#### Company
+
+
+| Field | Description |
+| --- | --- |
+| SAT Tax Regime | SAT Tax Regime for Companies |
+
+
+#### Customer
+
+
+| Field | Description |
+| --- | --- |
+| SAT Tax Regime | SAT Tax Regime for Customers |
+| CFDI Use | Default CFDI Use for Customer's Invoices |
+| Addenda | Includes custom content into the XML's Addenda section of Customer's CFDI Invoices |
+
+
+#### Item
+
+
+| Field | Description |
+| --- | --- |
+| SAT Product or Service Key | SAT Product or Service Key for Items |
+
+
+#### Mode of Payment
+
+
+| Field | Description |
+| --- | --- |
+| SAT Payment Method | Used to Link Invoices & Payment Entries with SAT Payment Method |
+
+
+#### Payment Entry
+
+
+| Field | Description |
+| --- | --- |
+| Cancellation reason | If a stamped Payment Entry needs to be cancelled, a Cancellation Reason must be provided |
+| Substitute payment entry | If the Cancellation Reason requires it, this field allows to specify a Substitute payment entry |
+| Stamped XML | Holds the XML data generated by the CFDI Stamping process. |
+| Cancellation acknowledgement | Cancellation Acknowledgement XML data generated by the CFDI Cancellation Stamping process. |
+
+
+#### Sales Invoice
+
+
+| Field | Description |
+| --- | --- |
+| Mode of Payment | Mode of Payment for Sales Invoices |
+| SAT Payment Option | SAT Payment Option for Sales Invoices |
+| SAT CFDI Use | SAT CFDI Use for Sales Invoices |
+| SAT Payment Method | SAT Payment Method for Sales Invoices |
+| Stamped XML | Holds the XML data generated by the CFDI Stamping process. |
+| Cancellation reason | If a stamped Sales Invoice needs to be cancelled, a Cancellation Reason must be provided |
+| Substitute invoice | If the Cancellation Reason requires it, this field allows to specify a Substitute invoice |
+| Cancellation acknowledgement | Cancellation Acknowledgement XML data generated by the CFDI Cancellation Stamping process. |
+| Addenda | Includes custom content into the XML's Addenda section of the CFDI Invoices |
+
+
+#### Sales Invoice Item
+
+
+| Field | Description |
+| --- | --- |
+| SAT Product or Service Key | SAT Product or Service Key for Sales Invoice Items |
+
+
+#### Sales Order Item
+
+
+| Field | Description |
+| --- | --- |
+| SAT Product or Service Key | SAT Product or Service Key for Sales Order Items |
+
+
+#### Subscription
+
+
+| Field | Description |
+| --- | --- |
+| Mode of Payment | Mode of Payment for Sales Invoices |
+| SAT Payment Option | SAT Payment Option for Sales Invoices |
+
+
+#### UOM
+
+
+| Field | Description |
+| --- | --- |
+| SAT UOM Key | Used to link Sales Invoice Items with a SAT UOM Key |
+
+
+### Hooks
+
+The following Document Event hooks are implemented
+
+| Hook | Description |
+| --- | --- |
+| `before_stamp_cfdi` | Method executed before stamping a CFDI document |
+| `after_stamp_cfdi` | Method executed after stamping a CFDI document |
+| `before_attach_files` | Method executed before attaching the CFDI files to the document |
+| `after_attach_files` | Method executed after attaching the CFDI files to the document |
+| `before_attach_pdf` | Method executed before attaching the PDF file to the document |
+| `after_attach_pdf` | Method executed after attaching the PDF file to the document |
+| `before_attach_xml` | Method executed before attaching the XML file to the document |
+| `after_attach_xml` | Method executed after attaching the XML file to the document |
+
+
+### Scheduled Jobs
+
+The following Scheduled Jobs are implemented
+
+| Scheduled Job Type | Description | Frequency |
+| --- | --- | --- |
+| `check_cancellation_status` | Checks the CFDI cancellation status of Sales Invoices and Payment Entries | Hourly |
+
+
+Contributing
+------------
+
+PRs are welcome!
+
+If you want to help with the translation of this app, please consider joining the project on [Crowdin](https://crwd.in/erpnext-mexico-compliance/35a28fa170d6652eeedc5b7dbd064a7a2457550)
+
+License
+-------
+
+MIT
+
+About
+-----
+
+ERPNext app to serve as base to comply with Mexican Rules and Regulations
+
+### Topics
+
+[mexico](/topics/mexico)
+[erpnext](/topics/erpnext)
+[erpnext-customization](/topics/erpnext-customization)
+[erpnext-localization](/topics/erpnext-localization)
+
+### Resources
+
+[Readme](#readme-ov-file) 
+### License
+
+[MIT license](#MIT-1-ov-file)
+
+### Uh oh!
+
+
+
+There was an error while loading. Please reload this page.
+
+
+
+ 
+ 
+
+[Activity](/TI-Sin-Problemas/erpnext_mexico_compliance/activity) 
+[Custom properties](/TI-Sin-Problemas/erpnext_mexico_compliance/custom-properties) 
+### Stars
+
+[**12**
+stars](/TI-Sin-Problemas/erpnext_mexico_compliance/stargazers) 
+### Watchers
+
+[**1**
+watching](/TI-Sin-Problemas/erpnext_mexico_compliance/watchers) 
+### Forks
+
+[**9**
+forks](/TI-Sin-Problemas/erpnext_mexico_compliance/forks) 
+[Report repository](/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2FTI-Sin-Problemas%2Ferpnext_mexico_compliance&report=TI-Sin-Problemas+%28user%29) 
+
+
+
+[Releases
+29](/TI-Sin-Problemas/erpnext_mexico_compliance/releases)
+-------------------------------------------------------------------
+
+[v0.12.3
+Latest
+ 
+Feb 12, 2026](/TI-Sin-Problemas/erpnext_mexico_compliance/releases/tag/v0.12.3) 
+[+ 28 releases](/TI-Sin-Problemas/erpnext_mexico_compliance/releases)
+
+
+[Packages
+0](/orgs/TI-Sin-Problemas/packages?repo_name=erpnext_mexico_compliance)
+---------------------------------------------------------------------------------
+
+ 
+
+ 
+
+ 
+
+### Uh oh!
+
+
+
+There was an error while loading. Please reload this page.
+
+
+
+ 
+ 
+
+
+
+### Uh oh!
+
+
+
+There was an error while loading. Please reload this page.
+
+
+
+ 
+ 
+
+
+
+[Contributors
+2](/TI-Sin-Problemas/erpnext_mexico_compliance/graphs/contributors)
+---------------------------------------------------------------------------------
+
+* [![]()](https://github.com/Ahuahuachi)
+  [**Ahuahuachi**
+  Alfredo Altamirano](https://github.com/Ahuahuachi)
+* [![]()](https://github.com/apps/dependabot)
+  [**dependabot[bot]**](https://github.com/apps/dependabot)
+
+
+Languages
+---------
+
+
+
+
+
+
+
+* [Python
+  68.5%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=python)
+* [Jinja
+  17.4%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=jinja)
+* [JavaScript
+  8.4%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=javascript)
+* [Dockerfile
+  2.8%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=dockerfile)
+* [CSS
+  1.2%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=css)
+* [Shell
+  0.9%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=shell)
+* [HTML
+  0.8%](/TI-Sin-Problemas/erpnext_mexico_compliance/search?l=html)
+
+
+
+   
+
+
+
+
+
+
+Footer
+------
+
+© 2026 GitHub, Inc.
+
+
+### Footer navigation
+
+* [Terms](https://docs.github.com/site-policy/github-terms/github-terms-of-service)
+* [Privacy](https://docs.github.com/site-policy/privacy-policies/github-privacy-statement)
+* [Security](https://github.com/security)
+* [Status](https://www.githubstatus.com/)
+* [Community](https://github.community/)
+* [Docs](https://docs.github.com/)
+* [Contact](https://support.github.com?tags=dotcom-footer)
+* Manage cookies
+* Do not share my personal information
+
+
+
+
+You can’t perform that action at this time.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
