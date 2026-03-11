@@ -692,7 +692,8 @@ class SalesOrderFollowupAgent:
             # Find common fields (excluding standard fields we don't want to copy)
             standard_fields = ['name', 'parent', 'parenttype', 'parentfield', 'idx', 'docstatus',
                             'item_code', 'item_name', 'qty', 'rate', 'amount', 'warehouse',
-                            'delivery_date', 'against_sales_order', 'prevdoc_docname', 'description']
+                            'delivery_date', 'against_sales_order', 'prevdoc_docname', 'description',
+                            'ordered_qty', 'received_qty', 'billed_qty', 'delivered_qty', 'conversion_factor']
             
             copyable_fields = [f for f in so_item_fields 
                             if f in qt_item_fields and f not in standard_fields]
