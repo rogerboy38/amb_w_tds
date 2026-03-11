@@ -1,0 +1,106 @@
+Found 100 SOs with source Quotations
+✅ SO-118626-BARENTZ Service S.p.A.: ✅ Fixed SO-118626-BARENTZ Service S.p.A.: 0 item fields updated from SAL-QTN-2021-00077
+✅ SO-118526-BARENTZ CANADA: ✅ Fixed SO-118526-BARENTZ CANADA: 0 item fields updated from SAL-QTN-2024-00772
+✅ SO-118426-LORAND LABORATORIES LLC: ✅ Fixed SO-118426-LORAND LABORATORIES LLC: 0 item fields updated from SAL-QTN-2024-00763
+✅ SO-118026-Calipso s.r.l: ✅ Fixed SO-118026-Calipso s.r.l: 0 item fields updated from SAL-QTN-2024-00982
+✅ SO-117926-AJE MEX: ✅ Fixed SO-117926-AJE MEX: 0 item fields updated from SAL-QTN-2024-00762
+✅ SO-117826-NATURAL MITCH: ✅ Fixed SO-117826-NATURAL MITCH: 0 item fields updated from SAL-QTN-2024-00981
+✅ SO-117726-Barentz France SARL: ✅ Fixed SO-117726-Barentz France SARL: 0 item fields updated from SAL-QTN-2024-00912
+✅ SO-117626-ALBAFLOR: ✅ Fixed SO-117626-ALBAFLOR: 0 item fields updated from SAL-QTN-2024-00911
+✅ SO-117526-CEMSA: ✅ Fixed SO-117526-CEMSA: 0 item fields updated from SAL-QTN-2024-00870
+✅ SO-117426-HSH Chemie SK s.r.o.: ✅ Fixed SO-117426-HSH Chemie SK s.r.o.: 0 item fields updated from SAL-QTN-2024-00797
+✅ SO-117026-BARENTZ Service S.p.A.: ✅ Fixed SO-117026-BARENTZ Service S.p.A.: 0 item fields updated from SAL-QTN-2023-00525
+❌ SO-116926-LORAND LABORATORIES LLC: Error fixing SO: Could not find Customer Address: LORAND LABORATORIES LLC - Billing-Billing-3
+❌ SO-01000-ALBAFLOR: Error fixing SO: Could not find Customer Address: ALBAFLOR - Billing-Billing-3
+❌ SO-01001-Parfusale AB: Error fixing SO: Could not find Customer Address: PARFUSALE AB - Billing-Billing-1
+❌ SO-01002-BRENNTAG TAIWAN CO.,: Error fixing SO: Could not find Customer Address: BRENNTAG TAIWAN CO, LTD - Billing-Billing-2
+✅ SO-01003-GOOD FIBERS: ✅ Fixed SO-01003-GOOD FIBERS: 0 item fields updated from SAL-QTN-2025-01003
+✅ SO-01004-CEMSA: ✅ Fixed SO-01004-CEMSA: 0 item fields updated from SAL-QTN-2025-01004
+✅ SO-01005-ABASTECEDORA QUIMICA: ✅ Fixed SO-01005-ABASTECEDORA QUIMICA: 0 item fields updated from SAL-QTN-2025-01005
+✅ SO-01006-Companhia Providênci: ✅ Fixed SO-01006-Companhia Providênci: 0 item fields updated from SAL-QTN-2025-01006
+✅ SO-01007-BONLAM S.A. DE C.V.: ✅ Fixed SO-01007-BONLAM S.A. DE C.V.: 0 item fields updated from SAL-QTN-2025-01007
+✅ SO-01008-CHARKIT CHEMICAL COR: ✅ Fixed SO-01008-CHARKIT CHEMICAL COR: 0 item fields updated from SAL-QTN-2025-01008
+✅ SO-01009-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01009-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01009
+✅ SO-01010-GREENTECH SA: ✅ Fixed SO-01010-GREENTECH SA: 0 item fields updated from SAL-QTN-2025-01010
+✅ SO-01011-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01011-BARENTZ GIDA VE KIMY: 0 item fields updated from SAL-QTN-2025-01011
+✅ SO-01012-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01012-BARENTZ GIDA VE KIMY: 0 item fields updated from SAL-QTN-2025-01012
+✅ SO-01013-BARENTZ Italia S.p.A: ✅ Fixed SO-01013-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01013
+❌ SO-01014-Pure Chemicals Co.,: Error fixing SO: Could not find Customer Address: Pure Chemicals CO, LTD - Billing-Billing-1
+✅ SO-01015-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01015-BARENTZ GIDA VE KIMY: 0 item fields updated from SAL-QTN-2025-01015
+❌ SO-01016-PGI ARGENTINA S.A.: Error fixing SO: Could not find Customer Address: PGI Argentina S.A.-Billing
+❌ SO-01017-WOONGJIN FOODS CO,LT: Error fixing SO: Could not find Customer Address: Woongjin Foods Co,Ltd.-Billing
+❌ SO-01018-CELLEX PHARM CO., LT: Error fixing SO: Could not find Customer Address: CELLEX PHARM CO, LTD - Billing-Billing-2
+✅ SO-01019-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01019-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01019
+❌ SO-01020-Cosmo Beauty Co., Lt: Error fixing SO: Could not find Customer Address: Cosmo Beauty Co, Ltd - Billing-Billing-1
+✅ SO-01021-BARENTZ Italia S.p.A: ✅ Fixed SO-01021-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01021
+✅ SO-01022-BARENTZ Italia S.p.A: ✅ Fixed SO-01022-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01022
+✅ SO-01023-BARENTZ Italia S.p.A: ✅ Fixed SO-01023-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01023
+✅ SO-01024-EL ALAMO EXPORT S.A.: ✅ Fixed SO-01024-EL ALAMO EXPORT S.A.: 0 item fields updated from SAL-QTN-2025-01024
+❌ SO-01025-BIONIC TRADING CORPO: Error fixing SO: Could not find Customer Address: BIONIC TRADING CORPORATION-Billing
+❌ SO-01026-Parfusale AB: Error fixing SO: Could not find Customer Address: PARFUSALE AB - Billing-Billing-1
+❌ SO-01027-HSH Chemie SK s.r.o.: Error fixing SO: Could not find Customer Address: HSH Chemie SK sro - Billing-Billing-2
+✅ SO-01028-AZELIS ISRAEL DISTRI: ✅ Fixed SO-01028-AZELIS ISRAEL DISTRI: 0 item fields updated from SAL-QTN-2025-01028
+✅ SO-01029-BARENTZ U.S.: ✅ Fixed SO-01029-BARENTZ U.S.: 0 item fields updated from SAL-QTN-2025-01029
+✅ SO-01030-GREENTECH SA: ✅ Fixed SO-01030-GREENTECH SA: 0 item fields updated from SAL-QTN-2025-01030
+❌ SO-01031-N BIOTECH CO., LTD.: Error fixing SO: Could not find Customer Address: N Biotech Co., Ltd.-Billing
+✅ SO-01032-BARENTZ Italia S.p.A: ✅ Fixed SO-01032-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01032
+✅ SO-01033-Companhia Providênci: ✅ Fixed SO-01033-Companhia Providênci: 0 item fields updated from SAL-QTN-2025-01033
+✅ SO-01034-BONLAM S.A. DE C.V.: ✅ Fixed SO-01034-BONLAM S.A. DE C.V.: 0 item fields updated from SAL-QTN-2025-01034
+❌ SO-01035-ALBAFLOR: Error fixing SO: Could not find Customer Address: ALBAFLOR - Billing-Billing-3
+❌ SO-01036-GUSTAVO RAFAEL VILLA: Error fixing SO: Could not find Customer Address: GUSTAVO RAFAEL VILLA CARRANDI - Billing-Billing-4
+✅ SO-01037-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01037-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01037
+✅ SO-01038-COSBAR SL: ✅ Fixed SO-01038-COSBAR SL: 0 item fields updated from SAL-QTN-2025-01038
+❌ SO-01039-SOMES: Error fixing SO: Could not find Customer Address: SOMES - Billing-Billing-2
+✅ SO-01040-VABO N: ✅ Fixed SO-01040-VABO N: 0 item fields updated from SAL-QTN-2025-01040
+❌ SO-01041-UNION CHEMICAL IND.: Error fixing SO: Could not find Customer Address: UNION CHEMICAL IND CO, LTD - Billing-Billing-1
+❌ SO-01042-PGI ARGENTINA S.A.: Error fixing SO: Could not find Customer Address: PGI Argentina S.A.-Billing
+✅ SO-01043-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01043-BARENTZ GIDA VE KIMY: 0 item fields updated from SAL-QTN-2025-01043
+❌ SO-01044-PGI ARGENTINA S.A.: Error fixing SO: Could not find Customer Address: PGI Argentina S.A.-Billing
+✅ SO-01045-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01045-BARENTZ GIDA VE KIMY: 0 item fields updated from SAL-QTN-2025-01045
+❌ SO-01046-TROPIC SKINCARE LTD: Error fixing SO: Could not find Customer Address: TROPIC SKINCARE LTD-Billing
+❌ SO-01047-BARENTZ FRANCE SARL: Error fixing SO: Could not find Customer Address: Barentz France SARL - Billing-Billing-1
+✅ SO-01048-BARENTZ Italia S.p.A: ✅ Fixed SO-01048-BARENTZ Italia S.p.A: 0 item fields updated from SAL-QTN-2025-01048
+✅ SO-01049-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01049-AJEMEX /PLNTA PUEBLA: 0 item fields updated from SAL-QTN-2025-01049
+✅ SO-01050-AZELIS ISRAEL DISTRI: ✅ Fixed SO-01050-AZELIS ISRAEL DISTRI: 0 item fields updated from SAL-QTN-2025-01050
+❌ SO-01051-BRENNTAG NORDIC A/S: Error fixing SO: Could not find Customer Address: BRENNTAG NORDIC A/S - Billing-Billing-1
+❌ SO-01052-GUSTAVO RAFAEL VILLA: Error fixing SO: Could not find Customer Address: GUSTAVO RAFAEL VILLA CARRANDI - Billing-Billing-4
+✅ SO-01053-NATURAL MITCH: ✅ Fixed SO-01053-NATURAL MITCH: 0 item fields updated from SAL-QTN-2025-01053
+✅ SO-01054-IMCD FRANCE SAS: ✅ Fixed SO-01054-IMCD FRANCE SAS: 0 item fields updated from SAL-QTN-2025-01054
+✅ SO-01055-IMCD FRANCE SAS: ✅ Fixed SO-01055-IMCD FRANCE SAS: 0 item fields updated from SAL-QTN-2025-01055
+✅ SO-01056-GREENTECH SA: ✅ Fixed SO-01056-GREENTECH SA: 0 item fields updated from SAL-QTN-2025-01056
+✅ SO-01058-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01058-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01058
+❌ SO-01059-ALBAFLOR: Error fixing SO: Could not find Customer Address: ALBAFLOR - Billing-Billing-3
+✅ SO-01061-UNIVERSIDAD AUTONOMA: ✅ Fixed SO-01061-UNIVERSIDAD AUTONOMA: 0 item fields updated from SAL-QTN-2025-01061
+✅ SO-01062-Calipso s.r.l: ✅ Fixed SO-01062-Calipso s.r.l: 0 item fields updated from SAL-QTN-2025-01062
+✅ SO-01063-BARENTZ FRANCE SARCE: ✅ Fixed SO-01063-BARENTZ FRANCE SARCE: 0 item fields updated from SAL-QTN-2025-01063
+✅ SO-01064-BARENTZ FRANCE SARCE: ✅ Fixed SO-01064-BARENTZ FRANCE SARCE: 0 item fields updated from SAL-QTN-2025-01064
+✅ SO-01065-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01065-AJEMEX /PLNTA PUEBLA: 0 item fields updated from SAL-QTN-2025-01065
+❌ SO-01066-Parfusale AB: Error fixing SO: Could not find Customer Address: PARFUSALE AB - Billing-Billing-1
+✅ SO-01067-BARENTZ FRANCE SARCE: ✅ Fixed SO-01067-BARENTZ FRANCE SARCE: 0 item fields updated from SAL-QTN-2025-01067
+✅ SO-01068-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01068-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01068
+✅ SO-01069-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01069-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01069
+✅ SO-01070-ABASTECEDORA QUIMICA: ✅ Fixed SO-01070-ABASTECEDORA QUIMICA: 0 item fields updated from SAL-QTN-2025-01070
+✅ SO-01071-GREENTECH SA: ✅ Fixed SO-01071-GREENTECH SA: 0 item fields updated from SAL-QTN-2025-01071
+✅ SO-01072-BONLAM S.A. DE C.V.: ✅ Fixed SO-01072-BONLAM S.A. DE C.V.: 0 item fields updated from SAL-QTN-2025-01072
+✅ SO-01073-CHARKIT CHEMICAL COR: ✅ Fixed SO-01073-CHARKIT CHEMICAL COR: 0 item fields updated from SAL-QTN-2025-01073
+❌ SO-01074-FROSCO AB: Error fixing SO: Could not find Customer Address: FROSCO AB - Billing-Billing-3
+❌ SO-01075-DON PULCRO SA. DE CV: Error fixing SO: Could not find Customer Address: DON PULCRO SA DE CV - Billing-Billing-1
+✅ SO-01076-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01076-AJEMEX /PLNTA PUEBLA: 0 item fields updated from SAL-QTN-2025-01076
+❌ SO-01077-TROPIC SKINCARE LTD: Error fixing SO: Could not find Customer Address: TROPIC SKINCARE LTD-Billing
+❌ SO-01078-ALBAFLOR: Error fixing SO: Could not find Customer Address: ALBAFLOR - Billing-Billing-3
+❌ SO-01079-LORAND LABORATORIES: Error fixing SO: Item 0803 is a template, please select one of its variants
+❌ SO-01080-DAEHAN CHEMTECH CO.,: Error fixing SO: Could not find Customer Address: DAEHAN CHEMTECH CO., LTD.-Billing
+✅ SO-01081-BLENDHUB: ✅ Fixed SO-01081-BLENDHUB: 0 item fields updated from SAL-QTN-2025-01081
+✅ SO-01082-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01082-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01082
+✅ SO-01083-BRENNTAG INGREDIENTS: ✅ Fixed SO-01083-BRENNTAG INGREDIENTS: 0 item fields updated from SAL-QTN-2025-01083
+✅ SO-01084-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01084-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01084
+✅ SO-01085-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01085-ALBAAD DEUTSCHLAND G: 0 item fields updated from SAL-QTN-2025-01085
+✅ SO-01086-NATURAL MITCH: ✅ Fixed SO-01086-NATURAL MITCH: 0 item fields updated from SAL-QTN-2025-01086
+❌ SO-01087-HSH Chemie SK s.r.o.: Error fixing SO: Could not find Customer Address: HSH Chemie SK sro - Billing-Billing-2
+✅ SO-01088-ALPHATECH SCIENCE (T: ✅ Fixed SO-01088-ALPHATECH SCIENCE (T: 0 item fields updated from SAL-QTN-2025-01088
+✅ SO-01089-AJE PANAMA: ✅ Fixed SO-01089-AJE PANAMA: 0 item fields updated from SAL-QTN-2025-01089
+
+=== SUMMARY ===
+Fixed: 68
+No changes needed: 0
+Errors: 32
