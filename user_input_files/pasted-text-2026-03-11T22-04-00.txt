@@ -1,0 +1,100 @@
+
+    ...:             else:
+    ...:                 # Check for bad naming patterns
+    ...:                 addr_name_lower = addr_name.lower()
+    ...:                 if addr_name_lower.count("billing") >= 2 or addr_name_l
+    ...: ower.count("shipping") >= 2:
+    ...:                     issues.append(f"{addr_field}: '{addr_name}' (BAD NA
+    ...: MING)")
+    ...: 
+    ...:     if issues:
+    ...:         problematic_qts.append({
+    ...:             "quotation": qt.name,
+    ...:             "customer": qt.customer,
+    ...:             "issues": issues
+    ...:         })
+    ...: 
+    ...: print(f"Found {len(problematic_qts)} Quotations with address issues:\n"
+    ...: )
+    ...: for p in problematic_qts[:50]:  # Show first 50
+    ...:     print(f"📋 {p['quotation']} ({p['customer']})")
+    ...:     for issue in p['issues']:
+    ...:         print(f"   ⚠️ {issue}")
+    ...:     print()
+    ...: 
+ 
+---------------------------------------------------------------------------
+OperationalError                          Traceback (most recent call last)
+Cell In[17], line 9
+      3 # Find all Quotations with addresses that either:
+      4 # 1. Don't exist in the Address table
+      5 # 2. Have bad naming like "Billing-Billing-Billing"
+      7 problematic_qts = []
+----> 9 all_qts = frappe.get_all("Quotation", 
+     10     filters={"docstatus": ["!=", 2]},  # Not cancelled
+     11     fields=["name", "customer", "billing_address", "customer_address", "shipping_address_name"],
+     12     limit=1000
+     13 )
+     15 for qt in all_qts:
+     16     issues = []
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1382, in get_all(doctype, *args, **kwargs)
+   1380 if "limit_page_length" not in kwargs:
+   1381 	kwargs["limit_page_length"] = 0
+-> 1382 return get_list(doctype, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1357, in get_list(doctype, *args, **kwargs)
+   1338 """List database query via `frappe.model.db_query`. Will also check for permissions.
+   1339 
+   1340 :param doctype: DocType on which query is to be made.
+   (...)
+   1353         frappe.get_list("ToDo", fields="*", filters = [["modified", ">", "2014-01-01"]])
+   1354 """
+   1355 import frappe.model.qb_query
+-> 1357 return frappe.model.qb_query.DatabaseQuery(doctype).execute(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/qb_query.py:212, in DatabaseQuery.execute(self, fields, filters, or_filters, group_by, order_by, limit, offset, limit_start, limit_page_length, as_list, with_childnames, debug, ignore_permissions, user, with_comment_count, join, distinct, start, page_length, ignore_ifnull, save_user_settings, save_user_settings_fields, update, user_settings, reference_doctype, run, strict, pluck, ignore_ddl, parent_doctype, ignore_user_permissions)
+    210 	result = query.run(debug=debug, as_dict=True, pluck=pluck)
+    211 else:
+--> 212 	result = query.run(debug=debug, as_dict=not as_list, update=update)
+    214 # Add comment count if requested and not as_list
+    215 if sbool(with_comment_count) and not as_list and self.doctype:
+
+File ~/frappe-bench/apps/frappe/frappe/query_builder/utils.py:131, in execute_query(query, *args, **kwargs)
+    129 child_queries = query._child_queries
+    130 query, params = prepare_query(query)
+--> 131 result = frappe.local.db.sql(query, params, *args, **kwargs)  # nosemgrep
+    133 if child_queries and isinstance(child_queries, list) and result:
+    134 	execute_child_queries(child_queries, result)
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:179, in BaseCursor.execute(self, query, args)
+    176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+--> 179 res = self._query(mogrified_query)
+    180 return res
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:330, in BaseCursor._query(self, q)
+    328 self.rowcount = None
+    329 self.lastrowid = None
+--> 330 db.query(q)
+    331 self._do_get_result(db)
+    332 self._post_get_result()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/connections.py:280, in Connection.query(self, query)
+    278 if isinstance(query, bytearray):
+    279     query = bytes(query)
+--> 280 _mysql.connection.query(self, query)
+
+OperationalError: (1054, "Unknown column 'customer' in 'SELECT'")
+
