@@ -1,0 +1,126 @@
+   ...: import frappe
+   ...: sos = frappe.get_all("Sales Order",
+   ...:     filters={
+   ...:         "docstatus": ["!=", 2],
+   ...:         "name": ["like", "SO-010%"]
+   ...:     },
+   ...:     fields=["name"]
+   ...: )
+   ...: 
+   ...: fixed, skipped, errors = 0, 0, 0
+   ...: for so in sos:
+   ...:     result = agent.fix_so_from_quotation(so.name)
+   ...:     if result.get("success"):
+   ...:         if "Skipped" in result.get("message", ""):
+   ...:             skipped += 1
+   ...:         else:
+   ...:             fixed += 1
+   ...:             print(f"✅ {so.name}: {result.get('message')}")
+   ...:     else:
+   ...:         errors += 1
+   ...:         print(f"❌ {so.name}: {result.get('error')}")
+   ...: 
+   ...: print(f"=== SUMMARY ===\nFixed: {fixed}\nSkipped: {skipped}\nErrors: {er
+   ...: rors}")
+✅ SO-01000-ALBAFLOR: ✅ Fixed SO-01000-ALBAFLOR: 0 fields updated from SAL-QTN-2025-01000
+✅ SO-01001-Parfusale AB: ✅ Fixed SO-01001-Parfusale AB: 0 fields updated from SAL-QTN-2025-01001
+✅ SO-01002-BRENNTAG TAIWAN CO.,: ✅ Fixed SO-01002-BRENNTAG TAIWAN CO.,: 0 fields updated from SAL-QTN-2025-01002
+✅ SO-01003-GOOD FIBERS: ✅ Fixed SO-01003-GOOD FIBERS: 0 fields updated from SAL-QTN-2025-01003
+✅ SO-01004-CEMSA: ✅ Fixed SO-01004-CEMSA: 0 fields updated from SAL-QTN-2025-01004
+✅ SO-01005-ABASTECEDORA QUIMICA: ✅ Fixed SO-01005-ABASTECEDORA QUIMICA: 0 fields updated from SAL-QTN-2025-01005
+✅ SO-01006-Companhia Providênci: ✅ Fixed SO-01006-Companhia Providênci: 0 fields updated from SAL-QTN-2025-01006
+✅ SO-01007-BONLAM S.A. DE C.V.: ✅ Fixed SO-01007-BONLAM S.A. DE C.V.: 0 fields updated from SAL-QTN-2025-01007
+✅ SO-01008-CHARKIT CHEMICAL COR: ✅ Fixed SO-01008-CHARKIT CHEMICAL COR: 0 fields updated from SAL-QTN-2025-01008
+✅ SO-01009-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01009-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01009
+✅ SO-01010-GREENTECH SA: ✅ Fixed SO-01010-GREENTECH SA: 1 fields updated from SAL-QTN-2025-01010
+✅ SO-01011-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01011-BARENTZ GIDA VE KIMY: 0 fields updated from SAL-QTN-2025-01011
+✅ SO-01012-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01012-BARENTZ GIDA VE KIMY: 0 fields updated from SAL-QTN-2025-01012
+✅ SO-01013-BARENTZ Italia S.p.A: ✅ Fixed SO-01013-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01013
+✅ SO-01014-Pure Chemicals Co.,: ✅ Fixed SO-01014-Pure Chemicals Co.,: 0 fields updated from SAL-QTN-2025-01014
+✅ SO-01015-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01015-BARENTZ GIDA VE KIMY: 0 fields updated from SAL-QTN-2025-01015
+✅ SO-01016-PGI ARGENTINA S.A.: ✅ Fixed SO-01016-PGI ARGENTINA S.A.: 0 fields updated from SAL-QTN-2025-01016
+✅ SO-01017-WOONGJIN FOODS CO,LT: ✅ Fixed SO-01017-WOONGJIN FOODS CO,LT: 0 fields updated from SAL-QTN-2025-01017
+✅ SO-01018-CELLEX PHARM CO., LT: ✅ Fixed SO-01018-CELLEX PHARM CO., LT: 0 fields updated from SAL-QTN-2025-01018
+✅ SO-01019-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01019-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01019
+✅ SO-01020-Cosmo Beauty Co., Lt: ✅ Fixed SO-01020-Cosmo Beauty Co., Lt: 0 fields updated from SAL-QTN-2025-01020
+✅ SO-01021-BARENTZ Italia S.p.A: ✅ Fixed SO-01021-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01021
+✅ SO-01022-BARENTZ Italia S.p.A: ✅ Fixed SO-01022-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01022
+✅ SO-01023-BARENTZ Italia S.p.A: ✅ Fixed SO-01023-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01023
+✅ SO-01024-EL ALAMO EXPORT S.A.: ✅ Fixed SO-01024-EL ALAMO EXPORT S.A.: 0 fields updated from SAL-QTN-2025-01024
+✅ SO-01025-BIONIC TRADING CORPO: ✅ Fixed SO-01025-BIONIC TRADING CORPO: 0 fields updated from SAL-QTN-2025-01025
+✅ SO-01026-Parfusale AB: ✅ Fixed SO-01026-Parfusale AB: 0 fields updated from SAL-QTN-2025-01026
+✅ SO-01027-HSH Chemie SK s.r.o.: ✅ Fixed SO-01027-HSH Chemie SK s.r.o.: 0 fields updated from SAL-QTN-2025-01027
+✅ SO-01028-AZELIS ISRAEL DISTRI: ✅ Fixed SO-01028-AZELIS ISRAEL DISTRI: 0 fields updated from SAL-QTN-2025-01028
+✅ SO-01029-BARENTZ U.S.: ✅ Fixed SO-01029-BARENTZ U.S.: 0 fields updated from SAL-QTN-2025-01029
+✅ SO-01030-GREENTECH SA: ✅ Fixed SO-01030-GREENTECH SA: 0 fields updated from SAL-QTN-2025-01030
+✅ SO-01031-N BIOTECH CO., LTD.: ✅ Fixed SO-01031-N BIOTECH CO., LTD.: 0 fields updated from SAL-QTN-2025-01031
+✅ SO-01032-BARENTZ Italia S.p.A: ✅ Fixed SO-01032-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01032
+✅ SO-01033-Companhia Providênci: ✅ Fixed SO-01033-Companhia Providênci: 0 fields updated from SAL-QTN-2025-01033
+✅ SO-01034-BONLAM S.A. DE C.V.: ✅ Fixed SO-01034-BONLAM S.A. DE C.V.: 0 fields updated from SAL-QTN-2025-01034
+✅ SO-01035-ALBAFLOR: ✅ Fixed SO-01035-ALBAFLOR: 0 fields updated from SAL-QTN-2025-01035
+✅ SO-01036-GUSTAVO RAFAEL VILLA: ✅ Fixed SO-01036-GUSTAVO RAFAEL VILLA: 0 fields updated from SAL-QTN-2025-01036
+✅ SO-01037-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01037-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01037
+✅ SO-01038-COSBAR SL: ✅ Fixed SO-01038-COSBAR SL: 0 fields updated from SAL-QTN-2025-01038
+✅ SO-01039-SOMES: ✅ Fixed SO-01039-SOMES: 0 fields updated from SAL-QTN-2025-01039
+✅ SO-01040-VABO N: ✅ Fixed SO-01040-VABO N: 0 fields updated from SAL-QTN-2025-01040
+✅ SO-01041-UNION CHEMICAL IND.: ✅ Fixed SO-01041-UNION CHEMICAL IND.: 0 fields updated from SAL-QTN-2025-01041
+✅ SO-01042-PGI ARGENTINA S.A.: ✅ Fixed SO-01042-PGI ARGENTINA S.A.: 0 fields updated from SAL-QTN-2025-01042
+✅ SO-01043-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01043-BARENTZ GIDA VE KIMY: 1 fields updated from SAL-QTN-2025-01043
+✅ SO-01044-PGI ARGENTINA S.A.: ✅ Fixed SO-01044-PGI ARGENTINA S.A.: 0 fields updated from SAL-QTN-2025-01044
+✅ SO-01045-BARENTZ GIDA VE KIMY: ✅ Fixed SO-01045-BARENTZ GIDA VE KIMY: 0 fields updated from SAL-QTN-2025-01045
+✅ SO-01046-TROPIC SKINCARE LTD: ✅ Fixed SO-01046-TROPIC SKINCARE LTD: 0 fields updated from SAL-QTN-2025-01046
+✅ SO-01047-BARENTZ FRANCE SARL: ✅ Fixed SO-01047-BARENTZ FRANCE SARL: 0 fields updated from SAL-QTN-2025-01047
+✅ SO-01048-BARENTZ Italia S.p.A: ✅ Fixed SO-01048-BARENTZ Italia S.p.A: 1 fields updated from SAL-QTN-2025-01048
+✅ SO-01049-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01049-AJEMEX /PLNTA PUEBLA: 0 fields updated from SAL-QTN-2025-01049
+✅ SO-01050-AZELIS ISRAEL DISTRI: ✅ Fixed SO-01050-AZELIS ISRAEL DISTRI: 0 fields updated from SAL-QTN-2025-01050
+✅ SO-01051-BRENNTAG NORDIC A/S: ✅ Fixed SO-01051-BRENNTAG NORDIC A/S: 0 fields updated from SAL-QTN-2025-01051
+✅ SO-01052-GUSTAVO RAFAEL VILLA: ✅ Fixed SO-01052-GUSTAVO RAFAEL VILLA: 0 fields updated from SAL-QTN-2025-01052
+✅ SO-01053-NATURAL MITCH: ✅ Fixed SO-01053-NATURAL MITCH: 0 fields updated from SAL-QTN-2025-01053
+✅ SO-01054-IMCD FRANCE SAS: ✅ Fixed SO-01054-IMCD FRANCE SAS: 0 fields updated from SAL-QTN-2025-01054
+✅ SO-01055-IMCD FRANCE SAS: ✅ Fixed SO-01055-IMCD FRANCE SAS: 0 fields updated from SAL-QTN-2025-01055
+✅ SO-01056-GREENTECH SA: ✅ Fixed SO-01056-GREENTECH SA: 1 fields updated from SAL-QTN-2025-01056
+✅ SO-01058-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01058-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01058
+✅ SO-01059-ALBAFLOR: ✅ Fixed SO-01059-ALBAFLOR: 1 fields updated from SAL-QTN-2025-01059
+✅ SO-01061-UNIVERSIDAD AUTONOMA: ✅ Fixed SO-01061-UNIVERSIDAD AUTONOMA: 0 fields updated from SAL-QTN-2025-01061
+✅ SO-01062-Calipso s.r.l: ✅ Fixed SO-01062-Calipso s.r.l: 0 fields updated from SAL-QTN-2025-01062
+✅ SO-01063-BARENTZ FRANCE SARCE: ✅ Fixed SO-01063-BARENTZ FRANCE SARCE: 0 fields updated from SAL-QTN-2025-01063
+✅ SO-01064-BARENTZ FRANCE SARCE: ✅ Fixed SO-01064-BARENTZ FRANCE SARCE: 0 fields updated from SAL-QTN-2025-01064
+✅ SO-01065-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01065-AJEMEX /PLNTA PUEBLA: 0 fields updated from SAL-QTN-2025-01065
+✅ SO-01066-Parfusale AB: ✅ Fixed SO-01066-Parfusale AB: 1 fields updated from SAL-QTN-2025-01066
+✅ SO-01067-BARENTZ FRANCE SARCE: ✅ Fixed SO-01067-BARENTZ FRANCE SARCE: 0 fields updated from SAL-QTN-2025-01067
+✅ SO-01068-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01068-ALBAAD DEUTSCHLAND G: 2 fields updated from SAL-QTN-2025-01068
+✅ SO-01069-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01069-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01069
+✅ SO-01070-ABASTECEDORA QUIMICA: ✅ Fixed SO-01070-ABASTECEDORA QUIMICA: 0 fields updated from SAL-QTN-2025-01070
+✅ SO-01071-GREENTECH SA: ✅ Fixed SO-01071-GREENTECH SA: 0 fields updated from SAL-QTN-2025-01071
+✅ SO-01072-BONLAM S.A. DE C.V.: ✅ Fixed SO-01072-BONLAM S.A. DE C.V.: 0 fields updated from SAL-QTN-2025-01072
+✅ SO-01073-CHARKIT CHEMICAL COR: ✅ Fixed SO-01073-CHARKIT CHEMICAL COR: 0 fields updated from SAL-QTN-2025-01073
+✅ SO-01074-FROSCO AB: ✅ Fixed SO-01074-FROSCO AB: 0 fields updated from SAL-QTN-2025-01074
+✅ SO-01075-DON PULCRO SA. DE CV: ✅ Fixed SO-01075-DON PULCRO SA. DE CV: 0 fields updated from SAL-QTN-2025-01075
+✅ SO-01076-AJEMEX /PLNTA PUEBLA: ✅ Fixed SO-01076-AJEMEX /PLNTA PUEBLA: 0 fields updated from SAL-QTN-2025-01076
+✅ SO-01077-TROPIC SKINCARE LTD: ✅ Fixed SO-01077-TROPIC SKINCARE LTD: 0 fields updated from SAL-QTN-2025-01077
+✅ SO-01078-ALBAFLOR: ✅ Fixed SO-01078-ALBAFLOR: 0 fields updated from SAL-QTN-2025-01078
+✅ SO-01079-LORAND LABORATORIES: ✅ Fixed SO-01079-LORAND LABORATORIES: 0 fields updated from SAL-QTN-2025-01079
+✅ SO-01080-DAEHAN CHEMTECH CO.,: ✅ Fixed SO-01080-DAEHAN CHEMTECH CO.,: 0 fields updated from SAL-QTN-2025-01080
+✅ SO-01081-BLENDHUB: ✅ Fixed SO-01081-BLENDHUB: 0 fields updated from SAL-QTN-2025-01081
+✅ SO-01082-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01082-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01082
+✅ SO-01083-BRENNTAG INGREDIENTS: ✅ Fixed SO-01083-BRENNTAG INGREDIENTS: 0 fields updated from SAL-QTN-2025-01083
+✅ SO-01084-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01084-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01084
+✅ SO-01085-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01085-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01085
+✅ SO-01086-NATURAL MITCH: ✅ Fixed SO-01086-NATURAL MITCH: 0 fields updated from SAL-QTN-2025-01086
+✅ SO-01087-HSH Chemie SK s.r.o.: ✅ Fixed SO-01087-HSH Chemie SK s.r.o.: 0 fields updated from SAL-QTN-2025-01087
+✅ SO-01088-ALPHATECH SCIENCE (T: ✅ Fixed SO-01088-ALPHATECH SCIENCE (T: 0 fields updated from SAL-QTN-2025-01088
+✅ SO-01089-AJE PANAMA: ✅ Fixed SO-01089-AJE PANAMA: 0 fields updated from SAL-QTN-2025-01089
+✅ SO-01090-AJE PANAMA: ✅ Fixed SO-01090-AJE PANAMA: 0 fields updated from SAL-QTN-2025-01090
+✅ SO-01091-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01091-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01091
+✅ SO-01092-YI-DA Chemicals Co.,: ✅ Fixed SO-01092-YI-DA Chemicals Co.,: 0 fields updated from SAL-QTN-2025-01092
+✅ SO-01093-ALBAAD DEUTSCHLAND G: ✅ Fixed SO-01093-ALBAAD DEUTSCHLAND G: 1 fields updated from SAL-QTN-2025-01093
+✅ SO-01094-DAEHAN CHEMTECH CO.,: ✅ Fixed SO-01094-DAEHAN CHEMTECH CO.,: 0 fields updated from SAL-QTN-2025-01094
+✅ SO-01095-Barentz UK Limited: ✅ Fixed SO-01095-Barentz UK Limited: 0 fields updated from SAL-QTN-2025-01095
+✅ SO-01096-N BIOTECH CO., LTD.: ✅ Fixed SO-01096-N BIOTECH CO., LTD.: 0 fields updated from SAL-QTN-2025-01096
+✅ SO-01097-AZELIS ISRAEL DISTRI: ✅ Fixed SO-01097-AZELIS ISRAEL DISTRI: 0 fields updated from SAL-QTN-2025-01097
+✅ SO-01098-MAGNACHEM INTERNATIO: ✅ Fixed SO-01098-MAGNACHEM INTERNATIO: 0 fields updated from SAL-QTN-2025-01098
+=== SUMMARY ===
+Fixed: 97
+Skipped: 0
+Errors: 0
+
