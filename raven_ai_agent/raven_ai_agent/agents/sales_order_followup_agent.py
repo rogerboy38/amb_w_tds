@@ -1,5 +1,5 @@
 """
-Sales Order Follow-up AI Agent — UPDATED
+Sales Order Follow-up AI Agent - UPDATED
 Tracks and advances Sales Orders through the complete fulfillment cycle.
 Based on SOP: Ciclo de Venta a Compra en ERPNext
 
@@ -9,10 +9,10 @@ UPDATED to cover Workflow Steps 3, 6, 7:
   Step 7: Sales Invoice (auto-create from SO/DN with CFDI/currency logic)
 
 Changes from original:
-  + create_delivery_note(so_name) — auto-creates DN from SO
-  + create_sales_invoice(so_name) — auto-creates SI from SO/DN with CFDI fields
-  + create_from_quotation(quotation_name) — creates SO from Quotation
-  + submit_sales_order(so_name) — auto-submit SO
+  + create_delivery_note(so_name) - auto-creates DN from SO
+  + create_sales_invoice(so_name) - auto-creates SI from SO/DN with CFDI fields
+  + create_from_quotation(quotation_name) - creates SO from Quotation
+  + submit_sales_order(so_name) - auto-submit SO
   + Updated STATUS_NEXT_ACTIONS to include manufacturing steps
   + Server Script awareness (no import frappe in Server Scripts)
 
@@ -27,15 +27,15 @@ import re
 class SalesOrderFollowupAgent:
     """AI Agent for Sales Order follow-up and fulfillment tracking"""
     
-    # Status workflow mapping — UPDATED with manufacturing steps
+    # Status workflow mapping - UPDATED with manufacturing steps
     STATUS_NEXT_ACTIONS = {
         "Draft": "Submit the Sales Order → then create Manufacturing WO",
         "To Deliver and Bill": "Check inventory → If stock available: Create DN; If not: Create Manufacturing WO",
         "To Deliver": "Create Delivery Note (stock must be available in FG to Sell)",
         "To Bill": "Create Sales Invoice (with CFDI G03 for Mexico)",
-        "Completed": "Order fully fulfilled — create Payment Entry if outstanding",
-        "Cancelled": "Order was cancelled — no action needed",
-        "Overdue": "Follow up with customer — order is past delivery date"
+        "Completed": "Order fully fulfilled - create Payment Entry if outstanding",
+        "Cancelled": "Order was cancelled - no action needed",
+        "Overdue": "Follow up with customer - order is past delivery date"
     }
     
     def __init__(self, user: str = None):
@@ -496,7 +496,7 @@ class SalesOrderFollowupAgent:
                 return {
                     "success": False,
                     "error": (
-                        f"Cannot create Delivery Note — insufficient stock:\n"
+                        f"Cannot create Delivery Note - insufficient stock:\n"
                         + "\n".join(shortages)
                         + f"\n\n💡 Complete manufacturing first:\n"
                         f"  `@manufacturing create wo from so {so_name}`"
@@ -794,7 +794,7 @@ class SalesOrderFollowupAgent:
             return {"success": False, "error": str(e)}
 
     def get_next_steps(self, so_name: str) -> Dict:
-        """Recommend next actions based on current SO state — UPDATED with manufacturing awareness"""
+        """Recommend next actions based on current SO state - UPDATED with manufacturing awareness"""
         try:
             so = frappe.get_doc("Sales Order", so_name)
             
@@ -820,11 +820,11 @@ class SalesOrderFollowupAgent:
                     outstanding = frappe.db.get_value("Sales Invoice", si_ref.parent, "outstanding_amount")
                     if flt(outstanding) > 0:
                         has_outstanding = True
-                        steps.append(f"1. Payment pending on {self.make_link('Sales Invoice', si_ref.parent)} — Outstanding: {outstanding}")
+                        steps.append(f"1. Payment pending on {self.make_link('Sales Invoice', si_ref.parent)} - Outstanding: {outstanding}")
                         steps.append(f"   `@payment create {si_ref.parent}`")
 
                 if not has_outstanding:
-                    steps = ["Order is fully completed and paid — no actions needed"]
+                    steps = ["Order is fully completed and paid - no actions needed"]
 
                 return {
                     "success": True,
@@ -844,7 +844,7 @@ class SalesOrderFollowupAgent:
 
             if so.status in ["To Deliver and Bill", "To Deliver"]:
                 if inv_check.get("all_available"):
-                    steps.append(f"1. ✅ Inventory available — Create Delivery Note")
+                    steps.append(f"1. ✅ Inventory available - Create Delivery Note")
                     steps.append(f"   `@sales_order_follow_up delivery {so_name}`")
                 else:
                     if existing_wos:
@@ -855,7 +855,7 @@ class SalesOrderFollowupAgent:
                             elif wo.status == "Completed":
                                 steps.append(f"1. ✅ WO Completed: {self.make_link('Work Order', wo.name)}")
                     else:
-                        steps.append("1. ❌ Inventory insufficient — Create Manufacturing WO")
+                        steps.append("1. ❌ Inventory insufficient - Create Manufacturing WO")
                         steps.append(f"   `@manufacturing create wo from so {so_name}`")
 
             if so.status in ["To Deliver and Bill", "To Bill"]:
@@ -974,10 +974,10 @@ class SalesOrderFollowupAgent:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    # ========== MAIN HANDLER — UPDATED ==========
+    # ========== MAIN HANDLER - UPDATED ==========
     
     def process_command(self, message: str) -> str:
-        """Process incoming command and return response — UPDATED with new commands"""
+        """Process incoming command and return response - UPDATED with new commands"""
         message_lower = message.lower().strip()
         
         # Extract SO name if present
@@ -1019,12 +1019,12 @@ class SalesOrderFollowupAgent:
             result = self.submit_sales_order(so_name)
             return result.get("message", result.get("error", "Unknown error"))
 
-        # ---- CREATE DELIVERY NOTE (NEW — Step 6) ----
+        # ---- CREATE DELIVERY NOTE (NEW - Step 6) ----
         if ("delivery" in message_lower or "dn" in message_lower or "entregar" in message_lower) and so_name:
             result = self.create_delivery_note(so_name)
             return result.get("message", result.get("error", "Unknown error"))
 
-        # ---- CREATE SALES INVOICE (NEW — Step 7) ----
+        # ---- CREATE SALES INVOICE (NEW - Step 7) ----
         if ("invoice" in message_lower or "factura" in message_lower
                 or "bill" in message_lower or "si" in message_lower) and so_name:
             from_dn = "from dn" in message_lower or "from delivery" in message_lower or "dn" not in message_lower
@@ -1062,7 +1062,7 @@ class SalesOrderFollowupAgent:
                 if wos:
                     msg += "\n🏭 **Work Orders:**\n"
                     for wo in wos:
-                        msg += f"  • {self.make_link('Work Order', wo['name'])} — {wo['status']} ({wo['produced']})\n"
+                        msg += f"  • {self.make_link('Work Order', wo['name'])} - {wo['status']} ({wo['produced']})\n"
 
                 linked = result["linked_documents"]
                 if linked["delivery_notes"]:
@@ -1079,7 +1079,7 @@ class SalesOrderFollowupAgent:
             if result["success"]:
                 msg = f"📦 **Inventory Check for {result['link']}**\n\n"
                 for item in result["items"]:
-                    msg += f"  {item['status']} {item['item_code']} — Need: {item['required_qty']}, Have: {item['available_qty']}\n"
+                    msg += f"  {item['status']} {item['item_code']} - Need: {item['required_qty']}, Have: {item['available_qty']}\n"
                 msg += f"\n💡 {result['recommendation']}"
                 return msg
             return f"❌ {result['error']}"
@@ -1114,7 +1114,7 @@ class SalesOrderFollowupAgent:
                     if items:
                         msg += f"\n{title}:\n"
                         for item in items:
-                            msg += f"  • {item['link']} — {item.get('status', 'N/A')}\n"
+                            msg += f"  • {item['link']} - {item.get('status', 'N/A')}\n"
                 
                 return msg
             return f"❌ {result['error']}"
@@ -1124,7 +1124,7 @@ class SalesOrderFollowupAgent:
             result = self.get_so_status(so_name)
             if result["success"]:
                 return (
-                    f"Sales Order {result['link']} — {result['status']}\n"
+                    f"Sales Order {result['link']} - {result['status']}\n"
                     f"➡️ {result['next_action']}\n\n"
                     f"Use `@sales_order_follow_up help` for all commands."
                 )
@@ -1133,18 +1133,18 @@ class SalesOrderFollowupAgent:
 
     def _help_text(self) -> str:
         return (
-            "📋 **Sales Order Follow-up Agent — Commands**\n\n"
+            "📋 **Sales Order Follow-up Agent - Commands**\n\n"
             "**Document Creation (NEW)**\n"
-            "`@sales_order_follow_up create from quotation [QTN-NAME]` — Create SO from Quotation\n"
-            "`@sales_order_follow_up submit [SO-NAME]` — Submit Sales Order\n"
-            "`@sales_order_follow_up delivery [SO-NAME]` — Create Delivery Note\n"
-            "`@sales_order_follow_up invoice [SO-NAME]` — Create Sales Invoice (CFDI G03)\n\n"
+            "`@sales_order_follow_up create from quotation [QTN-NAME]` - Create SO from Quotation\n"
+            "`@sales_order_follow_up submit [SO-NAME]` - Submit Sales Order\n"
+            "`@sales_order_follow_up delivery [SO-NAME]` - Create Delivery Note\n"
+            "`@sales_order_follow_up invoice [SO-NAME]` - Create Sales Invoice (CFDI G03)\n\n"
             "**Status & Tracking**\n"
-            "`@sales_order_follow_up pending` — List pending orders\n"
-            "`@sales_order_follow_up status [SO-NAME]` — Detailed SO status\n"
-            "`@sales_order_follow_up inventory [SO-NAME]` — Check stock availability\n"
-            "`@sales_order_follow_up next [SO-NAME]` — Recommended next actions\n"
-            "`@sales_order_follow_up track [SO-NAME]` — Full purchase cycle tracking\n\n"
+            "`@sales_order_follow_up pending` - List pending orders\n"
+            "`@sales_order_follow_up status [SO-NAME]` - Detailed SO status\n"
+            "`@sales_order_follow_up inventory [SO-NAME]` - Check stock availability\n"
+            "`@sales_order_follow_up next [SO-NAME]` - Recommended next actions\n"
+            "`@sales_order_follow_up track [SO-NAME]` - Full purchase cycle tracking\n\n"
             "**Example (Full Cycle)**\n"
             "```\n"
             "@sales_order_follow_up create from quotation SAL-QTN-2024-00752\n"
