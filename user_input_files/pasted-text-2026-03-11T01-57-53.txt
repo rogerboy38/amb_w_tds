@@ -1,0 +1,124 @@
+In [5]: # 1. Check actual SO naming pattern
+   ...: import frappe
+   ...: sos = frappe.get_all('Sales Order', fields=['name', 'customer_name', 'do
+   ...: cstatus'], limit=20)
+   ...: for so in sos: print(so)
+   ...: 
+   ...: # 2. Check Quotation status
+   ...: qtns = frappe.get_all('Quotation', fields=['name', 'customer_name', 'doc
+   ...: status'], limit=20)
+   ...: for q in qtns: print(q)
+   ...: 
+   ...: # 3. Check what invoices have been created (looking for F-numbers)
+   ...: sis = frappe.get_all('Sales Invoice', fields=['name', 'customer_name', '
+   ...: docstatus', 'custom_invoice_number'], limit=30)
+   ...: for si in sis: print(si)
+{'name': 'SO-118626-BARENTZ Service S.p.A.', 'customer_name': 'BARENTZ Service S.p.A.', 'docstatus': 1}
+{'name': 'SO-118526-BARENTZ CANADA', 'customer_name': 'BARENTZ CANADA', 'docstatus': 1}
+{'name': 'SO-118426-LORAND LABORATORIES LLC', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 1}
+{'name': 'SO-118026-Calipso s.r.l', 'customer_name': 'Calipso s.r.l', 'docstatus': 0}
+{'name': 'SO-117926-AJE MEX', 'customer_name': 'AJE MEX', 'docstatus': 1}
+{'name': 'SO-117826-NATURAL MITCH', 'customer_name': 'NATURAL MITCH', 'docstatus': 0}
+{'name': 'SO-117726-Barentz France SARL', 'customer_name': 'Barentz France SARL', 'docstatus': 0}
+{'name': 'SO-117626-ALBAFLOR', 'customer_name': 'ALBAFLOR', 'docstatus': 0}
+{'name': 'SO-117526-CEMSA', 'customer_name': 'CEMSA', 'docstatus': 0}
+{'name': 'SO-117426-HSH Chemie SK s.r.o.', 'customer_name': 'HSH Chemie SK s.r.o.', 'docstatus': 0}
+{'name': 'SO-117326-AGROMAYAL BOTANICA, S.A. DE C.V.', 'customer_name': 'AGROMAYAL BOTANICA, S.A. DE C.V.', 'docstatus': 1}
+{'name': 'SO-117026-BARENTZ Service S.p.A.', 'customer_name': 'BARENTZ Service S.p.A.', 'docstatus': 1}
+{'name': 'SO-116926-LORAND LABORATORIES LLC', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 1}
+{'name': 'SO-01000-ALBAFLOR', 'customer_name': 'ALBAFLOR', 'docstatus': 0}
+{'name': 'SO-01001-Parfusale AB', 'customer_name': 'PARFUSALE AB', 'docstatus': 0}
+{'name': 'SO-01002-BRENNTAG TAIWAN CO.,', 'customer_name': 'BRENNTAG TAIWAN CO., LTD.', 'docstatus': 0}
+{'name': 'SO-01003-GOOD FIBERS', 'customer_name': 'GOOD FIBERS', 'docstatus': 0}
+{'name': 'SO-01004-CEMSA', 'customer_name': 'CEMSA', 'docstatus': 0}
+{'name': 'SO-01005-ABASTECEDORA QUIMICA', 'customer_name': 'ABASTECEDORA QUIMICA HASEN', 'docstatus': 0}
+{'name': 'SO-01006-Companhia Providênci', 'customer_name': 'Companhia Providência Indústria e Comércio a Berry Global', 'docstatus': 0}
+{'name': 'SAL-QTN-2021-00167', 'customer_name': 'BARENTZ Service S.p.A.', 'docstatus': 0}
+{'name': 'SAL-QTN-2021-00171', 'customer_name': 'VABO N', 'docstatus': 0}
+{'name': 'SAL-QTN-2022-00299', 'customer_name': 'BARENTZ Service S.p.A.', 'docstatus': 1}
+{'name': 'SAL-QTN-2022-00345', 'customer_name': 'VABO N', 'docstatus': 0}
+{'name': 'SAL-QTN-2023-00525', 'customer_name': 'BARENTZ Service S.p.A.', 'docstatus': 1}
+{'name': 'SAL-QTN-2025-01057', 'customer_name': 'LORAND LABORATORIES', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01079', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01151', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2023-00672', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 1}
+{'name': 'SAL-QTN-2024-00763', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 1}
+{'name': 'SAL-QTN-2024-00852', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2024-00918', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2024-00949', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2024-00971', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-00992', 'customer_name': 'LORAND LABORATORIES LLC', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01010', 'customer_name': 'GREENTECH SA', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01043', 'customer_name': 'BARENTZ GIDA VE KIMYA TIC LTD STI', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01056', 'customer_name': 'GREENTECH SA', 'docstatus': 0}
+{'name': 'SAL-QTN-2025-01125', 'customer_name': 'GREENTECH SA', 'docstatus': 0}
+{'name': 'SAL-QTN-2023-00670', 'customer_name': 'GREENTECH SA', 'docstatus': 0}
+---------------------------------------------------------------------------
+OperationalError                          Traceback (most recent call last)
+Cell In[5], line 11
+      8 for q in qtns: print(q)
+     10 # 3. Check what invoices have been created (looking for F-numbers)
+---> 11 sis = frappe.get_all('Sales Invoice', fields=['name', 'customer_name', 'docstatus', 'custom_invoice_number'], limit=30)
+     12 for si in sis: print(si)
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1382, in get_all(doctype, *args, **kwargs)
+   1380 if "limit_page_length" not in kwargs:
+   1381 	kwargs["limit_page_length"] = 0
+-> 1382 return get_list(doctype, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1357, in get_list(doctype, *args, **kwargs)
+   1338 """List database query via `frappe.model.db_query`. Will also check for permissions.
+   1339 
+   1340 :param doctype: DocType on which query is to be made.
+   (...)
+   1353         frappe.get_list("ToDo", fields="*", filters = [["modified", ">", "2014-01-01"]])
+   1354 """
+   1355 import frappe.model.qb_query
+-> 1357 return frappe.model.qb_query.DatabaseQuery(doctype).execute(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/qb_query.py:212, in DatabaseQuery.execute(self, fields, filters, or_filters, group_by, order_by, limit, offset, limit_start, limit_page_length, as_list, with_childnames, debug, ignore_permissions, user, with_comment_count, join, distinct, start, page_length, ignore_ifnull, save_user_settings, save_user_settings_fields, update, user_settings, reference_doctype, run, strict, pluck, ignore_ddl, parent_doctype, ignore_user_permissions)
+    210 	result = query.run(debug=debug, as_dict=True, pluck=pluck)
+    211 else:
+--> 212 	result = query.run(debug=debug, as_dict=not as_list, update=update)
+    214 # Add comment count if requested and not as_list
+    215 if sbool(with_comment_count) and not as_list and self.doctype:
+
+File ~/frappe-bench/apps/frappe/frappe/query_builder/utils.py:131, in execute_query(query, *args, **kwargs)
+    129 child_queries = query._child_queries
+    130 query, params = prepare_query(query)
+--> 131 result = frappe.local.db.sql(query, params, *args, **kwargs)  # nosemgrep
+    133 if child_queries and isinstance(child_queries, list) and result:
+    134 	execute_child_queries(child_queries, result)
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:179, in BaseCursor.execute(self, query, args)
+    176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+--> 179 res = self._query(mogrified_query)
+    180 return res
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:330, in BaseCursor._query(self, q)
+    328 self.rowcount = None
+    329 self.lastrowid = None
+--> 330 db.query(q)
+    331 self._do_get_result(db)
+    332 self._post_get_result()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/connections.py:280, in Connection.query(self, query)
+    278 if isinstance(query, bytearray):
+    279     query = bytes(query)
+--> 280 _mysql.connection.query(self, query)
+
+OperationalError: (1054, "Unknown column 'custom_invoice_number' in 'SELECT'")
+
+In [6]: 
