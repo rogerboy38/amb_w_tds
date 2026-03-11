@@ -59,8 +59,6 @@ class SalesOrderFollowupAgent:
         Returns:
             Exact SO name if found, None if not found
         """
-        import re
-        
         # 1. Try exact match first
         if frappe.db.exists("Sales Order", so_name_input):
             return so_name_input
@@ -80,28 +78,16 @@ class SalesOrderFollowupAgent:
             return so_match[0][0]
         
         # 4. Try partial match - extract numbers and search
-        # For "SO-00769-COSMETILAB 18" try "SO-00769" or "00769"
         numbers = re.findall(r'\d+', so_name_input)
         if numbers:
-            # Try the main SO number (usually the first big number)
             for num in numbers:
-                if len(num) >= 4:  # Likely the SO number
+                if len(num) >= 4:
                     partial_matches = frappe.get_all("Sales Order",
                         filters={"name": ["like", f"%{num}%"]},
                         fields=["name"], limit=5
                     )
                     for match in partial_matches:
-                        # Check if customer name also matches partially
-                        so_doc = frappe.get_doc("Sales Order", match.name)
-                        # Extract customer name from input
-                        customer_part = so_name_input
-                        for n in numbers:
-                            customer_part = customer_part.replace(n, '').strip()
-                        customer_part = customer_part.replace('SO-', '').replace('-', '').strip()
-                        if customer_part and customer_part.lower() in so_doc.customer.lower():
-                            return match.name
-                        elif num in match.name:
-                            return match.name
+                        return match.name
         
         return None
     
@@ -165,41 +151,14 @@ class SalesOrderFollowupAgent:
                 except Exception as e:
                     frappe.logger().warning(f"Raven AI: Could not get Quotation {quotation_name}: {e}")
             
-            # 1b. Get from Customer's Dynamic Link (ROBUST SQL APPROACH)
-            # This is the same logic as sales.py - uses SQL JOIN to ensure valid links
+            # 1b. Get from Customer's Dynamic Link
             if not getattr(si, 'customer_address', None):
-                try:
-                    # Strategy 3: Look for Billing address first (via Dynamic Link)
-                    billing_addr = frappe.db.sql("""
-                        SELECT a.name
-                        FROM `tabAddress` a
-                        JOIN `tabDynamic Link` dl ON dl.parent = a.name
-                        WHERE dl.link_doctype = 'Customer'
-                          AND dl.link_name = %s
-                          AND a.address_type = 'Billing'
-                        ORDER BY a.is_primary_address DESC, a.creation DESC
-                        LIMIT 1
-                    """, (so.customer,), as_dict=True)
-                    if billing_addr:
-                        si.customer_address = billing_addr[0].name
-                        frappe.logger().info(f"Raven AI: Found Billing address via Dynamic Link: {billing_addr[0].name}")
-                    
-                    # Strategy 4: ANY address linked to customer (if no Billing found)
-                    if not getattr(si, 'customer_address', None):
-                        any_addr = frappe.db.sql("""
-                            SELECT a.name
-                            FROM `tabAddress` a
-                            JOIN `tabDynamic Link` dl ON dl.parent = a.name
-                            WHERE dl.link_doctype = 'Customer'
-                              AND dl.link_name = %s
-                            ORDER BY a.is_primary_address DESC, a.creation DESC
-                            LIMIT 1
-                        """, (so.customer,), as_dict=True)
-                        if any_addr:
-                            si.customer_address = any_addr[0].name
-                            frappe.logger().info(f"Raven AI: Found address via Dynamic Link: {any_addr[0].name}")
-                except Exception as e:
-                    frappe.logger().warning(f"Raven AI: Error in Dynamic Link address resolution: {e}")
+                addr_list = frappe.get_all("Dynamic Link",
+                    filters={"link_doctype": "Customer", "link_name": so.customer, "parenttype": "Address"},
+                    fields=["parent"], limit=5
+                )
+                if addr_list:
+                    si.customer_address = addr_list[0].parent
             
             # 1c. Get from Delivery Note
             if not getattr(si, 'customer_address', None) and from_dn:
@@ -534,7 +493,7 @@ class SalesOrderFollowupAgent:
         sets custom_customer_invoice_currency from SO grand_total currency.
         
         Args:
-            so_name: Sales Order name (intelligent matching - handles variations)
+            so_name: Sales Order name
             from_dn: If True, creates SI from the last DN. If False, from SO directly.
         
         Returns:
@@ -547,9 +506,6 @@ class SalesOrderFollowupAgent:
             so_name = found_so_name
             frappe.logger().info(f"Raven AI: Resolved '{original_so_name}' to '{so_name}'")
         
-        Returns:
-            Dict with SI details
-        """
         try:
             so = frappe.get_doc("Sales Order", so_name)
 
