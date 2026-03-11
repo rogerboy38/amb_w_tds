@@ -47,6 +47,64 @@ class SalesOrderFollowupAgent:
         slug = doctype.lower().replace(" ", "-")
         return f"[{name}](https://{self.site_name}/app/{slug}/{name})"
     
+    def _find_sales_order_intelligent(self, so_name_input: str) -> str:
+        """INTELLIGENT SO LOOKUP - Handle variations in SO name input.
+        
+        Problems this solves:
+        - Extra spaces: "SO-00769-COSMETILAB 18" vs "SO-00769-COSMETILAB-18"
+        - Extra dashes: "SO--00769" vs "SO-00769"
+        - Case sensitivity
+        - Partial matches
+        
+        Returns:
+            Exact SO name if found, None if not found
+        """
+        import re
+        
+        # 1. Try exact match first
+        if frappe.db.exists("Sales Order", so_name_input):
+            return so_name_input
+        
+        # 2. Clean up input - remove extra spaces, normalize dashes
+        cleaned = re.sub(r'[\s\-]+', '-', so_name_input.strip())
+        if cleaned != so_name_input and frappe.db.exists("Sales Order", cleaned):
+            return cleaned
+        
+        # 3. Try case-insensitive match
+        so_match = frappe.db.sql("""
+            SELECT name FROM `tabSales Order` 
+            WHERE name = %s COLLATE utf8mb4_general_ci
+            LIMIT 1
+        """, (so_name_input,))
+        if so_match:
+            return so_match[0][0]
+        
+        # 4. Try partial match - extract numbers and search
+        # For "SO-00769-COSMETILAB 18" try "SO-00769" or "00769"
+        numbers = re.findall(r'\d+', so_name_input)
+        if numbers:
+            # Try the main SO number (usually the first big number)
+            for num in numbers:
+                if len(num) >= 4:  # Likely the SO number
+                    partial_matches = frappe.get_all("Sales Order",
+                        filters={"name": ["like", f"%{num}%"]},
+                        fields=["name"], limit=5
+                    )
+                    for match in partial_matches:
+                        # Check if customer name also matches partially
+                        so_doc = frappe.get_doc("Sales Order", match.name)
+                        # Extract customer name from input
+                        customer_part = so_name_input
+                        for n in numbers:
+                            customer_part = customer_part.replace(n, '').strip()
+                        customer_part = customer_part.replace('SO-', '').replace('-', '').strip()
+                        if customer_part and customer_part.lower() in so_doc.customer.lower():
+                            return match.name
+                        elif num in match.name:
+                            return match.name
+        
+        return None
+    
     def _smart_validate_and_fix_sales_invoice(self, si, so, so_name: str, from_dn: bool = True) -> List[str]:
         """
         SMART INTELLIGENT VALIDATION - Proactively validate and fix ALL required fields
@@ -476,8 +534,18 @@ class SalesOrderFollowupAgent:
         sets custom_customer_invoice_currency from SO grand_total currency.
         
         Args:
-            so_name: Sales Order name
+            so_name: Sales Order name (intelligent matching - handles variations)
             from_dn: If True, creates SI from the last DN. If False, from SO directly.
+        
+        Returns:
+            Dict with SI details
+        """
+        # INTELLIGENT SO LOOKUP - Handle variations in name
+        original_so_name = so_name
+        found_so_name = self._find_sales_order_intelligent(so_name)
+        if found_so_name and found_so_name != so_name:
+            so_name = found_so_name
+            frappe.logger().info(f"Raven AI: Resolved '{original_so_name}' to '{so_name}'")
         
         Returns:
             Dict with SI details
