@@ -63,20 +63,49 @@ class SalesOrderFollowupAgent:
         # === 1. ADDRESS RESOLUTION (Truth Hierarchy) ===
         # Priority: Quotation → Customer → Delivery Note → Auto-create
         if not getattr(si, 'customer_address', None):
-            # 1a. Get from Quotation (truth source)
+            # 1a. Get from Quotation (truth source) - Enhanced detection
+            # First try: prevdoc_docname (standard link)
+            quotation_name = None
+            
+            # Method 1: Check prevdoc_docname in Sales Order Items
             qo_items = frappe.get_all("Sales Order Item",
                 filters={"parent": so_name, "parenttype": "Sales Order"},
                 fields=["prevdoc_docname"]
             )
             if qo_items and qo_items[0].prevdoc_docname:
+                quotation_name = qo_items[0].prevdoc_docname
+            
+            # Method 2: Check if SO has a directly linked Quotation
+            if not quotation_name:
+                linked_quotations = frappe.get_all("Dynamic Link",
+                    filters={
+                        "link_doctype": "Sales Order",
+                        "link_name": so_name,
+                        "parenttype": "Quotation"
+                    },
+                    fields=["parent"]
+                )
+                if linked_quotations:
+                    quotation_name = linked_quotations[0].parent
+            
+            # Now get addresses from the found Quotation
+            if quotation_name:
                 try:
-                    qo = frappe.get_doc("Quotation", qo_items[0].prevdoc_docname)
+                    qo = frappe.get_doc("Quotation", quotation_name)
+                    frappe.logger().info(f"Raven AI: Found Quotation {quotation_name} for SO {so_name}")
+                    
+                    # Priority: customer_address > billing_address > shipping_address
                     if getattr(qo, 'customer_address', None):
                         si.customer_address = qo.customer_address
+                        frappe.logger().info(f"Raven AI: Got customer_address from Quotation: {qo.customer_address}")
                     elif getattr(qo, 'billing_address', None):
                         si.billing_address = qo.billing_address
-                except:
-                    pass
+                        frappe.logger().info(f"Raven AI: Got billing_address from Quotation: {qo.billing_address}")
+                    elif getattr(qo, 'shipping_address_name', None):
+                        si.customer_address = qo.shipping_address_name
+                        frappe.logger().info(f"Raven AI: Got shipping_address from Quotation: {qo.shipping_address_name}")
+                except Exception as e:
+                    frappe.logger().warning(f"Raven AI: Could not get Quotation {quotation_name}: {e}")
             
             # 1b. Get from Customer's Dynamic Link
             if not getattr(si, 'customer_address', None):
