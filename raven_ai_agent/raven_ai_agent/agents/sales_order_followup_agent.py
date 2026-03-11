@@ -107,14 +107,41 @@ class SalesOrderFollowupAgent:
                 except Exception as e:
                     frappe.logger().warning(f"Raven AI: Could not get Quotation {quotation_name}: {e}")
             
-            # 1b. Get from Customer's Dynamic Link
+            # 1b. Get from Customer's Dynamic Link (ROBUST SQL APPROACH)
+            # This is the same logic as sales.py - uses SQL JOIN to ensure valid links
             if not getattr(si, 'customer_address', None):
-                addr_list = frappe.get_all("Dynamic Link",
-                    filters={"link_doctype": "Customer", "link_name": so.customer, "parenttype": "Address"},
-                    fields=["parent"], limit=5
-                )
-                if addr_list:
-                    si.customer_address = addr_list[0].parent
+                try:
+                    # Strategy 3: Look for Billing address first (via Dynamic Link)
+                    billing_addr = frappe.db.sql("""
+                        SELECT a.name
+                        FROM `tabAddress` a
+                        JOIN `tabDynamic Link` dl ON dl.parent = a.name
+                        WHERE dl.link_doctype = 'Customer'
+                          AND dl.link_name = %s
+                          AND a.address_type = 'Billing'
+                        ORDER BY a.is_primary_address DESC, a.creation DESC
+                        LIMIT 1
+                    """, (so.customer,), as_dict=True)
+                    if billing_addr:
+                        si.customer_address = billing_addr[0].name
+                        frappe.logger().info(f"Raven AI: Found Billing address via Dynamic Link: {billing_addr[0].name}")
+                    
+                    # Strategy 4: ANY address linked to customer (if no Billing found)
+                    if not getattr(si, 'customer_address', None):
+                        any_addr = frappe.db.sql("""
+                            SELECT a.name
+                            FROM `tabAddress` a
+                            JOIN `tabDynamic Link` dl ON dl.parent = a.name
+                            WHERE dl.link_doctype = 'Customer'
+                              AND dl.link_name = %s
+                            ORDER BY a.is_primary_address DESC, a.creation DESC
+                            LIMIT 1
+                        """, (so.customer,), as_dict=True)
+                        if any_addr:
+                            si.customer_address = any_addr[0].name
+                            frappe.logger().info(f"Raven AI: Found address via Dynamic Link: {any_addr[0].name}")
+                except Exception as e:
+                    frappe.logger().warning(f"Raven AI: Error in Dynamic Link address resolution: {e}")
             
             # 1c. Get from Delivery Note
             if not getattr(si, 'customer_address', None) and from_dn:
