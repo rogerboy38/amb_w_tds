@@ -1,0 +1,146 @@
+
+   ...:     AND T1.parent LIKE 'SAL-QTN-2024-%'
+   ...: """)
+   ...: print("Total SOs with linked Quotations in 2024:", total[0] if total els
+   ...: e 0)
+   ...: 
+   ...: # Let's also check the actual quotation names in the range
+   ...: sample_qts = frappe.db.sql_list("""
+   ...:     SELECT name
+   ...:     FROM `tabQuotation`
+   ...:     WHERE name BETWEEN 'SAL-QTN-2024-0744' AND 'SAL-QTN-2024-0983'
+   ...:     LIMIT 10
+   ...: """)
+   ...: print("Sample Quotations in range:", sample_qts)
+   ...: 
+   ...: # And check what SOs are linked to these
+   ...: sample_sos = frappe.db.sql_list("""
+   ...:     SELECT DISTINCT T2.parent
+   ...:     FROM `tabQuotation Item` T1
+   ...:     JOIN `tabSales Order Item` T2 ON T1.name = T2.prevdoc_docname
+   ...:     WHERE T1.parenttype = 'Quotation'
+   ...:     AND T1.parent LIKE 'SAL-QTN-2024-07%'
+   ...:     LIMIT 10
+   ...: """)
+   ...: print("Sample SOs linked to 07xx Quotations:", sample_sos)
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 177, in <module>
+    main()
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 77, in main
+    FrappeClickWrapper(click.Group, handle_exception)(commands=commands)(prog_name="bench")
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 682, in console
+    terminal()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 251, in __call__
+    self.mainloop(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 343, in mainloop
+    self.interact()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/interactiveshell.py", line 1038, in interact
+    self.run_cell(code, store_history=True)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3077, in run_cell
+    result = self._run_cell(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3132, in _run_cell
+    result = runner(coro)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/async_helpers.py", line 128, in _pseudo_sync_runner
+    coro.send(None)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3336, in run_cell_async
+    has_raised = await self.run_ast_nodes(code_ast.body, cell_name,
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3519, in run_ast_nodes
+    if await self.run_code(code, result, async_=asy):
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3579, in run_code
+    exec(code_obj, self.user_global_ns, self.user_ns)
+  File "<ipython-input-5-29648732954b>", line 4, in <module>
+    total = frappe.db.sql_list("""
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/database/database.py", line 449, in sql_list
+    return self.sql(query, values, **kwargs, debug=debug, pluck=True)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/database/database.py", line 300, in sql
+    traceback.print_stack()
+Error in query:
+("SELECT COUNT(DISTINCT T2.parent) as count\n    FROM `tabQuotation Item` T1\n    JOIN `tabSales Order Item` T2 ON T1.name = T2.prevdoc_docname\n    WHERE T1.parenttype = 'Quotation'\n    AND T1.parent LIKE 'SAL-QTN-2024-%'", ())
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:200, in BaseCursor._mogrify(self, query, args)
+    199 try:
+--> 200     query = query % args
+    201 except TypeError as m:
+
+TypeError: not enough arguments for format string
+
+During handling of the above exception, another exception occurred:
+
+ProgrammingError                          Traceback (most recent call last)
+Cell In[5], line 4
+      1 import frappe
+      3 # First, let's see how many SOs have linked Quotations in 2024
+----> 4 total = frappe.db.sql_list("""
+      5     SELECT COUNT(DISTINCT T2.parent) as count
+      6     FROM `tabQuotation Item` T1
+      7     JOIN `tabSales Order Item` T2 ON T1.name = T2.prevdoc_docname
+      8     WHERE T1.parenttype = 'Quotation'
+      9     AND T1.parent LIKE 'SAL-QTN-2024-%'
+     10 """)
+     11 print("Total SOs with linked Quotations in 2024:", total[0] if total else 0)
+     13 # Let's also check the actual quotation names in the range
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:449, in Database.sql_list(self, query, values, debug, **kwargs)
+    441 def sql_list(self, query, values=(), debug=False, **kwargs):
+    442 	"""Return data as list of single elements (first column).
+    443 
+    444 	Example:
+   (...)
+    447 	        doctypes = frappe.db.sql_list("select name from DocType")
+    448 	"""
+--> 449 	return self.sql(query, values, **kwargs, debug=debug, pluck=True)
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:176, in BaseCursor.execute(self, query, args)
+    163 """Execute a query.
+    164 
+    165 query -- string, query to execute on server
+   (...)
+    172 Returns integer represents rows affected, if any
+    173 """
+    174 self._discard()
+--> 176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+    179 res = self._query(mogrified_query)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:202, in BaseCursor._mogrify(self, query, args)
+    200         query = query % args
+    201     except TypeError as m:
+--> 202         raise ProgrammingError(str(m))
+    204 return query
+
+ProgrammingError: not enough arguments for format string
+
+In [6]: 
