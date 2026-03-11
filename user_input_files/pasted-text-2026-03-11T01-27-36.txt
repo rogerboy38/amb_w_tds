@@ -1,0 +1,287 @@
+puedes revisar con api o bench console, revisar clientes repetidos, proveedores repetidos, articulos repetidos, etc?
+Revisé los 3 doctypes principales vía API (limit_page_length=0) en tu ERP. Aquí el resumen:
+
+1. CLIENTES (496 total) — Muchos duplicados
+​
+ERPNext autonombra con sufijo - 1, - 2, etc. cuando detecta customer_name repetido. Los peores casos de clientes con mismo nombre repetido:
+
+customer_name	Veces repetido
+BARENTZ Italia S.p.A.	14 registros (- 1 hasta - 13)
+BARENTZ GIDA VE KIMYA TIC LTD STI	9 registros
+ABC Company	9 registros (test)
+XYZ Ltd	9 registros (test)
+DEF Corp	7 registros (test)
+ALBAAD DEUTSCHLAND GMBH	7 registros
+ALBAFLOR	6 registros
+BONLAM S.A. DE C.V.	5 registros
+Companhia Providência...Berry Global	4 registros
+KOSMETYKA NATURALNA SP ZOO	4 registros
+BRENNTAG TAIWAN CO., LTD.	4 registros
+GUSTAVO RAFAEL VILLA CARRANDI	3 registros
+ABASTECEDORA QUIMICA HASEN	3 registros
+CEMSA	3 registros
+GOOD FIBERS	3 registros
+BINDER INTERNATIONAL GMBH & CO.	3 registros
+BIONIC TRADING CORPORATION	3 registros
+International Juices and Concentrates Ltd	3 registros
+Además hay duplicados por variación de nombre (no detectados automáticamente):
+
+BARENTZ B.V vs BARENTZ B.V. (con/sin punto)
+
+BARENTZ NORTH AMERICA LLC vs BARENTZ NORTH AMERICA, LLC (coma)
+
+HARRIS & FORD LLC vs HARRIS & FORD, LLC
+
+ALPHATECH SCIENCE (THAILAND) CO., LTD vs CO., LTD. vs CO.,LTD.
+
+BE HEMP S.A DE C.V vs BE HEMP S.A. DE C.V.
+
+BONLAM S.A. DE C.V. vs BONLAM SA DE CV
+
+PGI ARGENTINA S.A vs PGI Argentina S.A.
+
+McIntyre Group, LTD vs McIntyre Group, Ltd.
+
+ORGANATURE, S.A. DE C.V. vs ORGANATURE, SA DE CV
+
+Don Pulcro S.A. de C.V. vs DON PULCRO SA. DE CV.
+
+VABO N vs VABO N GMBH vs VABO-N GmbH
+
+LORAND LABORATORIES vs LORAND LABORATORIES LLC vs LORAND LABS LLC
+
+Calipso s.r.l vs CALIPSO S.R.L.
+
+CHARKIT CHEMICAL CORP, INC. vs CHARKIT CHEMICAL CORP. vs CHARKIT CHEMICAL CORPORATION
+
+NK CHEMICALS EUROPE LTD. vs NK CHEMICALS EUROPE LTD (con/sin punto)
+
+POP FOOD, LTD vs POP FOOD., LTD
+
+BRENNTAG AUSTRALIA ePTY LTD vs BRENNTAG AUSTRALIA PTY LTD vs PTY LTD. vs PTY. LTD.
+
+CELLEX PHARM CO., LTD vs CELLEX PHARMA CO., LTD
+
+VITA Co. Ltd. vs VITA CO., LTD
+
+AGROMAYAL BOTANICA S.A. DE C.V. vs AGROMAYAL BOTANICA, S.A. DE C.V.
+
+2. PROVEEDORES (56 total) — Sin duplicados
+​
+Todos los proveedores tienen nombres únicos. No se detectaron duplicados ni variaciones.
+
+3. ARTÍCULOS (Items) — Situación compleja pero por diseño
+​
+Los items tienen IDs únicos (name) pero muchos comparten el mismo item_name. Esto parece ser por diseño de tu sistema de lotes/variantes de producción. Por ejemplo:
+
+ALOE ACETYPOL 10/15 tiene ~32 items diferentes (0401-0416, 0901-0916, etc.) — estos son lotes de producción
+
+ALOE ACETYPOL 15/18, 15/20, 18/20, 20/25 — mismo patrón
+
+INNOVALOE ALOE VERA GEL CONCENTRATE 30:1 tiene ~100+ items con prefijo ITEM_0227xxxyyy
+
+INNOVALOE ALOE VERA GEL SPRAY DRIED POWDER 200:1 similar cantidad
+
+Esto no son duplicados reales, son variantes/lotes del sistema de manufactura. Sin embargo, sí noté algunos items potencialmente problemáticos:
+
+2001 y 2002 ambos se llaman "ALOCROP ORGANIC BIOFERTILIZER"
+
+0612 y ITEM_0612185231 ambos "ALOE 70% + GOMA BB 30%"
+
+1200 y 1207 ambos "ALOE VERA EXTRACT"
+
+AN_LABORA y CERTIFICA2 ambos "ANALISIS A POLVO"
+
+0807 y 0808 ambos "ALOE VERA PINK"
+
+Recomendaciones
+Clientes: Tienes un problema severo de duplicados. Te recomiendo usar bench console para hacer merge:
+
+python
+frappe.rename_doc("Customer", "BARENTZ Italia S.p.A. - 1", "BARENTZ Italia S.p.A.", merge=True)
+Primero verifica que no tengan transacciones en conflicto.
+
+Limpieza de test data: ABC Company (9), DEF Corp (7), XYZ Ltd (9), Customer Test 257143, Test Customer — estos parecen datos de prueba que podrían eliminarse.
+
+Items: La estructura de lotes/variantes parece intencional. Solo revisa los pocos casos que mencioné arriba.
+
+¿Quieres que te genere un script de bench console para hacer el merge de los clientes duplicados?
+
+ok dame command line para usar frappe bench dentro del container
+Aquí tienes los comandos para entrar al bench console dentro de tu container Docker:
+
+1. Primero, identifica el container del backend:
+
+bash
+docker ps | grep backend
+2. Entra al container:
+
+bash
+docker exec -it <nombre_container_backend> bash
+(Generalmente algo como erp-sysmayal2-backend-1 o similar)
+
+3. Una vez dentro, abre bench console:
+
+bash
+cd /home/frappe/frappe-bench
+bench --site erp.sysmayal2.cloud console
+4. Ya dentro de la consola Python, puedes correr scripts para detectar/mergear duplicados:
+
+python
+# Ver clientes duplicados por customer_name
+from collections import Counter
+customers = frappe.get_all("Customer", fields=["name", "customer_name"], limit_page_length=0)
+names = [c.customer_name.strip().upper() for c in customers]
+dupes = {k: v for k, v in Counter(names).items() if v > 1}
+for name, count in sorted(dupes.items(), key=lambda x: -x[1]):
+    print(f"{name}: {count} veces")
+python
+# Merge de un cliente duplicado (ejemplo)
+frappe.rename_doc("Customer", "BARENTZ Italia S.p.A. - 1", "BARENTZ Italia S.p.A.", merge=True)
+frappe.db.commit()
+python
+# Script para listar todos los duplicados con sus IDs
+for name, count in sorted(dupes.items(), key=lambda x: -x[1]):
+    matches = [c.name for c in customers if c.customer_name.strip().upper() == name]
+    print(f"\n--- {name} ({count}) ---")
+    for m in matches:
+        print(f"  {m}")
+Atajo si usas docker compose:
+
+bash
+docker compose exec backend bench --site erp.sysmayal2.cloud console
+Last login: Tue Mar 10 03:50:13 2026 from 177.241.171.98
+root@srv1415373:~# docker ps | grep backend
+e9538cf6e4a4 custom-erpnext:v16 "/home/frappe/frappe…" 10 days ago Up 15 hours erpnext-backend-1
+root@srv1415373:~#
+Tu container se llama erpnext-backend-1. Corre esto:
+
+bash
+docker exec -it erpnext-backend-1 bash
+Ya dentro del container:
+
+bash
+cd /home/frappe/frappe-bench
+bench --site erp.sysmayal2.cloud console
+Y ya estarás en la consola Python de Frappe listo para ejecutar los scripts de detección/merge de duplicados.
+
+vaamos a enfocarnos en esta parte
+Cuello de Botella Identificado
+Quotation → SO: 86 cotizaciones, pero 483 SOs sugiere que las SOs se crearon directamente o por migración masiva, no desde el flujo Quotation→SO
+SO → DN: Solo 1 DN de 483 SOs = el pipeline de entrega está completamente bloqueado
+este es un reporte de migracion https://docs.google.com/spreadsheets/d/1-HeigCr3jmIAfnlB3q3XRE5VG7b3_qq9/edit?usp=sharing&ouid=109940108952088320654&rtpof=true&sd=true primero encuentra que folios de facturacion son solamente 2024
+y de alli reestructuraremos el reporte solo lo que se facturo en 2024
+Análisis del Spreadsheet de Migración - Folios de Facturación 2024
+Estructura del Spreadsheet
+El archivo migration_summary2.xlsx tiene dos hojas:
+​
+
+migration_summary (hoja principal): 280 líneas de items facturados (filas 881-1160), con columnas: migration_folio, folio, customer_name, invoice_number (F-xxxx), lote_real, item_name, quantity, price_unit, total_amount, file_original, renamed_file.
+
+Hoja 1: Resultados de extracción de POs con columnas: original_file, renamed_file, po_number, customer, date, status (SUCCESS/FAILED).
+​
+
+Folios de Facturación que son 2024
+Cruzando el campo folio del spreadsheet con los Sales Orders de ERPNext (SO-00744 a SO-00983 tienen transaction_date en 2024), los folios de facturación 2024 en el spreadsheet son:
+​
+
+Rango principal: Folios 0744–0983 — estos son los que tienen fecha de transacción 2024 en ERPNext. Del spreadsheet, los folios 2024 con factura asignada incluyen:
+
+Invoice (F-num)	Folio(s) SO	Cliente	Monto aprox.
+F2227	0752	LEGOSAN AB	$15,271
+F2228	0753	GREENTECH SA	$187,200
+F2229	0754	Calipso s.r.l	$69,189
+F2241	0766	ALBAAD DEUTSCHLAND	$702
+F2242	0767	BARENTZ Italia	$1,168
+F2244	0768	CEMSA	$2,772
+F2252	0772	BARENTZ CANADA	$6,804
+F2255	0775	ALBAFLOR	$2,389
+F2261	0779	BARENTZ NORTH AMERICA	$176
+F2262	0780	DON PULCRO	$1,330
+F2263	0781	BERRY GLOBAL	$1,211
+F2264	0782	CHARKIT CHEMICAL	$5,320
+F2265	0792	Calipso s.r.l	$69,189
+F2266	0783	ALBAFLOR	$2,986
+F2270	0787	BARENTZ Italia	$8,083
+F2272	0789	GUSTAVO VILLA	$221
+F2274	0790	BERRY GLOBAL	$1,211
+F2275	0791	PU FENG BIOTECH	$2,881
+F2276	0800	ALBAFLOR	$2,389
+F2278	0797	HSH Chemie	$236
+F2280	0796	GUSTAVO VILLA	$552
+F2282	0802	TROPIC SKINCARE	$23,034
+F2283	0803	ALBAFLOR	$5,973
+F2284	0804	ALBAAD DEUTSCHLAND	$13,500
+F2287	0810	ALBAFLOR	$2,986
+F2288	0806	PARFUSALE AB	$13,300
+F2289	0807	UNION CHEMICAL	$1,703
+F2290	0808	PU FENG BIOTECH	$2,881
+F2291	0814	ALBAFLOR	$2,389
+F2292	0811	Calipso s.r.l	$127,733
+F2294	0813	CONNELL BROS	$1,406
+F2295	0815	ALBAFLOR	$8,362
+F2298	0818	ALBAFLOR	$2,986
+F2299	0823	ALBAFLOR	$5,973
+F2300	0819	GUSTAVO VILLA	$331
+F2302	0821	BARENTZ FRANCE	$1,510
+F2303	0822	ALBAAD DEUTSCHLAND	$13,500
+F2306	0827	YI-DA Chemicals	$2,981
+F2309	0832	COLORCON USA	$671
+F2313	0834	ALBAFLOR	$11,946
+F2320	0840	Calipso s.r.l	$127,733
+F2322	0844	ALBAFLOR	$5,973
+F2335	0856	IMCD FRANCE	—
+F2338	0860	BARENTZ Italia	—
+F2348	0866	BARENTZ Italia	—
+F2350	0869	BRENNTAG	—
+F2353	0874	BARENTZ Italia	—
+F2355	0875	SOMES	$375
+F2357	0883	Calipso s.r.l	$127,733
+F2379	0899	LABORATORIES DELON	$2,773
+F2380	0900	LABORATORIES DELON	$2,773
+F2384	0903	Calipso s.r.l	$127,733
+F2386	0913	BARENTZ Italia	$172,500
+F2390	0907	BRENNTAG MX	$714
+F2391	0908	UNION CHEMICAL	$891
+F2393	0912	BARENTZ FRANCE	$773
+F2410	0937	DAEHAN CHEMTECH	—
+F2415	0933	Calipso s.r.l	$127,733
+F2417	0938/0939	BARENTZ Italia	$244,375+
+F2431	0950	Barentz UK	$19,000
+F2437	0957	BRENNTAG MX	$714
+F2446	0967	GUSTAVO VILLA	—
+F2447	0968	CHARKIT CHEMICAL	—
+F2452	0972	Parfusale AB	—
+F2454	0982	Calipso s.r.l	$127,733
+F2456	0974	Calipso s.r.l	$127,733
+F2458	0978	Don Pulcro	—
+F2460	0981	NATURAL MITCH	—
+F2461	0979	NATURAL MITCH	—
+F2463	0984	DAEHAN CHEMTECH	—
+F2467	0985	ALBAFLOR	—
+Además, hay folios fuera del rango 744-983 que también tienen actividad 2024:
+
+Folios < 744 (pre-2024 pero con entregas/POs en 2024): 0499, 0500, 0502, 0503, 0510, 0519, 0570, 0653, 0696, 0714, 0723
+​
+
+Folios > 983 (post-2024 o continuación): 0998, 0999, 1000, 1001, 1002, 1003, 1004, 1008, 1009, 1015, 1016, 1018, 1019, 1020, 1026-1072, 1094, 1117, 1122, 1152-1167
+​
+
+Hallazgo Clave
+El spreadsheet de migración contiene ~280 líneas de items que representan ~70+ facturas únicas (F-numbers), de las cuales aproximadamente 65 facturas corresponden a folios SO del rango 2024 (744-983). Sin embargo, también hay ~25+ facturas con folios fuera de ese rango que tienen fechas de PO/entrega en 2024.
+
+El cuello de botella real NO es que no haya facturación — la facturación existió en el sistema legacy con los F-numbers. El problema es que en ERPNext solo se han migrado 2 Sales Invoices de las ~70+ facturas que deberían existir para 2024.
+
+Siguiente Paso Recomendado
+Para reestructurar el reporte solo con lo facturado en 2024, necesitamos:
+
+Definir si "2024" se determina por fecha del SO (folio 744-983) o por fecha del PO/factura (campo date en Hoja 1)
+
+Con esa definición, filtrar las ~280 líneas y generar el reporte limpio
+
+¿Quieres que use el criterio de fecha de SO (744-983) o el de fecha de PO (columna E de Hoja 1 con año 2024)?
+
+ok necesitamos basarnos en folio factura (es nuestra llave) la revision humana fue realizaa en quotations, entonces la verdad esta en quotations eso quiere decir que items, payment terms son verdad lo que tiene la quotation. vamos a hacer match quotation factura y de alli revisamos el estado actual revisa ete archivo https://teams.live.com/l/message/19:0SOKfLghCUxoXnm7XEzr7CHRR0_Qqfbm2UyHPzd2XLQ1@thread.v2/1769448366942?context=%7B%22contextType%22%3A%22chat%22%7D contiene el trabajo que realizo el humano en las cotizaciones y su relacion a las facturas
+You've hit your limit for browser control tasks.
+
+ok necesitamos basarnos en folio factura (es nuestra llave) la revision humana fue realizaa en quotations, entonces la verdad esta en quotations eso quiere decir que items, payment terms son verdad lo que tiene la quotation. vamos a hacer match quotation factura y de alli revisamos el estado actual revisa ete archivo https://teams.live.com/l/message/19:0SOKfLghCUxoXnm7XEzr7CHRR0_Qqfbm2UyHPzd2XLQ1@thread.v2/1769448366942?context=%7B%22contextType%22%3A%22chat%22%7D contiene el trabajo que realizo el humano en las cotizaciones y su relacion a las facturas
