@@ -1,0 +1,397 @@
+In [8]: import frappe
+   ...: 
+   ...: # Get all SOs in the range 00744-00983 that have linked Quotations
+   ...: linked_sos = frappe.db.sql_list("""
+   ...:     SELECT DISTINCT T2.parent
+   ...:     FROM `tabSales Order Item` T2
+   ...:     WHERE T2.parent BETWEEN 'SO-00744-%' AND 'SO-00983-%'
+   ...:     AND T2.prevdoc_docname IS NOT NULL
+   ...:     AND T2.prevdoc_docname != ''
+   ...:     ORDER BY T2.parent
+   ...: """)
+   ...: print(f"Found {len(linked_sos)} SOs with linked Quotations in range 0074
+   ...: 4-00983")
+   ...: print("First 10:", linked_sos[:10] if linked_sos else "None")
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 177, in <module>
+    main()
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 77, in main
+    FrappeClickWrapper(click.Group, handle_exception)(commands=commands)(prog_name="bench")
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 682, in console
+    terminal()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 251, in __call__
+    self.mainloop(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 343, in mainloop
+    self.interact()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/interactiveshell.py", line 1038, in interact
+    self.run_cell(code, store_history=True)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3077, in run_cell
+    result = self._run_cell(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3132, in _run_cell
+    result = runner(coro)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/async_helpers.py", line 128, in _pseudo_sync_runner
+    coro.send(None)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3336, in run_cell_async
+    has_raised = await self.run_ast_nodes(code_ast.body, cell_name,
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3519, in run_ast_nodes
+    if await self.run_code(code, result, async_=asy):
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3579, in run_code
+    exec(code_obj, self.user_global_ns, self.user_ns)
+  File "<ipython-input-8-4d5a5137cd87>", line 4, in <module>
+    linked_sos = frappe.db.sql_list("""
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/database/database.py", line 449, in sql_list
+    return self.sql(query, values, **kwargs, debug=debug, pluck=True)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/database/database.py", line 300, in sql
+    traceback.print_stack()
+Error in query:
+("SELECT DISTINCT T2.parent\n    FROM `tabSales Order Item` T2\n    WHERE T2.parent BETWEEN 'SO-00744-%' AND 'SO-00983-%'\n    AND T2.prevdoc_docname IS NOT NULL\n    AND T2.prevdoc_docname != ''\n    ORDER BY T2.parent", ())
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:200, in BaseCursor._mogrify(self, query, args)
+    199 try:
+--> 200     query = query % args
+    201 except TypeError as m:
+
+TypeError: not enough arguments for format string
+
+During handling of the above exception, another exception occurred:
+
+ProgrammingError                          Traceback (most recent call last)
+Cell In[8], line 4
+      1 import frappe
+      3 # Get all SOs in the range 00744-00983 that have linked Quotations
+----> 4 linked_sos = frappe.db.sql_list("""
+      5     SELECT DISTINCT T2.parent
+      6     FROM `tabSales Order Item` T2
+      7     WHERE T2.parent BETWEEN 'SO-00744-%' AND 'SO-00983-%'
+      8     AND T2.prevdoc_docname IS NOT NULL
+      9     AND T2.prevdoc_docname != ''
+     10     ORDER BY T2.parent
+     11 """)
+     12 print(f"Found {len(linked_sos)} SOs with linked Quotations in range 00744-00983")
+     13 print("First 10:", linked_sos[:10] if linked_sos else "None")
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:449, in Database.sql_list(self, query, values, debug, **kwargs)
+    441 def sql_list(self, query, values=(), debug=False, **kwargs):
+    442 	"""Return data as list of single elements (first column).
+    443 
+    444 	Example:
+   (...)
+    447 	        doctypes = frappe.db.sql_list("select name from DocType")
+    448 	"""
+--> 449 	return self.sql(query, values, **kwargs, debug=debug, pluck=True)
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:176, in BaseCursor.execute(self, query, args)
+    163 """Execute a query.
+    164 
+    165 query -- string, query to execute on server
+   (...)
+    172 Returns integer represents rows affected, if any
+    173 """
+    174 self._discard()
+--> 176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+    179 res = self._query(mogrified_query)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:202, in BaseCursor._mogrify(self, query, args)
+    200         query = query % args
+    201     except TypeError as m:
+--> 202         raise ProgrammingError(str(m))
+    204 return query
+
+ProgrammingError: not enough arguments for format string
+
+In [9]: import frappe
+   ...: 
+   ...: # Get SOs from 00744 to 00983 that have linked Quotations
+   ...: linked_sos = frappe.db.sql_list("""
+   ...:     SELECT DISTINCT parent
+   ...:     FROM `tabSales Order Item`
+   ...:     WHERE prevdoc_docname LIKE 'SAL-QTN-2024-00%%'
+   ...:     AND parent >= 'SO-00744-'
+   ...:     AND parent < 'SO-01000-'
+   ...:     ORDER BY parent
+   ...: """)
+   ...: print(f"Found {len(linked_sos)} SOs")
+   ...: print(linked_sos[:20] if linked_sos else "None")
+Found 214 SOs
+['SO-00752-LEGOSAN AB', 'SO-00753-GREENTECH SA', 'SO-00754-Calipso s.r.l', 'SO-00755-CHARKIT CHEMICAL COR', 'SO-00756-BARENTZ Italia S.p.A', 'SO-00757-ALBAFLOR', 'SO-00758-ALPHATECH SCIENCE (T', 'SO-00759-ALBAAD DEUTSCHLAND G', 'SO-00760-ALBAAD DEUTSCHLAND G', 'SO-00761-N BIOTECH CO., LTD.', 'SO-00764-ALBAAD DEUTSCHLAND G', 'SO-00765-ALBAFLOR', 'SO-00766-ALBAAD DEUTSCHLAND G', 'SO-00767-BARENTZ Italia S.p.A', 'SO-00768-CEMSA', 'SO-00769-COSMETILAB 18', 'SO-00770-ABASTECEDORA QUIMICA', 'SO-00771-NATURAL MITCH', 'SO-00773-BRENNTAG INGREDIENTS', 'SO-00774-CELLEX PHARM CO., LT']
+
+    ...:     WHERE prevdoc_docname LIKE 'SAL-QTN-2024-00%%'
+    ...:     AND parent >= 'SO-00744-'
+    ...:     AND parent < 'SO-01000-'
+    ...:     ORDER BY parent
+    ...: """)
+    ...: 
+    ...: print(f"Found {len(linked_sos)} Sales Orders to fix. Starting...")
+    ...: fixed, skipped, errors = 0, 0, 0
+    ...: 
+    ...: for so_name in linked_sos:
+    ...:     result = agent.fix_so_from_quotation(so_name)
+    ...:     if result.get("success"):
+    ...:         if "Skipped" in result.get("message", ""):
+    ...:             skipped += 1
+    ...:             print(f"⏭️ {so_name}: Skipped")
+    ...:         else:
+    ...:             fixed += 1
+    ...:             print(f"✅ {so_name}: Fixed")
+    ...:     else:
+    ...:         errors += 1
+    ...:         print(f"❌ {so_name}: {result.get('error')}")
+    ...: 
+    ...: print(f"\n=== SUMMARY ===\nFixed: {fixed}\nSkipped: {skipped}\nErrors: 
+    ...: {errors}")
+Found 214 Sales Orders to fix. Starting...
+❌ SO-00752-LEGOSAN AB: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-LEGOSAN AB
+❌ SO-00753-GREENTECH SA: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0334- GREENTECH SA
+❌ SO-00754-Calipso s.r.l: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0308 TDS BASE
+❌ SO-00755-CHARKIT CHEMICAL COR: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0600 TDS MASTER
+❌ SO-00756-BARENTZ Italia S.p.A: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0308 Barentz Italia Specchiasol
+✅ SO-00757-ALBAFLOR: Fixed
+❌ SO-00758-ALPHATECH SCIENCE (T: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0323- ALPHATECH SCIENCE (THAILAND) CO.,LTD.
+❌ SO-00759-ALBAAD DEUTSCHLAND G: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-ALBAAD
+❌ SO-00760-ALBAAD DEUTSCHLAND G: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-ALBAAD
+✅ SO-00761-N BIOTECH CO., LTD.: Fixed
+❌ SO-00764-ALBAAD DEUTSCHLAND G: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-ALBAAD
+✅ SO-00765-ALBAFLOR: Fixed
+❌ SO-00766-ALBAAD DEUTSCHLAND G: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-ALBAAD
+✅ SO-00767-BARENTZ Italia S.p.A: Fixed
+❌ SO-00768-CEMSA: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-CEMSA
+❌ SO-00769-COSMETILAB 18: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0600 TDS MASTER
+❌ SO-00770-ABASTECEDORA QUIMICA: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0600 TDS MASTER
+❌ SO-00771-NATURAL MITCH: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-NATURAL MITCH
+❌ SO-00773-BRENNTAG INGREDIENTS: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307 -BRENNTAG INGREDIENTS PHILIPPINES
+❌ SO-00774-CELLEX PHARM CO., LT: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0310 CELLEX PHARMA
+✅ SO-00775-ALBAFLOR: Fixed
+✅ SO-00776-DAEHAN CHEMTECH CO.,: Fixed
+✅ SO-00777-N BIOTECH CO., LTD.: Fixed
+✅ SO-00778-BARENTZ HELLAS: Fixed
+❌ SO-00779-BARENTZ NORTH AMERIC: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0323- BARENTZ ITALIA S.P.A. (FSD COSMETICA)
+❌ SO-00780-DON PULCRO SA. DE CV: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0307-DON PULCRO S.A. DE C.V.
+❌ SO-00781-BERRY GLOBAL INC: Error fixing SO: Row #1: Not allowed to change TDS AMB after submission from None to 0323 COMPANHIA PROVIDÊNCIA INDÚSTRIA E COMÉRCIO A BERRY
+✅ SO-00782-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00783-ALBAFLOR: Fixed
+✅ SO-00784-WOONGJIN FOODS CO,LT: Fixed
+✅ SO-00785-REDA INDUSTRIAL MATE: Fixed
+✅ SO-00786-Pure Chemicals Co.,: Fixed
+✅ SO-00787-BARENTZ Italia S.p.A: Fixed
+✅ SO-00788-FAGRON HELLAS: Fixed
+✅ SO-00789-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00790-BERRY GLOBAL INC: Fixed
+✅ SO-00791-Pu Feng Biotech Co.,: Fixed
+✅ SO-00792-Calipso s.r.l: Fixed
+✅ SO-00793-ALBAFLOR: Fixed
+✅ SO-00796-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00798-BONLAM S.A. DE C.V.: Fixed
+✅ SO-00799-BARENTZ Italia S.p.A: Fixed
+✅ SO-00800-ALBAFLOR: Fixed
+✅ SO-00801-Genomma Lab Mexico,: Fixed
+✅ SO-00802-Tropic Skincare Ltd: Fixed
+✅ SO-00803-ALBAFLOR: Fixed
+✅ SO-00804-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00805-Barentz UK Limited: Fixed
+✅ SO-00806-Parfusale AB: Fixed
+✅ SO-00807-UNION CHEMICAL IND.: Fixed
+✅ SO-00808-Pu Feng Biotech Co.,: Fixed
+✅ SO-00809-BARENTZ GIDA VE KIMY: Fixed
+✅ SO-00810-ALBAFLOR: Fixed
+✅ SO-00811-Calipso s.r.l: Fixed
+✅ SO-00812-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00813-Connell Bros. (Taiwa: Fixed
+✅ SO-00814-ALBAFLOR: Fixed
+✅ SO-00815-ALBAFLOR: Fixed
+✅ SO-00816-AJE MEX: Fixed
+✅ SO-00817-N BIOTECH CO., LTD.: Fixed
+✅ SO-00818-ALBAFLOR: Fixed
+✅ SO-00819-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00820-VABO N: Fixed
+✅ SO-00821-BARENTZ FRANCE SARL: Fixed
+✅ SO-00822-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00823-ALBAFLOR: Fixed
+✅ SO-00824-COSMETILAB 18: Fixed
+✅ SO-00825-ABASTECEDORA QUIMICA: Fixed
+✅ SO-00826-BINDER INTERNATIONAL: Fixed
+✅ SO-00827-YI-DA Chemicals Co.,: Fixed
+✅ SO-00828-Companhia Providênci: Fixed
+✅ SO-00829-IMCD FRANCE SAS: Fixed
+✅ SO-00830-COMDRUSO: Fixed
+✅ SO-00831-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00832-COLORCON USA: Fixed
+✅ SO-00833-Parfusale AB: Fixed
+✅ SO-00834-ALBAFLOR: Fixed
+✅ SO-00835-ALBAFLOR: Fixed
+✅ SO-00836-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00837-AZELIS ISRAEL DISTRI: Fixed
+✅ SO-00838-BARENTZ Italia S.p.A: Fixed
+✅ SO-00839-MAGNACHEM INTERNATIO: Fixed
+✅ SO-00840-Calipso s.r.l: Fixed
+✅ SO-00841-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00842-GREENTECH SA: Fixed
+✅ SO-00843-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00844-ALBAFLOR: Fixed
+✅ SO-00845-Parfusale AB: Fixed
+✅ SO-00846-BRENNTAG TAIWAN CO.,: Fixed
+✅ SO-00847-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00848-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00850-Don Pulcro S.A. de C: Fixed
+✅ SO-00851-AJEMEX /PLNTA PUEBLA: Fixed
+✅ SO-00853-Parfusale AB: Fixed
+✅ SO-00854-BARENTZ BALTIC: Fixed
+✅ SO-00855-IMCD FRANCE SAS: Fixed
+✅ SO-00856-IMCD FRANCE SAS: Fixed
+✅ SO-00857-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00858-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00859-BRENNTAG MEXICO SA D: Fixed
+✅ SO-00860-BARENTZ Italia S.p.A: Fixed
+✅ SO-00861-BARENTZ GIDA VE KIMY: Fixed
+✅ SO-00862-BARENTZ FRANCE SARL: Fixed
+✅ SO-00863-Genomma Lab Mexico,: Fixed
+✅ SO-00864-AJE MEX: Fixed
+✅ SO-00865-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00866-BARENTZ Italia S.p.A: Fixed
+✅ SO-00867-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00869-SAS NATURAL INGREDIE: Fixed
+✅ SO-00871-EL ALAMO EXPORT S.A.: Fixed
+✅ SO-00872-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00873-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00874-BARENTZ Italia S.p.A: Fixed
+✅ SO-00875-SOMES: Fixed
+✅ SO-00876-AJE MEX: Fixed
+✅ SO-00877-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00878-BARENTZ Italia S.p.A: Fixed
+✅ SO-00879-GREENTECH SA: Fixed
+✅ SO-00880-PGI ARGENTINA S.A.: Fixed
+✅ SO-00881-TROPIC SKINCARE LTD: Fixed
+✅ SO-00883-Calipso s.r.l: Fixed
+✅ SO-00884-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00885-NATURAL MITCH: Fixed
+✅ SO-00886-BARENTZ HELLAS: Fixed
+✅ SO-00887-AZELIS ISRAEL DISTRI: Fixed
+✅ SO-00888-Connell Bros. (Taiwa: Fixed
+✅ SO-00889-ALPHATECH SCIENCE (T: Fixed
+✅ SO-00890-CELLEX PHARM CO., LT: Fixed
+✅ SO-00891-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00892-AJE MEX: Fixed
+✅ SO-00893-AJEMEX /PLNTA PUEBLA: Fixed
+✅ SO-00894-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00895-BARENTZ GIDA VE KIMY: Fixed
+✅ SO-00896-AJEMEX /PLNTA PUEBLA: Fixed
+✅ SO-00898-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00899-LABORATORIES DELON: Fixed
+✅ SO-00900-LABORATORIES DELON: Fixed
+✅ SO-00901-FROSCO AB: Fixed
+✅ SO-00902-BARENTZ GIDA VE KIMY: Fixed
+✅ SO-00903-Calipso s.r.l: Fixed
+✅ SO-00904-Nature's Care: Fixed
+✅ SO-00905-N BIOTECH CO., LTD.: Fixed
+✅ SO-00906-AJE MEX: Fixed
+✅ SO-00907-BRENNTAG MEXICO SA D: Fixed
+✅ SO-00908-UNION CHEMICAL IND.: Fixed
+✅ SO-00909-ABASTECEDORA QUIMICA: Fixed
+✅ SO-00910-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00913-BARENTZ Italia S.p.A: Fixed
+✅ SO-00914-BARENTZ Italia S.p.A: Fixed
+✅ SO-00915-BRENNTAG PUERTO RICO: Fixed
+✅ SO-00916-LEGOSAN AB: Fixed
+✅ SO-00917-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00918-LORAND LABORATORIES: Fixed
+✅ SO-00919-AJEMEX /PLNTA PUEBLA: Fixed
+✅ SO-00920-AJE MEX: Fixed
+✅ SO-00921-BARENTZ GIDA VE KIMY: Fixed
+✅ SO-00922-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00923-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00924-BARENTZ Italia S.p.A: Fixed
+✅ SO-00925-BRENNTAG NORDIC A/S: Fixed
+✅ SO-00926-BRENNTAG AUSTRALIA: Fixed
+✅ SO-00927-BRENNTAG INGREDIENTS: Fixed
+✅ SO-00928-DON PULCRO SA. DE CV: Fixed
+✅ SO-00929-COSBAR SL: Fixed
+✅ SO-00930-Pu Feng Biotech Co.,: Fixed
+✅ SO-00931-GREENTECH SA: Fixed
+✅ SO-00932-IMCD FRANCE SAS: Fixed
+✅ SO-00933-Calipso s.r.l: Fixed
+✅ SO-00934-Companhia Providênci: Fixed
+✅ SO-00935-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00936-HSH Chemie SK s.r.o.: Fixed
+✅ SO-00937-DAEHAN CHEMTECH CO.,: Fixed
+✅ SO-00938-BARENTZ Italia S.p.A: Fixed
+✅ SO-00939-BARENTZ Italia S.p.A: Fixed
+✅ SO-00940-VABO N: Fixed
+✅ SO-00941-BONLAM S.A. DE C.V.: Fixed
+✅ SO-00942-GREENTECH SA: Fixed
+✅ SO-00943-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00944-AJEMEX /PLNTA PUEBLA: Fixed
+✅ SO-00945-AJE MEX: Fixed
+✅ SO-00946-PARFUSALE: Fixed
+✅ SO-00947-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00948-COSMETILAB 18: Fixed
+✅ SO-00949-LORAND LABORATORIES: Fixed
+✅ SO-00950-Barentz UK Limited: Fixed
+✅ SO-00951-TROPIC SKINCARE LTD: Fixed
+✅ SO-00952-ABASTECEDORA QUIMICA: Fixed
+✅ SO-00953-BRENNTAG TAIWAN CO.,: Fixed
+✅ SO-00954-BARENTZ NORTH AMERIC: Fixed
+✅ SO-00955-ALBAFLOR: Fixed
+✅ SO-00956-ABSARA: Fixed
+✅ SO-00957-BRENNTAG MEXICO SA D: Fixed
+✅ SO-00958-Be Hemp S.A. de C.V.: Fixed
+✅ SO-00959-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00960-ABSARA: Fixed
+✅ SO-00961-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00962-N BIOTECH CO., LTD.: Fixed
+✅ SO-00964-BRENNTAG AUSTRALIA P: Fixed
+✅ SO-00966-BARENTZ Italia S.p.A: Fixed
+✅ SO-00967-GUSTAVO RAFAEL VILLA: Fixed
+✅ SO-00968-CHARKIT CHEMICAL COR: Fixed
+✅ SO-00969-ALPHATECH SCIENCE (T: Fixed
+✅ SO-00970-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00971-LORAND LABORATORIES: Fixed
+✅ SO-00972-Parfusale AB: Fixed
+✅ SO-00973-UNION CHEMICAL IND.: Fixed
+✅ SO-00974-Calipso s.r.l: Fixed
+✅ SO-00975-ALBAAD DEUTSCHLAND G: Fixed
+✅ SO-00976-EL ALAMO EXPORT S.A.: Fixed
+✅ SO-00977-AJE PANAMA: Fixed
+✅ SO-00978-Don Pulcro S.A. de C: Fixed
+✅ SO-00979-NATURAL MITCH: Fixed
+✅ SO-00980-BONLAM S.A. DE C.V.: Fixed
+✅ SO-00983-BONLAM S.A. DE C.V.: Fixed
+
+=== SUMMARY ===
+Fixed: 195
+Skipped: 0
+Errors: 19
+
+In [11]: 
