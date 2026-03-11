@@ -74,7 +74,19 @@ All 6 critical GAPs identified during LORAND Master Degree Test have been resolv
 
 ---
 
-## Latest Changes (March 8, 2026)
+## Latest Changes (March 11, 2026)
+
+### Generic BatchOrchestrator Implemented
+- Created `batch_orchestrator.py` - a smart batch processor that delegates to existing pipelines
+- Architecture: Generic "batcher" that calls existing tested pipelines/agents (as user requested)
+- Supported operations:
+  - `@batch create invoices for to bill` - Create SIs for To Bill orders with DN
+  - `@batch create delivery for to deliver` - Create DNs for To Deliver orders
+  - `@batch run pipeline for overdue` - Execute full 8-step pipeline for overdue SOs
+  - `@batch status for [criteria]` - Get pipeline status for multiple SOs
+- Criteria: to bill, to deliver, overdue, or explicit SO names
+- Added routing in agent.py for @batch commands
+- Pushed to main: commit 9331302
 
 ### Plant Code Migration Complete
 - Custom Field Item-custom_plant_code1 changed from Link to Select type
