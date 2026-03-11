@@ -467,6 +467,28 @@ class SalesOrderFollowupAgent:
 
             from erpnext.selling.doctype.quotation.quotation import make_sales_order
             so = make_sales_order(quotation_name)
+            
+            # === COPY TDS FIELDS FROM QUOTATION ITEMS ===
+            # ERPNext's make_sales_order doesn't copy custom fields like TDS
+            # Find all custom TDS fields on Quotation Item
+            qt_item_fields = [d.fieldname for d in frappe.get_meta("Quotation Item").fields 
+                              if d.fieldname and (d.fieldname.startswith("tds") or 
+                                                 "0307" in (d.label or "") or 
+                                                 "technical" in (d.label or "").lower() or
+                                                 "data_sheet" in d.fieldname)]
+            
+            if qt_item_fields and so.items:
+                frappe.logger().info(f"Raven AI: Copying TDS fields from Quotation: {qt_item_fields}")
+                for so_item in so.items:
+                    # Find matching Quotation item
+                    for qt_item in qt.items:
+                        if qt_item.item_code == so_item.item_code:
+                            # Copy each TDS field
+                            for field in qt_item_fields:
+                                if hasattr(qt_item, field) and hasattr(so_item, field):
+                                    setattr(so_item, field, getattr(qt_item, field))
+                            break
+            
             so.insert(ignore_permissions=True)
             frappe.db.commit()
 
