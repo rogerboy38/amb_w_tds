@@ -1,0 +1,106 @@
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+DN MAT-DN-2026-00048 already exists for SO-00778-BARENTZ HELLAS (BUG25 idempotency)
+
+Administrator Technical Support
+09:16 PM
+@ai !create delivery note from SO-00779-BARENTZ NORTH AMERIC
+
+sales_order_bot
+Bot
+09:16 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+✅ Delivery Note MAT-DN-2026-00049 created (Draft) Customer: BARENTZ NORTH AMERICA LLC ⚠️ DN created but auto-submit failed: Valuation Rate for the Item
+
+Administrator Technical Support
+09:19 PM
+@ai !create delivery note from SO-118626-BARENTZ Service S.p.A.
+
+sales_order_bot
+Bot
+09:19 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+✅ Delivery Note MAT-DN-2026-00050 created (Draft) Customer: BARENTZ Service S.p.A.
+
+Batch warnings: - No batch with stock for 1318 in FG to Sell Warehouse - AMB-W (need 16.0) ⚠️ DN left as Draft due to batch assignment issues — review before submitting.
+
+Administrator Technical Support
+09:21 PM
+@ai !create delivery note from SO-00780-DON PULCRO SA. DE CV
+
+sales_order_bot
+Bot
+09:21 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+✅ Delivery Note MAT-DN-2026-00051 created (Submitted) Customer: DON PULCRO SA. DE CV.
+
+Administrator Technical Support
+09:21 PM
+@ai !create delivery note from SO-00781-BERRY GLOBAL INC
+
+sales_order_bot
+Bot
+09:21 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+✅ Delivery Note MAT-DN-2026-00052 created (Submitted) Customer: BERRY GLOBAL INC
+
+Administrator Technical Support
+09:26 PM
+@ai !create delivery note from SO-00782-CHARKIT CHEMICAL COR
+
+sales_order_bot
+Bot
+09:26 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+✅ Delivery Note MAT-DN-2026-00053 created (Draft) Customer: CHARKIT CHEMICAL CORP, INC.
+
+Batch warnings: - No batch with stock for 0802 in FG to Sell Warehouse - AMB-W (need 40.0) ⚠️ DN left as Draft due to batch assignment issues — review before submitting.
+
+Administrator Technical Support
+09:29 PM
+@ai !create delivery note from SO-00783-ALBAFLOR
+
+sales_order_bot
+Bot
+09:29 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 2]
+
+❌ Error: Sales Order must be submitted.
+
+Administrator Technical Support
+09:30 PM
+@ai !create sales invoice from SO-00775-ALBAFLOR
+
+Administrator Technical Support
+09:30 PM
+💳 **Payment Agent — Commands** **Payment Creation** `@payment create [SI-NAME]` — Create Payment Entry from Sales Invoice `@payment create [SI-NAME] amount [AMOUNT]` — Partial payment **Payment Actions** `@payment submit [PE-NAME]` — Submit Payment Entry `@payment reconcile [PE-NAME]` — Check reconciliation status **Status & Tracking** `@payment outstanding` — List all unpaid invoices `@payment outstanding customer [NAME]` — Unpaid invoices for customer `@payment status [PE-NAME]` — Payment Entry details **Example (Full Cycle)** ``` @payment create ACC-SINV-2026-00001 @payment submit ACC-PAY-2026-00001 @payment reconcile ACC-PAY-2026-00001 ```
+
+Administrator Technical Support
+09:33 PM
+@ai !create sales invoice from SO-00775-ALBAFLOR
+
+Administrator Technical Support
+09:33 PM
+💳 **Payment Agent — Commands** **Payment Creation** `@payment create [SI-NAME]` — Create Payment Entry from Sales Invoice `@payment create [SI-NAME] amount [AMOUNT]` — Partial payment **Payment Actions** `@payment submit [PE-NAME]` — Submit Payment Entry `@payment reconcile [PE-NAME]` — Check reconciliation status **Status & Tracking** `@payment outstanding` — List all unpaid invoices `@payment outstanding customer [NAME]` — Unpaid invoices for customer `@payment status [PE-NAME]` — Payment Entry details **Example (Full Cycle)** ``` @payment create ACC-SINV-2026-00001 @payment submit ACC-PAY-2026-00001 @payment reconcile ACC-PAY-2026-00001 ```
+
+Administrator Technical Support
+09:56 PM
+@ai !create sales invoice from SO-00775-ALBAFLOR
+
+Administrator Technical Support
+09:56 PM
+💳 **Payment Agent — Commands** **Payment Creation** `@payment create [SI-NAME]` — Create Payment Entry from Sales Invoice `@payment create [SI-NAME] amount [AMOUNT]` — Partial payment **Payment Actions** `@payment submit [PE-NAME]` — Submit Payment Entry `@payment reconcile [PE-NAME]` — Check reconciliation status **Status & Tracking** `@payment outstanding` — List all unpaid invoices `@payment outstanding customer [NAME]` — Unpaid invoices for customer `@payment status [PE-NAME]` — Payment Entry details **Example (Full Cycle)** ``` @payment create ACC-SINV-2026-00001 @payment submit ACC-PAY-2026-00001 @payment reconcile ACC-PAY-2026-00001 ```
+
+10th March 2026
+Administrator Technical Support
+03:47 AM
+@ai !create sales invoice from SO-00775-ALBAFLOR
+
+Administrator Technical Support
+03:47 AM
+💳 **Payment Agent — Commands** **Payment Creation** `@payment create [SI-NAME]` — Create Payment Entry from Sales Invoice `@payment create [SI-NAME] amount [AMOUNT]` — Partial payment **Payment Actions** `@payment submit [PE-NAME]` — Submit Payment Entry `@payment reconcile [PE-NAME]` — Check reconciliation status **Status & Tracking** `@payment outstanding` — List all unpaid invoices `@payment outstanding customer [NAME]` — Unpaid invoices for customer `@payment status [PE-NAME]` — Payment Entry details **Example (Full Cycle)** ``` @payment create ACC-SINV-2026-00001 @payment submit ACC-PAY-2026-00001 @payment reconcile ACC-PAY-2026-00001 ```
