@@ -1,8 +1,18 @@
 # Raven AI Agent Status Report
 
-**Date:** March 8, 2026  
-**Source:** Development Team Report (PDF)  
-**Status:** 6/6 GAPs RESOLVED | Phase 5 COMPLETE
+**Date:** March 12, 2026
+
+## 🔑 CORE DEVELOPMENT PRINCIPLE (ALWAYS REMEMBER)
+**"Building raven_ai_agent with HIGH CLOUD CAPACITY + Raymond-Lucy-Memento-Tattoo capabilities"**
+
+This means:
+- **Cloud-native**: Scalable, distributed, always-available
+- **Raymond Protocol**: Anti-hallucination, verified data
+- **Lucy Protocol**: Context continuity, morning briefings
+- **Memento Protocol**: Persistent memory storage
+- **Tattoo System**: Permanent learning from bugs/fixes
+
+**Previous Status (March 8, 2026):** 6/6 GAPs RESOLVED | Phase 5 COMPLETE
 
 ---
 
