@@ -1,11 +1,10 @@
 app_name = "amb_w_tds"
 app_version = "9.2.0"
 app_title = "AMB W TDS"
-app_publisher = "Your Company"
-app_description = "AMB With TDS"
-app_email = "support@yourcompany.com"
+app_publisher = "AMB WELLNESS"
+app_description = "AMB WELLNESS TDS + Migration + Quotation AMB system"
+app_email = "support@amb-wellness.com"
 app_license = "MIT"
-<<<<<<< HEAD
 
 # ========================================
 #  MODULE LOAD + PATCH PREPARATION
@@ -146,5 +145,3 @@ default_mail_footer = """
 override_whitelisted_methods = {
 	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
 }
-=======
->>>>>>> 14c524d5cbaf02ef44ebf9fa733940547d2a0088
