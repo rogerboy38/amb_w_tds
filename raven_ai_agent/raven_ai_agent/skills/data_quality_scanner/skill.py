@@ -740,10 +740,10 @@ class DataQualityScannerSkill(SkillBase):
                     cc_name = f"LOT {cc_code} - {cc_code} - AMB-W"
                     
                     frappe.logger().info(f"[DataQualityScanner] Derived cost center from WO {wo_name}: {cc_name}")
-                        
-                        if frappe.db.exists("Cost Center", cc_name):
-                            return cc_name
+                    
+                    if frappe.db.exists("Cost Center", cc_name):
                         return cc_name
+                    return cc_name
         except Exception as e:
             frappe.logger().error(f"[DataQualityScanner] Error querying Work Orders: {e}")
         
