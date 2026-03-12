@@ -530,16 +530,19 @@ class DataQualityScannerSkill(SkillBase):
                     "fix_confidence": 0.80
                 })
             
-            # Check currency
+            # Check currency - Multi-currency is normal in ERPNext (USD invoices in MXN company)
+            # This is handled by exchange rate at invoice time, NOT an error
             account_currency = account.account_currency
             if account_currency and account_currency != currency:
+                # Multi-currency is valid workflow: USD invoice → USD payment → converted to MXN
+                # Exchange difference goes to "perdidas y ganancias monetarias"
                 issues.append({
                     "type": "currency_mismatch",
-                    "severity": "HIGH",
-                    "message": f"Account currency '{account_currency}' doesn't match document currency '{currency}'",
+                    "severity": "INFO",  # Changed from HIGH - this is expected multi-currency behavior
+                    "message": f"Multi-currency: Account in '{account_currency}', document in '{currency}' - Normal for export transactions",
                     "field": "currency",
-                    "auto_fix": "find_matching_currency_account",
-                    "fix_confidence": 0.88
+                    "auto_fix": None,  # No fix needed - this is correct
+                    "fix_confidence": 1.0
                 })
         except frappe.DoesNotExistError:
             issues.append({
@@ -739,26 +742,31 @@ class DataQualityScannerSkill(SkillBase):
     
     def _calculate_confidence(self, issues: List[Dict], warnings: List[Dict]) -> float:
         """Calculate confidence score based on issues"""
-        if not issues:
+        # Filter out INFO issues (they are informational, not problems)
+        real_issues = [i for i in issues if i.get("severity") != "INFO"]
+        
+        if not real_issues:
             return 0.95
         
         base_score = 1.0
         
         # Deduct for critical issues
-        critical = len([i for i in issues if i.get("severity") == "CRITICAL"])
+        critical = len([i for i in real_issues if i.get("severity") == "CRITICAL"])
         base_score -= critical * 0.25
         
         # Deduct for high issues
-        high = len([i for i in issues if i.get("severity") == "HIGH"])
+        high = len([i for i in real_issues if i.get("severity") == "HIGH"])
         base_score -= high * 0.15
         
         # Deduct for medium issues
-        medium = len([i for i in issues if i.get("severity") == "MEDIUM"])
+        medium = len([i for i in real_issues if i.get("severity") == "MEDIUM"])
         base_score -= medium * 0.08
         
         # Deduct for low issues
-        low = len([i for i in issues if i.get("severity") == "LOW"])
+        low = len([i for i in real_issues if i.get("severity") == "LOW"])
         base_score -= low * 0.03
+        
+        # INFO issues don't reduce confidence
         
         return max(0.1, min(0.95, base_score))
     
@@ -818,6 +826,7 @@ class DataQualityScannerSkill(SkillBase):
         high = [i for i in issues if i.get("severity") == "HIGH"]
         medium = [i for i in issues if i.get("severity") == "MEDIUM"]
         low = [i for i in issues if i.get("severity") == "LOW"]
+        info = [i for i in issues if i.get("severity") == "INFO"]
         
         if critical:
             response += f"### 🔴 Critical Issues ({len(critical)})\n"
