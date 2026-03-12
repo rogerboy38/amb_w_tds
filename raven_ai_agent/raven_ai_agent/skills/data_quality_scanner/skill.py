@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from raven_ai_agent.skills.framework import SkillBase
+from raven_ai_agent.skills.formulation_reader.reader import parse_golden_number
 
 
 class DataQualityScannerSkill(SkillBase):
@@ -56,6 +57,17 @@ class DataQualityScannerSkill(SkillBase):
         super().__init__(agent)
         self.issues_found = []
         self.fixes_applied = []
+        
+        # Plant code to Cost Center mapping (from golden number)
+        # Golden number format: ITEM_[product(4)][folio(3)][year(2)][plant(1)]
+        # Plant codes: 1=Mix, 2=Dry, 3=Juice, 4=Laboratory, 5=Formulated
+        self.PLANT_COST_CENTER_MAP = {
+            '1': 'Mix - AMB',      # Mix Plant
+            '2': 'Dry - AMB',      # Dry Plant
+            '3': 'Juice - AMB',   # Juice Plant
+            '4': 'Laboratory - AMB',  # Laboratory
+            '5': 'Formulated - AMB'   # Formulated Products
+        }
     
     def handle(self, query: str, context: Dict = None) -> Optional[Dict]:
         """Handle validation query"""
@@ -646,6 +658,96 @@ class DataQualityScannerSkill(SkillBase):
         
         return issues
     
+    def _get_cost_center_from_golden_number(self, doc) -> Optional[str]:
+        """
+        Derive cost center from golden number in document items.
+        
+        Looks at item codes in the document (Sales Order/Sales Invoice),
+        parses their golden numbers, and maps the plant code to a Cost Center.
+        
+        Args:
+            doc: Sales Order or Sales Invoice document
+            
+        Returns:
+            Cost Center name if found, None otherwise
+        """
+        # Get items from document
+        items = doc.get("items", [])
+        if not items:
+            return None
+        
+        # Collect plant codes from all items
+        plant_codes = set()
+        golden_items_found = 0
+        
+        for item in items:
+            item_code = item.get("item_code")
+            if not item_code:
+                continue
+            
+            # Parse golden number from item code
+            parsed = parse_golden_number(item_code)
+            if parsed and parsed.get("plant"):
+                golden_items_found += 1
+                # Get plant code (numeric) from the plant name
+                # Plant names: Mix, Dry, Juice, Laboratory, Formulated
+                plant_name = parsed.get("plant", "").lower()
+                
+                # Find the numeric code for this plant name
+                for code, name in self.PLANT_COST_CENTER_MAP.items():
+                    if plant_name in name.lower():
+                        plant_codes.add(code)
+                        break
+        
+        if not plant_codes:
+            frappe.logger().info(f"[DataQualityScanner] No golden numbers found in {len(items)} items")
+            return None
+        
+        # If multiple plants, we can't determine a single cost center
+        if len(plant_codes) > 1:
+            frappe.logger().info(f"[DataQualityScanner] Multiple plants found: {plant_codes}")
+            return None
+        
+        # Get the cost center for the identified plant
+        plant_code = list(plant_codes)[0]
+        cost_center = self.PLANT_COST_CENTER_MAP.get(plant_code)
+        
+        # Verify the cost center exists and is not a group
+        if cost_center:
+            try:
+                is_group = frappe.get_value("Cost Center", cost_center, "is_group")
+                if is_group:
+                    # Try to find a leaf cost center under this group
+                    leaf_cc = self._find_leaf_cost_center(cost_center)
+                    if leaf_cc:
+                        cost_center = leaf_cc
+                    else:
+                        cost_center = None
+            except Exception as e:
+                frappe.logger().error(f"[DataQualityScanner] Error verifying cost center {cost_center}: {e}")
+                cost_center = None
+        
+        frappe.logger().info(f"[DataQualityScanner] Derived cost center from golden number: {cost_center} (items with golden number: {golden_items_found})")
+        return cost_center
+    
+    def _find_leaf_cost_center(self, parent_cc: str) -> Optional[str]:
+        """Find a leaf (non-group) cost center under a parent group."""
+        try:
+            children = frappe.get_all(
+                "Cost Center",
+                filters={
+                    "parent_cost_center": parent_cc,
+                    "is_group": 0
+                },
+                fields=["name"],
+                limit=1
+            )
+            if children:
+                return children[0].name
+        except Exception as e:
+            frappe.logger().error(f"[DataQualityScanner] Error finding leaf cost center: {e}")
+        return None
+    
     def _validate_cost_center(self, doc) -> List[Dict]:
         """Check if cost center is valid (not a group)"""
         issues = []
@@ -653,14 +755,28 @@ class DataQualityScannerSkill(SkillBase):
         cost_center = doc.get("cost_center")
         
         if not cost_center:
-            issues.append({
-                "type": "missing_cost_center",
-                "severity": "MEDIUM",
-                "message": "Cost Center is missing",
-                "field": "cost_center",
-                "auto_fix": "set_default_cost_center",
-                "fix_confidence": 0.90
-            })
+            # Try to derive cost center from golden number in items
+            derived_cc = self._get_cost_center_from_golden_number(doc)
+            
+            if derived_cc:
+                issues.append({
+                    "type": "missing_cost_center",
+                    "severity": "MEDIUM",
+                    "message": "Cost Center is missing - AUTO-FIX AVAILABLE",
+                    "field": "cost_center",
+                    "auto_fix": "set_from_golden_number",
+                    "auto_fix_value": derived_cc,
+                    "fix_confidence": 0.95
+                })
+            else:
+                issues.append({
+                    "type": "missing_cost_center",
+                    "severity": "MEDIUM",
+                    "message": "Cost Center is missing - Could not derive from golden number",
+                    "field": "cost_center",
+                    "auto_fix": "set_default_cost_center",
+                    "fix_confidence": 0.70
+                })
             return issues
         
         # Check if it's a group
@@ -834,7 +950,10 @@ class DataQualityScannerSkill(SkillBase):
                 response += f"- **{issue['message']}**\n"
                 response += f"  - Field: `{issue.get('field')}`\n"
                 if issue.get("auto_fix"):
-                    response += f"  - Auto-fix: {issue['auto_fix']} ({issue['fix_confidence']*100:.0f}% confidence)\n"
+                    response += f"  - Auto-fix: {issue['auto_fix']}"
+                    if issue.get("auto_fix_value"):
+                        response += f" → `{issue['auto_fix_value']}`"
+                    response += f" ({issue['fix_confidence']*100:.0f}% confidence)\n"
             response += "\n"
         
         if high:
@@ -843,7 +962,10 @@ class DataQualityScannerSkill(SkillBase):
                 response += f"- **{issue['message']}**\n"
                 response += f"  - Field: `{issue.get('field')}`\n"
                 if issue.get("auto_fix"):
-                    response += f"  - Auto-fix: {issue['auto_fix']} ({issue['fix_confidence']*100:.0f}% confidence)\n"
+                    response += f"  - Auto-fix: {issue['auto_fix']}"
+                    if issue.get("auto_fix_value"):
+                        response += f" → `{issue['auto_fix_value']}`"
+                    response += f" ({issue['fix_confidence']*100:.0f}% confidence)\n"
             response += "\n"
         
         if medium:
