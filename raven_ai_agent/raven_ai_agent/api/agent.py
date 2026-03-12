@@ -373,6 +373,8 @@ def handle_raven_message(doc, method):
             query = plain_text[3:].strip()
             # Detect intent to route to specialized agents
             q_lower = query.lower()
+            
+            frappe.logger().info(f"[AI Agent] === START ROUTING === Query: '{query}' | q_lower: '{q_lower}'")
 
             # Phase 4: Analytics commands route to RaymondLucyAgent (default)
             analytics_keywords = [
@@ -423,12 +425,19 @@ def handle_raven_message(doc, method):
 
             # === SCANNER/DATA QUALITY commands - route to SkillRouter (before SO check) ===
             scanner_keywords = [
-                "scan ", "validate ", "check data", "pre-flight", "preflight",
+                "scan", "validate", "check data", "pre-flight", "preflight",
                 "quality check", "check address", "check account", "check invoice",
-                "verificar ", "diagnose "
+                "verificar", "diagnose"
             ]
+            
+            # DEBUG: Log the query and matching
+            frappe.logger().info(f"[AI Agent] Query: '{q_lower}' | Scanner keywords: {scanner_keywords}")
+            
             if any(kw in q_lower for kw in scanner_keywords):
+                frappe.logger().info(f"[AI Agent] MATCHED scanner keywords, bot_name=None")
                 bot_name = None  # Will route to SkillRouter in else case below
+            else:
+                frappe.logger().info(f"[AI Agent] Did NOT match scanner keywords")
 
             # === PRIORITY: SO-linked commands always go to sales agent ===
             # This must come FIRST to prevent payment_bot from intercepting SI/DN creation
@@ -590,6 +599,7 @@ def handle_raven_message(doc, method):
                     result = {"success": False, "response": "Could not process validator command. Try: `@ai diagnose SAL-QTN-XXXX`"}
             else:
                 # Try SkillRouter first for specialized skills
+                frappe.logger().info(f"[AI Agent] ELSE block reached with bot_name: {bot_name}")
                 try:
                     from raven_ai_agent.skills.router import SkillRouter
                     router = SkillRouter()
