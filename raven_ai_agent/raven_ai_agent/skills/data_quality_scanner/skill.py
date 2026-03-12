@@ -1242,13 +1242,20 @@ class DataQualityScannerSkill(SkillBase):
         
         return max(0.1, min(0.95, base_score))
     
-    def _find_leaf_account(self, account_name: str) -> Optional[str]:
-        """Find a leaf (non-group) account under the given account group"""
+    def _find_leaf_account(self, account_name: str, preferred_currency: str = None) -> Optional[str]:
+        """Find a leaf (non-group) account under the given account group.
+        
+        Args:
+            account_name: The account to find a leaf for
+            preferred_currency: Optional currency to match (e.g., 'USD', 'MXN')
+        """
         try:
             # Check if the account itself is a leaf
             is_group = frappe.get_value("Account", account_name, "is_group")
             if not is_group:
                 return account_name
+            
+            frappe.logger().info(f"[DataQualityScanner] {account_name} is a group, looking for leaf...")
             
             # Find direct child accounts that are leaves
             children = frappe.get_all(
@@ -1260,8 +1267,14 @@ class DataQualityScannerSkill(SkillBase):
                 fields=["name", "account_currency"],
                 limit=5
             )
+            
             if children:
-                frappe.logger().info(f"[DataQualityScanner] Found {len(children)} direct leaf accounts under {account_name}")
+                frappe.logger().info(f"[DataQualityScanner] Found {len(children)} direct leaf accounts")
+                # If we have a preferred currency, try to match
+                if preferred_currency:
+                    for child in children:
+                        if child.account_currency == preferred_currency:
+                            return child.name
                 return children[0].name
             
             # Try to find any descendant leaf accounts by climbing up the tree
@@ -1291,15 +1304,42 @@ class DataQualityScannerSkill(SkillBase):
                 
                 if siblings:
                     frappe.logger().info(f"[DataQualityScanner] Found {len(siblings)} sibling leaf accounts under {parent}")
+                    if preferred_currency:
+                        for sib in siblings:
+                            if sib.account_currency == preferred_currency:
+                                return sib.name
                     return siblings[0].name
                 
                 current_account = parent
             
             # Last resort: search for any receivable account in the company
-            frappe.logger().warning(f"[DataQualityScanner] No leaf found under {account_name}, trying receivable accounts")
+            frappe.logger().warning(f"[DataQualityScanner] No leaf found under {account_name}, trying company-wide receivable accounts")
             company = frappe.get_value("Account", account_name, "company")
             
             if company:
+                # First try generic "Debtors" accounts (most common fallback)
+                debtors_accounts = frappe.get_all(
+                    "Account",
+                    filters={
+                        "company": company,
+                        "account_type": "Receivable",
+                        "is_group": 0,
+                        "name": ["like", "%Debtors%"]
+                    },
+                    fields=["name", "account_currency"],
+                    limit=5
+                )
+                
+                if debtors_accounts:
+                    frappe.logger().info(f"[DataQualityScanner] Found {len(debtors_accounts)} Debtors accounts")
+                    # Match currency if possible
+                    if preferred_currency:
+                        for acc in debtors_accounts:
+                            if acc.account_currency == preferred_currency:
+                                return acc.name
+                    return debtors_accounts[0].name
+                
+                # Fallback to any receivable account
                 receivables = frappe.get_all(
                     "Account",
                     filters={
@@ -1307,10 +1347,15 @@ class DataQualityScannerSkill(SkillBase):
                         "account_type": "Receivable",
                         "is_group": 0
                     },
-                    fields=["name"],
+                    fields=["name", "account_currency"],
                     limit=5
                 )
                 if receivables:
+                    frappe.logger().info(f"[DataQualityScanner] Found {len(receivables)} generic receivable accounts")
+                    if preferred_currency:
+                        for acc in receivables:
+                            if acc.account_currency == preferred_currency:
+                                return acc.name
                     return receivables[0].name
             
             return None
