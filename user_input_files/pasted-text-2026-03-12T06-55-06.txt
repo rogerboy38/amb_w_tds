@@ -1,0 +1,130 @@
+There is no Work Order linked to SO-00752-LEGOSAN AB. The Work Orders for item 0307 exist but their sales_order field is null/empty — they were created independently without referencing the Sales Order.
+
+The most likely match is MFG-WO-03726 (Completed, item 0307, qty=150 — matching the SO qty).
+
+To fix the link, run this in bench console:
+
+python
+import frappe
+wo = frappe.get_doc("Work Order", "MFG-WO-03726")
+print(f"Current sales_order: {wo.sales_order}")
+print(f"Status: {wo.status}, qty: {wo.qty}, item: {wo.production_item}")
+wo.sales_order = "SO-00752-LEGOSAN AB"
+wo.flags.ignore_validate = True
+wo.flags.ignore_permissions = True
+wo.save()
+frappe.db.commit()
+print("Done! WO linked to SO")
+Before running: Confirm that MFG-WO-03726 is the correct Work Order for this Sales Order (Completed, item 0307, qty=150). If it's a different one, replace the name accordingly.
+
+After running, refresh the SO Connections tab and the Work Order should appear.
+
+In [13]: import frappe
+...: wo = frappe.get_doc("Work Order", "MFG-WO-03726")
+...: print(f"Current sales_order: {wo.sales_order}")
+...: print(f"Status: {wo.status}, qty: {wo.qty}, item: {wo.production_item}")
+...: wo.sales_order = "SO-00752-LEGOSAN AB"
+...: wo.flags.ignore_validate = True
+...: wo.flags.ignore_permissions = True
+...: wo.save()
+...: frappe.db.commit()
+...: print("Done! WO linked to SO")
+...:
+Current sales_order: None
+Status: Completed, qty: 150.0, item: 0307
+---------------------------------------------------------------------------
+UpdateAfterSubmitError Traceback (most recent call last)
+Cell In[13], line 8
+6 wo.flags.ignore_validate = True
+7 wo.flags.ignore_permissions = True
+----> 8 wo.save()
+9 frappe.db.commit()
+10 print("Done! WO linked to SO")
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:518, in Document.save(self, *args, **kwargs)
+516 def save(self, *args, **kwargs) -> "Self":
+517 """Wrapper for _save"""
+--> 518 return self._save(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:560, in Document._save(self, ignore_permissions, ignore_version)
+557 self._validate()
+559 if self._action == "update_after_submit":
+--> 560 self.validate_update_after_submit()
+562 self.set_docstatus()
+564 # parent
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:1099, in Document.validate_update_after_submit(self)
+1096 if self.flags.ignore_validate_update_after_submit:
+1097 return
+-> 1099 self._validate_update_after_submit()
+1100 for d in self.get_all_children():
+1101 if d.is_new() and self.meta.get_field(d.parentfield).allow_on_submit:
+1102 # in case of a new row, don't validate allow on submit, if table is allow on submit
+
+File ~/frappe-bench/apps/frappe/frappe/model/base_document.py:1285, in BaseDocument._validate_update_after_submit(self)
+1278 db_value = datetime.timedelta(
+1279 hours=db_value.hour,
+1280 minutes=db_value.minute,
+1281 seconds=db_value.second,
+1282 microseconds=db_value.microsecond,
+1283 )
+1284 if self_value != db_value:
+-> 1285 frappe.throw(
+1286 _("{0} Not allowed to change {1} after submission from {2} to {3}").format(
+1287 f"Row #{self.idx}:" if self.get("parent") else "",
+1288 frappe.bold(_(df.label, context=df.parent)),
+1289 frappe.bold(db_value),
+1290 frappe.bold(self_value),
+1291 ),
+1292 frappe.UpdateAfterSubmitError,
+1293 title=_("Cannot Update After Submit"),
+1294 )
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+129 def throw(
+130 msg: str | Sequence[str],
+131 exc: type[Exception] | Exception = frappe.ValidationError,
+(...)
+136 primary_action=None,
+137 ) -> None:
+138 """Throw execption and show message (`msgprint`).
+139
+140 :param msg: Message.
+(...)
+146 :param primary_action: [optional] Bind a primary server/client side action.
+147 """
+--> 148 msgprint(
+149 msg,
+150 raise_exception=exc,
+151 title=title,
+152 indicator="red",
+153 is_minimizable=is_minimizable,
+154 wide=wide,
+155 as_list=as_list,
+156 primary_action=primary_action,
+157 )
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+107 else:
+108 frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+56 if out.__frappe_exc_id:
+57 exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+UpdateAfterSubmitError: Not allowed to change Sales Order after submission from None to SO-00752-LEGOSAN AB
+
+we need to change the status and fix and restore status
+The WO is submitted (Completed), so we can't use save(). We need to bypass the validation and update directly via SQL. Run this in bench console:
+
+python
+import frappe
+frappe.db.set_value("Work Order", "MFG-WO-03726", "sales_order", "SO-00752-LEGOSAN AB", update_modified=False)
+frappe.db.commit()
+print("Done! WO linked to SO via direct DB update")
+# Verify
+so = frappe.db.get_value("Work Order", "MFG-WO-03726", "sales_order")
+print(f"Verified: sales_order = {so}")
+frappe.db.set_value bypasses the validate_update_after_submit check and writes directly to the database. No need to amend/cancel.

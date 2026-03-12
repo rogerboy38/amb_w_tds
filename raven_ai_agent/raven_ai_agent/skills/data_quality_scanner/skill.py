@@ -677,86 +677,78 @@ class DataQualityScannerSkill(SkillBase):
         if not items:
             return None
         
-        # Try to find Work Order from items
+        # Try to find Work Order or Production Order from items
         for item in items:
-            # Look for Work Order reference in the item
-            # ERPNext stores work_order in Production Plan or directly in Sales Order Item
             work_order = item.get("work_order")
-            if not work_order:
-                continue
+            production_order = item.get("production_order")
             
-            try:
-                # Get Work Order document
-                wo_doc = frappe.get_doc("Work Order", work_order)
-                
-                # Build the golden code from Work Order info
-                # Format: [item_code(4)][WO_consecutive(3)][year(2)][plant(1)]
-                
-                # Get item code - first 4 characters
-                item_code = wo_doc.get("item_code", "")
-                item_prefix = item_code[:4] if item_code else ""
-                
-                # Get Work Order name - extract consecutive number
-                # WO name format could be like "WO-0334114231" or just the number
-                wo_name = wo_doc.name
-                wo_consecutive = ""
-                wo_year = ""
-                
-                # Try to extract from Work Order name
-                # Look for patterns like "0334114231" in the name
-                import re
-                match = re.search(r'(\d{10})', wo_name)
-                if match:
-                    full_code = match.group(1)
-                    if len(full_code) >= 10:
-                        wo_consecutive = full_code[4:7]  # positions 4-6
-                        wo_year = full_code[7:9]  # positions 7-8
-                        plant_code = full_code[9]  # position 9
+            # Try Production Order (more common than Work Order in Sales Orders)
+            if production_order:
+                try:
+                    prod_doc = frappe.get_doc("Production Order", production_order)
+                    item_code = prod_doc.get("item_code", "")
+                    item_prefix = item_code[:4] if item_code else ""
+                    
+                    prod_name = prod_doc.name
+                    import re
+                    match = re.search(r'(\d{10})', prod_name)
+                    if match:
+                        full_code = match.group(1)
+                        wo_consecutive = full_code[4:7]
+                        wo_year = full_code[7:9]
+                        plant_code = full_code[9]
                     else:
-                        # If less than 10, we need more info
-                        wo_consecutive = "000"  # fallback
-                        wo_year = "23"  # fallback to current year
-                        plant_code = "1"  # default to Mix
-                else:
-                    # Extract year from work order date
-                    if wo_doc.get("creation"):
-                        wo_year = str(wo_doc.creation.year)[-2:]
+                        wo_consecutive = "000"
+                        wo_year = "23"
+                        plant_code = "1"
                     
-                    # Use Work Order sequence number if available
-                    if wo_doc.get("seq"):
-                        wo_consecutive = str(wo_doc.seq).zfill(3)
+                    if not item_prefix:
+                        item_prefix = "0000"
                     
-                    # Default plant to Mix if not found
-                    plant_code = "1"
-                
-                # Build the full code (10 digits)
-                if not item_prefix:
-                    item_prefix = "0000"
-                if not wo_consecutive:
-                    wo_consecutive = "000"
-                if not wo_year:
-                    wo_year = "23"
-                
-                cc_code = f"{item_prefix}{wo_consecutive}{wo_year}{plant_code}"
-                cc_name = f"LOT {cc_code} - {cc_code} - AMB-W"
-                
-                # Verify the cost center exists
-                if frappe.db.exists("Cost Center", cc_name):
-                    frappe.logger().info(f"[DataQualityScanner] Found cost center from Work Order: {cc_name}")
+                    cc_code = f"{item_prefix}{wo_consecutive}{wo_year}{plant_code}"
+                    cc_name = f"LOT {cc_code} - {cc_code} - AMB-W"
+                    
+                    if frappe.db.exists("Cost Center", cc_name):
+                        return cc_name
                     return cc_name
-                else:
-                    frappe.logger().info(f"[DataQualityScanner] Cost center not found: {cc_name}, will try fallback")
-                    # Return the expected name anyway - it might be created on the fly
-                    return cc_name
+                except:
+                    pass
+            
+            # Try Work Order
+            if work_order:
+                try:
+                    wo_doc = frappe.get_doc("Work Order", work_order)
+                    item_code = wo_doc.get("item_code", "")
+                    item_prefix = item_code[:4] if item_code else ""
                     
-            except frappe.DoesNotExistError:
-                frappe.logger().info(f"[DataQualityScanner] Work Order not found: {work_order}")
-                continue
-            except Exception as e:
-                frappe.logger().error(f"[DataQualityScanner] Error processing work order {work_order}: {e}")
-                continue
+                    wo_name = wo_doc.name
+                    import re
+                    match = re.search(r'(\d{10})', wo_name)
+                    if match:
+                        full_code = match.group(1)
+                        wo_consecutive = full_code[4:7]
+                        wo_year = full_code[7:9]
+                        plant_code = full_code[9]
+                    else:
+                        wo_consecutive = "000"
+                        wo_year = "23"
+                        plant_code = "1"
+                    
+                    if not item_prefix:
+                        item_prefix = "0000"
+                    
+                    cc_code = f"{item_prefix}{wo_consecutive}{wo_year}{plant_code}"
+                    cc_name = f"LOT {cc_code} - {cc_code} - AMB-W"
+                    
+                    if frappe.db.exists("Cost Center", cc_name):
+                        return cc_name
+                    return cc_name
+                except:
+                    pass
         
-        frappe.logger().info(f"[DataQualityScanner] No Work Orders found in Sales Order items")
+        frappe.logger().info(f"[DataQualityScanner] No Work Orders/Production Orders found")
+        
+        # FALLBACK: Try to derive cost center from Item Code directly
         
         # FALLBACK: Try to derive cost center from Item Code directly
         # Use the golden number format from formulation_reader: ITEM_[product(4)][folio(3)][year(2)][plant(1)]
@@ -765,17 +757,18 @@ class DataQualityScannerSkill(SkillBase):
     
     def _derive_cost_center_from_item_code(self, items) -> Optional[str]:
         """
-        Fallback: Derive cost center from Item Code golden number.
+        Fallback: Derive cost center from Item Code or BOM.
         
-        Uses the golden number format: ITEM_[product(4)][folio(3)][year(2)][plant(1)]
-        Example: ITEM_0617027231 → plant=1 (Mix)
-        
-        Returns generic plant-based Cost Center if golden number found.
+        Tries multiple approaches:
+        1. Parse golden number from item code (ITEM_XXXXXXXXXX format)
+        2. Use simple item code (4 digits) - assume plant based on first digit
+        3. Check BOM for plant information
         """
         from raven_ai_agent.skills.formulation_reader.reader import parse_golden_number
         
         # Plant code mapping to generic Cost Center names
         plant_cc_map = {
+            '0': 'Mix - AMB',      # Default fallback
             '1': 'Mix - AMB',      # Mix Plant
             '2': 'Dry - AMB',      # Dry Plant
             '3': 'Juice - AMB',   # Juice Plant
@@ -785,27 +778,50 @@ class DataQualityScannerSkill(SkillBase):
         
         for item in items:
             item_code = item.get("item_code")
+            bom_no = item.get("bom_no")
             if not item_code:
                 continue
             
-            # Parse golden number from item code
+            # Try 1: Parse golden number from item code (ITEM_XXXXXXXXXX format)
             parsed = parse_golden_number(item_code)
             if parsed and parsed.get("plant"):
                 plant_name = parsed.get("plant", "").lower()
-                
-                # Find the cost center for this plant
                 for code, cc_name in plant_cc_map.items():
                     if plant_name in cc_name.lower():
-                        # Verify the cost center exists
                         if frappe.db.exists("Cost Center", cc_name):
-                            frappe.logger().info(f"[DataQualityScanner] Derived cost center from item code: {cc_name}")
                             return cc_name
-                        else:
-                            frappe.logger().info(f"[DataQualityScanner] Cost center not found: {cc_name}")
+                        return cc_name
+            
+            # Try 2: Simple 4-digit item code - use first digit as plant hint
+            # This is a guess - may need adjustment based on your product codes
+            if item_code.isdigit() and len(item_code) == 4:
+                first_digit = item_code[0]
+                if first_digit in plant_cc_map:
+                    cc_name = plant_cc_map[first_digit]
+                    frappe.logger().info(f"[DataQualityScanner] Derived cost center from item code digit: {cc_name}")
+                    if frappe.db.exists("Cost Center", cc_name):
+                        return cc_name
+                    return cc_name
+            
+            # Try 3: Check BOM for more info
+            if bom_no:
+                try:
+                    # BOM names might have plant info
+                    import re
+                    match = re.search(r'(\d{10})', bom_no)
+                    if match:
+                        full_code = match.group(1)
+                        plant_code = full_code[9]  # Last digit is plant
+                        if plant_code in plant_cc_map:
+                            cc_name = plant_cc_map[plant_code]
+                            frappe.logger().info(f"[DataQualityScanner] Derived cost center from BOM: {cc_name}")
+                            if frappe.db.exists("Cost Center", cc_name):
+                                return cc_name
                             return cc_name
+                except:
+                    pass
         
-        frappe.logger().info(f"[DataQualityScanner] No golden numbers found in item codes")
-        return None
+        frappe.logger().info(f"[DataQualityScanner] Could not derive cost center from items")
         return None
     
     def _find_leaf_cost_center(self, parent_cc: str) -> Optional[str]:
