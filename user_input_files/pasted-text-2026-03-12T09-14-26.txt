@@ -1,0 +1,334 @@
+   ...:         print(f"   - Error loading {sin.name}: {e}")
+   ...: 
+   ...: # 5. BOMS
+   ...: print("\n🔧 5. BOMS for items in pipeline")
+   ...: all_boms = set()
+   ...: for so_name in so_names:
+   ...:     try:
+   ...:         so_doc = frappe.get_doc("Sales Order", so_name)
+   ...:         for item in so_doc.items:
+   ...:             if item.bom_no:
+   ...:                 all_boms.add(item.bom_no)
+   ...:     except:
+   ...:         pass
+   ...: 
+   ...: for bom_no in all_boms:
+   ...:     try:
+   ...:         bom_doc = frappe.get_doc("BOM", bom_no)
+   ...:         print(f"   - {bom_no} | Item: {bom_doc.item} | Cost: {bom_doc.total_cost}")
+   ...:     except Exception as e:
+   ...:         print(f"   - Error loading {bom_no}: {e}")
+   ...: 
+   ...: print("\n" + "=" * 70)
+   ...: print("PIPELINE ANALYSIS COMPLETE")
+   ...: print("=" * 70)
+======================================================================
+ANALYZING PIPELINE: SAL-QTN-2024-00752
+======================================================================
+
+📋 1. QUOTATION
+   Customer: LEGOSAN AB
+   Items: 1
+      - 0307 | qty: 150.0
+
+📦 2. SALES ORDERS
+   Found 78 Sales Orders with matching items
+   - SO-118526-BARENTZ CANADA | Customer: BARENTZ CANADA | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0307-005 | qty: 50.0
+   - SO-117926-AJE MEX | Customer: AJE MEX | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0307-005 | qty: 100.0
+   - SO-117826-NATURAL MITCH | Customer: NATURAL MITCH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0307-005 | qty: 1.0
+   - SO-117526-CEMSA | Customer: CEMSA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0307-005 | qty: 20.0
+        - 0307 | BOM: BOM-0307-005 | qty: 1.0
+   - SO-117426-HSH Chemie SK s.r.o. | Customer: HSH Chemie SK s.r.o. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0307-005 | qty: 1.0
+        - 0307 | BOM: BOM-0307-005 | qty: 1.0
+   - SO-117326-AGROMAYAL BOTANICA, S.A. DE C.V. | Customer: AGROMAYAL BOTANICA, S.A. DE C.V. | Status: To Deliver and Bill
+     Items:
+        - 0307 | BOM: None | qty: 6000.0
+   - SO-00196-CHARKIT CHEMICAL COR | Customer: CHARKIT CHEMICAL CORP, INC. | Status: To Deliver and Bill
+     Items:
+        - 0307 | BOM: BOM-0307-001 | qty: 2.27
+   - SO-00043-WOONGJIN FOODS CO,LT | Customer: Woongjin Foods Co,Ltd. | Status: To Deliver and Bill
+     Items:
+        - 0307 | BOM: BOM-0307-001 | qty: 18000.0
+   - SO-00752-LEGOSAN AB | Customer: LEGOSAN AB | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0307-001 | qty: 150.0
+   - SO-00759-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 125.0
+   - SO-00760-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00764-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00766-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 5.0
+   - SO-00768-CEMSA | Customer: CEMSA | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 20.0
+   - SO-00771-NATURAL MITCH | Customer: NATURAL MITCH | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 1.0
+   - SO-00773-BRENNTAG INGREDIENTS | Customer: BRENNTAG INGREDIENTS PHILIPPINES | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0602-001 | qty: 500.0
+   - SO-00780-DON PULCRO SA. DE CV | Customer: DON PULCRO SA. DE CV. | Status: Completed
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 10.0
+   - SO-00785-REDA INDUSTRIAL MATE | Customer: REDA INDUSTRIAL MATERIALS FZE | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0606-001 | qty: 25.0
+   - SO-00786-Pure Chemicals Co., | Customer: Pure Chemicals CO., LTD. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0601-001 | qty: 100.0
+   - SO-00789-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 2.0
+   - SO-00796-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 5.0
+   - SO-00801-Genomma Lab Mexico, | Customer: Genomma Lab Mexico, S.A. de C.V. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0607-001 | qty: 5.0
+   - SO-00804-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 125.0
+   - SO-00805-Barentz UK Limited | Customer: Barentz UK Limited | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 200.0
+   - SO-00816-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 100.0
+   - SO-00819-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 3.0
+   - SO-00822-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0701-001 | qty: 125.0
+   - SO-00830-COMDRUSO | Customer: COMDRUSO | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0609-001 | qty: 10.0
+   - SO-00836-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00839-MAGNACHEM INTERNATIO | Customer: MAGNACHEM INTERNATIONAL S.A. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 75.0
+   - SO-00841-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00848-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 2.0
+   - SO-00850-Don Pulcro S.A. de C | Customer: Don Pulcro S.A. de C.V. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 10.0
+   - SO-00851-AJEMEX /PLNTA PUEBLA | Customer: AJEMEX /PLNTA PUEBLA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 100.0
+   - SO-00854-BARENTZ BALTIC | Customer: BARENTZ BALTIC | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 5.0
+   - SO-00857-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 125.0
+   - SO-00858-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 50.0
+   - SO-00864-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 100.0
+   - SO-00865-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 5.0
+   - SO-00867-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 125.0
+   - SO-00872-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 50.0
+   - SO-00873-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 125.0
+   - SO-00875-SOMES | Customer: SOMES | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 2.0
+   - SO-00876-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 100.0
+   - SO-00884-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00885-NATURAL MITCH | Customer: NATURAL MITCH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 1.0
+   - SO-00892-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 100.0
+   - SO-00893-AJEMEX /PLNTA PUEBLA | Customer: AJEMEX /PLNTA PUEBLA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 100.0
+   - SO-00894-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00896-AJEMEX /PLNTA PUEBLA | Customer: AJEMEX /PLNTA PUEBLA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 200.0
+   - SO-00901-FROSCO AB | Customer: FROSCO AB | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 15.0
+   - SO-00906-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 300.0
+   - SO-00914-BARENTZ Italia S.p.A | Customer: Barentz Italia S.p.A. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 100.0
+   - SO-00915-BRENNTAG PUERTO RICO | Customer: BRENNTAG PUERTO RICO | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-1318-001 | qty: 5.0
+   - SO-00916-LEGOSAN AB | Customer: LEGOSAN AB | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 150.0
+   - SO-00919-AJEMEX /PLNTA PUEBLA | Customer: AJEMEX /PLNTA PUEBLA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 120.0
+   - SO-00920-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 150.0
+   - SO-00922-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00925-BRENNTAG NORDIC A/S | Customer: BRENNTAG NORDIC A/S | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 40.0
+   - SO-00927-BRENNTAG INGREDIENTS | Customer: BRENNTAG INGREDIENTS PHILIPPINES | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0602-001 | qty: 500.0
+   - SO-00928-DON PULCRO SA. DE CV | Customer: DON PULCRO SA. DE CV. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 10.0
+   - SO-00929-COSBAR SL | Customer: COSBAR SL | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 5.0
+   - SO-00935-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00936-HSH Chemie SK s.r.o. | Customer: HSH Chemie SK s.r.o. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 2.0
+   - SO-00944-AJEMEX /PLNTA PUEBLA | Customer: AJEMEX /PLNTA PUEBLA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 150.0
+   - SO-00945-AJE MEX | Customer: AJE MEX | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0608-001 | qty: 120.0
+   - SO-00947-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 125.0
+   - SO-00950-Barentz UK Limited | Customer: Barentz UK Limited | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 200.0
+   - SO-00956-ABSARA | Customer: ABSARA | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0609-001 | qty: 2.0
+   - SO-00959-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 5.0
+   - SO-00967-GUSTAVO RAFAEL VILLA | Customer: GUSTAVO RAFAEL VILLA CARRANDI | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 5.0
+   - SO-00974-Calipso s.r.l | Customer: Calipso s.r.l | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0616-001 | qty: 2592.0
+   - SO-00975-ALBAAD DEUTSCHLAND G | Customer: ALBAAD DEUTSCHLAND GMBH | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 150.0
+   - SO-00976-EL ALAMO EXPORT S.A. | Customer: EL ALAMO EXPORT S.A.C. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0609-001 | qty: 1500.0
+   - SO-00978-Don Pulcro S.A. de C | Customer: Don Pulcro S.A. de C.V. | Status: Draft
+     Items:
+        - 0307 | BOM: BOM-0612-001 | qty: 10.0
+   - SO-112726-Woongjin Foods Co,Ltd. | Customer: Woongjin Foods Co,Ltd. | Status: To Deliver and Bill
+     Items:
+        - 0307 | BOM: BOM-0307-001 | qty: 18000.0
+   - SO-97926-CHARKIT CHEMICAL CORP, INC. | Customer: CHARKIT CHEMICAL CORP, INC. | Status: To Deliver and Bill
+     Items:
+        - 0307 | BOM: BOM-0307-001 | qty: 2.27
+   - SO-104926-AZELIS ISRAEL DISTRIBUTION LTD | Customer: AZELIS ISRAEL DISTRIBUTION LTD | Status: To Deliver and Bill
+     Items:
+        - 0701 | BOM: BOM-0701-001 | qty: 50.0
+        - 1318 | BOM: BOM-1318-001 | qty: 40.0
+        - 0307 | BOM: BOM-0307-001 | qty: 30.0
+
+🚚 3. DELIVERY NOTES
+   Found 12 Delivery Notes
+   - MAT-DN-2026-00002 | Date: 2026-03-03
+        - 0307 | Batch: LOTE099 | qty: 150.0
+   - MAT-DN-2026-00051 | Date: 2026-03-09
+        - 0307 | Batch: LOTE105 | qty: 10.0
+   - MAT-DN-2026-00016 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 125.0
+   - MAT-DN-2026-00011 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 125.0
+   - MAT-DN-2026-00018 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 5.0
+   - MAT-DN-2026-00012 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 125.0
+   - MAT-DN-2026-00020 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 20.0
+   - MAT-DN-2026-00014 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 100.0
+   - MAT-DN-2026-00024 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 1.0
+   - MAT-DN-2026-00025 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 50.0
+   - MAT-DN-2026-00026 | Date: 2026-03-08
+        - 0307 | Batch: LOTE105 | qty: 500.0
+   - MAT-DN-2026-00037 | Date: 2026-03-09
+        - 0307 | Batch: None | qty: 10.0
+
+💰 4. SALES INVOICES
+   Found 11 Sales Invoices
+   - ACC-SINV-2026-00060 | Date: 2026-03-10 | Status: 1
+   - ACC-SINV-2026-00073 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00074 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00075 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00076 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00077 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00079 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00082 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00086 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00087 | Date: 2026-03-11 | Status: 1
+   - ACC-SINV-2026-00001 | Date: 2024-01-15 | Status: 1
+
+🔧 5. BOMS for items in pipeline
+   - BOM-0609-001 | Item: 0609 | Cost: 4505.4
+   - BOM-0612-001 | Item: 0612 | Cost: 265.36
+   - BOM-0307-005 | Item: 0307 | Cost: 2546.78
+   - BOM-0602-001 | Item: 0602 | Cost: 6046.2
+   - BOM-0307-001 | Item: 0307 | Cost: 3379.11
+   - BOM-0608-001 | Item: 0608 | Cost: 4762.2
+   - BOM-1318-001 | Item: 1318 | Cost: 210.36
+   - BOM-0601-001 | Item: 0601 | Cost: 6174.6
+   - BOM-0607-001 | Item: 0607 | Cost: 71.75
+   - BOM-0606-001 | Item: 0606 | Cost: 5275.8
+   - BOM-0701-001 | Item: 0701 | Cost: 8309.0
+   - BOM-0616-001 | Item: 0616 | Cost: 220.06
+
+======================================================================
+PIPELINE ANALYSIS COMPLETE
+======================================================================
+
+In [8]: 
