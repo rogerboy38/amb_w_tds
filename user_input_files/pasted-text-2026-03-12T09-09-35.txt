@@ -1,0 +1,235 @@
+
+In [5]: import frappe
+   ...: 
+   ...: # First, let's verify DocLink structure
+   ...: print("Checking DocLink table structure...")
+   ...: doclink_meta = frappe.get_meta("DocLink")
+   ...: print("DocLink Fields:")
+   ...: for field in doclink_meta.fields:
+   ...:     print(f"  - {field.fieldname}: {field.fieldtype}")
+   ...: 
+Checking DocLink table structure...
+---------------------------------------------------------------------------
+DoesNotExistError                         Traceback (most recent call last)
+Cell In[5], line 5
+      3 # First, let's verify DocLink structure
+      4 print("Checking DocLink table structure...")
+----> 5 doclink_meta = frappe.get_meta("DocLink")
+      6 print("DocLink Fields:")
+      7 for field in doclink_meta.fields:
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:89, in get_meta(doctype, cached)
+     82 if (
+     83 	cached
+     84 	and isinstance(doctype, str)
+     85 	and (meta := frappe.client_cache.get_value(f"doctype_meta::{doctype}"))
+     86 ):
+     87 	return meta
+---> 89 meta = Meta(doctype)
+     91 key = f"doctype_meta::{meta.name}"
+     92 frappe.client_cache.set_value(key, meta)
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:153, in Meta.__init__(self, doctype)
+    151 	super().__init__(doctype.as_dict())
+    152 else:
+--> 153 	super().__init__("DocType", doctype)
+    155 self.process()
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:208, in Document.__init__(self, *args, **kwargs)
+    205 	# for_update is set in flags to avoid changing load_from_db signature
+    206 	# since it is used in virtual doctypes and inherited in child classes
+    207 	self.flags.for_update = kwargs.get("for_update", False)
+--> 208 	self.load_from_db()
+    209 	return
+    211 if isinstance(first_arg, dict):
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:159, in Meta.load_from_db(self)
+    157 def load_from_db(self):
+    158 	try:
+--> 159 		super().load_from_db()
+    160 	except frappe.DoesNotExistError:
+    161 		if self.doctype == "DocType" and self.name in self.special_doctypes:
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:276, in Document.load_from_db(self)
+    267 		d = frappe.db.get_value(
+    268 			doctype=self.doctype,
+    269 			filters=self.name,
+   (...)
+    272 			as_dict=True,
+    273 		)
+    275 	if not d:
+--> 276 		frappe.throw(
+    277 			_("{0} {1} not found").format(_(self.doctype), self.name),
+    278 			frappe.DoesNotExistError(doctype=self.doctype),
+    279 		)
+    281 	super().__init__(d)
+    282 self.flags.pop("ignore_children", None)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+    129 def throw(
+    130 	msg: str | Sequence[str],
+    131 	exc: type[Exception] | Exception = frappe.ValidationError,
+   (...)
+    136 	primary_action=None,
+    137 ) -> None:
+    138 	"""Throw execption and show message (`msgprint`).
+    139 
+    140 	:param msg: Message.
+   (...)
+    146 	:param primary_action: [optional] Bind a primary server/client side action.
+    147 	"""
+--> 148 	msgprint(
+    149 		msg,
+    150 		raise_exception=exc,
+    151 		title=title,
+    152 		indicator="red",
+    153 		is_minimizable=is_minimizable,
+    154 		wide=wide,
+    155 		as_list=as_list,
+    156 		primary_action=primary_action,
+    157 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+    107 else:
+    108 	frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+     56 if out.__frappe_exc_id:
+     57 	exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+DoesNotExistError: DocType DocLink not found
+
+   ...:     sin_doc = frappe.get_doc("Sales Invoice", sin.name)
+   ...:     print(f"   - {sin.name} | Date: {sin.posting_date} | Status: {sin_doc.docstatus}")
+   ...: 
+   ...: # 5. BOMS related to items in this pipeline
+   ...: print("\n🔧 5. BOMS for items in pipeline")
+   ...: all_items = list(qtn.items)
+   ...: for so_name in so_names:
+   ...:     so_doc = frappe.get_doc("Sales Order", so_name)
+   ...:     all_items.extend(so_doc.items)
+   ...: 
+   ...: unique_boms = {item.bom_no for item in all_items if item.bom_no}
+   ...: if unique_boms:
+   ...:     for bom_no in unique_boms:
+   ...:         try:
+   ...:             bom_doc = frappe.get_doc("BOM", bom_no)
+   ...:             print(f"   - {bom_no} | Item: {bom_doc.item} | Cost: {bom_doc.total_cost}")
+   ...:         except Exception as e:
+   ...:             print(f"   - {bom_no} | Error loading BOM: {e}")
+   ...: else:
+   ...:     print("   ⚠️ No BOMs found linked to items")
+   ...: 
+   ...: print("\n" + "=" * 70)
+   ...: print("PIPELINE ANALYSIS COMPLETE")
+   ...: print("=" * 70)
+======================================================================
+ANALYZING PIPELINE: SAL-QTN-2024-00752
+======================================================================
+
+📋 1. QUOTATION
+   Customer: LEGOSAN AB
+   Items: 1
+      - 0307 | qty: 150.0
+
+📦 2. SALES ORDERS
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 177, in <module>
+    main()
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 77, in main
+    FrappeClickWrapper(click.Group, handle_exception)(commands=commands)(prog_name="bench")
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/utils/bench_helper.py", line 48, in invoke
+    return super().invoke(ctx)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/__init__.py", line 28, in _func
+    ret = f(ctx.obj, *args, **kwargs)
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/commands/utils.py", line 682, in console
+    terminal()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 251, in __call__
+    self.mainloop(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/embed.py", line 343, in mainloop
+    self.interact()
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/terminal/interactiveshell.py", line 1038, in interact
+    self.run_cell(code, store_history=True)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3077, in run_cell
+    result = self._run_cell(
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3132, in _run_cell
+    result = runner(coro)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/async_helpers.py", line 128, in _pseudo_sync_runner
+    coro.send(None)
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3336, in run_cell_async
+    has_raised = await self.run_ast_nodes(code_ast.body, cell_name,
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3519, in run_ast_nodes
+    if await self.run_code(code, result, async_=asy):
+  File "/home/frappe/frappe-bench/env/lib/python3.14/site-packages/IPython/core/interactiveshell.py", line 3579, in run_code
+    exec(code_obj, self.user_global_ns, self.user_ns)
+  File "<ipython-input-6-16e6b442a9a3>", line 19, in <module>
+    so_links = frappe.db.sql("""
+  File "/home/frappe/frappe-bench/apps/frappe/frappe/database/database.py", line 300, in sql
+    traceback.print_stack()
+Error in query:
+("SELECT link_name as so_name\n    FROM `tabDocLink`\n    WHERE link_doctype = 'Quotation'\n      AND link_name = %s\n      AND from_doctype = 'Sales Order'", ('SAL-QTN-2024-00752',))
+---------------------------------------------------------------------------
+ProgrammingError                          Traceback (most recent call last)
+Cell In[6], line 19
+     17 # 2. SALES ORDERS (Find via tabDocLink table - direct SQL)
+     18 print("\n📦 2. SALES ORDERS")
+---> 19 so_links = frappe.db.sql("""
+     20     SELECT link_name as so_name
+     21     FROM `tabDocLink`
+     22     WHERE link_doctype = 'Quotation'
+     23       AND link_name = %s
+     24       AND from_doctype = 'Sales Order'
+     25 """, qtn_name, as_dict=True)
+     27 so_names = [link.so_name for link in so_links]
+     28 print(f"   Found {len(so_names)} linked Sales Orders: {so_names}")
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:179, in BaseCursor.execute(self, query, args)
+    176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+--> 179 res = self._query(mogrified_query)
+    180 return res
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:330, in BaseCursor._query(self, q)
+    328 self.rowcount = None
+    329 self.lastrowid = None
+--> 330 db.query(q)
+    331 self._do_get_result(db)
+    332 self._post_get_result()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/connections.py:280, in Connection.query(self, query)
+    278 if isinstance(query, bytearray):
+    279     query = bytes(query)
+--> 280 _mysql.connection.query(self, query)
+
+ProgrammingError: (1146, "Table '_6566ebd2a8b0e4e9.tabDocLink' doesn't exist")
+
