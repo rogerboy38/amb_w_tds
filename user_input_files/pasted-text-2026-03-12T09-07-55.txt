@@ -1,0 +1,217 @@
+   ...: for dn in dns:
+   ...:     dn_doc = frappe.get_doc("Delivery Note", dn.name)
+   ...:     print(f"   - {dn.name} | Date: {dn.posting_date}")
+   ...:     for item in dn_doc.items:
+   ...:         print(f"        - {item.item_code} | Batch: {item.batch_no} | qty: {item.qty}")
+   ...: 
+   ...: # 4. SALES INVOICES
+   ...: print("\n💰 4. SALES INVOICES")
+   ...: sins = frappe.db.sql("""
+   ...:     SELECT DISTINCT sin.name, sin.customer, sin.posting_date
+   ...:     FROM `tabSales Invoice` sin
+   ...:     INNER JOIN `tabSales Invoice Item` sini ON sin.name = sini.parent
+   ...:     WHERE sini.sales_order IN (SELECT name FROM `tabSales Order` WHERE quotation = %s)
+   ...: """, qtn_name, as_dict=True)
+   ...: print(f"   Found {len(sins)} Sales Invoices")
+   ...: 
+   ...: # 5. BOMS related to items in this pipeline
+   ...: print("\n🔧 5. BOMS for items in pipeline")
+   ...: for item in qtn.items:
+   ...:     if item.bom_no:
+   ...:         bom_doc = frappe.get_doc("BOM", item.bom_no)
+   ...:         print(f"   - {item.bom_no} | Item: {item.item_code} | Cost: {bom_doc.total_cost}")
+   ...: 
+   ...: print("\n" + "=" * 70)
+======================================================================
+ANALYZING PIPELINE: SAL-QTN-2024-00752
+======================================================================
+
+📋 1. QUOTATION
+   Customer: LEGOSAN AB
+   Items: 1
+      - 0307 | qty: 150.0
+
+📦 2. SALES ORDERS
+---------------------------------------------------------------------------
+OperationalError                          Traceback (most recent call last)
+Cell In[3], line 19
+     17 # 2. SALES ORDERS
+     18 print("\n📦 2. SALES ORDERS")
+---> 19 sos = frappe.get_all("Sales Order", filters={"quotation": qtn_name}, fields=["name"])
+     20 print(f"   Found {len(sos)} Sales Orders")
+     21 for so in sos:
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1382, in get_all(doctype, *args, **kwargs)
+   1380 if "limit_page_length" not in kwargs:
+   1381 	kwargs["limit_page_length"] = 0
+-> 1382 return get_list(doctype, *args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/__init__.py:1357, in get_list(doctype, *args, **kwargs)
+   1338 """List database query via `frappe.model.db_query`. Will also check for permissions.
+   1339 
+   1340 :param doctype: DocType on which query is to be made.
+   (...)
+   1353         frappe.get_list("ToDo", fields="*", filters = [["modified", ">", "2014-01-01"]])
+   1354 """
+   1355 import frappe.model.qb_query
+-> 1357 return frappe.model.qb_query.DatabaseQuery(doctype).execute(*args, **kwargs)
+
+File ~/frappe-bench/apps/frappe/frappe/model/qb_query.py:212, in DatabaseQuery.execute(self, fields, filters, or_filters, group_by, order_by, limit, offset, limit_start, limit_page_length, as_list, with_childnames, debug, ignore_permissions, user, with_comment_count, join, distinct, start, page_length, ignore_ifnull, save_user_settings, save_user_settings_fields, update, user_settings, reference_doctype, run, strict, pluck, ignore_ddl, parent_doctype, ignore_user_permissions)
+    210 	result = query.run(debug=debug, as_dict=True, pluck=pluck)
+    211 else:
+--> 212 	result = query.run(debug=debug, as_dict=not as_list, update=update)
+    214 # Add comment count if requested and not as_list
+    215 if sbool(with_comment_count) and not as_list and self.doctype:
+
+File ~/frappe-bench/apps/frappe/frappe/query_builder/utils.py:131, in execute_query(query, *args, **kwargs)
+    129 child_queries = query._child_queries
+    130 query, params = prepare_query(query)
+--> 131 result = frappe.local.db.sql(query, params, *args, **kwargs)  # nosemgrep
+    133 if child_queries and isinstance(child_queries, list) and result:
+    134 	execute_child_queries(child_queries, result)
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:272, in Database.sql(self, query, values, as_dict, as_list, debug, ignore_ddl, auto_commit, update, explain, run, pluck, as_iterator)
+    269 	query += f" /* FRAPPE_TRACE_ID: {trace_id} */"
+    271 try:
+--> 272 	self.execute_query(query, values)
+    273 except Exception as e:
+    274 	if self.is_syntax_error(e):
+
+File ~/frappe-bench/apps/frappe/frappe/database/database.py:372, in Database.execute_query(self, query, values)
+    371 def execute_query(self, query, values=None):
+--> 372 	return self._cursor.execute(query, values)
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:179, in BaseCursor.execute(self, query, args)
+    176 mogrified_query = self._mogrify(query, args)
+    178 assert isinstance(mogrified_query, (bytes, bytearray))
+--> 179 res = self._query(mogrified_query)
+    180 return res
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/cursors.py:330, in BaseCursor._query(self, q)
+    328 self.rowcount = None
+    329 self.lastrowid = None
+--> 330 db.query(q)
+    331 self._do_get_result(db)
+    332 self._post_get_result()
+
+File ~/frappe-bench/env/lib/python3.14/site-packages/MySQLdb/connections.py:280, in Connection.query(self, query)
+    278 if isinstance(query, bytearray):
+    279     query = bytes(query)
+--> 280 _mysql.connection.query(self, query)
+
+OperationalError: (1054, "Unknown column 'quotation' in 'WHERE'")
+
+In [4]: import frappe
+   ...: 
+   ...: # Check Sales Order fields related to quotation
+   ...: meta = frappe.get_meta("Sales Order")
+   ...: fields = [f.fieldname for f in meta.fields if "quot" in f.fieldname.lower()]
+   ...: 
+   ...: print("Sales Order fields with 'quot':")
+   ...: for f in fields:
+   ...:     print(f"  {f}")
+   ...: 
+Sales Order fields with 'quot':
+
+In [5]: import frappe
+   ...: 
+   ...: # First, let's verify DocLink structure
+   ...: print("Checking DocLink table structure...")
+   ...: doclink_meta = frappe.get_meta("DocLink")
+   ...: print("DocLink Fields:")
+   ...: for field in doclink_meta.fields:
+   ...:     print(f"  - {field.fieldname}: {field.fieldtype}")
+   ...: 
+Checking DocLink table structure...
+---------------------------------------------------------------------------
+DoesNotExistError                         Traceback (most recent call last)
+Cell In[5], line 5
+      3 # First, let's verify DocLink structure
+      4 print("Checking DocLink table structure...")
+----> 5 doclink_meta = frappe.get_meta("DocLink")
+      6 print("DocLink Fields:")
+      7 for field in doclink_meta.fields:
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:89, in get_meta(doctype, cached)
+     82 if (
+     83 	cached
+     84 	and isinstance(doctype, str)
+     85 	and (meta := frappe.client_cache.get_value(f"doctype_meta::{doctype}"))
+     86 ):
+     87 	return meta
+---> 89 meta = Meta(doctype)
+     91 key = f"doctype_meta::{meta.name}"
+     92 frappe.client_cache.set_value(key, meta)
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:153, in Meta.__init__(self, doctype)
+    151 	super().__init__(doctype.as_dict())
+    152 else:
+--> 153 	super().__init__("DocType", doctype)
+    155 self.process()
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:208, in Document.__init__(self, *args, **kwargs)
+    205 	# for_update is set in flags to avoid changing load_from_db signature
+    206 	# since it is used in virtual doctypes and inherited in child classes
+    207 	self.flags.for_update = kwargs.get("for_update", False)
+--> 208 	self.load_from_db()
+    209 	return
+    211 if isinstance(first_arg, dict):
+
+File ~/frappe-bench/apps/frappe/frappe/model/meta.py:159, in Meta.load_from_db(self)
+    157 def load_from_db(self):
+    158 	try:
+--> 159 		super().load_from_db()
+    160 	except frappe.DoesNotExistError:
+    161 		if self.doctype == "DocType" and self.name in self.special_doctypes:
+
+File ~/frappe-bench/apps/frappe/frappe/model/document.py:276, in Document.load_from_db(self)
+    267 		d = frappe.db.get_value(
+    268 			doctype=self.doctype,
+    269 			filters=self.name,
+   (...)
+    272 			as_dict=True,
+    273 		)
+    275 	if not d:
+--> 276 		frappe.throw(
+    277 			_("{0} {1} not found").format(_(self.doctype), self.name),
+    278 			frappe.DoesNotExistError(doctype=self.doctype),
+    279 		)
+    281 	super().__init__(d)
+    282 self.flags.pop("ignore_children", None)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:148, in throw(msg, exc, title, is_minimizable, wide, as_list, primary_action)
+    129 def throw(
+    130 	msg: str | Sequence[str],
+    131 	exc: type[Exception] | Exception = frappe.ValidationError,
+   (...)
+    136 	primary_action=None,
+    137 ) -> None:
+    138 	"""Throw execption and show message (`msgprint`).
+    139 
+    140 	:param msg: Message.
+   (...)
+    146 	:param primary_action: [optional] Bind a primary server/client side action.
+    147 	"""
+--> 148 	msgprint(
+    149 		msg,
+    150 		raise_exception=exc,
+    151 		title=title,
+    152 		indicator="red",
+    153 		is_minimizable=is_minimizable,
+    154 		wide=wide,
+    155 		as_list=as_list,
+    156 		primary_action=primary_action,
+    157 	)
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:109, in msgprint(msg, title, raise_exception, as_table, as_list, indicator, alert, primary_action, is_minimizable, wide, realtime)
+    107 else:
+    108 	frappe.message_log.append(out)
+--> 109 _raise_exception()
+
+File ~/frappe-bench/apps/frappe/frappe/utils/messages.py:58, in msgprint.<locals>._raise_exception()
+     56 if out.__frappe_exc_id:
+     57 	exc.__frappe_exc_id = out.__frappe_exc_id
+---> 58 raise exc
+
+DoesNotExistError: DocType DocLink not found
+
