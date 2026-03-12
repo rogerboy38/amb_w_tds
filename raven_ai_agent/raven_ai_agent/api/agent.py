@@ -600,6 +600,28 @@ def handle_raven_message(doc, method):
             else:
                 # Try SkillRouter first for specialized skills
                 frappe.logger().info(f"[AI Agent] ELSE block reached with bot_name: {bot_name}")
+                
+                # DIRECT CALL: Try DataQualityScanner FIRST for scan/validate commands
+                q_lower_check = query.lower() if query else ""
+                scanner_keywords_direct = ["scan", "validate", "check data", "pre-flight", "diagnose"]
+                
+                if any(kw in q_lower_check for kw in scanner_keywords_direct):
+                    frappe.logger().info(f"[AI Agent] DIRECT SCANNER CALL for query: {query}")
+                    try:
+                        from raven_ai_agent.skills.data_quality_scanner.skill import DataQualityScannerSkill
+                        scanner = DataQualityScannerSkill()
+                        scanner_result = scanner.handle(query, {"channel_id": doc.channel_id})
+                        frappe.logger().info(f"[AI Agent] Direct scanner result: {scanner_result}")
+                        if scanner_result and scanner_result.get("handled"):
+                            result = {"success": True, "response": scanner_result.get("response", "Scan complete.")}
+                        else:
+                            frappe.logger().info("[AI Agent] Direct scanner did not handle, trying SkillRouter")
+                            # Fall through to SkillRouter
+                            raise Exception("Direct scanner returned False")
+                    except Exception as scan_error:
+                        frappe.logger().info(f"[AI Agent] Direct scanner failed: {scan_error}")
+                        # Continue to SkillRouter
+                
                 try:
                     from raven_ai_agent.skills.router import SkillRouter
                     router = SkillRouter()
