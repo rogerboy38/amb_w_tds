@@ -1,0 +1,24 @@
+📄 Extracted from page: (125) implementacion-amb-sysmayal2 - Raven
+URL: https://erp.sysmayal2.cloud/raven/AMB-Wellness/AMB-Wellness-implementacion-amb-sysmayal2
+
+Extracted content:
+<think>The user wants me to extract content from a web page about a Raven system implementation. Let me analyze the content:
+
+Page Title: (125) implementacion-amb-sysmayal2 - Raven
+Page URL: https://erp.sysmayal2.cloud/raven/AMB-Wellness/AMB-Wellness-implementacion-amb-sysmayal2
+
+The page content shows:
+1. A chat/thread interface from what appears to be an ERP system called Raven (based on ERPNext)
+2. Error messages related to sales invoice creation
+3. Batch processing results for creating invoices
+4. A help document showing AI agent capabilities
+
+Key content:
+- Multiple error messages from sales_order_followup_agent.py
+- Batch invoice creation attempts with various errors (invalid accounts, group cost centers, currency issues)
+- AI bot capabilities documentation showing various ERPNext operations
+- IoT sensor management features
+
+Let me create the JSON extraction:</think>
+
+{"title":"(125) implementacion-amb-sysmayal2 - Raven","url":"https://erp.sysmayal2.cloud/raven/AMB-Wellness/AMB-Wellness-implementacion-amb-sysmayal2","summary":"This page displays a Raven chatbot interface for AMB-Wellness ERP system (based on ERPNext). The conversation thread shows various AI agent operations including batch invoice creation from sales orders, with multiple error encounters related to accounting configuration issues such as invalid characters in code, unterminated strings, group accounts being used in transactions, currency mismatches, and missing customer addresses. The page also includes a comprehensive help document showing AI capabilities for manufacturing, quality management, warehouse management, sales-purchase cycles, IoT sensor monitoring, and document automation.","key_points":["Raven is an AI-powered ERP assistant built on ERPNext for AMB-Wellness company","Multiple errors encountered during automated invoice creation: invalid characters, unterminated strings, group accounts used incorrectly","Batch invoice processing shows mixed results - some invoices created successfully while others failed due to accounting configuration issues","Common errors include: group cost centers cannot be used in transactions, account currency must be MXN, customer address not found","AI agent capabilities include: work order management, production execution, stock entry management, quality management system","Quality management features: Non-Conformance reports, Internal Audits, Training Programs","BOM and batch tracking with health checks and validation","Warehouse management with zone checking and stock balance monitoring","Sales-to-purchase cycle automation from opportunities to purchase orders","IoT sensor integration for temperature, humidity, motion monitoring via Raspberry Pi","Ollama AI integration for local AI operations","Autonomy levels: Level 1 (Copilot), Level 2 (Command), Level 3 (Agent)"],"relevant_links":["https://erp.sysmayal2.cloud/app/sales-order/SO-00769-COSMETILAB 18","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00070","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00071","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00072","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00073","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00074","https://erp.sysmayal2.cloud/app/sales-invoice/ACC-SINV-2026-00075"],"file_name":"raven_amb_wellness_implementation.json"}
