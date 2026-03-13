@@ -1,0 +1,191 @@
+write me the explanation about our multicurrency applied to MExico Account
+🌎 Manejo de Moneda Extranjera en Contabilidad Mexicana - ERPNext
+📋 Base Legal y Contable en México
+En México, la contabilidad debe llevarse en Pesos Mexicanos (MXN) según lo establecido por el SAT y el Código Fiscal de la Federación. Sin embargo, las empresas pueden realizar operaciones en moneda extranjera (USD, EUR, etc.) siempre que se conviertan adecuadamente a MXN para efectos contables y fiscales.
+
+🏗️ Arquitectura de Cuentas por Cobrar en AMB-Wellness
+Estructura de Cuentas:
+text
+1105 - CLIENTES - AMB-W (GRUPO - MXN)
+├── 1105.1 - NACIONALES - AMB-W (GRUPO - MXN)
+│   ├── 1105.1.1 - GRUPO COMERCIAL IBEMEX SA DE CV - AMB-W (HOJA - MXN)
+│   ├── 1105.1.22 - ABASTECEDORA QUIMICA HASEN - AMB-W (HOJA - MXN)
+│   └── ... (cada cliente nacional tiene su cuenta específica en MXN)
+│
+└── 1105.2 - EXTRANJEROS - AMB-W (GRUPO - MXN)
+    ├── 1105.2.13 - LORAND LABORATORIES LLC - AMB-W (HOJA - MXN)
+    ├── 1105.2.101 - BARENTZ ITALIA S.P.A. - AMB-W (HOJA - MXN)
+    └── ... (cada cliente extranjero tiene su cuenta específica en MXN)
+Cuentas Genéricas de Respaldo:
+1105.1.29 - AL PUBLICO EN GENERAL - AMB-W (MXN) - Para clientes nacionales nuevos
+
+1310 - Debtors - AMB-W (MXN) - Cuenta genérica histórica (convertida de USD a MXN)
+
+💱 Flujo de Transacciones en Moneda Extranjera
+Escenario: Facturación a Cliente Extranjero en USD
+text
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   SALES ORDER   │────▶│  SALES INVOICE  │────▶│  PAYMENT ENTRY  │
+│   (Opcional)    │     │    (en USD)     │     │   (en USD)      │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                               │                         │
+                               ▼                         ▼
+                    ┌─────────────────────┐   ┌─────────────────────┐
+                    │  Tipo de Cambio     │   │  Tipo de Cambio     │
+                    │  USD → MXN = 20.50  │   │  USD → MXN = 21.30  │
+                    └─────────────────────┘   └─────────────────────┘
+                               │                         │
+                               ▼                         ▼
+                    ┌─────────────────────┐   ┌─────────────────────┐
+                    │  CUENTA POR COBRAR  │   │     BANCOS / CAJA    │
+                    │  (siempre en MXN)   │   │    (en MXN según TC) │
+                    └─────────────────────┘   └─────────────────────┘
+Registro Contable Detallado:
+1. Emisión de Factura en USD
+text
+Cliente: LORAND LABORATORIES LLC (cuenta: 1105.2.13 - MXN)
+Monto Factura: USD 10,000
+Tipo de Cambio: 20.50 MXN/USD
+Equivalente MXN: $205,000 MXN
+
+Asiento Contable:
+┌─────────────────────────────────┬──────────┬──────────┐
+│ Cuenta                          │ Debe     │ Haber    │
+├─────────────────────────────────┼──────────┼──────────┤
+│ 1105.2.13 - LORAND (MXN)        │ 205,000  │          │
+│ 4110 - Ventas (MXN)              │          │ 205,000  │
+└─────────────────────────────────┴──────────┴──────────┘
+2. Recepción del Pago en USD (30 días después)
+text
+Monto Recibido: USD 10,000
+Tipo de Cambio Actual: 21.30 MXN/USD
+Equivalente MXN: $213,000 MXN
+
+Asiento Contable:
+┌─────────────────────────────────┬──────────┬──────────┐
+│ Cuenta                          │ Debe     │ Haber    │
+├─────────────────────────────────┼──────────┼──────────┤
+│ 1102.1.1 - Banco (MXN)          │ 213,000  │          │
+│ 1105.2.13 - LORAND (MXN)        │          │ 205,000  │
+│ 5219 - Exchange Gain/Loss (MXN) │          │   8,000  │
+└─────────────────────────────────┴──────────┴──────────┘
+🎯 Beneficios de Nuestra Implementación
+1. Cumplimiento Fiscal
+✅ Contabilidad 100% en MXN según requisitos del SAT
+✅ Trazabilidad completa de operaciones en moneda extranjera
+✅ Registro automático de diferencias cambiarias
+
+2. Control por Cliente
+✅ Cada cliente tiene su cuenta específica en MXN
+✅ Saldos individuales visibles en el Mayor de Cuentas
+✅ Conciliación rápida con estados de cuenta
+
+3. Automatización
+✅ Server Script que fuerza la cuenta específica al crear facturas
+✅ No requiere intervención manual del contador
+✅ Consistencia en todas las transacciones
+
+4. Manejo de Diferencias Cambiarias
+✅ Cuenta 5219 - Exchange Gain/Loss - AMB-W configurada
+✅ Cálculo automático al momento del pago
+✅ Reportes de utilidad/perdida cambiaria disponibles
+
+🔧 Componentes Técnicos Implementados
+Server Script: "Force Customer Specific Account"
+python
+def before_insert(doc, method):
+    """
+    Fuerza la cuenta específica del cliente en la factura
+    """
+    if not doc.customer or not doc.company:
+        return
+    
+    customer_account = frappe.db.get_value(
+        "Party Account",
+        {
+            "parent": doc.customer,
+            "parenttype": "Customer",
+            "company": doc.company
+        },
+        "account"
+    )
+    
+    if customer_account:
+        doc.debit_to = customer_account
+        doc.add_comment("Info", f"Usando cuenta específica: {customer_account}")
+Configuración de Cuentas por Cliente
+text
+Customer > Accounting > Accounts
+├── Company: AMB-Wellness
+└── Account: [Cuenta específica del cliente en MXN]
+📊 Ejemplos Prácticos
+Cliente Nacional (Factura en MXN)
+python
+Cliente: ABASTECEDORA QUIMICA HASEN
+Cuenta: 1105.1.22 - ABASTECEDORA QUIMICA HASEN - AMB-W (MXN)
+Factura: $50,000 MXN
+
+Resultado: 
+- debit_to = 1105.1.22 (MXN) ✓
+- Sin diferencia cambiaria
+Cliente Extranjero (Factura en USD)
+python
+Cliente: LORAND LABORATORIES LLC
+Cuenta: 1105.2.13 - LORAND LABORATORIES LLC - AMB-W (MXN)
+Factura: USD 10,000
+TC: 20.50 → $205,000 MXN
+
+Resultado:
+- debit_to = 1105.2.13 (MXN) ✓
+- Asiento en MXN
+- Diferencia cambiaria al pagar
+Cliente Nuevo (Sin cuenta específica)
+python
+Cliente: NUEVO CLIENTE TEST
+Cuenta temporal: 1105.1.29 - AL PUBLICO EN GENERAL - AMB-W (MXN)
+
+Nota: El Server Script de automatización creará su cuenta específica
+      después de la primera factura.
+✅ Validaciones y Controles
+El Server Script garantiza:
+Todas las facturas nuevas usan la cuenta MXN específica del cliente
+
+Fallback seguro a cuenta genérica MXN si no hay cuenta específica
+
+Logs y comentarios para auditoría
+
+Consistencia con la contabilidad mexicana
+
+Verificación en Tiempo Real:
+sql
+-- Verificar cuenta asignada a una factura
+SELECT 
+    si.name AS factura,
+    si.customer AS cliente,
+    si.debit_to AS cuenta_contable,
+    a.account_currency AS moneda
+FROM `tabSales Invoice` si
+LEFT JOIN `tabAccount` a ON a.name = si.debit_to
+WHERE si.name = 'SINV-XXXXX';
+🚀 Conclusión
+Nuestra implementación de moneda extranjera en contabilidad mexicana cumple con:
+
+Requisito	Estado	Beneficio
+Contabilidad en MXN	✅	Cumple SAT
+Cuentas específicas por cliente	✅	Control individual
+Automatización de asignación	✅	Sin errores manuales
+Manejo de diferencias cambiarias	✅	Precisión financiera
+Trazabilidad completa	✅	Auditoría sencilla
+El sistema ahora maneja correctamente:
+
+Facturación en cualquier moneda
+
+Conversión automática a MXN
+
+Cuentas por cobrar en MXN
+
+Diferencias cambiarias al cobro
+
+Asignación correcta de cuentas por cliente
+
+Esta solución garantiza el cumplimiento fiscal mexicano mientras permite operar internacionalmente con la flexibilidad que el negocio requiere.
