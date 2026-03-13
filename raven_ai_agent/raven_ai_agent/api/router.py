@@ -46,6 +46,14 @@ def _detect_ai_intent(query: str) -> str:
         r'^check\s+data\s+SO-',  # @ai check data SO-00752
         r'pipeline\s+SO-',       # @ai pipeline SO-00752
         r'full\s+scan\s+SO-',    # @ai full scan SO-00752
+        # === Quotation Diagnostics (NEW) ===
+        r'diagnose\s+pipeline\s+of\s+quotation',  # @ai diagnose pipeline of quotation
+        r'diagnose\s+quotation',   # @ai diagnose quotation QUOT-XXX
+        r'scan\s+quotation',       # @ai scan quotation QUOT-XXX
+        r'pipeline\s+quotation',   # @ai pipeline quotation QUOT-XXX
+        r'validate\s+quotation',   # @ai validate quotation QUOT-XXX
+        r'^fix\s+QUOT-',          # @ai fix QUOT-XXX
+        r'QUOT-\d+-\d+',          # Matches QUOT-2026-00001
     ]
     if any(re.search(p, query, re.IGNORECASE) for p in diagnosis_commands):
         return "data_quality_scanner"

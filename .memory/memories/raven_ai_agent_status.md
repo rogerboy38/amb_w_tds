@@ -126,6 +126,21 @@ from raven_ai_agent.scripts.pipeline_diagnostic import run_full_pipeline_diagnos
 run_full_pipeline_diagnostic("ACC-SINV-2026-00001", "ACC-PAY-2026-00010")
 ```
 
+### 📋 Quotation Diagnostics Added (March 13, 2026)
+**Features:**
+- New patterns for Quotation detection: `QUOT-2026-XXXXX`, `SAL-QTN-XXXXX`
+- Full pipeline diagnosis for Quotations: status, items, customer, next steps
+- Smart recommendations based on Quotation status (Draft → Submit → Convert → SO)
+
+**New Commands:**
+- `@ai scan QUOT-2026-00001` - Scan a Quotation for data quality issues
+- `@ai diagnose pipeline of quotation QUOT-2026-00001` - Full pipeline diagnosis
+- `@ai diagnose quotation QUOT-2026-00001` - Quotation diagnosis
+
+**Files Modified:**
+- `/raven_ai_agent/api/router.py` - Added Quotation routing patterns
+- `/raven_ai_agent/skills/data_quality_scanner/skill.py` - Added Quotation support
+
 ---
 
 ### 🎯 PHASE 1 COMPLETE: Data Quality Scanner Skill
