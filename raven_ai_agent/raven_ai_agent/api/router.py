@@ -122,6 +122,17 @@ def _detect_ai_intent(query: str) -> str:
     if any(re.search(p, query, re.IGNORECASE) for p in validator_patterns):
         return "task_validator"
     
+    # Party Account Management (NEW)
+    party_account_patterns = [
+        r'create\s+party\s+accounts',
+        r'party\s+account',
+        r'fix\s+customer\s+account',
+        r'assign\s+customer\s+account',
+        r'batch\s+account',
+    ]
+    if any(re.search(p, query, re.IGNORECASE) for p in party_account_patterns):
+        return "task_validator"
+    
     # Sales-specific patterns (DN, invoice, pending orders, next steps)
     sales_patterns = [
         r'(?:create|make)\s+(?:DN|delivery\s*note)',

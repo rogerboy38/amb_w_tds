@@ -141,6 +141,27 @@ run_full_pipeline_diagnostic("ACC-SINV-2026-00001", "ACC-PAY-2026-00010")
 - `/raven_ai_agent/api/router.py` - Added Quotation routing patterns
 - `/raven_ai_agent/skills/data_quality_scanner/skill.py` - Added Quotation support
 
+### 📋 Batch Party Account Creator (March 13, 2026)
+**Problem:** 303 of 310 customers (97.7%) use generic account instead of specific Party Accounts
+
+**Solution:** Batch script to create Party Accounts automatically
+
+**Features:**
+- Smart account selection based on customer type (Nacional/Extranjero)
+- Dry-run support to preview changes before execution
+- Raven AI commands for easy execution
+- Status reporting with coverage metrics
+
+**Raven Commands:**
+- `@ai create party accounts` - Create all missing Party Accounts
+- `@ai create party accounts dry-run` - Preview what would be created
+- `@ai check party accounts` - Show status of Party Accounts
+
+**Files Added:**
+- `/raven_ai_agent/scripts/batch_party_account_creator.py` - Batch creation script
+- `/raven_ai_agent/api/router.py` - Added Party Account routing
+- `/raven_ai_agent/api/handlers/task_validator.py` - Added command handler
+
 ---
 
 ### 🎯 PHASE 1 COMPLETE: Data Quality Scanner Skill
