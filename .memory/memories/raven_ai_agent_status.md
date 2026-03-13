@@ -110,6 +110,22 @@ Commands:
 - ACC-SINV pattern: `r'ACC-SINV-\d+-\d+'` (was truncating at year)
 - ACC-PAY pattern: `r'ACC-PAY-\d+-\d+'` (was truncating at year)
 
+### 📋 Pipeline Diagnostic Script Added
+**File:** `/raven_ai_agent/scripts/pipeline_diagnostic.py`
+**Features:**
+- Complete validation of Sales Invoice & Payment Entry
+- GL Entries verification & balance check
+- Customer Party Account validation
+- Exchange rate difference detection (multi-currency)
+- Data Quality Scanner integration test
+- Executive summary with pass/fail status
+
+**Usage in bench console:**
+```python
+from raven_ai_agent.scripts.pipeline_diagnostic import run_full_pipeline_diagnostic
+run_full_pipeline_diagnostic("ACC-SINV-2026-00001", "ACC-PAY-2026-00010")
+```
+
 ---
 
 ### 🎯 PHASE 1 COMPLETE: Data Quality Scanner Skill
