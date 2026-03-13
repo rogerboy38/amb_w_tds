@@ -3,38 +3,31 @@
     "Coordinator": {
       "1": {
         "id": "1",
-        "content": "Fix current confirmation loop bug in agent.py",
-        "details": "Ensure ! prefix executes directly without confirmation for all paths",
-        "status": "completed",
+        "content": "Test @ai fix command to verify Data Quality Scanner works",
+        "details": "1. Verify scanner can detect issues on a test Sales Order\n2. Verify @ai !fix applies fixes correctly\n3. Confirm fixes are applied and scanner shows clean results",
+        "status": "in_progress",
         "priority": "high"
       },
       "2": {
         "id": "2",
-        "content": "Add routing analytics to track bot distribution",
-        "details": "Add logging for which bot handles each request type",
-        "status": "completed",
-        "priority": "medium"
+        "content": "Verify Payment Entry (Step 8) integration",
+        "details": "1. Check PaymentAgent creates Payment Entries from Sales Invoices\n2. Verify multi-currency support works (USD → MXN)\n3. Confirm exchange gain/loss calculation",
+        "status": "pending",
+        "priority": "high"
       },
       "3": {
         "id": "3",
-        "content": "Improve keyword matching for better distribution",
-        "details": "Enhance routing logic to distribute load more evenly",
-        "status": "completed",
+        "content": "Verify complete pipeline integration",
+        "details": "1. Confirm all 8 steps work together\n2. Check workflow orchestrator status\n3. Document any gaps in integration",
+        "status": "pending",
         "priority": "medium"
       },
       "4": {
         "id": "4",
-        "content": "Commit and push changes to GitHub",
-        "details": "Stage, commit and push all fixes",
-        "status": "completed",
-        "priority": "high"
-      },
-      "5": {
-        "id": "5",
-        "content": "Provide deployment instructions to team",
-        "details": "Share git pull and restart commands",
-        "status": "completed",
-        "priority": "high"
+        "content": "Document Project Phase completion status",
+        "details": "1. Create summary of what's completed\n2. Identify remaining work\n3. Update project status",
+        "status": "pending",
+        "priority": "medium"
       }
     }
   }
