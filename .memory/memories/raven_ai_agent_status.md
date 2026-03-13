@@ -86,6 +86,18 @@ All 6 critical GAPs identified during LORAND Master Degree Test have been resolv
 
 ## Latest Changes (March 12, 2026)
 
+### 🎯 PAYMENT ENTRY FIX (March 13, 2026)
+**Problem:** `payment_form` custom field is MANDATORY on Payment Entry
+**Root Cause:** Custom field `payment_form` links to `Payment Form` DocType - required for SAT compliance
+**Valid Values:** 01 (Efectivo), 02 (Cheque), 03 (Transferencia), 04 (Tarjeta), 28 (Otros)
+**Solution:** Add `payment_form` field when creating Payment Entry
+
+Commands:
+- `@ai create payment for ACC-SINV-2026-00001` (defaults to form 01)
+- `@ai create payment for ACC-SINV-2026-00001 form 03` (Transferencia)
+
+---
+
 ### 🎯 PHASE 1 COMPLETE: Data Quality Scanner Skill
 **Created:** `/raven_ai_agent/skills/data_quality_scanner/skill.py`
 **Features:** 7 validation types, confidence scoring, memory integration, Raven commands
