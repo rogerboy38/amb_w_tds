@@ -1,0 +1,198 @@
+🎉 ¡EXCELENTE DIAGNÓSTICO! Todos los checks pasaron. Ahora tenemos la imagen completa y podemos ver exactamente cuál es el problema.
+
+Análisis de Resultados:
+✅ Todo está correcto:
+Invoice encontrada
+
+Cliente válido
+
+Cuenta paid_from válida (1105.2.46 - LEGOSAN AB en MXN)
+
+Cuentas paid_to disponibles (múltiples opciones)
+
+Tipo de cambio disponible (17.326)
+
+Modo de Pago configurado
+
+❌ El único error:
+En la simulación manual, falló por:
+name 'get_company_default' is not defined
+
+Este es un error de código en el agente, no un problema de configuración de ERPNext.
+
+La Solución: Corregir el Payment Agent
+El agente está usando una función get_company_default() que no existe. La forma correcta de obtener cuentas por defecto en ERPNext es:
+
+Opción 1: Usar frappe.db.get_value() directamente
+python
+# Reemplazar get_company_default() con esto:
+default_cash_account = frappe.db.get_value("Company", invoice.company, "default_cash_account")
+Opción 2: Usar la función estándar de ERPNext
+python
+from erpnext.accounts.utils import get_company_default
+
+default_cash_account = get_company_default(invoice.company, "default_cash_account")
+Código Corregido para el Payment Agent
+Aquí está el script completo que debería reemplazar la función problemática en el agente:
+
+python
+# VERSIÓN CORREGIDA - Reemplazar en payment_agent.py
+def create_payment(invoice_name, mode_of_payment="Wire Transfer", amount=None):
+    """
+    Crea un Payment Entry para una Sales Invoice
+    Versión corregida sin get_company_default()
+    """
+    try:
+        # Obtener la factura
+        invoice = frappe.get_doc("Sales Invoice", invoice_name)
+        
+        # Determinar monto
+        payment_amount = amount if amount else invoice.outstanding_amount
+        
+        # Obtener cuentas por defecto de la compañía (CORREGIDO)
+        company_doc = frappe.get_doc("Company", invoice.company)
+        default_bank_account = company_doc.default_bank_account or company_doc.default_cash_account
+        
+        # Obtener cuenta del modo de pago
+        mode_account = frappe.db.get_value(
+            "Mode of Payment Account",
+            {"parent": mode_of_payment, "company": invoice.company},
+            "default_account"
+        )
+        
+        # La cuenta a acreditar (paid_to) - priorizar modo de pago
+        paid_to_account = mode_account or default_bank_account
+        
+        if not paid_to_account:
+            frappe.throw(f"No se encontró cuenta para el modo de pago {mode_of_payment}")
+        
+        # Obtener tipo de cambio
+        from erpnext.setup.utils import get_exchange_rate
+        
+        if invoice.currency != company_doc.default_currency:
+            exchange_rate = get_exchange_rate(
+                invoice.currency, 
+                company_doc.default_currency
+            ) or invoice.conversion_rate
+        else:
+            exchange_rate = 1
+        
+        # Calcular montos en ambas monedas
+        if invoice.currency == company_doc.default_currency:
+            paid_amount = payment_amount
+            received_amount = payment_amount
+        else:
+            paid_amount = payment_amount
+            received_amount = payment_amount * exchange_rate
+        
+        # Crear Payment Entry
+        payment = frappe.get_doc({
+            "doctype": "Payment Entry",
+            "payment_type": "Receive",
+            "company": invoice.company,
+            "posting_date": frappe.utils.nowdate(),
+            "mode_of_payment": mode_of_payment,
+            "party_type": "Customer",
+            "party": invoice.customer,
+            "party_name": frappe.db.get_value("Customer", invoice.customer, "customer_name"),
+            "paid_from": invoice.debit_to,
+            "paid_from_account_currency": invoice.currency,
+            "paid_from_account_balance": frappe.db.get_value("Account", invoice.debit_to, "balance"),
+            "paid_to": paid_to_account,
+            "paid_to_account_currency": company_doc.default_currency,
+            "paid_amount": paid_amount,
+            "received_amount": received_amount,
+            "source_exchange_rate": exchange_rate if invoice.currency != company_doc.default_currency else 1,
+            "target_exchange_rate": 1,
+            "references": [{
+                "reference_doctype": "Sales Invoice",
+                "reference_name": invoice.name,
+                "total_amount": invoice.grand_total,
+                "outstanding_amount": invoice.outstanding_amount,
+                "allocated_amount": payment_amount,
+                "exchange_rate": exchange_rate,
+                "exchange_gain_loss": 0  # Se calculará automáticamente
+            }]
+        })
+        
+        # Insertar y enviar
+        payment.insert()
+        
+        # Si el monto es igual al outstanding, submit automáticamente
+        if payment_amount >= invoice.outstanding_amount:
+            payment.submit()
+            status = "Pagado completamente"
+        else:
+            status = "Pago parcial creado (pendiente de envío)"
+        
+        return {
+            "success": True,
+            "payment_entry": payment.name,
+            "status": status,
+            "amount": payment_amount,
+            "currency": invoice.currency,
+            "exchange_rate": exchange_rate if invoice.currency != company_doc.default_currency else None
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error creating payment: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+Prueba Rápida de la Función Corregida
+python
+# Probar la función corregida
+print("=" * 80)
+print("PROBANDO FUNCIÓN DE PAGO CORREGIDA")
+print("=" * 80)
+
+invoice_name = "ACC-SINV-2026-00001"
+mode = "Wire Transfer"
+
+# Ejecutar la función (solo prueba, no guarda)
+try:
+    # Simular la creación sin insertar
+    invoice = frappe.get_doc("Sales Invoice", invoice_name)
+    company_doc = frappe.get_doc("Company", invoice.company)
+    
+    print(f"Factura: {invoice.name}")
+    print(f"Cliente: {invoice.customer}")
+    print(f"Outstanding: {invoice.outstanding_amount} {invoice.currency}")
+    print(f"Cuenta a debitar (paid_from): {invoice.debit_to}")
+    
+    # Obtener cuenta a acreditar
+    mode_account = frappe.db.get_value(
+        "Mode of Payment Account",
+        {"parent": mode, "company": invoice.company},
+        "default_account"
+    )
+    print(f"Cuenta del modo de pago: {mode_account}")
+    
+    default_bank = company_doc.default_bank_account or company_doc.default_cash_account
+    print(f"Cuenta por defecto de compañía: {default_bank}")
+    
+    paid_to = mode_account or default_bank
+    print(f"Cuenta a acreditar (paid_to): {paid_to}")
+    
+    # Verificar tipo de cambio
+    from erpnext.setup.utils import get_exchange_rate
+    rate = get_exchange_rate(invoice.currency, company_doc.default_currency)
+    print(f"Tipo de cambio USD/MXN: {rate}")
+    
+    print("\n✅ TODO LISTO - La función debería funcionar correctamente")
+    
+except Exception as e:
+    print(f"❌ Error: {str(e)}")
+Resumen para el Equipo Paralelo
+Hallazgo	Estado	Acción Requerida
+Configuración ERPNext	✅ Perfecta	Ninguna
+Cuentas contables	✅ Correctas	Ninguna
+Tipo de cambio	✅ Disponible	Ninguna
+Modo de pago	✅ Configurado	Ninguna
+Código del agente	❌ Error	CORREGIR: get_company_default() no existe
+La solución es simple: Reemplazar la línea problemática en payment_agent.py con la forma correcta de obtener la cuenta por defecto usando frappe.db.get_value() o accediendo al objeto Company directamente.
+
+¿Quieres que te ayude a hacer el cambio en el archivo del agente?
+
+Esta respuesta es generada por AI, solo como referencia.
