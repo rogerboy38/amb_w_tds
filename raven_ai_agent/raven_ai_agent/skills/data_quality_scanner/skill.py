@@ -338,7 +338,7 @@ class DataQualityScannerSkill(SkillBase):
         issues.extend(billing_issues)
         
         # Check 4: Customer Account
-        account_issues = self._validate_customer_account(so)
+        account_issues = self._validate_customer_account(so, doc_type="Sales Order")
         issues.extend(account_issues)
         
         # Check 5: MX CFDI Fields
