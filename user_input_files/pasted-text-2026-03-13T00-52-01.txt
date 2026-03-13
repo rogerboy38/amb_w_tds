@@ -1,0 +1,188 @@
+================================================================================
+PACKAGING ITEMS MANAGEMENT - SHOW AND UPDATE
+================================================================================
+
+📦 PART 1: LIST OF ALL NEW PACKAGING ITEMS
+------------------------------------------------------------
+Total new packaging items: 36
+
+Item Code → Item Name:
+----------------------------------------
+  CJ001: Caja de Cartón con 1kg
+  CJ002: Caja de Cartón con 2kg
+  CJ005: Caja de Cartón con 5kg
+  CN005: Cuñete de Cartón con 5 kg
+  CN010: Cuñete de Cartón con 10 kg
+  CN012: Cuñete Cuadrado de Cartón con 12 kg
+  CN015: Cuñete de Cartón con 15 kg
+  CN020: Cuñete de Cartón con 20 kg
+  CN025: Cuñete de Cartón con 25 kg
+  TENV: Tipo de Envase
+  BOT050: Botella de Plástico 50ml
+  BOT100: Botella de Plástico 100ml
+  BOT125: Botella de Plástico 125ml
+  BOT200: Botella de Plástico 200ml
+  BOT250: Botella de Plástico 250ml
+  BOT500: Botella de Plástico 500ml
+  BOT750: Botella de Plástico 750ml
+  BOT1000: Botella de Plástico 1000ml
+  BOL020: Bolsa Estéril con 20g
+  BOL025: Bolsa Estéril con 25g
+  BOL030: Bolsa Estéril con 30g
+  BOL050: Bolsa Estéril con 50g
+  BOL100: Bolsa Estéril con 100g
+  BOL150: Bolsa Estéril con 150g
+  BOL200: Bolsa Estéril con 200g
+  BOL250: Bolsa Estéril con 250g
+  BOL300: Bolsa Estéril con 300g
+  BOL350: Bolsa Estéril con 350g
+  BOL500: Bolsa Estéril con 500g
+  POL005: Bolsa de polietileno con 5 kg
+  POL010: Bolsa de polietileno con 10 kg
+  POL015: Bolsa de polietileno con 15 kg
+  POL020: Bolsa de polietileno con 20kg
+  POL025: Bolsa de polietileno con 25kg
+  JAR019: Porrón de plástico con 19kg
+  JAR020: Porrón de plástico con 20 kg
+
+================================================================================
+📋 PART 2: CURRENT SALES ORDER SELECT FIELD OPTIONS
+------------------------------------------------------------
+Current select field has 44 options:
+----------------------------------------
+   1. E001 220L Barrel Blue
+   2. E009 30X60 Poly Bag 300 Gauge
+   3. E010 30X60 Poly Bag 300 Gauge
+   4. Caja de Cartón con 1kg
+   5. Caja de Cartón con 2kg
+   6. Caja de Cartón con 5kg
+   7. Cuñete de Cartón con 5 kg
+   8. Cuñete de Cartón con 10 kg
+   9. Cuñete Cuadrado de Cartón con 12 kg
+  10. Cuñete de Cartón con 15 kg
+  11. Cuñete de Cartón con 20 kg
+  12. Cuñete de Cartón con 25 kg
+  13. Tipo de Envase
+  14. Botella de Plástico 50ml
+  15. Botella de Plástico 100ml
+  16. Botella de Plástico 125ml
+  17. Botella de Plástico 200ml
+  18. Botella de Plástico 250ml
+  19. Botella de Plástico 500ml
+  20. Botella de Plástico 750ml
+  21. Botella de Plástico 1000ml
+  22. Bolsa Estéril con 20g
+  23. Bolsa Estéril con 25g
+  24. Bolsa Estéril con 30g
+  25. Bolsa Estéril con 50g
+  26. Bolsa Estéril con 100g
+  27. Bolsa Estéril con 150g
+  28. Bolsa Estéril con 200g
+  29. Bolsa Estéril con 250g
+  30. Bolsa Estéril con 300g
+  31. Bolsa Estéril con 350g
+  32. Bolsa Estéril con 500g
+  33. E014	Bolsa metalizada con 1 kg
+  34. E016	Bolsa metalizada con 1 kg LORAND
+  35. E015	Bolsa metalizada con 2 kg
+  36. E010	Bolsa de polietileno con 5 kg
+  37. Bolsa de polietileno con 10 kg
+  38. Bolsa de polietileno con 15 kg
+  39. Bolsa de polietileno con 20kg
+  40. Bolsa de polietileno con 25kg
+  41. E025	Porrón de plástico con 19kg
+  42. Porrón de plástico con 20 kg
+  43. E001	Barril HDPE con 220kg
+  44. E011	IBC Contenedor 1000kg
+
+================================================================================
+🔍 PART 3: COMPARING ITEMS VS SELECT OPTIONS
+------------------------------------------------------------
+Items in database: 36
+Options in select field: 44
+
+❌ Item names MISSING from select field (2):
+  - Bolsa de polietileno con 5 kg
+  - Porrón de plástico con 19kg
+
+================================================================================
+🔄 PART 4: UPDATING SALES ORDER SELECT FIELD
+------------------------------------------------------------
+
+Do you want to update the select field with all item names? (yes/no): yes
+
+✅ Select field updated successfully!
+   New options count: 46
+   - E-codes kept: 10
+   - Item names added: 36
+
+Sample of new options (first 10):
+  - Bolsa Estéril con 100g
+  - Bolsa Estéril con 150g
+  - Bolsa Estéril con 200g
+  - Bolsa Estéril con 20g
+  - Bolsa Estéril con 250g
+  - Bolsa Estéril con 25g
+  - Bolsa Estéril con 300g
+  - Bolsa Estéril con 30g
+  - Bolsa Estéril con 350g
+  - Bolsa Estéril con 500g
+
+================================================================================
+✅ PART 5: VERIFICATION
+------------------------------------------------------------
+Select field now has 46 options
+✓ Caja de Cartón con 1kg
+✓ Caja de Cartón con 2kg
+✓ Caja de Cartón con 5kg
+✓ Cuñete de Cartón con 5 kg
+✓ Cuñete de Cartón con 10 kg
+✓ Cuñete Cuadrado de Cartón con 12 kg
+✓ Cuñete de Cartón con 15 kg
+✓ Cuñete de Cartón con 20 kg
+✓ Cuñete de Cartón con 25 kg
+✓ Tipo de Envase
+✓ Botella de Plástico 50ml
+✓ Botella de Plástico 100ml
+✓ Botella de Plástico 125ml
+✓ Botella de Plástico 200ml
+✓ Botella de Plástico 250ml
+✓ Botella de Plástico 500ml
+✓ Botella de Plástico 750ml
+✓ Botella de Plástico 1000ml
+✓ Bolsa Estéril con 20g
+✓ Bolsa Estéril con 25g
+✓ Bolsa Estéril con 30g
+✓ Bolsa Estéril con 50g
+✓ Bolsa Estéril con 100g
+✓ Bolsa Estéril con 150g
+✓ Bolsa Estéril con 200g
+✓ Bolsa Estéril con 250g
+✓ Bolsa Estéril con 300g
+✓ Bolsa Estéril con 350g
+✓ Bolsa Estéril con 500g
+✓ Bolsa de polietileno con 5 kg
+✓ Bolsa de polietileno con 10 kg
+✓ Bolsa de polietileno con 15 kg
+✓ Bolsa de polietileno con 20kg
+✓ Bolsa de polietileno con 25kg
+✓ Porrón de plástico con 19kg
+✓ Porrón de plástico con 20 kg
+
+✅ SUCCESS! All item names are now in the select field!
+
+================================================================================
+SUMMARY
+================================================================================
+
+📊 FINAL STATUS:
+   - Total packaging items: 36
+   - Total select options: 46
+   - All items in select: ✅ YES
+
+📝 NEXT STEPS:
+   1. Go to Sales Order and test the select field
+   2. Look for "Bolsa Estéril con 20g" in the dropdown
+   3. Create a test Sales Order to verify everything works
+
+
