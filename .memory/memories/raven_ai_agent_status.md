@@ -91,12 +91,24 @@ All 6 critical GAPs identified during LORAND Master Degree Test have been resolv
 **Root Cause:** Custom field `payment_form` links to `Payment Form` DocType - required for SAT compliance
 **Valid Values:** 01 (Efectivo), 02 (Cheque), 03 (Transferencia), 04 (Tarjeta), 28 (Otros)
 **Solution:** Add `payment_form` field when creating Payment Entry
-**Status:** ✅ WORKING - Tested with ACC-SINV-2026-00001 → ACC-PAY-2026-00010
+**Status:** ✅ COMPLETE - Full E2E pipeline tested!
+
+**Final E2E Test (March 13, 2026):**
+- Sales Order: SO-00752 (LEGOSAN AB)
+- Sales Invoice: ACC-SINV-2026-00001
+- Payment Entry: ACC-PAY-2026-00010 (CREATED & SUBMITTED)
+- Amount: 257,989.09 MXN
+- Mode: Wire Transfer
+- All 8 pipeline steps verified ✅
 
 Commands:
 - `@ai create payment for ACC-SINV-2026-00001` (defaults to form 01)
 - `@ai create payment for ACC-SINV-2026-00001 form 03` (Transferencia)
 - `@payment submit ACC-PAY-2026-00010` (submit the payment)
+
+**Regex Fixes Applied:**
+- ACC-SINV pattern: `r'ACC-SINV-\d+-\d+'` (was truncating at year)
+- ACC-PAY pattern: `r'ACC-PAY-\d+-\d+'` (was truncating at year)
 
 ---
 
