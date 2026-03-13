@@ -91,10 +91,12 @@ All 6 critical GAPs identified during LORAND Master Degree Test have been resolv
 **Root Cause:** Custom field `payment_form` links to `Payment Form` DocType - required for SAT compliance
 **Valid Values:** 01 (Efectivo), 02 (Cheque), 03 (Transferencia), 04 (Tarjeta), 28 (Otros)
 **Solution:** Add `payment_form` field when creating Payment Entry
+**Status:** ✅ WORKING - Tested with ACC-SINV-2026-00001 → ACC-PAY-2026-00010
 
 Commands:
 - `@ai create payment for ACC-SINV-2026-00001` (defaults to form 01)
 - `@ai create payment for ACC-SINV-2026-00001 form 03` (Transferencia)
+- `@payment submit ACC-PAY-2026-00010` (submit the payment)
 
 ---
 

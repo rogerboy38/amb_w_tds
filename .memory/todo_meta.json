@@ -5,28 +5,28 @@
         "id": "1",
         "content": "Test @ai fix command to verify Data Quality Scanner works",
         "details": "1. Verify scanner can detect issues on a test Sales Order\n2. Verify @ai !fix applies fixes correctly\n3. Confirm fixes are applied and scanner shows clean results",
-        "status": "in_progress",
+        "status": "completed",
         "priority": "high"
       },
       "2": {
         "id": "2",
         "content": "Verify Payment Entry (Step 8) integration",
         "details": "1. Check PaymentAgent creates Payment Entries from Sales Invoices\n2. Verify multi-currency support works (USD → MXN)\n3. Confirm exchange gain/loss calculation",
-        "status": "pending",
+        "status": "completed",
         "priority": "high"
       },
       "3": {
         "id": "3",
         "content": "Verify complete pipeline integration",
         "details": "1. Confirm all 8 steps work together\n2. Check workflow orchestrator status\n3. Document any gaps in integration",
-        "status": "pending",
+        "status": "completed",
         "priority": "medium"
       },
       "4": {
         "id": "4",
         "content": "Document Project Phase completion status",
         "details": "1. Create summary of what's completed\n2. Identify remaining work\n3. Update project status",
-        "status": "pending",
+        "status": "completed",
         "priority": "medium"
       }
     }
