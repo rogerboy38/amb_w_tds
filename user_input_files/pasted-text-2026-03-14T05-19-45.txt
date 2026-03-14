@@ -1,0 +1,869 @@
+Comprehensive Audit Script for v11.0.0
+Run this entire script in your bench console to get a complete picture of the current state:
+
+python
+# ============================================================
+# COMPREHENSIVE AUDIT FOR RAVEN AI AGENT v11.0.0 REBORN
+# ============================================================
+print("=" * 80)
+print("📊 RAVEN AI AGENT v11.0.0 - COMPREHENSIVE AUDIT")
+print("=" * 80)
+print(f"Date: {frappe.utils.nowdate()}")
+print(f"Time: {frappe.utils.now_datetime().strftime('%H:%M:%S')}")
+print("=" * 80)
+
+import os
+import json
+from collections import defaultdict
+
+base_path = frappe.get_app_path('raven_ai_agent')
+print(f"\n📁 Base path: {base_path}")
+
+# ============================================================
+# 1. FILE STRUCTURE AUDIT
+# ============================================================
+print("\n" + "=" * 80)
+print("1. FILE STRUCTURE AUDIT")
+print("=" * 80)
+
+def scan_directory(path, indent=0):
+    """Scan directory and return structure"""
+    structure = []
+    try:
+        items = os.listdir(path)
+        for item in sorted(items):
+            if item.startswith('__pycache__') or item.endswith('.pyc') or item in ['.git', '.github']:
+                continue
+            full_path = os.path.join(path, item)
+            if os.path.isdir(full_path):
+                structure.append({
+                    "type": "directory",
+                    "name": item,
+                    "path": full_path.replace(base_path, ''),
+                    "children": scan_directory(full_path, indent+1)
+                })
+            else:
+                structure.append({
+                    "type": "file",
+                    "name": item,
+                    "path": full_path.replace(base_path, ''),
+                    "size": os.path.getsize(full_path)
+                })
+    except Exception as e:
+        print(f"Error scanning {path}: {e}")
+    return structure
+
+file_structure = scan_directory(base_path)
+print(f"✅ Total files/directories found: {len(file_structure)}")
+
+# ============================================================
+# 2. FIND DUPLICATE HANDLERS
+# ============================================================
+print("\n" + "=" * 80)
+print("2. DUPLICATE HANDLERS DETECTION")
+print("=" * 80)
+
+handlers = {}
+handler_files = []
+
+# Find all Python files
+for root, dirs, files in os.walk(base_path):
+    for file in files:
+        if file.endswith('.py') and not file.startswith('__'):
+            full_path = os.path.join(root, file)
+            rel_path = full_path.replace(base_path, '')
+            
+            # Look for class definitions
+            with open(full_path, 'r', encoding='utf-8') as f:
+                try:
+                    content = f.read()
+                    # Find class names
+                    import re
+                    classes = re.findall(r'class\s+(\w+)', content)
+                    for cls in classes:
+                        if cls not in handlers:
+                            handlers[cls] = []
+                        handlers[cls].append(rel_path)
+                    
+                    # Check for bot_name patterns
+                    if 'bot_name' in content or 'Raven Bot' in content:
+                        handler_files.append({
+                            "path": rel_path,
+                            "size": os.path.getsize(full_path),
+                            "has_bot": 'bot_name' in content,
+                            "has_router": 'router' in rel_path.lower()
+                        })
+                except Exception as e:
+                    print(f"  Error reading {rel_path}: {e}")
+
+print("\n📋 DUPLICATE CLASSES FOUND:")
+for cls, paths in handlers.items():
+    if len(paths) > 1:
+        print(f"\n⚠️  {cls} appears in {len(paths)} locations:")
+        for p in paths:
+            print(f"    • {p}")
+
+print("\n📋 POTENTIAL BOT HANDLERS:")
+for h in handler_files:
+    print(f"  • {h['path']} (bot: {h['has_bot']})")
+
+# ============================================================
+# 3. ROUTER ANALYSIS
+# ============================================================
+print("\n" + "=" * 80)
+print("3. ROUTER ANALYSIS")
+print("=" * 80)
+
+router_path = os.path.join(base_path, 'api/handlers/router.py')
+if os.path.exists(router_path):
+    with open(router_path, 'r') as f:
+        router_content = f.read()
+    
+    print(f"✅ Router found: {router_path}")
+    
+    # Extract all bot names and patterns
+    import re
+    bot_returns = re.findall(r'return\s+"(\w+)"', router_content)
+    patterns = re.findall(r'r"([^"]+)"', router_content)
+    
+    print(f"\n📋 Bots defined in router ({len(set(bot_returns))} unique):")
+    for bot in sorted(set(bot_returns)):
+        count = bot_returns.count(bot)
+        print(f"  • {bot} (appears {count} times)")
+    
+    # Find validator patterns
+    validator_section = re.search(r'validator_patterns\s*=\s*\[(.*?)\]', router_content, re.DOTALL)
+    if validator_section:
+        validator_patterns = re.findall(r'r"([^"]+)"', validator_section.group(1))
+        print(f"\n🔍 Validator patterns ({len(validator_patterns)}):")
+        for p in validator_patterns:
+            print(f"    - {p}")
+    
+    # Find orchestrator patterns
+    orch_section = re.search(r'orch_patterns\s*=\s*\[(.*?)\]', router_content, re.DOTALL)
+    if orch_section:
+        orch_patterns = re.findall(r'r"([^"]+)"', orch_section.group(1))
+        print(f"\n🔍 Orchestrator patterns ({len(orch_patterns)}):")
+        for p in orch_patterns:
+            print(f"    - {p}")
+else:
+    print("❌ Router not found!")
+
+# ============================================================
+# 4. TASK_VALIDATOR LOCATIONS
+# ============================================================
+print("\n" + "=" * 80)
+print("4. TASK_VALIDATOR LOCATIONS")
+print("=" * 80)
+
+task_validator_files = frappe.db.sql("""
+    SELECT name 
+    FROM `tabServer Script` 
+    WHERE name LIKE '%task_validator%' 
+       OR script LIKE '%TaskValidator%'
+""", as_dict=True)
+
+print(f"📋 Server Scripts with task_validator ({len(task_validator_files)}):")
+for script in task_validator_files:
+    print(f"  • {script.name}")
+
+# Find all task_validator.py files
+for root, dirs, files in os.walk(base_path):
+    for file in files:
+        if file == 'task_validator.py':
+            full_path = os.path.join(root, file)
+            rel_path = full_path.replace(base_path, '')
+            print(f"\n📄 Found: {rel_path}")
+            
+            # Check imports
+            with open(full_path, 'r') as f:
+                content = f.read()
+                imports = re.findall(r'from\s+([\w.]+)\s+import', content)
+                print(f"    Imports: {', '.join(set(imports[:5]))}...")
+
+# ============================================================
+# 5. GIT STATUS
+# ============================================================
+print("\n" + "=" * 80)
+print("5. GIT STATUS")
+print("=" * 80)
+
+import subprocess
+try:
+    os.chdir(base_path)
+    result = subprocess.run(['git', 'remote', '-v'], capture_output=True, text=True)
+    print(f"📌 Remote: {result.stdout.strip()}")
+    
+    result = subprocess.run(['git', 'branch', '--show-current'], capture_output=True, text=True)
+    print(f"📌 Current branch: {result.stdout.strip()}")
+    
+    result = subprocess.run(['git', 'log', '-1', '--oneline'], capture_output=True, text=True)
+    print(f"📌 Last commit: {result.stdout.strip()}")
+    
+    result = subprocess.run(['git', 'status', '-s'], capture_output=True, text=True)
+    if result.stdout:
+        print(f"\n⚠️  Uncommitted changes:")
+        print(result.stdout)
+    else:
+        print("\n✅ No uncommitted changes")
+        
+except Exception as e:
+    print(f"❌ Git error: {e}")
+
+# ============================================================
+# 6. BOTS REGISTERED IN RAVEN
+# ============================================================
+print("\n" + "=" * 80)
+print("6. RAVEN BOTS REGISTERED")
+print("=" * 80)
+
+bots = frappe.db.sql("""
+    SELECT name, bot_name, is_ai_bot, modified 
+    FROM `tabRaven Bot` 
+    ORDER BY name
+""", as_dict=True)
+
+print(f"📋 Registered Raven Bots ({len(bots)}):")
+for bot in bots:
+    print(f"  • {bot.name} (AI: {bot.is_ai_bot}) - Last mod: {bot.modified}")
+
+# ============================================================
+# 7. COMMAND PATTERNS IN USE
+# ============================================================
+print("\n" + "=" * 80)
+print("7. COMMAND PATTERNS IN USE")
+print("=" * 80)
+
+# Search for patterns in all Python files
+patterns_found = defaultdict(list)
+for root, dirs, files in os.walk(base_path):
+    for file in files:
+        if file.endswith('.py') and file not in ['__init__.py']:
+            full_path = os.path.join(root, file)
+            rel_path = full_path.replace(base_path, '')
+            with open(full_path, 'r', encoding='utf-8') as f:
+                try:
+                    content = f.read()
+                    # Find regex patterns
+                    regex_patterns = re.findall(r'r"([^"]+)"', content)
+                    for p in regex_patterns[:5]:  # Limit per file
+                        if any(key in p for key in ['pipeline', 'SAL-QTN', 'QUOT', 'SO-', 'ACC-']):
+                            patterns_found[p].append(rel_path)
+                except:
+                    pass
+
+print("📋 Key command patterns found:")
+for pattern, files in patterns_found.items():
+    if len(files) > 1:
+        print(f"\n⚠️  Pattern '{pattern}' appears in {len(files)} files:")
+        for f in files:
+            print(f"    • {f}")
+
+# ============================================================
+# 8. SUMMARY FOR v11.0.0 REBORN
+# ============================================================
+print("\n" + "=" * 80)
+print("📋 SUMMARY FOR v11.0.0 REBORN")
+print("=" * 80)
+
+print("""
+🔴 CRITICAL ISSUES FOUND:
+""")
+
+# Check for duplicate handlers
+duplicate_issues = []
+for cls, paths in handlers.items():
+    if len(paths) > 1:
+        duplicate_issues.append(f"• {cls} appears in {len(paths)} locations")
+if duplicate_issues:
+    for issue in duplicate_issues[:3]:
+        print(issue)
+else:
+    print("✅ No duplicate classes found")
+
+# Check for multiple task_validator
+task_validator_count = len([p for p in handlers.get('TaskValidator', [])])
+if task_validator_count > 1:
+    print(f"• ⚠️ TaskValidator appears in {task_validator_count} locations")
+
+print("\n🟡 RECOMMENDATIONS FOR v11.0.0:")
+print("""
+1. SINGLE SOURCE OF TRUTH:
+   • Consolidate all handlers to agents/
+   • Remove duplicate task_validator.py
+   • Single router.py in api/handlers/
+
+2. CLEAN ARCHITECTURE:
+   agents/          → Bot implementations
+   api/handlers/    → Router only
+   skills/          → Reusable skills
+   tests/           → Unit tests
+   docs/            → Documentation
+
+3. NAMING CONVENTIONS:
+   • All bots: *Agent.py (e.g., PaymentAgent.py)
+   • All handlers: descriptive names
+   • No duplicate class names across files
+
+4. DOCUMENTATION:
+   • COMMANDS.md - All available commands
+   • ARCHITECTURE.md - How it works
+   • CONTRIBUTING.md - Team guidelines
+
+5. GIT WORKFLOW:
+   • main branch: production-ready
+   • develop branch: integration
+   • feature/* branches: new features
+   • hotfix/* branches: urgent fixes
+""")
+
+print("\n✅ Audit complete. Ready for v11.0.0 reborn!")
+print("=" * 80)
+This script will give you:
+
+File structure - Complete map of your codebase
+
+Duplicate handlers - Find conflicting implementations
+
+Router analysis - Understand all routing rules
+
+TaskValidator locations - Find where it's implemented
+
+Git status - Know your current state
+
+Raven bots - See what's registered
+
+Command patterns - Find conflicting patterns
+
+Summary - Actionable recommendations
+
+Run this and share the output. Then I can help you create a clean v11.0.0 structure!
+
+================================================================================
+📊 RAVEN AI AGENT v11.0.0 - COMPREHENSIVE AUDIT
+================================================================================
+Date: 2026-03-13
+Time: 23:16:30
+================================================================================
+
+📁 Base path: /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent
+
+================================================================================
+1. FILE STRUCTURE AUDIT
+================================================================================
+Error scanning /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent: name 'base_path' is not defined
+✅ Total files/directories found: 0
+
+================================================================================
+2. DUPLICATE HANDLERS DETECTION
+================================================================================
+
+📋 DUPLICATE CLASSES FOUND:
+
+⚠️  SOMatch appears in 5 locations:
+    • /agents/task_validator.py
+    • /api/command_router.py
+    • /api/sales.py
+    • /api/handlers/base.py
+    • /api/handlers/sales.py
+
+⚠️  for appears in 11 locations:
+    • /skills/framework.py
+    • /skills/formulation_orchestrator/agents/base.py
+    • /skills/formulation_orchestrator/agents/base.py
+    • /skills/formulation_orchestrator/agents/base.py
+    • /skills/batch_selector/selector.py
+    • /skills/batch_selector/parsers.py
+    • /skills/migration_fixer/skill.py
+    • /providers/base.py
+    • /channels/base.py
+    • /raven_ai_agent/doctype/ai_memory/test_ai_memory.py
+    • /raven_ai_agent/doctype/iot_sensor_reading/test_iot_sensor_reading.py
+
+⚠️  SkillRouter appears in 2 locations:
+    • /skills/framework.py
+    • /skills/router.py
+
+⚠️  in appears in 2 locations:
+    • /skills/framework.py
+    • /skills/framework.py
+
+⚠️  class appears in 24 locations:
+    • /skills/browser.py
+    • /skills/formulation_orchestrator/messages.py
+    • /skills/formulation_orchestrator/messages.py
+    • /skills/batch_selector/selector.py
+    • /skills/batch_selector/selector.py
+    • /skills/batch_selector/parsers.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_reader/reader.py
+    • /skills/formulation_advisor/advisor.py
+    • /skills/formulation_advisor/advisor.py
+    • /skills/formulation_advisor/advisor.py
+    • /channels/base.py
+    • /channels/base.py
+    • /utils/cost_monitor.py
+    • /config/environment.py
+    • /config/environment.py
+    • /gateway/session_manager.py
+    • /realtime/client.py
+
+⚠️  TestPhase4Integration appears in 2 locations:
+    • /skills/formulation_orchestrator/tests.py
+    • /skills/formulation_orchestrator/tests.py
+
+⚠️  from appears in 2 locations:
+    • /skills/batch_selector/parsers.py
+    • /utils/cost_monitor.py
+
+⚠️  RaymondLucyAgent appears in 2 locations:
+    • /api/agent_V1.py
+    • /api/agent.py
+
+⚠️  _ValidatorAgent appears in 4 locations:
+    • /api/router.py
+    • /api/agent.py
+    • /api/batch_sync.py
+    • /api/batch_sync.py
+
+⚠️  SalesMixin appears in 2 locations:
+    • /api/sales.py
+    • /api/handlers/sales.py
+
+📋 POTENTIAL BOT HANDLERS:
+  • /agents/router_patch.py (bot: True)
+  • /gateway/router.py (bot: True)
+  • /api/router.py (bot: True)
+  • /api/agent.py (bot: True)
+  • /api/queue_handlers.py (bot: True)
+  • /api/handlers/router.py (bot: True)
+
+================================================================================
+3. ROUTER ANALYSIS
+================================================================================
+✅ Router found: /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/api/handlers/router.py
+
+📋 Bots defined in router (6 unique):
+  • manufacturing_bot (appears 1 times)
+  • payment_bot (appears 1 times)
+  • sales_order_bot (appears 1 times)
+  • sales_order_follow_up (appears 2 times)
+  • task_validator (appears 4 times)
+  • workflow_orchestrator (appears 1 times)
+
+🔍 Validator patterns (0):
+
+🔍 Orchestrator patterns (0):
+
+================================================================================
+4. TASK_VALIDATOR LOCATIONS
+================================================================================
+📋 Server Scripts with task_validator (0):
+
+📄 Found: /agents/task_validator.py
+    Imports: frappe, raven_ai_agent.skills.data_quality_scanner.skill, __future__...
+
+================================================================================
+5. GIT STATUS
+================================================================================
+📌 Remote: origin	git@github.com:rogerboy38/raven_ai_agent.git (fetch)
+origin	git@github.com:rogerboy38/raven_ai_agent.git (push)
+upstream	https://github.com/rogerboy38/raven_ai_agent.git (fetch)
+upstream	https://github.com/rogerboy38/raven_ai_agent.git (push)
+📌 Current branch: main
+📌 Last commit: e79cd24 Update:  and 6 other files
+
+⚠️  Uncommitted changes:
+ D ../.git_backup_20260313_220104/raven_ai_agent/agents/task_validator.py
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py.backup_error
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py.backup_final
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py.backup_order
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py.backup_sed
+ D ../.git_backup_20260313_220104/raven_ai_agent/api/handlers/router.py.backup_working
+ D ../.git_backup_20260313_220104/raven_ai_agent/skills/data_quality_scanner/skill.py
+ D ../.git_backup_20260313_220104/raven_ai_agent/skills/data_quality_scanner/skill.py.backup_final
+ D ../.git_backup_20260313_220104/raven_ai_agent/skills/data_quality_scanner/skill.py.backup_mar13
+ D ../.git_backup_20260313_220104/raven_ai_agent/skills/data_quality_scanner/skill.py.backup_mar13_final
+ M agents/task_validator.py
+ M api/agent.py
+ M api/batch_sync.py
+ M api/handlers/router.py
+ D api/handlers/task_validator.py
+ M api/router.py
+?? agents/task_validator.py.teamA
+?? api/handlers/task_validator.py.teamB
+
+
+================================================================================
+6. RAVEN BOTS REGISTERED
+================================================================================
+📋 Registered Raven Bots (5):
+  • Executive Insights (AI: 1) - Last mod: 2026-01-18 00:34:51.471469
+  • rnd_bot (AI: 1) - Last mod: 2025-11-16 16:48:26.114515
+  • sales_order_bot (AI: 1) - Last mod: 2025-08-14 05:09:59.774598
+  • sales_order_follow_up (AI: 1) - Last mod: 2026-01-15 14:57:10.835617
+  • task_validator (AI: 0) - Last mod: 2026-03-13 02:41:42.857159
+
+================================================================================
+7. COMMAND PATTERNS IN USE
+================================================================================
+📋 Key command patterns found:
+
+================================================================================
+📋 SUMMARY FOR v11.0.0 REBORN
+================================================================================
+
+🔴 CRITICAL ISSUES FOUND:
+
+• SOMatch appears in 5 locations
+• for appears in 11 locations
+• SkillRouter appears in 2 locations
+
+🟡 RECOMMENDATIONS FOR v11.0.0:
+
+1. SINGLE SOURCE OF TRUTH:
+   • Consolidate all handlers to agents/
+   • Remove duplicate task_validator.py
+   • Single router.py in api/handlers/
+
+2. CLEAN ARCHITECTURE:
+   agents/          → Bot implementations
+   api/handlers/    → Router only
+   skills/          → Reusable skills
+   tests/           → Unit tests
+   docs/            → Documentation
+
+3. NAMING CONVENTIONS:
+   • All bots: *Agent.py (e.g., PaymentAgent.py)
+   • All handlers: descriptive names
+   • No duplicate class names across files
+
+4. DOCUMENTATION:
+   • COMMANDS.md - All available commands
+   • ARCHITECTURE.md - How it works
+   • CONTRIBUTING.md - Team guidelines
+
+5. GIT WORKFLOW:
+   • main branch: production-ready
+   • develop branch: integration
+   • feature/* branches: new features
+   • hotfix/* branches: urgent fixes
+
+
+✅ Audit complete. Ready for v11.0.0 reborn!
+================================================================================
+
+In [2]:
+Perfect! Now we have the complete picture. Let me analyze this audit and provide you with a comprehensive plan for v11.0.0.
+
+📊 AUDIT ANALYSIS - KEY FINDINGS
+🔴 Critical Issues Identified:
+Multiple ROUTER files (3 detected):
+
+api/handlers/router.py (main one)
+
+api/router.py
+
+gateway/router.py
+
+agents/router_patch.py
+
+TaskValidator conflicts:
+
+✅ agents/task_validator.py (your working version)
+
+❌ api/handlers/task_validator.py (legacy/other team)
+
+Duplicate classes across 24 files - major architectural debt
+
+Uncommitted changes with backup files and conflicts
+
+Git remote has both origin (SSH) and upstream (HTTPS)
+
+🎯 v11.0.0 REBORN - COMPLETE PLAN
+Phase 1: Git & Repository Cleanup
+bash
+# Run these commands in order:
+
+# 1. Create a backup branch of current state
+cd /home/frappe/frappe-bench/apps/raven_ai_agent
+git checkout -b v10.x.x-backup
+git add .
+git commit -m "backup: v10.x.x pre-reborn state - $(date)"
+git push origin v10.x.x-backup
+
+# 2. Create fresh v11.0.0 branch
+git checkout main
+git pull origin main
+git checkout -b v11.0.0-reborn
+
+# 3. Clean up untracked files (careful!)
+git clean -fd  # Remove untracked files and directories
+git reset --hard HEAD  # Reset any modified files
+
+# 4. Standardize remotes (use SSH only)
+git remote -v  # Check current remotes
+git remote remove upstream  # Remove HTTPS remote
+git remote set-url origin git@github.com:rogerboy38/raven_ai_agent.git
+Phase 2: New Folder Structure
+Create this structure:
+
+text
+raven_ai_agent/
+├── __init__.py
+├── agents/
+│   ├── __init__.py
+│   ├── base_agent.py           # Base class for all agents
+│   ├── manufacturing_agent.py
+│   ├── payment_agent.py
+│   ├── sales_agent.py
+│   ├── task_validator_agent.py  # YOUR working version (renamed)
+│   └── workflow_agent.py
+├── api/
+│   ├── __init__.py
+│   └── router.py                # SINGLE router (from handlers/router.py)
+├── skills/
+│   ├── __init__.py
+│   ├── data_quality_scanner/
+│   │   └── skill.py             # Keep your working version
+│   └── ... (other skills)
+├── core/
+│   ├── __init__.py
+│   ├── constants.py
+│   └── exceptions.py
+├── docs/
+│   ├── COMMANDS.md
+│   ├── ARCHITECTURE.md
+│   └── CONTRIBUTING.md
+├── tests/
+│   ├── __init__.py
+│   ├── test_router.py
+│   └── test_task_validator.py
+├── .gitignore
+├── README.md
+└── version.py                   # v11.0.0
+Phase 3: File Consolidation Script
+python
+# Save this as /tmp/reborn_script.py and run it
+import os
+import shutil
+from pathlib import Path
+
+base = "/home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent"
+
+# 1. Create new structure
+new_dirs = [
+    "agents", "api", "skills/data_quality_scanner", 
+    "core", "docs", "tests"
+]
+
+for dir_path in new_dirs:
+    os.makedirs(f"{base}/{dir_path}", exist_ok=True)
+
+# 2. Move your working files
+file_moves = {
+    # Agents
+    f"{base}/agents/task_validator.py": f"{base}/agents/task_validator_agent.py",
+    f"{base}/agents/payment_agent.py": f"{base}/agents/payment_agent.py",
+    f"{base}/agents/manufacturing_agent.py": f"{base}/agents/manufacturing_agent.py",
+    
+    # Router (use the main one from handlers)
+    f"{base}/api/handlers/router.py": f"{base}/api/router.py",
+    
+    # Skills
+    f"{base}/skills/data_quality_scanner/skill.py": f"{base}/skills/data_quality_scanner/skill.py",
+}
+
+for src, dst in file_moves.items():
+    if os.path.exists(src):
+        shutil.copy2(src, dst)
+        print(f"✓ Copied {src} -> {dst}")
+
+# 3. Remove duplicate routers
+to_remove = [
+    f"{base}/api/router.py",  # Will be replaced by new one
+    f"{base}/gateway/router.py",
+    f"{base}/agents/router_patch.py",
+    f"{base}/api/handlers/task_validator.py",
+]
+
+for path in to_remove:
+    if os.path.exists(path):
+        os.remove(path)
+        print(f"✓ Removed {path}")
+
+# 4. Create __init__.py files
+init_files = [
+    f"{base}/agents/__init__.py",
+    f"{base}/api/__init__.py",
+    f"{base}/skills/__init__.py",
+    f"{base}/core/__init__.py",
+    f"{base}/tests/__init__.py",
+]
+
+for init in init_files:
+    with open(init, 'w') as f:
+        f.write('# Auto-generated for v11.0.0\n')
+    print(f"✓ Created {init}")
+
+# 5. Create version.py
+with open(f"{base}/version.py", 'w') as f:
+    f.write('__version__ = "11.0.0"\n')
+print("✓ Created version.py")
+
+print("\n✅ Reborn structure created successfully!")
+Phase 4: Router Simplification
+Replace api/router.py with this clean version:
+
+python
+"""
+Router v11.0.0 - Single source of truth for all routing
+"""
+import frappe
+import re
+from frappe import _
+
+# Import all agents
+from raven_ai_agent.agents.task_validator_agent import TaskValidatorAgent
+from raven_ai_agent.agents.payment_agent import PaymentAgent
+from raven_ai_agent.agents.manufacturing_agent import ManufacturingAgent
+from raven_ai_agent.agents.sales_agent import SalesAgent
+
+class AgentRouter:
+    """Central routing for all AI commands"""
+    
+    def __init__(self):
+        self.agents = {
+            'task_validator': TaskValidatorAgent(),
+            'payment': PaymentAgent(),
+            'manufacturing': ManufacturingAgent(),
+            'sales': SalesAgent(),
+        }
+    
+    def route(self, query: str, context: dict = None) -> dict:
+        """Route command to appropriate agent"""
+        query_lower = query.lower()
+        
+        # 1. Task Validator (pipeline/diagnose commands)
+        if re.search(r'pipeline\s+SAL-QTN-', query, re.IGNORECASE):
+            return self.agents['task_validator'].handle(query, context)
+        if re.search(r'diagnose\s+SAL-QTN-', query, re.IGNORECASE):
+            return self.agents['task_validator'].handle(query, context)
+        
+        # 2. Payment commands
+        if re.search(r'ACC-SINV-|ACC-PAY-', query, re.IGNORECASE):
+            return self.agents['payment'].handle(query, context)
+        
+        # 3. Manufacturing commands
+        if re.search(r'MFG-WO-', query, re.IGNORECASE):
+            return self.agents['manufacturing'].handle(query, context)
+        
+        # 4. Sales commands
+        if re.search(r'SO-', query, re.IGNORECASE):
+            return self.agents['sales'].handle(query, context)
+        
+        # Default
+        return {
+            "success": False,
+            "response": "Command not recognized. Try @ai help"
+        }
+
+# For backward compatibility
+router = AgentRouter()
+handle = router.route
+Phase 5: Documentation Templates
+Create docs/COMMANDS.md:
+
+markdown
+# Raven AI Agent v11.0.0 - Command Reference
+
+## 📋 Commands by Agent
+
+### Task Validator Agent
+- `@ai pipeline SAL-QTN-XXXX` - Full pipeline diagnosis from quotation
+- `@ai diagnose SAL-QTN-XXXX` - Diagnose quotation issues
+
+### Payment Agent
+- `@ai create payment for ACC-SINV-XXXX` - Create payment entry
+- `@ai submit payment ACC-PAY-XXXX` - Submit payment
+
+### Manufacturing Agent
+- `@ai show work orders` - List work orders
+- `@ai create work order for ITEM` - Create new work order
+
+### Sales Agent
+- `@ai show sales orders` - List sales orders
+- `@ai check status SO-XXXX` - Check order status
+Phase 6: Team Agreement
+Create CONTRIBUTING.md:
+
+markdown
+# Contributing to Raven AI Agent v11.0.0
+
+## 🏗️ Architecture Rules
+1. **Single Source of Truth**
+   - All agents go in `/agents`
+   - Router ONLY in `/api/router.py`
+   - No duplicate files
+
+2. **Naming Conventions**
+   - Agents: `*Agent.py` (e.g., `TaskValidatorAgent.py`)
+   - Classes: Same name as file (e.g., `TaskValidatorAgent`)
+   - No duplicate class names
+
+3. **Git Workflow**
+   - `main` branch: production-ready
+   - `develop` branch: integration
+   - Feature branches: `feature/description`
+   - Hotfix branches: `hotfix/description`
+
+4. **Pull Request Checklist**
+   - [ ] No duplicate files
+   - [ ] Tests pass
+   - [ ] Documentation updated
+   - [ ] Team reviewed
+🚀 Execution Plan
+bash
+# Step 1: Create backup branch
+cd /home/frappe/frappe-bench/apps/raven_ai_agent
+git checkout -b v10-backup
+git add .
+git commit -m "backup: pre-v11 state"
+git push origin v10-backup
+
+# Step 2: Switch to main and create v11 branch
+git checkout main
+git pull origin main
+git checkout -b v11.0.0-reborn
+
+# Step 3: Run cleanup script
+python3 /tmp/reborn_script.py
+
+# Step 4: Update imports in all files
+find . -type f -name "*.py" -exec sed -i 's/from raven_ai_agent.agents.task_validator/from raven_ai_agent.agents.task_validator_agent/g' {} \;
+find . -type f -name "*.py" -exec sed -i 's/import raven_ai_agent.agents.task_validator/import raven_ai_agent.agents.task_validator_agent/g' {} \;
+
+# Step 5: Test
+bench --site erp.sysmayal2.cloud console
+from raven_ai_agent.api.router import handle
+print(handle("pipeline SAL-QTN-2024-00752"))
+
+# Step 6: Commit
+git add .
+git commit -m "release: v11.0.0 - Complete reborn with clean architecture
+
+- Consolidated all routers to single source
+- Removed duplicate task_validator files
+- Standardized agent naming
+- Added comprehensive documentation
+- Clean git history"
+git push origin v11.0.0-reborn
+
+# Step 7: Create PR to main

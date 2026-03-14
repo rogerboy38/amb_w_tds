@@ -1,0 +1,607 @@
+Questions to Reborn the Project:
+1. Git & History
+Should I keep the existing git history or start fresh? (Option A: Clean slate, Option B: Preserve commit history)
+RPD: We will try to presewrve the history, but we understand that is a Major revision we are opened to follow best practices
+Current remote URL: https://github.com/rogerboy38/raven_ai_agent.git - confirm?
+RPD: YES same credentials ask if you need to refres them
+2. Core Architecture
+What MUST BE PRESERVED from current version?
+We have a apparent functional raven_ai_agent see our help scenario
+*** start of help output ***
+sales_order_bot
+Bot
+05:59 PM
+[CONFIDENCE: HIGH] [AUTONOMY: LEVEL 1]
+
+?? AMB AI Agent Capabilities
+
+Latest Update: March 2026 | Version: 2.0
+
+?? Available Bots
+
+Bot
+
+Purpose
+
+@ai
+
+General ERPNext operations, manufacturing, sales, purchasing
+
+@sales_order_follow_up
+
+Dedicated SO tracking and fulfillment
+
+@rnd_bot
+
+R&D/Formulation research, innovation tracking
+
+@bom_creator
+
+BOM Creator automation
+
+?? Manufacturing & Production
+
+Work Order Management
+
+@ai show work orders - List active work orders
+
+@ai create work order for [item] qty [n] - Create new work order
+
+@ai submit work order [WO] - Submit/start work order
+
+@ai material status for [WO] - Check component availability (Red/Green zone)
+
+@ai reserve stock for [WO] - Reserve materials for work order
+
+Production Execution
+
+@ai issue materials for [WO] - Transfer materials to WIP warehouse
+
+@ai show job cards for [WO] - List operations (linked to Project Tasks)
+
+@ai update progress for [WO] qty [n] - Report production progress
+
+@ai finish work order [WO] - Complete production & receive FG
+
+Stock Entry Management
+
+@ai material receipt [ITEM] qty [n] price $[x] - Create Material Receipt
+
+@ai convert [STE] to material receipt - Convert draft to Material Receipt
+
+@ai verify stock entries - Check submitted vs draft entries
+
+@ai check stock ledger - Show recent stock ledger entries
+
+@ai list batches - Show recently created batches
+
+? Quality Management System (QMS)
+
+Command
+
+Description
+
+@ai quality setup status
+
+View QMS configuration and status
+
+@ai quality create nc <subject>
+
+Create Non-Conformance report
+
+@ai quality create training <name>
+
+Create Training Program
+
+@ai quality create audit <subject>
+
+Create Internal Audit
+
+@ai quality check
+
+Show recent Quality Inspections
+
+Verified Working (March 2026): - ? Non-Conformance: QA-NC-00020 - ? Internal Audit: QA-MEET-26-03-08 - ? Training Program: GMP Basics
+
+?? BOM & Batch Management (ambwtds)
+
+BOM Tracking Commands
+
+@ai bom health - Run BOM hierarchy health check
+
+@ai bom inspect <BOM> - Inspect specific BOM structure
+
+@ai bom status <ITEM> - Get BOM status for an item
+
+@ai bom issues - List all known BOM issues
+
+@ai validate bom <BOM> - Validate BOM structure and components
+
+Serial/Batch Tracking
+
+@ai serial health - Overall serial system health check
+
+@ai serial status <SERIAL> - Get status of specific serial number
+
+@ai serial batch <BATCH> - List all serials in a batch
+
+BOM Creator
+
+@ai show bom [NAME] - View BOM or BOM Creator details
+
+@ai !submit bom BOM-XXXX - Submit BOM Creator to generate BOMs
+
+@ai validate bom BOM-XXXX - Validate BOM Creator before submission
+
+@ai create bom from tds [TDS-NAME] - Create BOM Creator from TDS
+
+@ai create bom for batch LOTE-XXXX - Create BOM for a Batch AMB
+
+?? Warehouse Management (rndwarehousemanagement)
+
+Command
+
+Description
+
+@ai warehouse status
+
+Overall warehouse status and utilization
+
+@ai check zone for WO-XXXX
+
+Check Red/Green zone status for Work Order
+
+@ai stock balance [ITEM]
+
+Show current stock levels
+
+@ai show stock entry [SE]
+
+Details of a specific Stock Entry
+
+SAP Movement Types: - 261 (FrontFlush) - Goods Issue for Production - 311 (BackFlush) - Transfer for Kitting with dual-signature
+
+?? Sales-to-Purchase Cycle
+
+@ai show opportunities - List sales opportunities
+
+@ai create opportunity for [customer] - Create new sales opportunity
+
+@ai check inventory for [SO] - Check item availability for Sales Order
+
+@ai show quotations - View your quotations
+
+@ai show sales orders - View your sales orders
+
+@ai show pending deliveries - Delivery notes, stock levels
+
+@ai create delivery note for [SO] - Ship items to customer
+
+@ai create sales invoice for [SO/DN] - Invoice the customer
+
+Purchase Cycle: - @ai create material request for [SO] - Create Material Request from SO - @ai show material requests - List pending material requests - @ai create rfq from [MR] - Create Request for Quotation - @ai show rfqs - List RFQs and their status - @ai show supplier quotations - List supplier quotations - @ai create po from [SQ] - Create Purchase Order from Supplier Quotation - @ai receive goods for [PO] - Create Purchase Receipt
+
+?? Web Research & External Data
+
+@ai search [topic] - Web search for any topic
+
+@ai find suppliers for [product] - Find manufacturers/suppliers
+
+@ai extract from [URL] - Extract data from any website
+
+@ai who are the players in [market] - Market research
+
+?? Create ERPNext Records
+
+@ai create supplier [name] - Create basic supplier
+
+@ai create supplier [name] with address - Search web & create with address
+
+@ai save this research - Cache research to AI Memory
+
+?? Workflows (Level 2-3 Autonomy)
+
+Command
+
+Description
+
+!command
+
+Force execute without confirmation
+
+@ai convert quotation [name] to sales order
+
+Document conversion
+
+@ai create work order for [item]
+
+Manufacturing workflows
+
+Autonomy Levels: - Level 1 (Copilot): Read-only queries, suggestions - Level 2 (Command): Execute with confirmation - Level 3 (Agent): Multi-step autonomous workflows
+
+?? Document Actions
+
+@ai !submit Sales Order SO-XXXX - Submit sales order
+
+@ai !submit Work Order MFG-WO-XXXX - Submit work order
+
+@ai unlink sales order from MFG-WO-XXXX - Remove SO link from WO
+
+@ai !cancel bom BOM-XXXX - Cancel submitted BOM
+
+@ai !revert bom BOM-XXXX to draft - Reset cancelled BOM to draft
+
+@ai !fix quotation SAL-QTN-XXXX - Fix cancelled quotation
+
+@ai !update quotation SAL-QTN-XXXX item ITEM-CODE - Update quotation item
+
+?? Skills (AI-Powered)
+
+Skill
+
+Description
+
+Formulation Reader
+
+Parse and validate formulation data from BOMs
+
+Formulation Orchestrator
+
+Optimize batch selection (FEFO/Cost balancing)
+
+Formulation Advisor
+
+Production batch selection recommendations
+
+Browser
+
+Web automation and data extraction
+
+IoT Sensors
+
+Temperature, humidity, motion monitoring
+
+Skill Creator
+
+Create new custom skills
+
+?? IoT Bot (@iot) - Raspberry Pi AI
+
+Use @iot for direct Ollama AI access on Raspberry Pi:
+
+Command
+
+Description
+
+@iot ask <prompt>
+
+Ask Ollama AI
+
+@iot status
+
+Ollama service status
+
+@iot models
+
+List available models
+
+@iot pull <model>
+
+Pull a new model
+
+@iot sysinfo
+
+VPS/RPi system info
+
+@iot <anything>
+
+Direct AI query
+
+?? IoT Sensor Manager - RPi Bots L01-L30
+
+Supported Sensors: Temperature (DHT22), Humidity, Motion (HC-SR501), Light (BH1750)
+
+Command
+
+Description
+
+@ai sensor status
+
+All sensors status
+
+@ai temperature L01
+
+Temperature from bot L01
+
+@ai humidity L05
+
+Humidity from bot L05
+
+@ai motion L10
+
+Motion detection on L10
+
+@ai sensor history L02
+
+Historical readings
+
+@ai sensor alert
+
+Active sensor alerts
+
+@ai read sensor L03
+
+Read all sensors on L03
+
+@ai bot L07 status
+
+Full status for bot L07
+
+Sensor Thresholds: - Temperature: 15-35°C (Warning), <5°C or >45°C (Critical) - Humidity: 20-80% (Warning), <10% or >95% (Critical) - Light: 50-800 lux (Warning)
+
+?? Phase 4: Advanced Analytics (Coming Soon)
+
+Dashboard Widgets for Raven
+
+Smart Aggregations (AI-powered data summarization)
+
+Scheduled Reports (automated generation & distribution)
+
+Alert Rules Engine (configurable business alerts)
+
+?? Help
+
+@ai help or @ai capabilities - Show this list
+
+@ai what can you do - Show capabilities
+
+Note: Always use @ai !command format in Raven channels. Commands with ! prefix execute directly without confirmation.
+
+Type your question and I'll help!
+*** end of help output ***
+but we have new features as :
+Payment Agent (ACC-PAY, ACC-SINV creation)
+Sales Order Follow-up Agent
+Manufacturing Agent
+Pipeline/Diagnosis commands (SAL-QTN)
+WebSocket/Raven integration
+(What MUST BE PRESERVED from current version?
+
+Payment Agent (ACC-PAY, ACC-SINV creation)
+Sales Order Follow-up Agent
+Manufacturing Agent
+Pipeline/Diagnosis commands (SAL-QTN)
+WebSocket/Raven integration)
+RPD: WE are trying to preserve all the features, we have inverted a lot of effort and we don't want to loos features, but we are opened to rethink our way of work was .. some user needs a command, we develop the command... we have a lot of test and bugs because the doctypes, the customized fields or some special developments on their doctypes, our own apps and so on
+3. What's Broken That Needs Fixing?
+From your analysis:
+
+Two handlers pointing to different folders (which ones?)
+
+RPD: this is an example but it seems to be iceberg arow
+*** look this need to be unified example ***
+root@srv1415373:~# docker exec -it erpnext-backend-1 bash
+cd /home/frappe/frappe-bench/apps/raven_ai_agent/raven__ai_agent/agents
+cp task_validator.py task_validator.unified.py
+nano task_validator.unified.py
+frappe@e9538cf6e4a4:~/frappe-bench$ cp task_validator.py task_validator.unified.py
+nano task_validator.unified.py
+cp: cannot stat 'task_validator.py': No such file or directory
+frappe@e9538cf6e4a4:~/frappe-bench$ cat task_validator.unified.py
+# task_validator.py - UNIFIED VERSION (both teams)
+from __future__ import unicode_literals
+import frappe
+from frappe import _
+import re
+from raven_ai_agent.skills.data_quality_scanner.skill import DataQualityScannerSkill
+
+class TaskValidator:
+    """Task Validator Agent - Unified version (Team A + Team B)"""
+    
+    def __init__(self):
+        self.scanner = DataQualityScannerSkill()
+    
+    # ===== TEAM B's FUNCTIONS =====
+    def _resolve_so_name(self, query):
+        """BUG15 fix - Resolve SO name from prefix"""
+        m = re.search(r'(SAL-ORD-\d+-\d+|SO-\d{3,5})', query, re.IGNORECASE)
+        if not m:
+            return None
+        prefix = m.group(1).upper()
+        full_name = frappe.db.get_value("Sales Order",
+            {"name": ["like", f"{prefix}%"], "docstatus": ["!=", 2]}, "name")
+        if full_name:
+            class SOMatch:
+                def group(self, n):
+                    return full_name
+            return SOMatch()
+        return None
+    
+    def _audit_pipeline(self, so_name):
+        """Team B's pipeline audit functionality"""
+        # Aquí va la lógica de audit del otro equipo
+        pass
+    
+    # ===== TEAM A's FUNCTIONS =====
+    def _handle_quotation_pipeline(self, qtn_name):
+        """Team A's quotation pipeline diagnosis"""
+        result = self.scanner.handle(f"diagnose {qtn_name}")
+        if isinstance(result, dict):
+            return result
+        return {"success": True, "response": str(result)}
+        # ===== UNIFIED HANDLER =====
+    def handle(self, query: str, context: dict = None) -> dict:
+        """Unified handler - processes both team's commands"""
+        if not frappe.db:            return {
+                "success": False,
+                "error": "Frappe database not available"
+            }
+        
+        query_lower = query.lower()
+        
+        # TEAM B's commands (audit, validate, etc.)
+        if 'audit' in query_lower and ('pipeline' in query_lower or 'so-' in query_lower):
+            so_match = self._resolve_so_name(query)
+            if so_match:
+                return self._audit_pipeline(so_match.group(0))
+        
+        # TEAM A's commands (pipeline, diagnose for quotations)
+        qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
+        if qtn_match and ('pipeline' in query_lower or 'diagnose' in query_lower):
+            return self._handle_quotation_pipeline(qtn_match.group(1).upper())
+        
+        quot_match = re.search(r'(QUOT-\d+-\d+)', query, re.IGNORECASE)
+        if quot_match and ('pipeline' in query_lower or 'diagnose' in query_lower):
+            return self._handle_quotation_pipeline(quot_match.group(1).upper())
+        
+        # TEAM B's SO validation
+        so_match = self._resolve_so_name(query)
+        if so_match and ('validate' in query_lower or 'check' in query_lower):
+            # Handle SO validation
+            pass
+        
+        return {
+            "success": False,
+            "error": "No valid document ID found. Use: SAL-QTN-YYYY-NNNNN, SO-XXXXX, or audit pipeline SO-XXXXX"
+        }
+
+# For backward compatibility
+def handle_task_validator(query, context=None):
+    validator = TaskValidator()
+    return validator.handle(query, context)
+frappe@e9538cf6e4a4:~/frappe-bench$ # Cambiar TODAS las referencias al nuevo archivo unificado
+docker exec -it erpnext-backend-1 bash -c "find /home/frappe/frappe-bench/apps/raven_ai_agent -name '*.py' -exec sed -i 's/from raven_ai_agent.api.handlers.task_validator/from raven_ai_agent.agents.task_validator/g' {} \;"
+
+# Mover el archivo antiguo como backup
+docker exec -it erpnext-backend-1 bash -c "mv /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/api/handlers/task_validator.py /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/api/handlers/task_validator.py.teamB"
+bash: docker: command not found
+bash: docker: command not found
+frappe@e9538cf6e4a4:~/frappe-bench$ exit
+exit
+-bash: cd: /home/frappe/frappe-bench/apps/raven_ai_agent/raven__ai_agent/agents: No such file or directory
+cp: cannot stat 'task_validator.py': No such file or directory
+root@srv1415373:~# # Cambiar TODAS las referencias al nuevo archivo unificado
+docker exec -it erpnext-backend-1 bash -c "find /home/frappe/frappe-bench/apps/raven_ai_agent -name '*.py' -exec sed -i 's/from raven_ai_agent.api.handlers.task_validator/from raven_ai_agent.agents.task_validator/g' {} \;"
+
+# Mover el archivo antiguo como backup
+docker exec -it erpnext-backend-1 bash -c "mv /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/api/handlers/task_validator.py /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/api/handlers/task_validator.py.teamB"
+root@srv1415373:~# docker exec -it erpnext-backend-1 bash frappe@e9538cf6e4a4:~/frappe-bench$ 
+# Ir al directorio de agents
+cd /home/frappe/frappe-bench/apps/raven_ai_agent/raven_ai_agent/agents/
+
+# Crear el archivo unificado
+nano task_validator.py
+frappe@e9538cf6e4a4:~/frappe-bench/apps/raven_ai_agent/raven_ai_agent/agents$ cat task_validator.py
+# task_validator.py - Bridge to DataQualityScannerSkill
+# This file redirects pipeline commands to the actual scanner implementation
+
+from __future__ import unicode_literals
+import frappe
+from frappe import _
+import re
+from raven_ai_agent.skills.data_quality_scanner.skill import DataQualityScannerSkill
+
+class TaskValidator:
+    """Task Validator Agent - Bridges to DataQualityScannerSkill"""
+    
+    def __init__(self):
+        self.scanner = DataQualityScannerSkill()
+    
+    def handle(self, query: str, context: dict = None) -> dict:
+        """Handle task validation requests"""
+        if not frappe.db:
+            return {
+                "success": False,
+                "error": "Frappe database not available"
+            }
+        
+        query_lower = query.lower()
+        
+        # Check for SAL-QTN pattern (quotations)
+        qtn_match = re.search(r'(SAL-QTN-\d+-\d+)', query, re.IGNORECASE)
+        if qtn_match and ('pipeline' in query_lower or 'diagnose' in query_lower):
+            doc_name = qtn_match.group(1).upper()
+            # Llamar al scanner con un comando diagnose
+            result = self.scanner.handle(f"diagnose {doc_name}")
+            
+            # Si el scanner devuelve un resultado, lo formateamos
+            if isinstance(result, dict):
+                if result.get("success"):
+                    # Intentar obtener el diagnóstico formateado
+                    try:
+                        from frappe import _
+                        # Usar el método privado de formato si existe
+                        if hasattr(self.scanner, '_format_quotation_diagnosis'):
+                            formatted = self.scanner._format_quotation_diagnosis(result)
+                            return {
+                                "success": True,
+                                "response": formatted,
+                                "raw_data": result
+                            }
+                    except:
+                        pass
+                    return result
+            return {"success": True, "response": str(result)}
+        
+        # Check for QUOT pattern (alternative prefix)
+        quot_match = re.search(r'(QUOT-\d+-\d+)', query, re.IGNORECASE)
+        if quot_match and ('pipeline' in query_lower or 'diagnose' in query_lower):
+            doc_name = quot_match.group(1).upper()
+            result = self.scanner.handle(f"diagnose {doc_name}")
+            if isinstance(result, dict):
+                return result
+            return {"success": True, "response": str(result)}
+        
+        # Check for SO pattern (sales orders)
+        so_match = re.search(r'(SO-[\w-]+)', query, re.IGNORECASE)
+        if so_match:
+            doc_name = so_match.group(1).upper()
+            result = self.scanner.handle(f"diagnose {doc_name}")
+            if isinstance(result, dict):
+                return result
+            return {"success": True, "response": str(result)}
+        
+        # Para otros comandos, pasar al scanner directamente
+        result = self.scanner.handle(query)
+        if isinstance(result, dict):
+            return result
+        return {"success": True, "response": str(result)}
+
+# For backward compatibility
+def handle_task_validator(query, context=None):
+    validator = TaskValidator()
+    return validator.handle(query, context)
+frappe@e9538cf6e4a4:~/frappe-bench/apps/raven_ai_agent/raven_ai_agent/agents$ # Respaldar tu versión actual
+cp task_validator.py task_validator.py.teamA
+
+# Ahora vamos a crear la versión unificada
+nano task_validator.py
+frappe@e9538cf6e4a4:~/frappe-bench/apps/raven_ai_agent/raven_ai_agent/agents$ exit
+exit
+root@srv1415373:~# docker restart erpnext-backend-1
+erpnext-backend-1
+root@srv1415373:~# 
+*** end of unified fix example ***
+Mixing bots - what's the conflict?
+*** for example if you need a sales order diagnose, the sales bot can handle but a fixer too... 
+*** example of mix bots pointers ***
+*** end of example of mixing pointers on bots ***
+
+Which fixes are working vs skipped?
+4. New Structure Preferences
+Do you want me to:
+
+Create a new folder structure?
+Consolidate all handlers to single location?
+Add strict naming conventions?
+Create an orchestrator manifest that documents all commands?
+5. Immediate Needs
+What's the TOP 3 features that MUST work in v11.0.0?
+
+My recommendation: Give me read access to analyze the current state and I'll create a reborn architecture document with:
+
+Clean file structure
+Single source of truth for routing
+Proper separation of concerns
+Documentation standards
+What information can you provide to help me build v11.0.0?
