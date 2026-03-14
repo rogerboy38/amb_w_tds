@@ -1,219 +1,65 @@
-# Raven AI Agent Status Report
+# Raven AI Agent - Project Status
 
-**Date:** March 12, 2026
-
-## 🔑 CORE DEVELOPMENT PRINCIPLE (ALWAYS REMEMBER)
-**"Building raven_ai_agent with HIGH CLOUD CAPACITY + Raymond-Lucy-Memento-Tattoo capabilities"**
-
-This means:
-- **Cloud-native**: Scalable, distributed, always-available
-- **Raymond Protocol**: Anti-hallucination, verified data
-- **Lucy Protocol**: Context continuity, morning briefings
-- **Memento Protocol**: Persistent memory storage
-- **Tattoo System**: Permanent learning from bugs/fixes
-
-**Previous Status (March 8, 2026):** 6/6 GAPs RESOLVED | Phase 5 COMPLETE
+**Last Updated:** March 14, 2026
 
 ---
 
-## Executive Summary
+## Current Status
 
-All 6 critical GAPs identified during LORAND Master Degree Test have been resolved and deployed. Phase 5 introduced 4 smart capabilities. System validated E2E from Sales Order through Invoice.
+### ✅ Pipeline & Diagnosis Commands - FIXED
 
----
+Team A (first team) successfully fixed the pipeline routing issue:
 
-## GAPs Status (6/6 RESOLVED)
+- `@ai pipeline SAL-QTN-2024-00752` → ✅ Working
+- `@ai diagnose SAL-QTN-2024-00752` → ✅ Working
+- Full pipeline diagnosis now returns complete data including:
+  - Quotation summary (customer, date, items, total, status)
+  - Issues found (severity levels)
+  - Pipeline status
+  - Next steps
 
-| GAP | Title | Status |
-|-----|-------|--------|
-| GAP-01 | Batch Handling in Delivery Notes | RESOLVED |
-| GAP-02 | Batch Auto-Assignment (FIFO) | RESOLVED |
-| GAP-03 | Smart WO Planning with SO Allocation | RESOLVED |
-| GAP-04 | Named Batch Creation | RESOLVED |
-| GAP-05 | Auto Material Transfer | RESOLVED |
-| GAP-06 | Manufacturing Dashboard | RESOLVED |
+### Architecture
 
----
+**Working Solution:**
+1. `api/handlers/router.py` - Routes `pipeline SAL-QTN-*` to `task_validator`
+2. `agents/task_validator.py` - NEW TaskValidator agent (NOT the mixin in handlers/)
+3. `skills/data_quality_scanner/skill.py` - DataQualityScannerSkill processes the command
 
-## Phase 5 Smart Capabilities
+### Key Files
 
-1. **Auto-Assign Batches** - FIFO by expiry date
-2. **Preflight Delivery Check** - Stock/batch/QI validation
-3. **Mexico CFDI Resolution** - PUE/PPD, G01 auto-detection
-4. **Error Suggestions Engine** - Actionable recovery steps
+| File | Status | Notes |
+|------|--------|-------|
+| `agents/task_validator.py` | ✅ ACTIVE | Main TaskValidator implementation |
+| `api/handlers/task_validator.py` | ⚠️ LEGACY | Old mixin - can be deprecated |
+| `api/handlers/router.py` | ✅ ACTIVE | Routing logic |
+| `skills/data_quality_scanner/skill.py` | ✅ ACTIVE | Scanner logic |
 
----
+### Known Issues
 
-## Known Constraints
-
-1. Item 0803- has broken 'Plant Code: 1 (Mix)' link
-2. No manufacturing_bot exists - falls back to sales_order_bot
-3. SSH from sandbox to VPS times out
-4. Vector store not active
-
----
-
-## Recommended Next Steps
-
-| Priority | Item | Description |
-|----------|------|-------------|
-| HIGH | Payment Entry (Step 6) | Complete PaymentAgent for final pipeline step |
-| HIGH | Batch Transfer Fix | Ensure Material Receipt STE correctly links batch to FG |
-| MEDIUM | LORAND Smart Commands | track samples, generate samples, Mix Lot Calculator, Packaging Optimizer |
-| MEDIUM | Error Recovery Automation | Expand auto-retry logic for recoverable errors |
-| LOW | Manufacturing Bot | Create dedicated Raven bot |
-| LOW | Vector Store Activation | Enable semantic search |
+- Backup files need cleanup (multiple .backup_* files created during development)
+- There was a conflict between two development teams working in parallel:
+  - Team A: Fixed pipeline/diagnosis (this is the working solution)
+  - Team B: Worked on separate branch ("mundo paralelo")
+  - Result: Duplicate files, conflicting approaches
 
 ---
 
-## Test Artifacts (Post-Rollback)
+## Test Commands
 
-- Delivery Note: MAT-DN-2026-00005 (cancelled)
-- Sales Invoice: ACC-SINV-2026-00006 (deleted)
-- Stock Entry: MAT-STE-2026-00350 (cancelled)
-- Batch: LOTE102 (active, expiry 2028-03-06)
-
----
-
-## Commands Verified
-
-- @ai mfg status
-- @ai !delivery from SO-00763
-- @ai !invoice from SO-00763
-- @ai plan work orders for SO-00763
-
----
-
-## Latest Changes (March 12, 2026)
-
-### 🎯 PAYMENT ENTRY FIX (March 13, 2026)
-**Problem:** `payment_form` custom field is MANDATORY on Payment Entry
-**Root Cause:** Custom field `payment_form` links to `Payment Form` DocType - required for SAT compliance
-**Valid Values:** 01 (Efectivo), 02 (Cheque), 03 (Transferencia), 04 (Tarjeta), 28 (Otros)
-**Solution:** Add `payment_form` field when creating Payment Entry
-**Status:** ✅ COMPLETE - Full E2E pipeline tested!
-
-**Final E2E Test (March 13, 2026):**
-- Sales Order: SO-00752 (LEGOSAN AB)
-- Sales Invoice: ACC-SINV-2026-00001
-- Payment Entry: ACC-PAY-2026-00010 (CREATED & SUBMITTED)
-- Amount: 257,989.09 MXN
-- Mode: Wire Transfer
-- All 8 pipeline steps verified ✅
-
-Commands:
-- `@ai create payment for ACC-SINV-2026-00001` (defaults to form 01)
-- `@ai create payment for ACC-SINV-2026-00001 form 03` (Transferencia)
-- `@payment submit ACC-PAY-2026-00010` (submit the payment)
-
-**Regex Fixes Applied:**
-- ACC-SINV pattern: `r'ACC-SINV-\d+-\d+'` (was truncating at year)
-- ACC-PAY pattern: `r'ACC-PAY-\d+-\d+'` (was truncating at year)
-
-### 📋 Pipeline Diagnostic Script Added
-**File:** `/raven_ai_agent/scripts/pipeline_diagnostic.py`
-**Features:**
-- Complete validation of Sales Invoice & Payment Entry
-- GL Entries verification & balance check
-- Customer Party Account validation
-- Exchange rate difference detection (multi-currency)
-- Data Quality Scanner integration test
-- Executive summary with pass/fail status
-
-**Usage in bench console:**
-```python
-from raven_ai_agent.scripts.pipeline_diagnostic import run_full_pipeline_diagnostic
-run_full_pipeline_diagnostic("ACC-SINV-2026-00001", "ACC-PAY-2026-00010")
+```
+@ai pipeline SAL-QTN-2024-00752
+@ai diagnose SAL-QTN-2024-00752  
+@ai scan SAL-QTN-2024-00752
 ```
 
-### 📋 Quotation Diagnostics Added (March 13, 2026)
-**Features:**
-- New patterns for Quotation detection: `QUOT-2026-XXXXX`, `SAL-QTN-XXXXX`
-- Full pipeline diagnosis for Quotations: status, items, customer, next steps
-- Smart recommendations based on Quotation status (Draft → Submit → Convert → SO)
+---
 
-**New Commands:**
-- `@ai scan QUOT-2026-00001` - Scan a Quotation for data quality issues
-- `@ai diagnose pipeline of quotation QUOT-2026-00001` - Full pipeline diagnosis
-- `@ai diagnose quotation QUOT-2026-00001` - Quotation diagnosis
+## Recent History
 
-**Files Modified:**
-- `/raven_ai_agent/api/router.py` - Added Quotation routing patterns
-- `/raven_ai_agent/skills/data_quality_scanner/skill.py` - Added Quotation support
-
-### 📋 Batch Party Account Creator (March 13, 2026)
-**Problem:** 303 of 310 customers (97.7%) use generic account instead of specific Party Accounts
-
-**Solution:** Batch script to create Party Accounts automatically
-
-**Features:**
-- Smart account selection based on customer type (Nacional/Extranjero)
-- Dry-run support to preview changes before execution
-- Raven AI commands for easy execution
-- Status reporting with coverage metrics
-
-**Raven Commands:**
-- `@ai create party accounts` - Create all missing Party Accounts
-- `@ai create party accounts dry-run` - Preview what would be created
-- `@ai check party accounts` - Show status of Party Accounts
-
-**Files Added:**
-- `/raven_ai_agent/scripts/batch_party_account_creator.py` - Batch creation script
-- `/raven_ai_agent/api/router.py` - Added Party Account routing
-- `/raven_ai_agent/api/handlers/task_validator.py` - Added command handler
+- 2026-03-13: Pipeline routing issue identified
+- 2026-03-14: Team A fixed the issue - confirmed working via bench console test
+- 2026-03-14: Pulled changes to workspace, audited the solution
 
 ---
 
-### 🎯 PHASE 1 COMPLETE: Data Quality Scanner Skill
-**Created:** `/raven_ai_agent/skills/data_quality_scanner/skill.py`
-**Features:** 7 validation types, confidence scoring, memory integration, Raven commands
-
-**Test Plan:** `/docs/test_plan_data_quality_scanner.md`
-
-### 🎯 NEXT: PHASE 1 DEPLOY & TEST
-- Push to Git → Deploy to VPS → Test in Raven channel
-
-**Key Findings from Bug Pattern Analysis:**
-- 60% of bugs: Data quality (addresses, accounts, CFDI fields)
-- 25% of bugs: Code quality (syntax, field mismatches)
-- 15% of bugs: Workflow logic (idempotency, validation)
-
-**3-Week Implementation Plan:**
-- Week 1: Data Quality Scanner skill
-- Week 2: Self-Healing Fixer skill  
-- Week 3: Confidence-Aware Execution
-
-**Expected Impact:**
-- 80% reduction in bugs per deployment
-- 83% faster time to fix issues
-- 70% auto-fix rate (less user intervention)
-- 2x development velocity
-
-**Documentation:**
-- `/docs/intelligent_development_proposal.md` - Full analysis & proposal
-- `/docs/implementation_roadmap.md` - 3-week sprint plan
-
-### Previous Updates (March 11, 2026)
-
-### Generic BatchOrchestrator Implemented
-- Created `batch_orchestrator.py` - a smart batch processor that delegates to existing pipelines
-- Architecture: Generic "batcher" that calls existing tested pipelines/agents (as user requested)
-- Supported operations:
-  - `@batch create invoices for to bill` - Create SIs for To Bill orders with DN
-  - `@batch create delivery for to deliver` - Create DNs for To Deliver orders
-  - `@batch run pipeline for overdue` - Execute full 8-step pipeline for overdue SOs
-  - `@batch status for [criteria]` - Get pipeline status for multiple SOs
-- Criteria: to bill, to deliver, overdue, or explicit SO names
-- Added routing in agent.py for @batch commands
-- Pushed to main: commit 9331302
-
-### Plant Code Migration Complete
-- Custom Field Item-custom_plant_code1 changed from Link to Select type
-- New options: Mix, Dry, Juice, Laboratory, Formulated
-- All items migrated from old codes (1, 2, 3, 4, 5) to new names
-
-### Code Updates Pushed
-- Added PLANT_CODE_MAP and get_plant_name() in reader.py
-- Updated parse_golden_number() to return plant names
-- Updated tests.py to expect new plant names
-- Fixed regex patterns in manufacturing_agent.py
+**Memory maintained by:** MiniMax Agent
