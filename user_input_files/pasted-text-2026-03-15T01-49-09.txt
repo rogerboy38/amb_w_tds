@@ -1,0 +1,132 @@
+In [1]: from raven_ai_agent.api.handlers.router import _detect_ai_intent
+   ...: print(_detect_ai_intent("scan SAL-QTN-2024-00752"))  # Debe mostrar: task_validator
+task_validator
+
+In [2]: # En la consola de bench
+   ...: from raven_ai_agent.api.handlers.router import _detect_ai_intent
+   ...: 
+   ...: # Ver qué patrones coinciden
+   ...: query = "pipeline SAL-QTN-2024-00752"
+   ...: print(_detect_ai_intent(query))
+task_validator
+
+In [3]: # En consola de bench
+   ...: import frappe
+   ...: 
+   ...: # Deshabilitar sales_order_bot
+   ...: sales_bot = frappe.get_doc("Raven Bot", "sales_order_bot")
+   ...: sales_bot.enabled = 0
+   ...: sales_bot.save()
+   ...: frappe.db.commit()
+   ...: print("✅ sales_order_bot deshabilitado")
+
+✅ sales_order_bot deshabilitado
+
+In [4]: 
+
+   ...:         print(f"  Estado: {status}")
+   ...: 
+   ...:         if status == "✅" and 'response' in result:
+   ...:             preview = result['response'][:150].replace('\n', ' ')
+   ...:             print(f"  Respuesta: {preview}...")
+   ...: 
+   ...:     except Exception as e:
+   ...:         print(f"\n{desc:<30} → ERROR")
+   ...:         print(f"  Comando: {query}")
+   ...:         print(f"  Error: {str(e)[:100]}")
+   ...: 
+   ...: # ============================================================
+   ...: # 4. RESUMEN DE RESULTADOS
+   ...: # ============================================================
+   ...: print("\n" + "=" * 80)
+   ...: print("📊 RESUMEN DE RESULTADOS")
+   ...: print("=" * 80)
+   ...: 
+   ...: total_tests = sum(resultados.values())
+   ...: print(f"\nTotal de pruebas de router: {total_tests}")
+   ...: print(f"✅ Exitosas: {resultados.get('✅', 0)}")
+   ...: print(f"❌ Fallidas: {resultados.get('❌', 0)}")
+   ...: print(f"⚠️ Errores: {resultados.get('⚠️', 0)}")
+   ...: 
+   ...: porcentaje_exito = (resultados.get('✅', 0) / total_tests * 100) if total_tests > 0 else 0
+   ...: print(f"\n🎯 Tasa de éxito: {porcentaje_exito:.1f}%")
+   ...: 
+   ...: print("\n" + "=" * 80)
+   ...: print("✅ PRUEBAS COMPLETADAS")
+   ...: print("=" * 80)
+================================================================================
+🔬 INICIANDO PRUEBAS INTEGRALES
+================================================================================
+
+📋 1. PRUEBAS DEL ROUTER
+------------------------------------------------------------
+Comando                                  Esperado             Obtenido             Estado    
+------------------------------------------------------------------------------------------
+pipeline SAL-QTN-2024-00752              task_validator       task_validator       ✅         
+diagnose SAL-QTN-2024-00752              task_validator       task_validator       ✅         
+scan SAL-QTN-2024-00752                  task_validator       task_validator       ✅         
+validate SAL-QTN-2024-00763              task_validator       task_validator       ✅         
+check data SAL-QTN-2024-00763            task_validator       sales_order_bot      ❌         
+scan SO-00767-BARENTZ Italia             sales_order_follow_up sales_order_follow_up ✅         
+validate SO-00769-COSMETILAB 18          sales_order_follow_up sales_order_follow_up ✅         
+check data SO-00767-BARENTZ Italia       sales_order_follow_up sales_order_follow_up ✅         
+scan ACC-SINV-2026-00070                 payment_bot          payment_bot          ✅         
+validate ACC-SINV-2026-00070             payment_bot          task_validator       ❌         
+help scan                                sales_order_bot      sales_order_bot      ✅         
+help diagnose                            sales_order_bot      task_validator       ❌         
+
+
+📋 2. PRUEBAS DEL TASK VALIDATOR
+------------------------------------------------------------
+Comando                                  Tipo                      Resultado 
+--------------------------------------------------------------------------------
+pipeline SAL-QTN-2024-00752              Diagnóstico de cotización ✅         
+      📄 {'handled': True, 'response': "## 📋 Quotation: SAL-QTN-2024-00752\n\n### 📊 Summary\n| Metric | Value...
+diagnose SAL-QTN-2024-00752              Diagnóstico de cotización ✅         
+      📄 {'handled': True, 'response': "## 📋 Quotation: SAL-QTN-2024-00752\n\n### 📊 Summary\n| Metric | Value...
+scan SAL-QTN-2024-00752                  Escaneo de cotización     ❌         
+validate SAL-QTN-2024-00763              Validación de cotización  ❌         
+
+
+📋 3. PRUEBAS DE COMANDOS ESPECÍFICOS
+------------------------------------------------------------
+
+Sales Order Barentz            → sales_order_follow_up
+  Comando: scan SO-00767-BARENTZ Italia
+  Estado: ⏩
+
+Sales Order Cosmetilab         → sales_order_follow_up
+  Comando: validate SO-00769-COSMETILAB 18
+  Estado: ⏩
+
+Sales Order Barentz            → sales_order_follow_up
+  Comando: check data SO-00767-BARENTZ Italia
+  Estado: ⏩
+
+Sales Invoice                  → payment_bot
+  Comando: scan ACC-SINV-2026-00070
+  Estado: ⏩
+
+Sales Invoice                  → task_validator
+  Comando: validate ACC-SINV-2026-00070
+  Estado: ❌
+
+Quotation alternate            → sales_order_bot
+  Comando: check data SAL-QTN-2024-00763
+  Estado: ⏩
+
+================================================================================
+📊 RESUMEN DE RESULTADOS
+================================================================================
+
+Total de pruebas de router: 12
+✅ Exitosas: 9
+❌ Fallidas: 3
+⚠️ Errores: 0
+
+🎯 Tasa de éxito: 75.0%
+
+================================================================================
+✅ PRUEBAS COMPLETADAS
+================================================================================
+
