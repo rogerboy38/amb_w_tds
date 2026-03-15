@@ -457,9 +457,9 @@ def handle_raven_message(doc, method):
 
             # === SCANNER/DATA QUALITY commands - route to SkillRouter (before SO check) ===
             scanner_keywords = [
-                "scan", "validate", "check data", "pre-flight", "preflight",
+                "scan", "pre-flight", "preflight",
                 "quality check", "check address", "check account", "check invoice",
-                "verificar", "diagnose"
+                "verificar"
             ]
             
             # DEBUG: Log the query and matching
