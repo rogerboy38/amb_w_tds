@@ -21,6 +21,9 @@ doctype_class = {
 
 doctype_js = {
     "Quotation": "amb_w_tds/amb_w_tds/doctype/batch_amb/quotation_sample_request.js",
+    "Lead": "amb_w_tds/amb_w_tds/doctype/batch_amb/lead_sample_request.js",
+    "Prospect": "amb_w_tds/amb_w_tds/doctype/batch_amb/prospect_sample_request.js",
+    "Opportunity": "amb_w_tds/amb_w_tds/doctype/batch_amb/opportunity_sample_request.js",
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
     "Work Order": "public/js/work_order_list.js", 

@@ -1948,3 +1948,202 @@ def get_sample_request_from_quotation(quotation_name):
             "success": False,
             "message": str(e)
         }
+
+
+# ==================== SAMPLE REQUEST FROM LEAD ==================== 
+
+
+@frappe.whitelist()
+def create_sample_request_from_lead(lead_name):
+    """Create Sample Request from Lead"""
+    try:
+        lead = frappe.get_doc("Lead", lead_name)
+        
+        # Check if sample request already exists
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"party_type": "Lead", "party": lead_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            return {
+                "success": True,
+                "action": "open",
+                "sample_request": existing,
+                "message": f"Opening existing Sample Request: {existing}"
+            }
+        
+        # Create new sample request
+        sample_request = frappe.new_doc("Sample Request AMB")
+        sample_request.party_type = "Lead"
+        sample_request.party = lead_name
+        sample_request.request_type = "Prospect"
+        sample_request.request_date = frappe.utils.nowdate()
+        
+        # Get customer name from lead
+        if lead.lead_name:
+            sample_request.customer_name = lead.lead_name
+        
+        # Get contact info from lead
+        if lead.phone:
+            sample_request.phone = lead.phone
+        if lead.email_id:
+            sample_request.email = lead.email_id
+        
+        # Get address from lead
+        if lead.address_title:
+            sample_request.address = lead.address_title
+        if lead.city:
+            sample_request.city = lead.city
+        if lead.state:
+            sample_request.state = lead.state
+        if lead.country:
+            sample_request.country = lead.country
+        if lead.pincode:
+            sample_request.postal_code = lead.pincode
+        
+        sample_request.insert()
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "action": "create",
+            "sample_request": sample_request.name,
+            "message": f"Created Sample Request: {sample_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Sample Request from Lead Error: {str(e)}")
+        return {"success": False, "message": str(e)}
+
+
+# ==================== SAMPLE REQUEST FROM PROSPECT ==================== 
+
+
+@frappe.whitelist()
+def create_sample_request_from_prospect(prospect_name):
+    """Create Sample Request from Prospect"""
+    try:
+        prospect = frappe.get_doc("Prospect", prospect_name)
+        
+        # Check if sample request already exists
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"party_type": "Prospect", "party": prospect_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            return {
+                "success": True,
+                "action": "open",
+                "sample_request": existing,
+                "message": f"Opening existing Sample Request: {existing}"
+            }
+        
+        # Create new sample request
+        sample_request = frappe.new_doc("Sample Request AMB")
+        sample_request.party_type = "Prospect"
+        sample_request.party = prospect_name
+        sample_request.request_type = "Prospect"
+        sample_request.request_date = frappe.utils.nowdate()
+        
+        # Get customer name from prospect
+        if prospect.company_name:
+            sample_request.customer_name = prospect.company_name
+        
+        sample_request.insert()
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "action": "create",
+            "sample_request": sample_request.name,
+            "message": f"Created Sample Request: {sample_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Sample Request from Prospect Error: {str(e)}")
+        return {"success": False, "message": str(e)}
+
+
+# ==================== SAMPLE REQUEST FROM OPPORTUNITY ==================== 
+
+
+@frappe.whitelist()
+def create_sample_request_from_opportunity(opportunity_name):
+    """Create Sample Request from Opportunity"""
+    try:
+        opportunity = frappe.get_doc("Opportunity", opportunity_name)
+        
+        # Check if sample request already exists
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"party_type": "Customer", "party": opportunity.customer_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            return {
+                "success": True,
+                "action": "open",
+                "sample_request": existing,
+                "message": f"Opening existing Sample Request: {existing}"
+            }
+        
+        # Create new sample request
+        sample_request = frappe.new_doc("Sample Request AMB")
+        sample_request.request_type = "Prospect"
+        sample_request.request_date = frappe.utils.nowdate()
+        
+        # Get customer from opportunity
+        if opportunity.customer:
+            sample_request.customer = opportunity.customer
+            sample_request.customer_name = frappe.db.get_value("Customer", opportunity.customer, "customer_name")
+        elif opportunity.party_name:
+            sample_request.customer_name = opportunity.party_name
+        
+        # Get contact and address from opportunity
+        if opportunity.contact_person:
+            sample_request.contact_person = opportunity.contact_person
+            contact = frappe.get_doc("Contact", opportunity.contact_person)
+            if contact.phone:
+                sample_request.phone = contact.phone
+            if contact.email_id:
+                sample_request.email = contact.email_id
+        
+        if opportunity.customer_address:
+            sample_request.address = opportunity.customer_address
+            address = frappe.get_doc("Address", opportunity.customer_address)
+            if address:
+                sample_request.city = address.city
+                sample_request.state = address.state
+                sample_request.postal_code = address.pincode
+                if address.country:
+                    sample_request.country = address.country
+        
+        # Add items from opportunity as sample lines
+        for item in opportunity.items:
+            sample_line = sample_request.append("samples", {})
+            sample_line.item = item.item_code
+            sample_line.description = item.description or item.item_name
+            sample_line.qty = item.qty
+            sample_line.uom = item.uom
+        
+        sample_request.insert()
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "action": "create",
+            "sample_request": sample_request.name,
+            "message": f"Created Sample Request: {sample_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Sample Request from Opportunity Error: {str(e)}")
+        return {"success": False, "message": str(e)}
