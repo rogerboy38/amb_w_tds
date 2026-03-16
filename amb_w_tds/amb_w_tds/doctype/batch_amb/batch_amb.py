@@ -374,10 +374,14 @@ class BatchAMB(NestedSet):
         self.title = base_golden_number
 
         # Decompose golden number into component fields
-        self.custom_product_family = product_code  # PP (first 4 digits)
+        # product_code is 4 digits: e.g., "0334"
+        # Product Family = first 2 digits: "03"
+        # Subfamily = last 2 digits: "34"
+        self.custom_product_family = product_code[:2] or "00"      # First 2 digits = Family
         self.custom_consecutive = consecutive  # AAA (3 digits from WO)
-        self.custom_subfamily = year + plant_code  # SS (year + plant)
+        self.custom_subfamily = product_code[2:4] or "00"          # Last 2 digits = Subfamily
         print(f"✅ Generated Golden Number: {base_golden_number}")
+        print(f"   Product Family: {self.custom_product_family}, Subfamily: {self.custom_subfamily}")
 
     def update_container_sequence(self):
         """Update container sequence"""
