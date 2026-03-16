@@ -15,7 +15,27 @@ frappe.ui.form.on('Batch AMB', {
         apply_field_filters(frm);
         setup_field_dependencies(frm);
         show_status_indicators(frm);
-        
+
+        #
+       // existing refresh code...
+
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("New Sample Request"), () => {
+                frappe.call({
+                    method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_batch",
+                    args: { batch_name: frm.doc.name },
+                    freeze: true,
+                    freeze_message: __("Creating Sample Request..."),
+                    callback(r) {
+                        if (!r.exc && r.message) {
+                            frappe.set_route("Form", "Sample Request AMB", r.message);
+                        }
+                    }
+                });
+            }, __("Create"));
+        }
+
+        #
         // BatchL2 enhancements
         if (should_auto_generate(frm)) {
             generate_batch_code(frm);
@@ -35,6 +55,7 @@ frappe.ui.form.on('Batch AMB', {
         add_debug_button(frm);
     },
     
+
     onload: function(frm) {
         console.log('📥 Batch AMB Onload for:', frm.doc.name);
 

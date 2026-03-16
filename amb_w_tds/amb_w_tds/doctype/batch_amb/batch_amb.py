@@ -1681,6 +1681,38 @@ def get_work_orders_for_sales_order(sales_order):
         return {"success": False, "message": str(e)}
 
 
+
+
+    @frappe.whitelist()
+    def make_sample_request(self):
+        """Create a Sample Request AMB pre-filled from this batch."""
+        doc = frappe.new_doc("Sample Request AMB")
+        doc.request_type = "External Analysis"
+        doc.request_date = frappe.utils.nowdate()
+
+        # Optional: map customer if your Batch AMB has it
+        if self.customer:
+            doc.customer = self.customer
+            doc.customer_name = frappe.db.get_value("Customer", self.customer, "customer_name")
+
+        # Add one sample line for this batch
+        item_row = doc.append("samples", {})
+        item_row.item = self.item  # adapt to your fieldnames
+        item_row.description = self.item_name or ""
+        item_row.batch = self.name  # Batch name
+        item_row.samples_count = 1
+        item_row.qty_per_sample = 1
+        item_row.uom = self.stock_uom  # adapt if different
+
+        doc.flags.ignore_mandatory = True
+        doc.insert(ignore_permissions=True)
+
+        return doc.name
+
+#
+
+#
+
 @frappe.whitelist()
 def get_quick_entry_defaults(work_order_name):
     """
