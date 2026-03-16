@@ -78,6 +78,23 @@
       "fieldtype": "Data",
       "label": "Customer PO / Orden de Compra"
     },
+    {
+      "fieldname": "batch_reference",
+      "fieldtype": "Link",
+      "label": "Batch Reference",
+      "options": "Batch AMB"
+    },
+    {
+      "fieldname": "item",
+      "fieldtype": "Link",
+      "label": "Item / Producto",
+      "options": "Item"
+    },
+    {
+      "fieldname": "batch_quantity",
+      "fieldtype": "Float",
+      "label": "Batch Quantity"
+    },
 
     {
       "fieldname": "section_contact",

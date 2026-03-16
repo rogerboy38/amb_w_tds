@@ -120,8 +120,7 @@ frappe.ui.form.on('Batch AMB', {
             fetch_work_order_data(frm);
         }
     },
-        // ADD THESE TWO EVENTS TO THE FIELD EVENTS SECTION:
-    
+
     title: function(frm) {
         // When title is set, update barrel serials
         if (frm.doc.title && frm.doc.container_barrels) {
@@ -878,6 +877,33 @@ function setup_custom_buttons(frm) {
             frappe.set_route('Form', 'Lote AMB', frm.doc.lote_amb_reference);
         }, view_group);
     }
+    
+    // Sample Request button
+    frm.add_custom_button(__('Sample Request'), function() {
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.create_sample_request',
+            args: { batch_name: frm.doc.name },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    frappe.show_alert({
+                        message: __(r.message.message),
+                        indicator: 'green'
+                    });
+                    if (r.message.action === 'open') {
+                        frappe.set_route('Form', 'Sample Request AMB', r.message.sample_request);
+                    } else {
+                        frappe.set_route('Form', 'Sample Request AMB', r.message.sample_request);
+                    }
+                } else {
+                    frappe.msgprint({
+                        title: __('Error'),
+                        message: r.message ? r.message.message : __('Failed to create sample request'),
+                        indicator: 'red'
+                    });
+                }
+            }
+        });
+    }, actions_group);
     
     console.log('✅ Custom buttons setup completed');
 }
