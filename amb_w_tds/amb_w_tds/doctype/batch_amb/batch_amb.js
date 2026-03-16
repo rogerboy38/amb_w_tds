@@ -16,7 +16,7 @@ frappe.ui.form.on('Batch AMB', {
         setup_field_dependencies(frm);
         show_status_indicators(frm);
 
-        #
+        
        // existing refresh code...
 
         if (!frm.is_new()) {
@@ -35,7 +35,7 @@ frappe.ui.form.on('Batch AMB', {
             }, __("Create"));
         }
 
-        #
+        
         // BatchL2 enhancements
         if (should_auto_generate(frm)) {
             generate_batch_code(frm);
