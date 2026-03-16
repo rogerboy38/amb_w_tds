@@ -1836,3 +1836,115 @@ def get_sample_request(batch_name):
             "success": False,
             "message": str(e)
         }
+
+
+# ==================== SAMPLE REQUEST FROM QUOTATION ==================== 
+
+
+@frappe.whitelist()
+def create_sample_request_from_quotation(quotation_name):
+    """Create Sample Request from Quotation - for the Sample Request button on Quotation form"""
+    try:
+        quotation = frappe.get_doc("Quotation", quotation_name)
+        
+        # Check if sample request already exists for this quotation
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"quotation": quotation_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            # Open existing sample request
+            return {
+                "success": True,
+                "action": "open",
+                "sample_request": existing,
+                "message": f"Opening existing Sample Request: {existing}"
+            }
+        
+        # Create new sample request
+        sample_request = frappe.new_doc("Sample Request AMB")
+        sample_request.quotation = quotation_name
+        sample_request.request_type = "Pre-sample Approved"
+        sample_request.request_date = frappe.utils.nowdate()
+        
+        # Get customer from quotation
+        if quotation.party_name:
+            sample_request.customer = quotation.party_name
+            sample_request.customer_name = frappe.db.get_value("Customer", quotation.party_name, "customer_name")
+        
+        # Get contact and address from quotation
+        if quotation.contact_person:
+            sample_request.contact_person = quotation.contact_person
+            contact = frappe.get_doc("Contact", quotation.contact_person)
+            if contact.phone:
+                sample_request.phone = contact.phone
+            if contact.email_id:
+                sample_request.email = contact.email_id
+        
+        if quotation.customer_address:
+            sample_request.address = quotation.customer_address
+            address = frappe.get_doc("Address", quotation.customer_address)
+            if address:
+                sample_request.city = address.city
+                sample_request.state = address.state
+                sample_request.postal_code = address.pincode
+                if address.country:
+                    sample_request.country = address.country
+        
+        # Add items from quotation as sample lines
+        total_qty = 0
+        for item in quotation.items:
+            sample_line = sample_request.append("samples", {})
+            sample_line.item = item.item_code
+            sample_line.description = item.description or item.item_name
+            sample_line.qty = item.qty
+            sample_line.uom = item.uom
+            total_qty += item.qty
+        
+        sample_request.batch_quantity = total_qty
+        
+        sample_request.insert()
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "action": "create",
+            "sample_request": sample_request.name,
+            "message": f"Created Sample Request: {sample_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Sample Request from Quotation Error: {str(e)}")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def get_sample_request_from_quotation(quotation_name):
+    """Get Sample Request for this quotation if exists"""
+    try:
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"quotation": quotation_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            return {
+                "success": True,
+                "sample_request": existing
+            }
+        
+        return {
+            "success": False,
+            "message": "No sample request found"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }

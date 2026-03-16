@@ -20,6 +20,7 @@ doctype_class = {
 # ========================================
 
 doctype_js = {
+    "Quotation": "amb_w_tds/amb_w_tds/doctype/batch_amb/quotation_sample_request.js",
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
     "Work Order": "public/js/work_order_list.js", 
