@@ -1,0 +1,558 @@
+"""
+Agent Core Engine for BOM Creator Agent v9.2.0
+
+Main orchestration engine for multi-level BOM generation.
+"""
+
+import os
+import json
+import time
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+from .data_contracts import ParsedSpec, PlannedItem, PlannedBOM, GenerationReport, BOMItem
+from .parser import ProductSpecificationParser
+from .templates import MasterTemplateDB
+from .erpnext_client import ItemAndBOMService
+from .validators import ValidationRulesEngine, ValidationError
+
+
+class AgentCoreEngine:
+    """
+    Core engine for BOM Creator Agent.
+    
+    Orchestrates the full BOM generation process:
+    1. Parse specification
+    2. Load template
+    3. Plan items and BOMs
+    4. Validate plan
+    5. Execute (create items and BOMs)
+    6. Return report
+    """
+    
+    def __init__(
+        self,
+        templates_dir: Optional[str] = None,
+        rules_file: Optional[str] = None,
+        company: Optional[str] = None
+    ):
+        """
+        Initialize the engine.
+        
+        Args:
+            templates_dir: Path to templates directory
+            rules_file: Path to business_rules.json
+            company: Company for item/BOM creation
+        """
+        self.parser = ProductSpecificationParser()
+        self.templates = MasterTemplateDB(templates_dir)
+        self.erpnext = ItemAndBOMService(company)
+        self.validator = ValidationRulesEngine(rules_file)
+    
+    def generate(
+        self,
+        spec: ParsedSpec,
+        dry_run: bool = False
+    ) -> GenerationReport:
+        """
+        Generate multi-level BOM from specification.
+        
+        Args:
+            spec: Parsed product specification
+            dry_run: If True, plan but don't create in database
+            
+        Returns:
+            GenerationReport with results
+        """
+        start_time = time.time()
+        
+        items_created = []
+        items_reused = []
+        boms_created = []
+        boms_reused = []
+        errors = []
+        warnings = []
+        
+        try:
+            # 1. Load template
+            template = self.templates.get_template(spec.family)
+            
+            # 2. Plan items and BOMs
+            planned_items, planned_boms = self._plan_hierarchy(spec, template)
+            
+            # 3. Validate plan
+            plan = {
+                "spec": spec.to_dict(),
+                "items": [i.to_dict() for i in planned_items],
+                "boms": [b.to_dict() for b in planned_boms]
+            }
+            
+            validation_errors = self.validator.validate_plan(plan)
+            
+            for ve in validation_errors:
+                if ve.severity == "ERROR":
+                    errors.append(ve.to_dict())
+                else:
+                    warnings.append(ve.to_dict())
+            
+            # Stop if there are validation errors
+            if errors and not dry_run:
+                return GenerationReport(
+                    success=False,
+                    spec=spec,
+                    items_created=[],
+                    items_reused=[],
+                    boms_created=[],
+                    boms_reused=[],
+                    errors=errors,
+                    warnings=warnings,
+                    dry_run=dry_run,
+                    execution_time_seconds=time.time() - start_time
+                )
+            
+            # 4. Execute (if not dry run)
+            if not dry_run:
+                items_created, items_reused = self._create_items(planned_items)
+                boms_created, boms_reused = self._create_boms(planned_boms)
+            else:
+                # In dry run, just report what would be created
+                for item in planned_items:
+                    if item.already_exists:
+                        items_reused.append(item.item_code)
+                    else:
+                        items_created.append(item.item_code)
+                
+                for bom in planned_boms:
+                    if bom.already_exists:
+                        boms_reused.append(bom.item_code)
+                    else:
+                        boms_created.append(bom.item_code)
+            
+            return GenerationReport(
+                success=True,
+                spec=spec,
+                items_created=items_created,
+                items_reused=items_reused,
+                boms_created=boms_created,
+                boms_reused=boms_reused,
+                errors=errors,
+                warnings=warnings,
+                dry_run=dry_run,
+                execution_time_seconds=time.time() - start_time
+            )
+            
+        except Exception as e:
+            errors.append({
+                "rule_id": "SYSTEM",
+                "rule_name": "System Error",
+                "message": str(e),
+                "severity": "ERROR",
+                "context": {}
+            })
+            
+            return GenerationReport(
+                success=False,
+                spec=spec,
+                items_created=items_created,
+                items_reused=items_reused,
+                boms_created=boms_created,
+                boms_reused=boms_reused,
+                errors=errors,
+                warnings=warnings,
+                dry_run=dry_run,
+                execution_time_seconds=time.time() - start_time
+            )
+    
+    def _plan_hierarchy(
+        self,
+        spec: ParsedSpec,
+        template: Dict[str, Any]
+    ) -> tuple:
+        """
+        Plan the item and BOM hierarchy based on template.
+        
+        Args:
+            spec: Parsed specification
+            template: Master template for this family
+            
+        Returns:
+            Tuple of (planned_items, planned_boms)
+        """
+        planned_items: List[PlannedItem] = []
+        planned_boms: List[PlannedBOM] = []
+        
+        steps = template.get("steps", [])
+        previous_output = None
+        
+        for step in steps:
+            step_num = step.get("step_number", 0)
+            step_name = step.get("step_name", f"Step{step_num}")
+            process_type = step.get("process_type", step_name.lower())
+            
+            # Generate output item code for this step
+            output_item = self._generate_step_output_item(spec, step, step_num)
+            
+            # Check if item already exists
+            item_exists = self.erpnext.item_exists(output_item["item_code"])
+            
+            planned_items.append(PlannedItem(
+                item_code=output_item["item_code"],
+                item_name=output_item["item_name"],
+                item_group=output_item["item_group"],
+                stock_uom=output_item["stock_uom"],
+                already_exists=item_exists
+            ))
+            
+            # Plan BOM for this step
+            bom_items = self._plan_bom_items(spec, step, previous_output)
+            
+            # Check if BOM already exists
+            bom_exists = self.erpnext.bom_exists(output_item["item_code"])
+            
+            planned_boms.append(PlannedBOM(
+                item_code=output_item["item_code"],
+                bom_items=bom_items,
+                operations=step.get("operations", []),
+                yield_pct=step.get("yield_percentage", 1.0),
+                already_exists=bom_exists,
+                step_number=step_num,
+                process_type=process_type
+            ))
+            
+            previous_output = output_item["item_code"]
+        
+        # Plan final FG item
+        fg_item = self._generate_fg_item(spec)
+        fg_exists = self.erpnext.item_exists(fg_item["item_code"])
+        
+        planned_items.append(PlannedItem(
+            item_code=fg_item["item_code"],
+            item_name=fg_item["item_name"],
+            item_group=fg_item["item_group"],
+            stock_uom=fg_item["stock_uom"],
+            already_exists=fg_exists
+        ))
+        
+        # Plan FG BOM (uses last step output + container if applicable)
+        fg_bom_items = [BOMItem(
+            item_code=previous_output,
+            qty=1.0,
+            uom=spec.target_uom,
+            bom_no=self.erpnext.get_default_bom(previous_output)
+        )]
+        
+        # Add container item if specified (e.g., E011 for IBC Container)
+        # Use "Piece" UOM which allows fractions
+        # Qty is calculated: container_qty_per_kg (e.g., 0.000926 for 1080Kg IBC)
+        # When producing 2000 Kg: 2000 × 0.000926 = 1.85 containers
+        if spec.container_item and spec.container_qty_per_kg > 0:
+            fg_bom_items.append(BOMItem(
+                item_code=spec.container_item,
+                qty=spec.container_qty_per_kg,  # Fraction per Kg
+                uom="Piece"
+            ))
+        
+        fg_bom_exists = self.erpnext.bom_exists(fg_item["item_code"])
+        
+        planned_boms.append(PlannedBOM(
+            item_code=fg_item["item_code"],
+            bom_items=fg_bom_items,
+            operations=[],
+            yield_pct=0.99,  # Packing yield
+            already_exists=fg_bom_exists,
+            step_number=len(steps) + 1,
+            process_type="packing"
+        ))
+        
+        return planned_items, planned_boms
+    
+    def _generate_step_output_item(
+        self,
+        spec: ParsedSpec,
+        step: Dict[str, Any],
+        step_num: int
+    ) -> Dict[str, Any]:
+        """Generate item details for a step's output."""
+        step_name = step.get("step_name", f"STEP{step_num}").upper().replace(" ", "-")
+        
+        # SFG naming: SFG-{FAMILY}-STEP{N}-{PROCESS}
+        item_code = f"SFG-{spec.family}-STEP{step_num}-{step_name}"
+        
+        return {
+            "item_code": item_code,
+            "item_name": f"{spec.family} {step_name} (Step {step_num})",
+            "item_group": "SFG Semi Finished Goods",
+            "stock_uom": step.get("output_uom", "Kg")
+        }
+    
+    def _generate_fg_item(self, spec: ParsedSpec) -> Dict[str, Any]:
+        """Generate finished goods item details.
+        
+        FG naming pattern: {FAMILY}-{ATTRIBUTE}-{VARIANT}-{PACKAGING}
+        Where ATTRIBUTE = certification code (ORG, FT, KOS, etc.)
+        
+        Phase 7: Customer-specific naming pattern support.
+        If customer_code is set and a rule exists, use the rule's pattern.
+        
+        Examples:
+        - 0227-FT-30X-1000L-IBC
+        - 0227-ORG-10X-200L-DRUM
+        - 0307-KOS-200X-25KG-BAG
+        - 0227-XYZ-30X-1000L-IBC (customer XYZ pattern)
+        """
+        # Phase 7: Check for customer-specific naming rule
+        customer_rule = self._get_customer_naming_rule(spec.customer_code)
+        
+        if customer_rule:
+            item_code = self._apply_customer_pattern(spec, customer_rule)
+        else:
+            # Default naming pattern
+            parts = [spec.family]
+            
+            # Add certification/attribute (e.g., FT, ORG, KOS)
+            if spec.attribute:
+                parts.append(spec.attribute)
+            
+            # Add variant (concentration ratio, e.g., 30X, 200X)
+            if spec.variant:
+                parts.append(spec.variant)
+            
+            # Phase 7: Add mesh size for powder products
+            if spec.mesh_size:
+                parts.append(spec.mesh_size)
+            
+            # Add packaging
+            if spec.packaging:
+                parts.append(spec.packaging)
+            
+            item_code = "-".join(parts)
+        
+        # Build item name (clean, human-readable)
+        # Map codes back to readable names for item_name
+        cert_names = {
+            "FT": "Fair Trade",
+            "ORG": "Organic",
+            "ORG-EU": "EU Organic",
+            "ORG-NOP": "NOP USA Organic",
+            "ORG-KR": "Korean Organic",
+            "KOS": "Kosher",
+            "KOS-ORG": "Kosher Organic",
+            "CONV": "Conventional",
+            "HALAL": "Halal",
+            "IASC": "IASC",
+            "FSSC": "FSSC",
+            "COSMOS": "COSMOS",
+        }
+        cert_name = cert_names.get(spec.attribute, spec.attribute) if spec.attribute else ""
+        variant_str = spec.variant or ""
+        mesh_str = spec.mesh_size or ""
+        
+        name_parts = [p for p in [spec.family, cert_name, variant_str, mesh_str] if p]
+        item_name = " ".join(name_parts)
+        if spec.packaging:
+            item_name += f" ({spec.packaging})"
+        if spec.customer:
+            item_name += f" [Customer: {spec.customer}]"
+        
+        return {
+            "item_code": item_code,
+            "item_name": item_name,
+            "item_group": "Finished Goods",
+            "stock_uom": spec.target_uom
+        }
+    
+    def _get_customer_naming_rule(self, customer_code: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        Phase 7: Get customer-specific naming rule if exists.
+        
+        Args:
+            customer_code: Customer code to look up
+            
+        Returns:
+            Customer rule dict or None
+        """
+        if not customer_code:
+            return None
+        
+        # Try to load customer rules
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "customer_naming_rules.json"),
+            os.path.join(os.path.dirname(__file__), "templates", "customer_naming_rules.json"),
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        rules = json.load(f)
+                        return rules.get(customer_code)
+                except Exception:
+                    pass
+        
+        return None
+    
+    def _apply_customer_pattern(self, spec: ParsedSpec, rule: Dict[str, Any]) -> str:
+        """
+        Phase 7: Apply customer-specific naming pattern.
+        
+        Args:
+            spec: Parsed specification
+            rule: Customer naming rule
+            
+        Returns:
+            Item code generated from pattern
+        """
+        pattern = rule.get("pattern", "{FAMILY}-{CUSTOMER_CODE}-{VARIANT}-{PACKAGING}")
+        
+        # Replace placeholders
+        item_code = pattern
+        item_code = item_code.replace("{FAMILY}", spec.family or "")
+        item_code = item_code.replace("{ATTRIBUTE}", spec.attribute or "")
+        item_code = item_code.replace("{VARIANT}", spec.variant or "")
+        item_code = item_code.replace("{MESH_SIZE}", spec.mesh_size or "")
+        item_code = item_code.replace("{PACKAGING}", spec.packaging or "")
+        item_code = item_code.replace("{CUSTOMER_CODE}", rule.get("customer_code", spec.customer_code or ""))
+        
+        # Clean up multiple dashes
+        while "--" in item_code:
+            item_code = item_code.replace("--", "-")
+        item_code = item_code.strip("-")
+        
+        return item_code
+    
+    def _plan_bom_items(
+        self,
+        spec: ParsedSpec,
+        step: Dict[str, Any],
+        previous_output: Optional[str]
+    ) -> List[BOMItem]:
+        """Plan BOM items for a step."""
+        items = []
+        
+        # Get input items from template
+        input_items = step.get("input_items", [])
+        
+        for input_item in input_items:
+            item_pattern = input_item.get("item_pattern", "")
+            qty = input_item.get("qty", 1.0)
+            uom = input_item.get("uom", "Kg")
+            
+            # If pattern references previous step output
+            if "PREV_OUTPUT" in item_pattern and previous_output:
+                items.append(BOMItem(
+                    item_code=previous_output,
+                    qty=qty,
+                    uom=uom,
+                    bom_no=self.erpnext.get_default_bom(previous_output)
+                ))
+            else:
+                # Resolve pattern to actual item code
+                item_code = self._resolve_item_pattern(item_pattern, spec)
+                items.append(BOMItem(
+                    item_code=item_code,
+                    qty=qty,
+                    uom=uom
+                ))
+        
+        # If no input items defined but we have previous output, use it
+        if not items and previous_output:
+            items.append(BOMItem(
+                item_code=previous_output,
+                qty=1.0,
+                uom="Kg",
+                bom_no=self.erpnext.get_default_bom(previous_output)
+            ))
+        
+        return items
+    
+    def _resolve_item_pattern(
+        self,
+        pattern: str,
+        spec: ParsedSpec
+    ) -> str:
+        """Resolve an item pattern to actual item code."""
+        # Replace placeholders (handle None values)
+        resolved = pattern
+        resolved = resolved.replace("{FAMILY}", spec.family or "")
+        resolved = resolved.replace("{ATTRIBUTE}", spec.attribute or "")
+        resolved = resolved.replace("{VARIANT}", spec.variant or "")
+        resolved = resolved.replace("{PACKAGING}", spec.packaging or "")
+        
+        # Remove wildcards for now (could do lookup in future)
+        resolved = resolved.replace("*", "")
+        
+        return resolved
+    
+    def _create_items(
+        self,
+        planned_items: List[PlannedItem]
+    ) -> tuple:
+        """Create items in ERPNext."""
+        created = []
+        reused = []
+        
+        for item in planned_items:
+            if item.already_exists:
+                reused.append(item.item_code)
+            else:
+                self.erpnext.create_item(
+                    item_code=item.item_code,
+                    item_name=item.item_name,
+                    item_group=item.item_group,
+                    stock_uom=item.stock_uom
+                )
+                created.append(item.item_code)
+        
+        return created, reused
+    
+    def _create_boms(
+        self,
+        planned_boms: List[PlannedBOM]
+    ) -> tuple:
+        """Create BOMs in ERPNext."""
+        created = []
+        reused = []
+        
+        for bom in planned_boms:
+            if bom.already_exists:
+                reused.append(bom.item_code)
+            else:
+                # Convert BOMItem dataclass objects to dicts for create_bom
+                items_as_dicts = [item.to_dict() for item in bom.bom_items]
+                result = self.erpnext.create_bom(
+                    item_code=bom.item_code,
+                    items=items_as_dicts,
+                    operations=bom.operations,
+                    is_default=1
+                )
+                
+                # Set as default
+                if result and result.get("name"):
+                    self.erpnext.set_default_bom(bom.item_code, result["name"])
+                
+                created.append(bom.item_code)
+        
+        return created, reused
+
+
+def create_engine(
+    templates_dir: Optional[str] = None,
+    rules_file: Optional[str] = None,
+    company: Optional[str] = None
+) -> AgentCoreEngine:
+    """
+    Factory function to create an AgentCoreEngine instance.
+    
+    Args:
+        templates_dir: Path to templates directory
+        rules_file: Path to business_rules.json
+        company: Company name
+        
+    Returns:
+        Configured AgentCoreEngine
+    """
+    return AgentCoreEngine(
+        templates_dir=templates_dir,
+        rules_file=rules_file,
+        company=company
+    )

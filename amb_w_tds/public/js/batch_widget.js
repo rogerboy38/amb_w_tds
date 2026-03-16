@@ -7,10 +7,26 @@
 frappe.provide('frappe.ui');
 frappe.provide('amb.batch_widget');
 
-// Initialize when page loads
+// Initialize when page loads AND on Frappe SPA route changes
 $(document).ready(function() {
     initializeBatchWidget();
 });
+
+// Re-initialize on Frappe SPA page changes (route transitions)
+if (typeof frappe !== 'undefined' && frappe.router) {
+    frappe.router.on('change', function() {
+        setTimeout(function() {
+            if (frappe.session && frappe.session.user !== 'Guest' && !isWidgetHidden()) {
+                if ($('.batch-announcement-widget').length === 0) {
+                    console.log('\ud83d\udd04 SPA route change detected, re-initializing widget...');
+                    update_batch_announcements();
+                    addGlobalRefreshButton();
+					                    createStarterPill();
+                }
+            }
+        }, 2000);
+    });
+}
 
 // Enhanced Configuration
 amb.batch_widget.config = {
@@ -142,13 +158,13 @@ function getSavedPosition() {
     return null;
 }
 
-function savePosition(top, right) {
-    localStorage.setItem(amb.batch_widget.config.positionKey, JSON.stringify({ top, right }));
+function savePosition(bottom, left) {
+    localStorage.setItem(amb.batch_widget.config.positionKey, JSON.stringify({ bottom, left }));
 }
 
 function makeDraggable(widget) {
     const header = widget.find('.widget-drag-handle');
-    let startX, startY, startTop, startRight;
+    let startX, startY, startBottom, startLeft;
     
     header.css('cursor', 'move');
     
@@ -163,8 +179,8 @@ function makeDraggable(widget) {
         startY = touch.clientY;
         
         const rect = widget[0].getBoundingClientRect();
-        startTop = rect.top;
-        startRight = window.innerWidth - rect.right;
+        startBottom = window.innerHeight - rect.bottom;
+        startLeft = rect.left;
         
         widget.css('transition', 'none');
         
@@ -173,21 +189,21 @@ function makeDraggable(widget) {
             const deltaX = touch.clientX - startX;
             const deltaY = touch.clientY - startY;
             
-            let newTop = startTop + deltaY;
-            let newRight = startRight - deltaX;
+            let newBottom = startBottom - deltaY;
+            let newLeft = startLeft + deltaX;
             
             // Bounds checking
             const widgetWidth = widget.outerWidth();
             const widgetHeight = widget.outerHeight();
             
-            newTop = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newTop));
-            newRight = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newRight));
+            newBottom = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newBottom));
+            newLeft = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newLeft));
             
             widget.css({
-                'top': newTop + 'px',
-                'right': newRight + 'px',
-                'left': 'auto',
-                'bottom': 'auto'
+                'bottom': newBottom + 'px',
+                'left': newLeft + 'px',
+                'top': 'auto',
+                'right': 'auto'
             });
         });
         
@@ -198,7 +214,7 @@ function makeDraggable(widget) {
             
             // Save position
             const rect = widget[0].getBoundingClientRect();
-            savePosition(rect.top, window.innerWidth - rect.right);
+            savePosition(window.innerHeight - rect.bottom, rect.left);
         });
     });
 }
@@ -216,6 +232,8 @@ function initializeBatchWidget() {
         }
         
         console.log('🚀 Initializing Enhanced Batch Navbar Widget v2.0...');
+		        // Show starter pill immediately
+        createStarterPill();
         
         setTimeout(function() {
             setupSmartRefresh();
@@ -306,8 +324,7 @@ function update_batch_announcements() {
             if (r.message && r.message.success) {
                 console.log('✅ API call successful');
                 amb.batch_widget.state.cache = r.message;
-                amb.batch_widget.state.cacheTimestamp = Date.now();
-                process_api_response(r.message);
+function createStarterPill()                process_api_response(r.message);
             } else {
                 console.warn('⚠️ API returned unsuccessful response:', r.message);
                 handle_api_error(r.message || {error: 'Unknown API error'});
@@ -337,6 +354,9 @@ function process_api_response(response) {
             show_no_batches_message(response.message);
         }
         update_last_refresh_time();
+
+		            // Update starter pill status if it exists
+            updateStarterPillStatus(response);
     } catch (error) {
         console.error('Error processing API response:', error);
         show_error_message('Error displaying batch data');
@@ -533,9 +553,10 @@ function show_navbar_widget(html_content, count, stats = {}) {
         </div>
     ` : '';
     
+    // Default position: bottom-left, above the user avatar (approximately 60px from bottom)
     let positionStyles = savedPosition 
-        ? `top: ${savedPosition.top}px; right: ${savedPosition.right}px;`
-        : 'top: 70px; right: 20px;';
+        ? `bottom: ${savedPosition.bottom}px; left: ${savedPosition.left}px;`
+        : 'bottom: 60px; left: 10px;';
     
     let widget = $(`
         <div class="batch-announcement-widget" style="
@@ -549,7 +570,7 @@ function show_navbar_widget(html_content, count, stats = {}) {
             border: 2px solid #28a745;
             border-radius: 8px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-            animation: slideInRight 0.3s ease-out;
+            animation: slideInUp 0.3s ease-out;
         ">
             <div class="widget-drag-handle" style="
                 display: flex; 
@@ -612,9 +633,9 @@ function show_navbar_widget(html_content, count, stats = {}) {
     if (!$('#batch-widget-styles').length) {
         $('head').append(`
             <style id="batch-widget-styles">
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
+                @keyframes slideInUp {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
                 }
                 .batch-announcement-widget::-webkit-scrollbar {
                     width: 6px;
@@ -888,7 +909,7 @@ window.reset_batch_widget_position = function() {
     localStorage.removeItem(amb.batch_widget.config.positionKey);
     const widget = $('.batch-announcement-widget');
     if (widget.length) {
-        widget.css({ 'top': '70px', 'right': '20px' });
+        widget.css({ 'bottom': '60px', 'left': '10px', 'top': 'auto', 'right': 'auto' });
     }
 };
 
@@ -899,3 +920,158 @@ $(window).on('beforeunload', function() {
 });
 
 console.log('✅ Enhanced Batch Widget v2.0 loaded (Responsive + Draggable + Hide Duration)');
+
+// =============================================================================
+// SMALL STARTER PILL WIDGET - Always visible, click to open Production Monitor
+// =============================================================================
+function createStarterPill() {
+    // Remove existing pill if any
+    $('.batch-starter-pill').remove();
+
+    var pill = $(`
+        <div class="batch-starter-pill" style="
+            position: fixed;
+            bottom: 60px;
+            left: 10px;
+            z-index: 1050;
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.3s ease;
+            animation: pillSlideIn 0.5s ease-out;
+            user-select: none;
+        ">
+            <span style="font-size: 16px;">&#127981;</span>
+            <span class="widget-title" style="font-weight: 600;">Batch AMB</span>
+            <span class="widget-status" id="batch-amb-status" style="
+                background: rgba(255,255,255,0.2);
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 11px;
+            ">Click to run</span>
+        </div>
+    `);
+
+    // Add hover effect
+    pill.on('mouseenter', function() {
+        $(this).css({
+            'transform': 'translateY(-2px)',
+            'box-shadow': '0 4px 15px rgba(0,0,0,0.3)'
+        });
+    }).on('mouseleave', function() {
+        $(this).css({
+            'transform': 'translateY(0)',
+            'box-shadow': '0 2px 10px rgba(0,0,0,0.2)'
+        });
+    });
+
+    // Click to load Production Monitor
+    pill.on('click', function() {
+        var statusEl = $(this).find('#batch-amb-status');
+        statusEl.text('Loading...');
+        $(this).css('background', 'linear-gradient(135deg, #f39c12, #e67e22)');
+
+        // Clear any hide preference and load the full widget
+        localStorage.removeItem(amb.batch_widget.config.storageKey);
+        update_batch_announcements();
+        setupSmartRefresh();
+        addGlobalRefreshButton();
+        setupConnectivityMonitoring();
+        setupResizeHandler();
+
+        // Update pill status after loading
+        setTimeout(function() {
+            if ($('.batch-announcement-widget').length > 0) {
+                statusEl.text('Running');
+                pill.css('background', 'linear-gradient(135deg, #27ae60, #2ecc71)');
+            } else {
+                statusEl.text('No data');
+                pill.css('background', 'linear-gradient(135deg, #95a5a6, #7f8c8d)');
+            }
+        }, 5000);
+    });
+
+    // Add animation CSS
+    if (!$('#batch-pill-styles').length) {
+        $('head').append(`
+            <style id="batch-pill-styles">
+                @keyframes pillSlideIn {
+                    from { transform: translateX(-100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                .batch-starter-pill:active {
+                    transform: scale(0.95) !important;
+                }
+            </style>
+        `);
+    }
+
+    $('body').append(pill);
+    console.log('[BatchWidget] Starter pill created');
+
+	    // Auto-fetch status on pill creation (don't wait for click)
+    setTimeout(function() {
+        var autoStatusEl = $('#batch-amb-status');
+        if (autoStatusEl.length && autoStatusEl.text() === 'Click to run') {
+            autoStatusEl.text('Loading...');
+            frappe.call({
+                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_running_batch_announcements',
+                args: { include_companies: true, include_plants: true, include_quality: true },
+                callback: function(r) {
+                    if (r.message && r.message.success) {
+                        var count = r.message.stats ? r.message.stats.total : 0;
+                        if (count > 0) {
+                            autoStatusEl.text(count + ' active').css('color', '#27ae60');
+                            pill.css('background', 'linear-gradient(135deg, #27ae60, #2ecc71)');
+                        } else {
+                            autoStatusEl.text('No batches').css('color', '#95a5a6');
+                            pill.css('background', 'linear-gradient(135deg, #95a5a6, #7f8c8d)');
+                        }
+                    } else {
+                        autoStatusEl.text('Click to run').css('color', '#2c3e50');
+                    }
+                },
+                error: function() {
+                    autoStatusEl.text('Offline').css('color', '#e74c3c');
+                },
+                freeze: false
+            });
+        }
+    }, 2000);
+}
+
+// =============================================================================
+// STARTER PILL STATUS UPDATER - Called by process_api_response()
+// =============================================================================
+function updateStarterPillStatus(response) {
+    var pillStatus = $('#batch-amb-status');
+    var pill = $('.batch-starter-pill');
+    if (!pillStatus.length || !pill.length) return;
+
+    var total = 0;
+    if (response && response.stats && response.stats.total) {
+        total = response.stats.total;
+    } else if (response && response.announcements) {
+        total = response.announcements.length;
+    }
+
+    if (total > 0) {
+        pillStatus.text(total + ' active').css('color', '#27ae60');
+        pill.css('background', 'linear-gradient(135deg, #27ae60, #2ecc71)');
+    } else {
+        pillStatus.text('No batches').css('color', '#95a5a6');
+        pill.css('background', 'linear-gradient(135deg, #95a5a6, #7f8c8d)');
+    }
+    console.log('[BatchWidget] Pill status updated: ' + (total > 0 ? total + ' active' : 'No batches'));
+}
+
+// Export starter pill function
+window.create_batch_starter_pill = createStarterPill;

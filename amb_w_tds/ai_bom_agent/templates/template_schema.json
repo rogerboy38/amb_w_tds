@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BOM Master Template Schema v1.0",
+  "description": "Schema for hierarchical BOM creation templates in AMB W TDS",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["family", "version", "meta", "steps"],
+  "properties": {
+    "family": {
+      "type": "string",
+      "description": "Product family code (e.g., 0227, 0307)",
+      "pattern": "^[0-9]{4}$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Template version",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name", "description", "created_date", "item_group"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "created_date": { "type": "string", "format": "date" },
+        "item_group": { "type": "string" },
+        "default_company": { "type": "string" },
+        "default_warehouse": { "type": "string" }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["step_number", "step_name", "operation_name", "input_items", "output_item_pattern"],
+        "properties": {
+          "step_number": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Sequential step number"
+          },
+          "step_name": {
+            "type": "string",
+            "description": "Human-readable step name"
+          },
+          "operation_name": {
+            "type": "string",
+            "description": "ERPNext Operation to link"
+          },
+          "workstation": {
+            "type": "string",
+            "description": "ERPNext Workstation for this operation"
+          },
+          "input_items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["item_pattern", "qty_formula", "uom"],
+              "properties": {
+                "item_pattern": {
+                  "type": "string",
+                  "description": "Pattern for input item (supports wildcards)"
+                },
+                "item_type": {
+                  "type": "string",
+                  "enum": ["raw_material", "sfg", "packaging", "consumable"]
+                },
+                "qty_formula": {
+                  "type": "string",
+                  "description": "Formula for quantity calculation"
+                },
+                "uom": { "type": "string" },
+                "is_optional": { "type": "boolean", "default": false }
+              }
+            }
+          },
+          "output_item_pattern": {
+            "type": "string",
+            "description": "Pattern for output item naming"
+          },
+          "output_uom": {
+            "type": "string",
+            "default": "Kg"
+          },
+          "yield_percentage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Expected yield (0.95 = 95%)"
+          },
+          "extra_to_wip_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Percentage of extra output sent to WIP"
+          },
+          "is_subcontracted": {
+            "type": "boolean",
+            "default": false
+          },
+          "cycle_time_minutes": {
+            "type": "integer",
+            "description": "Standard cycle time in minutes"
+          },
+          "hourly_cost": {
+            "type": "number",
+            "description": "Hourly operation cost"
+          },
+          "is_shared_sfg": {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, this SFG is shared across variants"
+          },
+          "sharing_key": {
+            "type": "string",
+            "description": "Key for grouping shared SFGs (e.g., family+attribute)"
+          }
+        }
+      }
+    },
+    "variants": {
+      "type": "object",
+      "description": "Variant configurations",
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of variant attributes (ORGANIC, KOSHER, etc.)"
+        },
+        "variants": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "packaging": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "name": { "type": "string" },
+              "uom": { "type": "string" },
+              "conversion_factor": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "business_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rule_id": { "type": "string" },
+          "description": { "type": "string" },
+          "condition": { "type": "string" },
+          "action": { "type": "string" }
+        }
+      }
+    }
+  }
+}

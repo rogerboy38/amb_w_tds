@@ -1,0 +1,156 @@
+{
+  "version": "1.0",
+  "description": "UOM conversion rules for BOM calculations",
+  "created_date": "2026-02-17",
+
+  "base_uoms": {
+    "mass": "Kg",
+    "volume": "Ltr",
+    "quantity": "Nos"
+  },
+
+  "conversions": {
+    "mass": [
+      {"from": "g", "to": "Kg", "factor": 0.001},
+      {"from": "mg", "to": "Kg", "factor": 0.000001},
+      {"from": "lb", "to": "Kg", "factor": 0.453592},
+      {"from": "oz", "to": "Kg", "factor": 0.0283495},
+      {"from": "MT", "to": "Kg", "factor": 1000}
+    ],
+    "volume": [
+      {"from": "mL", "to": "Ltr", "factor": 0.001},
+      {"from": "Gal", "to": "Ltr", "factor": 3.78541},
+      {"from": "L", "to": "Ltr", "factor": 1},
+      {"from": "m3", "to": "Ltr", "factor": 1000}
+    ],
+    "mass_to_volume": {
+      "description": "Density-based conversions (material specific)",
+      "materials": [
+        {
+          "material": "aloe_juice",
+          "density_kg_per_ltr": 1.02,
+          "notes": "Aloe juice slightly denser than water"
+        },
+        {
+          "material": "aloe_concentrate",
+          "density_kg_per_ltr": 1.15,
+          "notes": "Concentrated aloe vera"
+        },
+        {
+          "material": "water",
+          "density_kg_per_ltr": 1.0,
+          "notes": "Pure water at 20°C"
+        },
+        {
+          "material": "aloe_powder",
+          "bulk_density_kg_per_ltr": 0.55,
+          "notes": "Loose bulk density"
+        }
+      ]
+    }
+  },
+
+  "packaging_conversions": {
+    "description": "Container capacity conversions",
+    "containers": [
+      {
+        "code": "IBC",
+        "name": "IBC Container",
+        "capacity_ltr": 1000,
+        "capacity_kg_liquid": 1020,
+        "uom": "Nos"
+      },
+      {
+        "code": "DRUM-200L",
+        "name": "200L Drum",
+        "capacity_ltr": 200,
+        "capacity_kg_liquid": 204,
+        "uom": "Nos"
+      },
+      {
+        "code": "PAIL-20L",
+        "name": "20L Pail",
+        "capacity_ltr": 20,
+        "capacity_kg_liquid": 20.4,
+        "uom": "Nos"
+      },
+      {
+        "code": "5GAL",
+        "name": "5 Gallon",
+        "capacity_ltr": 18.927,
+        "capacity_kg_liquid": 19.3,
+        "uom": "Nos"
+      },
+      {
+        "code": "BAG-25KG",
+        "name": "25Kg Bag",
+        "capacity_kg": 25,
+        "uom": "Nos"
+      },
+      {
+        "code": "BAG-10KG",
+        "name": "10Kg Bag",
+        "capacity_kg": 10,
+        "uom": "Nos"
+      },
+      {
+        "code": "DRUM-50KG",
+        "name": "50Kg Drum",
+        "capacity_kg": 50,
+        "uom": "Nos"
+      }
+    ]
+  },
+
+  "formulas": {
+    "container_count": {
+      "liquid": "ceil(volume_ltr / container_capacity_ltr)",
+      "powder": "ceil(mass_kg / container_capacity_kg)"
+    },
+    "input_from_output": {
+      "description": "Calculate input quantity from required output",
+      "formula": "input_qty = output_qty / yield_percentage"
+    },
+    "convert_mass_to_volume": {
+      "formula": "volume_ltr = mass_kg / density_kg_per_ltr"
+    },
+    "convert_volume_to_mass": {
+      "formula": "mass_kg = volume_ltr * density_kg_per_ltr"
+    }
+  },
+
+  "erpnext_uom_mapping": {
+    "description": "Map internal UOM codes to ERPNext UOM names",
+    "mappings": [
+      {"internal": "Kg", "erpnext": "Kg"},
+      {"internal": "Ltr", "erpnext": "Litre"},
+      {"internal": "Nos", "erpnext": "Nos"},
+      {"internal": "g", "erpnext": "Gram"},
+      {"internal": "mL", "erpnext": "Millilitre"},
+      {"internal": "Gal", "erpnext": "Gallon"}
+    ]
+  },
+
+  "validation_rules": [
+    {
+      "rule_id": "UOM1",
+      "description": "Mass UOMs must use Kg as base",
+      "applies_to": ["raw_materials", "sfg_powder"]
+    },
+    {
+      "rule_id": "UOM2",
+      "description": "Volume UOMs must use Ltr as base",
+      "applies_to": ["sfg_liquid", "liquid_products"]
+    },
+    {
+      "rule_id": "UOM3",
+      "description": "Packaging always counted in Nos",
+      "applies_to": ["packaging_materials", "finished_goods"]
+    },
+    {
+      "rule_id": "UOM4",
+      "description": "BOM quantities must be in stock UOM",
+      "action": "convert_to_stock_uom_before_save"
+    }
+  ]
+}

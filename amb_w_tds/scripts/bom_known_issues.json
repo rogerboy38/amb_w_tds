@@ -1,0 +1,51 @@
+{
+  "issues": [
+    {
+      "bom": "BOM-0301-001",
+      "item": "0301",
+      "reason": "0227 variant - expected cost difference due to alternate formulation",
+      "issue_type": "COST_ANOMALY",
+      "added": "2026-02-17",
+      "added_by": "system"
+    },
+    {
+      "bom": "BOM-0303-005",
+      "item": "0303",
+      "reason": "Cost-only BOM for pricing reference, not used in production",
+      "issue_type": "COST_ANOMALY",
+      "added": "2026-02-17",
+      "added_by": "system"
+    },
+    {
+      "bom": "BOM-0307-004",
+      "item": "0307",
+      "reason": "Known cost anomaly - accepted variance in production",
+      "issue_type": "COST_ANOMALY",
+      "added": "2026-02-17",
+      "added_by": "phase5-verification"
+    },
+    {
+      "bom": "BOM-0307-006",
+      "item": "0307",
+      "reason": "Known cost anomaly - accepted variance in production",
+      "issue_type": "COST_ANOMALY",
+      "added": "2026-02-17",
+      "added_by": "phase5-verification"
+    },
+    {
+      "item": "0302",
+      "reason": "Missing item - pending master data creation",
+      "issue_type": "MISSING_COMPONENT",
+      "added": "2026-02-17",
+      "added_by": "system"
+    },
+    {
+      "item": "0803-KOSHER-ORGANIC",
+      "reason": "Missing item - Kosher/Organic variant pending supplier confirmation",
+      "issue_type": "MISSING_COMPONENT",
+      "added": "2026-02-17",
+      "added_by": "system"
+    }
+  ],
+  "last_updated": "2026-02-17T14:01:00"
+}

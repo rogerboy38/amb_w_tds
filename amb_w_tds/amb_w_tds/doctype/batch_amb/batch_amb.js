@@ -1,7 +1,7 @@
 // =============================================================================
 // BATCH AMB - COMPLETE INTEGRATED CLIENT SCRIPT
 // Combines original functionality, BatchL2 enhancements, and Serial Tracking
-// Version: 2024-12-08 - Fixed Serial Generation
+// Version: 2026-02-14 - Merged Batch L2 client script features (Create Sublot/Container, Bulk Scan, View Batch Tree), route_options support for frappe.new_doc()
 // =============================================================================
 
 frappe.ui.form.on('Batch AMB', {
@@ -15,7 +15,27 @@ frappe.ui.form.on('Batch AMB', {
         apply_field_filters(frm);
         setup_field_dependencies(frm);
         show_status_indicators(frm);
-        
+
+        #
+       // existing refresh code...
+
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("New Sample Request"), () => {
+                frappe.call({
+                    method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_batch",
+                    args: { batch_name: frm.doc.name },
+                    freeze: true,
+                    freeze_message: __("Creating Sample Request..."),
+                    callback(r) {
+                        if (!r.exc && r.message) {
+                            frappe.set_route("Form", "Sample Request AMB", r.message);
+                        }
+                    }
+                });
+            }, __("Create"));
+        }
+
+        #
         // BatchL2 enhancements
         if (should_auto_generate(frm)) {
             generate_batch_code(frm);
@@ -35,8 +55,21 @@ frappe.ui.form.on('Batch AMB', {
         add_debug_button(frm);
     },
     
+
     onload: function(frm) {
         console.log('📥 Batch AMB Onload for:', frm.doc.name);
+
+		        // Apply defaults from frappe.new_doc() / URL parameters
+        if (frm.is_new() && frappe.route_options) {
+            console.log('📋 Applying route_options:', frappe.route_options);
+            for (let key in frappe.route_options) {
+                if (frappe.route_options.hasOwnProperty(key) && frm.fields_dict[key]) {
+                    frm.set_value(key, frappe.route_options[key]);
+                }
+            }
+            // Clear route_options after applying
+            frappe.route_options = null;
+        }
         
         // Original functionality
         set_default_values(frm);
@@ -884,6 +917,51 @@ function add_bom_button_to_form(frm) {
 
 function add_level_specific_buttons(frm) {
     // Add buttons based on batch level
+	    const currentLevel = frm.doc.custom_batch_level;
+    if (!currentLevel) return;
+    
+    // Level 1: Create Sublot button
+    if (currentLevel === '1') {
+        frm.add_custom_button(__('Create Sublot'), function() {
+            create_sublot_batch(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 2: Create Sublot + Create Container buttons
+    if (currentLevel === '2') {
+        frm.add_custom_button(__('Create Sublot'), function() {
+            create_sublot_batch(frm);
+        });
+        frm.add_custom_button(__('Create Container'), function() {
+            create_container_batch(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 3: handled by existing code below, plus additional buttons
+    if (currentLevel === '3') {
+        frm.add_custom_button(__('Create Container'), function() {
+            create_container_batch(frm);
+        });
+        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+            open_bulk_scan_dialog(frm);
+        });
+        frm.add_custom_button(__('Generate Barrel Serials'), function() {
+            generate_bulk_barrel_serials(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Level 4: Scan Multiple Barcodes
+    if (currentLevel === '4') {
+        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+            open_bulk_scan_dialog(frm);
+        }).addClass('btn-primary');
+    }
+    
+    // Add global buttons for non-level-4
+    add_global_buttons(frm);
+    
+    // Original Level 3 scanning functionality continues below
+
     if (frm.doc.custom_batch_level == '3') {
         const scan_group = __('🔍 Scanning');
         
@@ -1202,6 +1280,18 @@ function display_announcements(frm, announcements) {
     
     let html = '<div class="announcement-list">';
     announcements.forEach(announcement => {
+					// FIX: Enrich announcement with missing fields for display
+			if (!announcement.batch_name) announcement.batch_name = announcement.name;
+			if (!announcement.work_order) {
+				// Fallback: if this is the current batch, use frm.doc
+				if (announcement.name === frm.doc.name) {
+					announcement.work_order = frm.doc.work_order_ref || frm.doc.work_order || 'N/A';
+					announcement.plant = frm.doc.production_plant_name || frm.doc.custom_plant_code || 'N/A';
+					announcement.golden_number = frm.doc.custom_golden_number || '';
+				}
+			}
+			if (!announcement.plant) announcement.plant = announcement.company || 'N/A';
+			if (!announcement.golden_number) announcement.golden_number = announcement.title || '';
         html += `
             <div class="announcement-item">
                 <strong>${announcement.batch_name || announcement.name}</strong>
@@ -1353,12 +1443,11 @@ function set_default_values(frm) {
 }
 
 function load_user_preferences(frm) {
-    // Load user's preferred warehouses, etc.
-    frappe.db.get_value('User', frappe.session.user, 'default_warehouse', function(r) {
-        if (r && r.default_warehouse && !frm.doc.target_warehouse) {
-            frm.set_value('target_warehouse', r.default_warehouse);
-        }
-    });
+	// Load user's preferred warehouses using frappe.defaults (safe API)
+	var default_wh = frappe.defaults.get_user_default('Warehouse');
+	if (default_wh && !frm.doc.target_warehouse) {
+		frm.set_value('target_warehouse', default_wh);
+	}
 }
 
 function calculate_container_totals(frm) {
@@ -1418,6 +1507,16 @@ function fetch_work_order_data(frm) {
                 if (r.message) {
                     // Process work order data for batch generation
                     console.log('Work order data loaded:', r.message);
+											// FIX: Actually populate batch fields from WO data
+						var d = r.message;
+						if (d.production_item) frm.set_value('item_to_manufacture', d.production_item);
+						if (d.item_name) frm.set_value('wo_item_name', d.item_name);
+						if (d.qty) frm.set_value('planned_qty', d.qty);
+						if (d.planned_start_date) frm.set_value('wo_start_date', d.planned_start_date);
+						if (d.company) frm.set_value('company', d.company);
+						if (d.custom_plant_code) frm.set_value('production_plant_name', d.custom_plant_code);
+						if (d.sales_order) frm.set_value('sales_order_related', d.sales_order);
+						frappe.show_alert({message: __('Work Order data loaded'), indicator: 'green'});
                 }
             }
         });
@@ -1610,4 +1709,261 @@ function calculate_net_weight_fixed(frm, cdt, cdn) {
         row.weight_validated = 0;
     }
 }
+
+// ==================== BATCH L2 MERGED FUNCTIONS ====================
+
+// Create Sublot Batch (Level 2) from parent
+function create_sublot_batch(frm) {
+    frappe.new_doc('Batch AMB', {
+        'custom_batch_level': '2',
+        'parent_batch_amb': frm.doc.name,
+        'work_order_ref': frm.doc.work_order_ref,
+        'sales_order_related': frm.doc.sales_order_related,
+        'item_to_manufacture': frm.doc.item_to_manufacture,
+        'production_plant_name': frm.doc.production_plant_name,
+        'original_item_code': frm.doc.original_item_code || frm.doc.item_code
+    });
+}
+
+// Create Container Batch (Level 3) from parent
+function create_container_batch(frm) {
+    frappe.new_doc('Batch AMB', {
+        'custom_batch_level': '3',
+        'parent_batch_amb': frm.doc.name,
+        'work_order_ref': frm.doc.work_order_ref,
+        'sales_order_related': frm.doc.sales_order_related,
+        'item_to_manufacture': frm.doc.item_to_manufacture,
+        'production_plant_name': frm.doc.production_plant_name,
+        'original_item_code': frm.doc.original_item_code || frm.doc.item_code,
+        'current_item_code': frm.doc.current_item_code || frm.doc.item_code
+    });
+}
+
+// Add global buttons (View Batch Tree)
+function add_global_buttons(frm) {
+    if (frm.doc.custom_batch_level && frm.doc.custom_batch_level !== '4') {
+        frm.add_custom_button(__('View Batch Tree'), function() {
+            show_batch_hierarchy(frm);
+        });
+    }
+}
+
+// Show batch hierarchy (placeholder)
+function show_batch_hierarchy(frm) {
+    frappe.msgprint(__('Batch hierarchy view - Feature coming soon'));
+}
+
+// Open bulk barcode scan dialog
+function open_bulk_scan_dialog(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Bulk Barcode Scanning'),
+        fields: [{
+            fieldtype: 'Small Text',
+            fieldname: 'barcode_list',
+            label: __('Scan Multiple Barcodes (one per line)'),
+            reqd: 1
+        }],
+        primary_action_label: __('Process Barcodes'),
+        primary_action: function() {
+            const barcodes = dialog.get_value('barcode_list').split('\n').filter(b => b.trim());
+            process_bulk_barcodes(frm, barcodes);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// Process bulk barcodes
+function process_bulk_barcodes(frm, barcodes) {
+    frappe.msgprint(__('Processing {0} barcodes...', [barcodes.length]));
+}
+
+// Generate bulk barrel serials dialog
+function generate_bulk_barrel_serials(frm) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Generate Barrel Serial Numbers'),
+        fields: [
+            {
+                fieldtype: 'Int',
+                fieldname: 'barrel_count',
+                label: __('Number of Barrels'),
+                reqd: 1,
+                default: 1
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'prefix',
+                label: __('Serial Prefix'),
+                default: 'BRL'
+            }
+        ],
+        primary_action_label: __('Generate Serials'),
+        primary_action: function() {
+            const data = dialog.get_value();
+            generate_serials_l2(frm, data.barrel_count, data.prefix);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// Generate serials (placeholder)
+function generate_serials_l2(frm, count, prefix) {
+    frappe.msgprint(__('Generating {0} serials with prefix {1}...', [count, prefix]));
+}
+
+// =============================================================================
+// QUICK ENTRY - Custom Quick Entry Form for Batch AMB
+// Implements cascading: Sales Order -> Work Order -> Item auto-populate
+// =============================================================================
+
+frappe.provide('frappe.ui.form');
+
+frappe.ui.form.BatchAMBQuickEntryForm = class BatchAMBQuickEntryForm extends frappe.ui.form.QuickEntryForm {
+    constructor(doctype, after_insert, init_callback, doc, force) {
+        super(doctype, after_insert, init_callback, doc, force);
+    }
+
+    get_variant_fields() {
+        // These fields appear in the Quick Entry popup
+        // The cascading logic: SO -> WO -> auto-fill item & dates
+        return [
+            {
+                fieldtype: 'Link',
+                fieldname: 'sales_order_related',
+                label: __('Sales Order'),
+                options: 'Sales Order',
+                get_query: () => {
+                    return {
+                        filters: {
+                            'docstatus': 1,
+                            'status': ['not in', ['Cancelled', 'Closed']]
+                        }
+                    };
+                },
+                onchange: () => {
+                    let so = this.dialog.get_value('sales_order_related');
+                    if (so) {
+                        this.load_work_orders_for_so(so);
+                    } else {
+                        this.dialog.fields_dict.work_order_ref.set_data([]);
+                        this.dialog.set_value('work_order_ref', '');
+                    }
+                }
+            },
+            {
+                fieldtype: 'Link',
+                fieldname: 'work_order_ref',
+                label: __('Work Order'),
+                options: 'Work Order',
+                reqd: 1,
+                get_query: () => {
+                    let so = this.dialog.get_value('sales_order_related');
+                    let filters = {
+                        'docstatus': ['!=', 2],
+                        'status': ['not in', ['Stopped', 'Cancelled']]
+                    };
+                    if (so) {
+                        filters['sales_order'] = so;
+                    }
+                    return { filters: filters };
+                },
+                onchange: () => {
+                    let wo = this.dialog.get_value('work_order_ref');
+                    if (wo) {
+                        this.load_work_order_defaults(wo);
+                    }
+                }
+            },
+            {
+                fieldtype: 'Section Break'
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'item_to_manufacture',
+                label: __('Item to Manufacture'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'wo_item_name',
+                label: __('Item Name'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Column Break'
+            },
+            {
+                fieldtype: 'Data',
+                fieldname: 'production_plant_name',
+                label: __('Plant Code'),
+                read_only: 1
+            },
+            {
+                fieldtype: 'Link',
+                fieldname: 'company',
+                label: __('Company'),
+                options: 'Company',
+                reqd: 1,
+                default: frappe.defaults.get_user_default('Company')
+            }
+        ];
+    }
+
+    load_work_orders_for_so(sales_order) {
+        // Fetch Work Orders linked to the selected Sales Order
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_work_orders_for_sales_order',
+            args: { sales_order: sales_order },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    let wo_count = r.message.work_orders.length;
+                    let project = r.message.project || '';
+                    let msg = wo_count + ' Work Orders found';
+                    if (project) {
+                        msg += ' (Project: ' + project + ')';
+                    }
+                    frappe.show_alert({
+                        message: __(msg),
+                        indicator: 'blue'
+                    }, 3);
+                    // If only one WO, auto-select it
+                    if (wo_count === 1) {
+                        this.dialog.set_value('work_order_ref', r.message.work_orders[0].name);
+                    }
+                }
+            }
+        });
+    }
+
+    load_work_order_defaults(work_order_name) {
+        // Fetch all defaults from selected Work Order
+        frappe.call({
+            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_quick_entry_defaults',
+            args: { work_order_name: work_order_name },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    let data = r.message;
+                    this.dialog.set_value('item_to_manufacture', data.production_item || '');
+                    this.dialog.set_value('wo_item_name', data.item_name || '');
+                    this.dialog.set_value('production_plant_name', data.plant_code || '');
+                    if (data.company) {
+                        this.dialog.set_value('company', data.company);
+                    }
+                    if (!this.dialog.get_value('sales_order_related') && data.sales_order) {
+                        this.dialog.set_value('sales_order_related', data.sales_order);
+                    }
+                    frappe.show_alert({
+                        message: __('Work Order details loaded: ' + data.production_item),
+                        indicator: 'green'
+                    }, 3);
+                }
+            }
+        });
+    }
+};
+
+// Register the custom Quick Entry form for Batch AMB
+frappe.ui.form.QuickEntryForm = frappe.ui.form.QuickEntryForm;
+frappe.ui.form['BatchAMBQuickEntryForm'] = frappe.ui.form.BatchAMBQuickEntryForm;
 
