@@ -1759,3 +1759,80 @@ def get_quick_entry_defaults(work_order_name):
     except Exception as e:
         frappe.log_error(f"Quick Entry - get_defaults error: {str(e)}")
         return {"success": False, "message": str(e)}
+
+
+# ==================== SAMPLE REQUEST BUTTON ==================== 
+
+
+@frappe.whitelist()
+def create_sample_request(batch_name):
+    """Create Sample Request from Batch - for the Sample Request button"""
+    try:
+        batch = frappe.get_doc("Batch AMB", batch_name)
+        
+        # Check if sample request already exists for this batch
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"batch_reference": batch_name},
+            "name"
+        )
+        
+        if existing:
+            # Open existing sample request
+            return {
+                "success": True,
+                "action": "open",
+                "sample_request": existing,
+                "message": f"Opening existing Sample Request: {existing}"
+            }
+        
+        # Create new sample request
+        sample_request = frappe.new_doc("Sample Request AMB")
+        sample_request.batch_reference = batch_name
+        sample_request.customer = getattr(batch, 'customer', None)
+        sample_request.sales_order = getattr(batch, 'sales_order_related', None)
+        sample_request.item = batch.item_to_manufacture or batch.current_item_code
+        sample_request.batch_quantity = batch.planned_qty or batch.total_net_weight
+        
+        sample_request.insert()
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "action": "create",
+            "sample_request": sample_request.name,
+            "message": f"Created Sample Request: {sample_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Sample Request Creation Error: {str(e)}")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def get_sample_request(batch_name):
+    """Get Sample Request for this batch if exists"""
+    try:
+        existing = frappe.db.get_value(
+            "Sample Request AMB",
+            {"batch_reference": batch_name},
+            "name",
+            order_by="creation desc"
+        )
+        
+        if existing:
+            return {
+                "success": True,
+                "sample_request": existing
+            }
+        
+        return {
+            "success": False,
+            "message": "No sample request found"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }

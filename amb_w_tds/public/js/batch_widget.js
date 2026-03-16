@@ -324,7 +324,7 @@ function update_batch_announcements() {
             if (r.message && r.message.success) {
                 console.log('✅ API call successful');
                 amb.batch_widget.state.cache = r.message;
-function createStarterPill()                process_api_response(r.message);
+                process_api_response(r.message);
             } else {
                 console.warn('⚠️ API returned unsuccessful response:', r.message);
                 handle_api_error(r.message || {error: 'Unknown API error'});
