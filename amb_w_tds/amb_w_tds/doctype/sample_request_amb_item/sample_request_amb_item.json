@@ -1,0 +1,171 @@
+{
+  "actions": [],
+  "allow_import": 0,
+  "beta": 0,
+  "creation": "2026-03-14 00:00:00.000000",
+  "custom": 0,
+  "doctype": "DocType",
+  "document_type": "Document",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "item",
+      "fieldtype": "Link",
+      "label": "Item / Producto",
+      "options": "Item",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Data",
+      "label": "Description / Descripción",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "batch",
+      "fieldtype": "Link",
+      "label": "Batch / Lote",
+      "options": "Batch",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "spc_specification",
+      "fieldtype": "Link",
+      "label": "SPC Specification / Especificación SPC",
+      "options": "SPC Specification"
+    },
+
+    {
+      "fieldname": "col_qty",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "samples_count",
+      "fieldtype": "Int",
+      "label": "Number of Samples / Número de Muestras",
+      "default": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "qty_per_sample",
+      "fieldtype": "Float",
+      "label": "Qty per Sample / Cantidad por Muestra"
+    },
+    {
+      "fieldname": "uom",
+      "fieldtype": "Link",
+      "label": "UOM / Unidad",
+      "options": "UOM"
+    },
+    {
+      "fieldname": "total_qty",
+      "fieldtype": "Float",
+      "label": "Total Qty / Cantidad Total",
+      "read_only": 1
+    },
+
+    {
+      "fieldname": "section_pack",
+      "fieldtype": "Section Break",
+      "label": "Packaging & Label / Envase y Etiqueta"
+    },
+    {
+      "fieldname": "container_type",
+      "fieldtype": "Data",
+      "label": "Container Type / Tipo de Envase"
+    },
+    {
+      "fieldname": "container_size",
+      "fieldtype": "Data",
+      "label": "Container Size / Capacidad Envase"
+    },
+    {
+      "fieldname": "label_text",
+      "fieldtype": "Small Text",
+      "label": "Label Text / Texto de Etiqueta"
+    },
+
+    {
+      "fieldname": "col_flags",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "for_retention",
+      "fieldtype": "Check",
+      "label": "Retention Sample / Muestra de Retención"
+    },
+    {
+      "fieldname": "for_microbiology",
+      "fieldtype": "Check",
+      "label": "Microbiology / Microbiología"
+    },
+    {
+      "fieldname": "for_customer",
+      "fieldtype": "Check",
+      "label": "Customer / Cliente"
+    },
+    {
+      "fieldname": "for_distributor",
+      "fieldtype": "Check",
+      "label": "Distributor / Distribuidor"
+    },
+    {
+      "fieldname": "for_external_lab",
+      "fieldtype": "Check",
+      "label": "External Lab / Lab Externo"
+    },
+
+    {
+      "fieldname": "target_warehouse",
+      "fieldtype": "Link",
+      "label": "Target Warehouse / Almacén Destino",
+      "options": "Warehouse"
+    },
+    {
+      "fieldname": "sample_role",
+      "fieldtype": "Select",
+      "label": "Sample Role / Rol de la Muestra",
+      "options": "Routine Control\nValidation\nInvestigation\nStability Study\nCustomer Complaint\nMarketing"
+    },
+    {
+      "fieldname": "criticality_class",
+      "fieldtype": "Select",
+      "label": "Criticality / Criticidad",
+      "options": "Critical\nMajor\nMinor"
+    },
+    {
+      "fieldname": "spc_chart_type",
+      "fieldtype": "Select",
+      "label": "SPC Chart Type",
+      "options": "Xbar-R\nXbar-S\nP\nNP\nC\nU\nRun\nCapability"
+    },
+    {
+      "fieldname": "lab_notes",
+      "fieldtype": "Small Text",
+      "label": "Lab Notes / Notas de Laboratorio"
+    },
+    {
+      "fieldname": "source_batch_note",
+      "fieldtype": "Small Text",
+      "label": "Source Batch Note / Nota de Lote Origen"
+    }
+  ],
+  "has_web_view": 0,
+  "idx": 0,
+  "in_create": 0,
+  "is_submittable": 0,
+  "issingle": 0,
+  "istable": 1,
+  "max_attachments": 0,
+  "modified": "2026-03-14 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "AMB W TDS",
+  "name": "Sample Request AMB Item",
+  "owner": "Administrator",
+  "permissions": [],
+  "sort_field": "idx",
+  "sort_order": "ASC",
+  "track_changes": 0
+}
