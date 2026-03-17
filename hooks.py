@@ -23,17 +23,13 @@ doctype_class = {
 #  FRONTEND JS INJECTIONS
 # ========================================
 
-doctype_js = {
-    "Quotation": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/quotation_sample_request.js",
-    "Lead": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/lead_sample_request.js",
-    "Prospect": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/prospect_sample_request.js",
-    "Opportunity": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/opportunity_sample_request.js",
-    "Quotation AMB": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
-    "Batch AMB": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
-}
+# Sample Request buttons are now loaded via app_include_js (bundled approach)
+# Removed doctype_js entries to avoid asset bundle issues
 
 app_include_js = [
-    "/assets/amb_w_tds/js/batch_widget.js"
+    "/assets/amb_w_tds/js/batch_widget.js",
+    "/assets/amb_w_tds/js/sample_request_utils.js",
+    "/assets/amb_w_tds/js/sample_request_buttons.js"
 ]
 
 # ========================================
