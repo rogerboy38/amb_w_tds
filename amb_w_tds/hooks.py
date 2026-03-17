@@ -24,16 +24,21 @@ doctype_class = {
 #  FRONTEND JS INJECTIONS
 # ========================================
 
-doctype_js = {
-    "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
-    "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
-    "Work Order": "public/js/work_order_list.js", 
-}
-
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
     "/assets/amb_w_tds/js/work_order_list.js",
+    "/assets/amb_w_tds/js/sample_request_utils.js",
+    "/assets/amb_w_tds/js/sample_request_buttons.js",
 ]
+
+# Doctype-specific JS for Sample Request buttons
+doctype_js = {
+    "Lead": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Prospect": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Opportunity": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Quotation": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Sales Order": "amb_w_tds/public/js/sample_request_buttons.js",
+}
 
 # ========================================
 #  DOCUMENT EVENTS (Critical migration hooks)
