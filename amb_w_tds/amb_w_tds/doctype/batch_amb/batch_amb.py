@@ -1842,6 +1842,7 @@ def get_sample_request(batch_name):
 def make_sample_request_from_source(source_doctype, source_name):
     """
     Create a sample request from any source doctype (Lead, Prospect, Opportunity, Quotation, Sales Order)
+    Enhanced to fetch comprehensive data from source documents
     """
     try:
         # Get source document
@@ -1854,47 +1855,102 @@ def make_sample_request_from_source(source_doctype, source_name):
         sample_request.request_type = "Pre-sample Approved"
         sample_request.request_date = frappe.utils.nowdate()
         
-        # Get item from source document
-        item_code = None
-        if source_doctype == "Quotation" and hasattr(source_doc, 'items') and source_doc.items:
-            item_code = source_doc.items[0].item_code
-        elif source_doctype == "Sales Order" and hasattr(source_doc, 'items') and source_doc.items:
-            item_code = source_doc.items[0].item_code
+        # Get item and other details from source document based on doctype
+        customer_name = None
+        customer = None
+        contact_email = None
+        contact_phone = None
+        address = None
         
-        # Map based on doctype
         if source_doctype == "Lead":
-            # For Lead, we don't have a Customer yet - just set the name
-            sample_request.customer_name = source_doc.lead_name
-            if source_doc.company_name:
-                sample_request.customer_name = source_doc.company_name
-        
+            # Get customer name from Lead
+            customer_name = source_doc.company_name or source_doc.lead_name
+            # Get contact info from Lead
+            contact_email = source_doc.email_id
+            contact_phone = source_doc.mobile_no
+            # Try to get address
+            if hasattr(source_doc, 'address') and source_doc.address:
+                address = source_doc.address
+            
         elif source_doctype == "Prospect":
-            sample_request.customer_name = source_doc.company_name or source_doc.prospect_name
+            # Get customer name from Prospect
+            customer_name = source_doc.company_name or source_doc.prospect_name
+            # Get contact info from Prospect
+            if hasattr(source_doc, 'email') and source_doc.email:
+                contact_email = source_doc.email
+            if hasattr(source_doc, 'phone') and source_doc.phone:
+                contact_phone = source_doc.phone
         
         elif source_doctype == "Opportunity":
-            sample_request.customer_name = source_doc.customer_name or ""
-            if source_doc.customer:
-                sample_request.customer = source_doc.customer
+            # Get customer from Opportunity
+            customer_name = source_doc.customer_name
+            customer = source_doc.customer
             sample_request.opportunity = source_doc.name
+            # Get contact info
+            if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
+                contact_email = source_doc.contact_email
+            if hasattr(source_doc, 'phone') and source_doc.phone:
+                contact_phone = source_doc.phone
+            # Get address
+            if hasattr(source_doc, 'customer_address') and source_doc.customer_address:
+                address = source_doc.customer_address
         
         elif source_doctype == "Quotation":
-            sample_request.customer_name = source_doc.party_name
+            # Get customer from Quotation
+            customer_name = source_doc.party_name
             if source_doc.party_name:
                 # Try to find if party_name is a customer
                 customer = frappe.db.get_value("Customer", {"name": source_doc.party_name}, "name")
-                if customer:
-                    sample_request.customer = customer
             sample_request.quotation = source_doc.name
+            # Get contact info from Quotation
+            if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
+                contact_email = source_doc.contact_email
+            if hasattr(source_doc, 'phone') and source_doc.phone:
+                contact_phone = source_doc.phone
+            # Get address
+            if hasattr(source_doc, 'customer_address') and source_doc.customer_address:
+                address = source_doc.customer_address
         
         elif source_doctype == "Sales Order":
-            sample_request.customer_name = source_doc.customer_name
-            sample_request.customer = source_doc.customer
+            # Get customer from Sales Order
+            customer_name = source_doc.customer_name
+            customer = source_doc.customer
             sample_request.sales_order = source_doc.name
+            # Get contact info from Sales Order
+            if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
+                contact_email = source_doc.contact_email
+            if hasattr(source_doc, 'phone') and source_doc.phone:
+                contact_phone = source_doc.phone
+            # Get address
+            if hasattr(source_doc, 'customer_address') and source_doc.customer_address:
+                address = source_doc.customer_address
         
-        # Add sample row
-        if item_code:
+        # Set the values
+        sample_request.customer_name = customer_name
+        if customer:
+            sample_request.customer = customer
+        if contact_email:
+            sample_request.contact_email = contact_email
+        if contact_phone:
+            sample_request.contact_phone = contact_phone
+        if address:
+            sample_request.shipping_address = address
+        
+        # Add ALL sample rows from source document items
+        if hasattr(source_doc, 'items') and source_doc.items:
+            for item in source_doc.items:
+                sample_row = sample_request.append("samples", {})
+                sample_row.item = item.item_code
+                sample_row.item_name = item.item_name
+                sample_row.samples_count = 1
+                sample_row.qty_per_sample = 1
+                # Try to get description if available
+                if hasattr(item, 'description') and item.description:
+                    sample_row.description = item.description
+        
+        # Ensure at least one sample row exists (fallback)
+        if not sample_request.samples:
             sample_row = sample_request.append("samples", {})
-            sample_row.item = item_code
             sample_row.samples_count = 1
             sample_row.qty_per_sample = 1
         
