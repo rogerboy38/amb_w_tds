@@ -1854,6 +1854,13 @@ def make_sample_request_from_source(source_doctype, source_name):
         sample_request.request_type = "Pre-sample Approved"
         sample_request.request_date = frappe.utils.nowdate()
         
+        # Get item from source document
+        item_code = None
+        if source_doctype == "Quotation" and hasattr(source_doc, 'items') and source_doc.items:
+            item_code = source_doc.items[0].item_code
+        elif source_doctype == "Sales Order" and hasattr(source_doc, 'items') and source_doc.items:
+            item_code = source_doc.items[0].item_code
+        
         # Map based on doctype
         if source_doctype == "Lead":
             sample_request.customer = source_doc.lead_name
@@ -1877,6 +1884,13 @@ def make_sample_request_from_source(source_doctype, source_name):
             sample_request.customer = source_doc.customer
             sample_request.customer_name = source_doc.customer_name
             sample_request.sales_order = source_doc.name
+        
+        # Add sample row
+        if item_code:
+            sample_row = sample_request.append("samples", {})
+            sample_row.item = item_code
+            sample_row.samples_count = 1
+            sample_row.qty_per_sample = 1
         
         sample_request.insert(ignore_permissions=True)
         frappe.db.commit()
