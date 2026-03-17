@@ -1863,26 +1863,32 @@ def make_sample_request_from_source(source_doctype, source_name):
         
         # Map based on doctype
         if source_doctype == "Lead":
-            sample_request.customer = source_doc.lead_name
-            sample_request.customer_name = source_doc.company_name
+            # For Lead, we don't have a Customer yet - just set the name
+            sample_request.customer_name = source_doc.lead_name
+            if source_doc.company_name:
+                sample_request.customer_name = source_doc.company_name
         
         elif source_doctype == "Prospect":
-            sample_request.customer = source_doc.prospect_name
-            sample_request.customer_name = source_doc.company_name
+            sample_request.customer_name = source_doc.company_name or source_doc.prospect_name
         
         elif source_doctype == "Opportunity":
-            sample_request.customer = source_doc.customer_name
-            sample_request.customer_name = source_doc.customer_name
+            sample_request.customer_name = source_doc.customer_name or ""
+            if source_doc.customer:
+                sample_request.customer = source_doc.customer
             sample_request.opportunity = source_doc.name
         
         elif source_doctype == "Quotation":
-            sample_request.customer = source_doc.party_name
             sample_request.customer_name = source_doc.party_name
+            if source_doc.party_name:
+                # Try to find if party_name is a customer
+                customer = frappe.db.get_value("Customer", {"name": source_doc.party_name}, "name")
+                if customer:
+                    sample_request.customer = customer
             sample_request.quotation = source_doc.name
         
         elif source_doctype == "Sales Order":
-            sample_request.customer = source_doc.customer
             sample_request.customer_name = source_doc.customer_name
+            sample_request.customer = source_doc.customer
             sample_request.sales_order = source_doc.name
         
         # Add sample row
