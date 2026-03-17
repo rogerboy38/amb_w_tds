@@ -1836,3 +1836,53 @@ def get_sample_request(batch_name):
             "success": False,
             "message": str(e)
         }
+
+
+@frappe.whitelist()
+def make_sample_request_from_source(source_doctype, source_name):
+    """
+    Create a sample request from any source doctype (Lead, Prospect, Opportunity, Quotation, Sales Order)
+    """
+    try:
+        # Get source document
+        source_doc = frappe.get_doc(source_doctype, source_name)
+        
+        # Create new Sample Request AMB
+        sample_request = frappe.new_doc("Sample Request AMB")
+        
+        # Set source info
+        sample_request.request_type = "Pre-sample Approved"
+        sample_request.request_date = frappe.utils.nowdate()
+        
+        # Map based on doctype
+        if source_doctype == "Lead":
+            sample_request.customer = source_doc.lead_name
+            sample_request.customer_name = source_doc.company_name
+        
+        elif source_doctype == "Prospect":
+            sample_request.customer = source_doc.prospect_name
+            sample_request.customer_name = source_doc.company_name
+        
+        elif source_doctype == "Opportunity":
+            sample_request.customer = source_doc.customer_name
+            sample_request.customer_name = source_doc.customer_name
+            sample_request.opportunity = source_doc.name
+        
+        elif source_doctype == "Quotation":
+            sample_request.customer = source_doc.party_name
+            sample_request.customer_name = source_doc.party_name
+            sample_request.quotation = source_doc.name
+        
+        elif source_doctype == "Sales Order":
+            sample_request.customer = source_doc.customer
+            sample_request.customer_name = source_doc.customer_name
+            sample_request.sales_order = source_doc.name
+        
+        sample_request.insert(ignore_permissions=True)
+        frappe.db.commit()
+        
+        return sample_request.name
+        
+    except Exception as e:
+        frappe.log_error(f"Error creating sample request from {source_doctype}: {str(e)}")
+        frappe.throw(_("Failed to create sample request: ") + str(e))
