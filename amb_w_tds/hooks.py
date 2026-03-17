@@ -32,6 +32,8 @@ doctype_js = {
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
     "/assets/amb_w_tds/js/work_order_list.js",
+    "/assets/amb_w_tds/js/sample_request_utils.js",
+    "/assets/amb_w_tds/js/sample_request_buttons.js",
 ]
 
 # ========================================
