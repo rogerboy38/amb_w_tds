@@ -24,21 +24,20 @@ doctype_class = {
 #  FRONTEND JS INJECTIONS
 # ========================================
 
-# App-level bundled JS files (order matters: utils must load before buttons)
+# App-level JS files (combined module for reliable loading)
 app_include_js = [
-    "/assets/amb_w_tds/js/sample_request_utils.js",  # Load first - contains shared utilities
-    "/assets/amb_w_tds/js/sample_request_buttons.js",  # Load second - depends on utils
+    "/assets/amb_w_tds/js/sample_request_combined.js",  # Combined utilities + buttons
     "/assets/amb_w_tds/js/batch_widget.js",
     "/assets/amb_w_tds/js/work_order_list.js",
 ]
 
-# Doctype-specific JS for Sample Request buttons (alternative approach)
+# Doctype-specific JS for additional customization
 doctype_js = {
-    "Lead": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Prospect": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Opportunity": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Quotation": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Sales Order": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Lead": "amb_w_tds/public/js/sample_request_combined.js",
+    "Prospect": "amb_w_tds/public/js/sample_request_combined.js",
+    "Opportunity": "amb_w_tds/public/js/sample_request_combined.js",
+    "Quotation": "amb_w_tds/public/js/sample_request_combined.js",
+    "Sales Order": "amb_w_tds/public/js/sample_request_combined.js",
 }
 
 # ========================================
