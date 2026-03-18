@@ -24,14 +24,15 @@ doctype_class = {
 #  FRONTEND JS INJECTIONS
 # ========================================
 
+# App-level bundled JS files (order matters: utils must load before buttons)
 app_include_js = [
+    "/assets/amb_w_tds/js/sample_request_utils.js",  # Load first - contains shared utilities
+    "/assets/amb_w_tds/js/sample_request_buttons.js",  # Load second - depends on utils
     "/assets/amb_w_tds/js/batch_widget.js",
     "/assets/amb_w_tds/js/work_order_list.js",
-    "/assets/amb_w_tds/js/sample_request_utils.js",
-    "/assets/amb_w_tds/js/sample_request_buttons.js",
 ]
 
-# Doctype-specific JS for Sample Request buttons
+# Doctype-specific JS for Sample Request buttons (alternative approach)
 doctype_js = {
     "Lead": "amb_w_tds/public/js/sample_request_buttons.js",
     "Prospect": "amb_w_tds/public/js/sample_request_buttons.js",
