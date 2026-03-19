@@ -38,7 +38,7 @@ doctype_js = {
     "Sales Order": "public/js/sample_request_buttons.js",
 }
 
-# Global app-level JS bundles (compiled by bench build - for batch_widget only)
+# Global app-level JS bundles (compiled by bench build)
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
 ]

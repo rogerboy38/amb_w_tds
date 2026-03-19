@@ -1,10 +1,68 @@
 // =============================================================================
-// Sample Request Buttons
-// Adds Sample Request button to Lead, Prospect, Opportunity, Quotation, Sales Order
-// Version: 2026-03-17
+// Sample Request Buttons - Combined Module
+// Contains both utilities and button logic
+// Works with doctype_js - no bundling required
 // =============================================================================
 
-// Target doctypes for Sample Request button
+// =============================================================================
+// PART 1: SampleRequestUtils (Utilities) - Embedded directly
+// =============================================================================
+window.SampleRequestUtils = {
+    hasPermission: function() {
+        var allowed_roles = ["System Manager", "RND Manager", "Manufacturing Manager"];
+        var user_roles = frappe.user_roles || [];
+        return allowed_roles.some(function(role) {
+            return user_roles.indexOf(role) !== -1;
+        });
+    },
+
+    createSampleRequest: function(doctype, docname) {
+        if (!this.hasPermission()) {
+            frappe.msgprint({
+                title: __("Permission Denied"),
+                message: __("You don't have permission to create sample requests."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        frappe.call({
+            method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_source",
+            args: {
+                source_doctype: doctype,
+                source_name: docname
+            },
+            freeze: true,
+            freeze_message: __("Creating Sample Request..."),
+            callback: function(r) {
+                if (!r.exc && r.message) {
+                    frappe.set_route("Form", "Sample Request AMB", r.message);
+                    frappe.show_alert({
+                        message: __("Sample Request created successfully"),
+                        indicator: "green"
+                    });
+                }
+            }
+        });
+    },
+
+    addButtonToForm: function(frm, doctype) {
+        if (frm.is_new()) return;
+        if (!this.hasPermission()) return;
+
+        frm.add_custom_button(
+            __("Sample Request"),
+            function() {
+                window.SampleRequestUtils.createSampleRequest(doctype, frm.doc.name);
+            },
+            __("Create")
+        );
+    }
+};
+
+// =============================================================================
+// PART 2: Button Registration
+// =============================================================================
 var TARGET_DOCTYPES = [
     "Lead",
     "Prospect", 
@@ -13,28 +71,17 @@ var TARGET_DOCTYPES = [
     "Sales Order"
 ];
 
-// Wait for Frappe to be ready
-frappe.router.on("change", function() {
-    // This ensures the app is loaded
-});
-
+// Register buttons when Frappe is ready
 $(document).on('app_ready', function() {
     console.log("🚀 Initializing Sample Request buttons for", TARGET_DOCTYPES);
     
-    // Apply to each doctype
     TARGET_DOCTYPES.forEach(function(doctype) {
         frappe.ui.form.on(doctype, {
             refresh: function(frm) {
-                // Add the button using our utility
                 window.SampleRequestUtils.addButtonToForm(frm, doctype);
-                
-                // Doctype-specific logic if needed
-                if (doctype === "Quotation") {
-                    console.log("Quotation form - Sample Request button added");
-                }
             }
         });
     });
 });
 
-console.log("✅ Sample Request Buttons script loaded for:", TARGET_DOCTYPES);
+console.log("✅ Sample Request module loaded");
