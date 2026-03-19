@@ -24,21 +24,24 @@ doctype_class = {
 #  FRONTEND JS INJECTIONS
 # ========================================
 
-# App-level JS files (combined module for reliable loading)
-app_include_js = [
-    "/assets/amb_w_tds/js/sample_request_combined.js",  # Combined utilities + buttons
-    "/assets/amb_w_tds/js/batch_widget.js",
-    "/assets/amb_w_tds/js/work_order_list.js",
-]
-
-# Doctype-specific JS for additional customization
+# Doctype-specific JS (loaded dynamically per doctype - works in Docker AND sandbox)
 doctype_js = {
-    "Lead": "amb_w_tds/public/js/sample_request_combined.js",
-    "Prospect": "amb_w_tds/public/js/sample_request_combined.js",
-    "Opportunity": "amb_w_tds/public/js/sample_request_combined.js",
-    "Quotation": "amb_w_tds/public/js/sample_request_combined.js",
-    "Sales Order": "amb_w_tds/public/js/sample_request_combined.js",
+    # Original doctype scripts (RESTORED - DO NOT REMOVE)
+    "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
+    "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
+    "Work Order": "public/js/work_order_list.js",
+    # Sample Request buttons (loaded only on these doctypes via doctype_js - works in Docker)
+    "Lead": "public/js/sample_request_buttons.js",
+    "Prospect": "public/js/sample_request_buttons.js",
+    "Opportunity": "public/js/sample_request_buttons.js",
+    "Quotation": "public/js/sample_request_buttons.js",
+    "Sales Order": "public/js/sample_request_buttons.js",
 }
+
+# Global app-level JS bundles (compiled by bench build - for batch_widget only)
+app_include_js = [
+    "/assets/amb_w_tds/js/batch_widget.js",
+]
 
 # ========================================
 #  DOCUMENT EVENTS (Critical migration hooks)
