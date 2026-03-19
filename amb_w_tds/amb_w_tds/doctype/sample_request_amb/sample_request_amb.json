@@ -220,7 +220,7 @@
       "fieldtype": "Table",
       "label": "Samples / Detalle de Muestras",
       "options": "Sample Request AMB Item",
-      "reqd": 1
+      "reqd": 0
     },
 
     {
