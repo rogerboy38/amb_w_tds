@@ -1948,15 +1948,9 @@ def make_sample_request_from_source(source_doctype, source_name):
                 if hasattr(item, 'description') and item.description:
                     sample_row.description = item.description
         
-        # Ensure at least one sample row exists (fallback)
-        if not sample_request.samples:
-            sample_row = sample_request.append("samples", {})
-            sample_row.samples_count = 1
-            sample_row.qty_per_sample = 1
-        
-        # Set main item field from first sample row (required by DocType)
-        if sample_request.samples and sample_request.samples[0].item:
-            sample_request.item = sample_request.samples[0].item
+        # Note: Do NOT create sample rows automatically for Leads/Prospects
+        # User must manually add samples after creation since they need to select items
+        # based on their analysis of the customer's needs
         
         sample_request.insert(ignore_permissions=True)
         frappe.db.commit()
