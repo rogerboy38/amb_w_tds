@@ -37,7 +37,7 @@
       "fieldname": "request_type",
       "fieldtype": "Select",
       "label": "Request Type / Tipo de Solicitud",
-      "options": "Marketing\nProspect\nPre-sample Approved\nExternal Analysis\nNew Product Development\nInspector / Sublot Report\nNew Process Trial\nExternal Laboratory\nOther"
+      "options": "Marketing\nProspect\nRepresentative Sample\nExhibition\nPre-sample Approved\nExternal Analysis\nNew Product Development\nInspector / Sublot Report\nNew Process Trial\nExternal Laboratory\nOther"
     },
     {
       "fieldname": "party_type",
@@ -89,6 +89,15 @@
       "fieldtype": "Link",
       "label": "Item / Producto",
       "options": "Item"
+    },
+    {
+      "fieldname": "custom_product_key_tds",
+      "fieldtype": "Link",
+      "label": "TDS / Especificacion TDS",
+      "options": "TDS Product Specification",
+      "fetch_from": "item.custom_product_key_tds",
+      "fetch_if_empty": 1,
+      "read_only": 1
     },
     {
       "fieldname": "batch_quantity",

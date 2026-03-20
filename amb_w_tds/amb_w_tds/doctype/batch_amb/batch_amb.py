@@ -1851,8 +1851,16 @@ def make_sample_request_from_source(source_doctype, source_name):
         # Create new Sample Request AMB
         sample_request = frappe.new_doc("Sample Request AMB")
         
-        # Set source info
-        sample_request.request_type = "Pre-sample Approved"
+        # Set request_type based on source doctype
+        request_type_map = {
+            'Lead': 'Marketing',
+            'Prospect': 'Prospect',
+            'Opportunity': 'Marketing',
+            'Quotation': 'Pre-sample Approved',
+            'Sales Order': 'Pre-sample Approved',
+            'Batch AMB': 'Representative Sample'
+        }
+        sample_request.request_type = request_type_map.get(source_doctype, 'Pre-sample Approved')
         sample_request.request_date = frappe.utils.nowdate()
         
         # Get item and other details from source document based on doctype
@@ -1865,12 +1873,28 @@ def make_sample_request_from_source(source_doctype, source_name):
         if source_doctype == "Lead":
             # Get customer name from Lead
             customer_name = source_doc.company_name or source_doc.lead_name
+            # Set party type and party for Lead
+            sample_request.party_type = 'Lead'
+            sample_request.party = source_name
             # Get contact info from Lead
             contact_email = source_doc.email_id
             contact_phone = source_doc.mobile_no
             # Try to get address
             if hasattr(source_doc, 'address') and source_doc.address:
                 address = source_doc.address
+            
+            # DEFAULT ITEM for Lead (no items table) - use item 0307
+            default_item = frappe.get_doc('Item', '0307')
+            sample_row = sample_request.append('samples', {})
+            sample_row.item = '0307'
+            sample_row.description = default_item.item_name
+            sample_row.uom = 'Kg'
+            sample_row.qty_per_sample = 0.020
+            sample_row.samples_count = 8
+            sample_row.total_qty = 0.160
+            sample_row.container_size = '0.020'
+            sample_row.container_type = 'BOL020'
+            sample_row.lab_notes = '70% Aloe - 30% Gum\n3 samples of retention:\n  Sample 1 - Qty. 1 Distributor Retention\n  Sample 2 - Qty. 1 Customer Retention\n  Sample 3 - Qty. 1 Analysis'
             
         elif source_doctype == "Prospect":
             # Get customer name from Prospect
@@ -1951,6 +1975,16 @@ def make_sample_request_from_source(source_doctype, source_name):
         # Note: Do NOT create sample rows automatically for Leads/Prospects
         # User must manually add samples after creation since they need to select items
         # based on their analysis of the customer's needs
+        
+        # Fallback: If no samples were added, use default item 0307
+        if not sample_request.samples:
+            default_item = frappe.get_doc('Item', '0307')
+            sample_row = sample_request.append('samples', {})
+            sample_row.item = '0307'
+            sample_row.description = default_item.item_name
+            sample_row.uom = 'Kg'
+            sample_row.qty_per_sample = 0.020
+            sample_row.samples_count = 8
         
         sample_request.insert(ignore_permissions=True)
         frappe.db.commit()
