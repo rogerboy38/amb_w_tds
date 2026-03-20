@@ -63,25 +63,12 @@ window.SampleRequestUtils = {
 // =============================================================================
 // PART 2: Button Registration
 // =============================================================================
-var TARGET_DOCTYPES = [
-    "Lead",
-    "Prospect", 
-    "Opportunity",
-    "Quotation",
-    "Sales Order"
-];
-
-// Register buttons when Frappe is ready
-$(document).on('app_ready', function() {
-    console.log("🚀 Initializing Sample Request buttons for", TARGET_DOCTYPES);
-    
-    TARGET_DOCTYPES.forEach(function(doctype) {
-        frappe.ui.form.on(doctype, {
-            refresh: function(frm) {
-                window.SampleRequestUtils.addButtonToForm(frm, doctype);
-            }
-        });
-    });
+// Direct frappe.ui.form.on registration - works with doctype_js loading
+// When loaded via doctype_js, the form is already available, so we register directly
+frappe.ui.form.on(cur_frm.doctype, {
+    refresh: function(frm) {
+        window.SampleRequestUtils.addButtonToForm(frm, frm.doctype);
+    }
 });
 
-console.log("✅ Sample Request module loaded");
+console.log("✅ Sample Request buttons registered for", cur_frm.doctype);
