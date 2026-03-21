@@ -1899,17 +1899,39 @@ def make_sample_request_from_source(source_doctype, source_name):
         elif source_doctype == "Prospect":
             # Get customer name from Prospect
             customer_name = source_doc.company_name or source_doc.prospect_name
+            # Set party type and party for Prospect
+            sample_request.party_type = 'Prospect'
+            sample_request.party = source_name
             # Get contact info from Prospect
             if hasattr(source_doc, 'email') and source_doc.email:
                 contact_email = source_doc.email
             if hasattr(source_doc, 'phone') and source_doc.phone:
                 contact_phone = source_doc.phone
+            # Try to get address
+            if hasattr(source_doc, 'address') and source_doc.address:
+                address = source_doc.address
+            
+            # DEFAULT ITEM for Prospect (no items table) - use item 0307
+            default_item = frappe.get_doc('Item', '0307')
+            sample_row = sample_request.append('samples', {})
+            sample_row.item = '0307'
+            sample_row.description = default_item.item_name
+            sample_row.uom = 'Kg'
+            sample_row.qty_per_sample = 0.020
+            sample_row.samples_count = 8
+            sample_row.total_qty = 0.160
+            sample_row.container_size = '0.020'
+            sample_row.container_type = 'BOL020'
+            sample_row.lab_notes = '70% Aloe - 30% Gum\n3 samples of retention:\n  Sample 1 - Qty. 1 Distributor Retention\n  Sample 2 - Qty. 1 Customer Retention\n  Sample 3 - Qty. 1 Analysis'
         
         elif source_doctype == "Opportunity":
             # Get customer from Opportunity
             customer_name = source_doc.customer_name
             customer = source_doc.customer
             sample_request.opportunity = source_doc.name
+            # Set party type and party for Opportunity
+            sample_request.party_type = 'Customer' if customer else None
+            sample_request.party = customer
             # Get contact info
             if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
                 contact_email = source_doc.contact_email
@@ -1918,6 +1940,20 @@ def make_sample_request_from_source(source_doctype, source_name):
             # Get address
             if hasattr(source_doc, 'customer_address') and source_doc.customer_address:
                 address = source_doc.customer_address
+            
+            # DEFAULT ITEM for Opportunity if no items - use item 0307
+            if not (hasattr(source_doc, 'items') and source_doc.items):
+                default_item = frappe.get_doc('Item', '0307')
+                sample_row = sample_request.append('samples', {})
+                sample_row.item = '0307'
+                sample_row.description = default_item.item_name
+                sample_row.uom = 'Kg'
+                sample_row.qty_per_sample = 0.020
+                sample_row.samples_count = 8
+                sample_row.total_qty = 0.160
+                sample_row.container_size = '0.020'
+                sample_row.container_type = 'BOL020'
+                sample_row.lab_notes = '70% Aloe - 30% Gum\n3 samples of retention:\n  Sample 1 - Qty. 1 Distributor Retention\n  Sample 2 - Qty. 1 Customer Retention\n  Sample 3 - Qty. 1 Analysis'
         
         elif source_doctype == "Quotation":
             # Get customer from Quotation
