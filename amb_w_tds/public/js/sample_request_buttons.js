@@ -59,16 +59,17 @@ window.SampleRequestUtils = {
         );
     }
 };
-
-// =============================================================================
+// ===========================================================================
 // PART 2: Button Registration
-// =============================================================================
-// Direct frappe.ui.form.on registration - works with doctype_js loading
-// When loaded via doctype_js, the form is already available, so we register directly
-frappe.ui.form.on(cur_frm.doctype, {
-    refresh: function(frm) {
-        window.SampleRequestUtils.addButtonToForm(frm, frm.doctype);
-    }
+// ===========================================================================
+var TARGET_DOCTYPES = ["Lead", "Prospect", "Opportunity", "Quotation", "Sales Order"];
+
+TARGET_DOCTYPES.forEach(function(doctype) {
+    frappe.ui.form.on(doctype, {
+        refresh: function(frm) {
+            window.SampleRequestUtils.addButtonToForm(frm, doctype);
+        }
+    });
 });
 
-console.log("✅ Sample Request buttons registered for", cur_frm.doctype);
+console.log("Sample Request buttons registered for:", TARGET_DOCTYPES.join(", "));
