@@ -1925,13 +1925,19 @@ def make_sample_request_from_source(source_doctype, source_name):
             sample_row.lab_notes = '70% Aloe - 30% Gum\n3 samples of retention:\n  Sample 1 - Qty. 1 Distributor Retention\n  Sample 2 - Qty. 1 Customer Retention\n  Sample 3 - Qty. 1 Analysis'
         
         elif source_doctype == "Opportunity":
-            # Get customer from Opportunity
-            customer_name = source_doc.customer_name
-            customer = source_doc.customer
-            sample_request.opportunity = source_doc.name
-            # Set party type and party for Opportunity
-            sample_request.party_type = 'Customer' if customer else None
+            # Get customer name from Opportunity
+            customer_name = source_doc.customer_name or source_doc.party_name
+            # Set party based on opportunity_from (Lead or Customer)
+            opportunity_from = getattr(source_doc, 'opportunity_from', 'Customer')
+            if opportunity_from == 'Customer':
+                customer = source_doc.party_name
+                sample_request.party_type = 'Customer'
+            else:
+                # It's from a Lead
+                customer = source_doc.party_name
+                sample_request.party_type = 'Lead'
             sample_request.party = customer
+            sample_request.opportunity = source_doc.name
             # Get contact info
             if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
                 contact_email = source_doc.contact_email
@@ -1962,6 +1968,10 @@ def make_sample_request_from_source(source_doctype, source_name):
                 # Try to find if party_name is a customer
                 customer = frappe.db.get_value("Customer", {"name": source_doc.party_name}, "name")
             sample_request.quotation = source_doc.name
+            # Set party type and party
+            if customer:
+                sample_request.party_type = 'Customer'
+                sample_request.party = customer
             # Get contact info from Quotation
             if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
                 contact_email = source_doc.contact_email
@@ -1976,6 +1986,10 @@ def make_sample_request_from_source(source_doctype, source_name):
             customer_name = source_doc.customer_name
             customer = source_doc.customer
             sample_request.sales_order = source_doc.name
+            # Set party type and party
+            if customer:
+                sample_request.party_type = 'Customer'
+                sample_request.party = customer
             # Get contact info from Sales Order
             if hasattr(source_doc, 'contact_email') and source_doc.contact_email:
                 contact_email = source_doc.contact_email
