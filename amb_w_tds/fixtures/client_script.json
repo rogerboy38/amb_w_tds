@@ -1,0 +1,8 @@
+[
+  {
+    "doctype": "Client Script",
+    "name": "Lead-BUG72-Fix",
+    "dt": "Lead",
+    "script": "<!--\n__() translatable function is not available in Client Script as it's evaluated differently\nUsing frappe.format __\n-->\nfrappe.ui.form.on('Lead', {\n    refresh: function(frm) {\n        // Add custom button to create Sample Request\n        frm.add_custom_button(__('Sample Request'), function() {\n            create_sample_request(frm);\n        }, __('Create'));\n    }\n});\n\nfunction create_sample_request(frm) {\n    // Call the server function that creates Sample Request with default sample row\n    // This fixes BUG 72 - \"Data missing in table Samples\"\n    frappe.call({\n        method: 'amb_w_tds.api.utils.create_sample_request_from_lead',\n        args: {\n            lead_name: frm.doc.name\n        },\n        freeze: true,\n        callback: function(r) {\n            if (!r.exc) {\n                frappe.msgprint('Sample Request created: ' + r.message);\n                frappe.set_route('Form', 'Sample Request AMB', r.message);\n            }\n        },\n        error_callback: function(r) {\n            frappe.msgprint('Error creating Sample Request: ' + r.message);\n        }\n    });\n}"
+  }
+]
