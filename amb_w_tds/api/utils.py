@@ -2,6 +2,7 @@
 
 from typing import Callable
 import frappe
+from frappe.utils import today
 
 
 def resolve_agent_fn(agent, fn_name: str) -> Callable:
@@ -33,3 +34,39 @@ def resolve_agent_fn(agent, fn_name: str) -> Callable:
         )
 
     return fn
+
+
+
+@frappe.whitelist()
+def create_sample_request_from_lead(lead_name):
+    """Create a Sample Request AMB from a Lead with a default sample row.
+    
+    This fixes Bug 72 where the 'Data missing in table Samples' error occurred
+    when creating a Sample Request from a Lead without any sample rows.
+    
+    Args:
+        lead_name: The name of the Lead document
+        
+    Returns:
+        str: The name of the newly created Sample Request AMB
+    """
+    lead = frappe.get_doc("Lead", lead_name)
+    
+    # Create the Sample Request with a default sample row
+    # This ensures the child table has data and prevents validation errors
+    sr = frappe.get_doc({
+        "doctype": "Sample Request AMB",
+        "party_type": "Lead",
+        "party": lead_name,
+        "request_date": today(),
+        "samples": [
+            {
+                "doctype": "Sample Request AMB Item",
+                "item": "0307"
+            }
+        ]
+    })
+    sr.insert(ignore_permissions=True)
+    frappe.db.commit()
+    
+    return sr.name
