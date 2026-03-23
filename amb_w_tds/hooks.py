@@ -15,6 +15,17 @@ doctype_class = {
     "Batch AMB":  "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
 }
 
+# Override custom DocTypes to prevent orphan deletion during bench migrate
+override_doctype_class = {
+    "Sample Request AMB": "amb_w_tds.amb_w_tds.doctype.sample_request_amb.sample_request_amb.SampleRequestAMB",
+    "RND Parent DocType": "amb_w_tds.amb_w_tds.doctype.rnd_parent_doctype.rnd_parent_doctype.RNDParentDocType",
+    "Production Plant AMB": "amb_w_tds.amb_w_tds.doctype.production_plant_amb.production_plant_amb.ProductionPlantAMB",
+    "Lote AMB": "amb_w_tds.amb_w_tds.doctype.lote_amb.lote_amb.LoteAMB",
+    "Third Party API": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyAPI",
+    "KPI Cost Breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KPICostBreakdown",
+    "COA AMB2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.COAMB2",
+}
+
 # Fix freight app's broken Lead override path (DISABLED - freight app may not exist)
 # override_doctype_class = {
 #     "Lead": "freight.freight_management.customization.lead.lead.CustomLead"
@@ -111,6 +122,23 @@ scheduler_events = {
 
 fixtures = [
 
+    # DocType fixtures - ALL custom DocTypes must be listed here to prevent deletion during migrate
+    {
+        "doctype": "DocType",
+        "filters": [
+            ["name", "in", [
+                "Sample Request AMB",
+                "Sample Request AMB Item",
+                "RND Parent DocType",
+                "Production Plant AMB",
+                "Lote AMB",
+                "Third Party API",
+                "KPI Cost Breakdown",
+                "COA AMB2"
+            ]]
+        ]
+    },
+
     # sales_partner + agent tracking required fields
     {
         "doctype": "Custom Field",
@@ -124,6 +152,14 @@ fixtures = [
         "doctype": "Workflow",
         "filters": [
             ["name", "like", "AMB%"]
+        ]
+    },
+
+    # Protect standard ERPNext workspaces from orphan deletion
+    {
+        "doctype": "Workspace",
+        "filters": [
+            ["name", "in", ["Home", "Welcome Workspace", "Build", "Financial Reports", "CRM", "Users", "Settings", "Accounting", "Stock", "Buying", "Selling", "Manufacturing", "Projects", "Assets", "Quality", "Support", "Tools", "Website", "Integrations", "ERPNext Settings", "ERPNext Integrations", "Receivables", "Payables"]]
         ]
     },
 ]
