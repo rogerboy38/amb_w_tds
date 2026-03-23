@@ -27,3 +27,29 @@ def after_migrate():
         )
     except Exception as e:
         frappe.logger().error(f"[amb_w_tds] after_migrate error: {e}")
+
+
+def mark_doctypes_as_owned():
+    """Mark custom DocTypes as owned by amb_w_tds to prevent orphan deletion."""
+    custom_doctypes = [
+        "RND Parent DocType",
+        "Production Plant AMB",
+        "Lote AMB",
+        "Third Party API",
+        "KPI Cost Breakdown",
+        "COA AMB2",
+    ]
+    
+    for dt_name in custom_doctypes:
+        try:
+            if frappe.db.exists("DocType", dt_name):
+                frappe.db.sql("""
+                    UPDATE `tabDocType` 
+                    SET module = 'amb_w_tds' 
+                    WHERE name = %s
+                """, (dt_name,))
+                frappe.logger().info(f"[amb_w_tds] Marked {dt_name} as owned by amb_w_tds")
+        except Exception as e:
+            frappe.logger().warning(f"[amb_w_tds] Could not mark {dt_name}: {e}")
+    
+    frappe.db.commit()

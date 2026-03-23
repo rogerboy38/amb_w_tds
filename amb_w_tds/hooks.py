@@ -186,4 +186,7 @@ override_whitelisted_methods = {
 # ================================================
 # POST-MIGRATE HOOK (protect amb_w_tds DocTypes)
 # ================================================
-after_migrate = ["amb_w_tds.install.after_migrate"]
+after_migrate = [
+    "amb_w_tds.install.after_migrate",
+    "amb_w_tds.install.mark_doctypes_as_owned"
+]
