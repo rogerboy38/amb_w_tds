@@ -111,6 +111,23 @@ scheduler_events = {
 
 fixtures = [
 
+    # DocType fixtures - ALL custom DocTypes must be listed here to prevent deletion during migrate
+    {
+        "doctype": "DocType",
+        "filters": [
+            ["name", "in", [
+                "Sample Request AMB",
+                "Sample Request AMB Item",
+                "RND Parent DocType",
+                "Production Plant AMB",
+                "Lote AMB",
+                "Third Party API",
+                "KPI Cost Breakdown",
+                "COA AMB2"
+            ]]
+        ]
+    },
+
     # sales_partner + agent tracking required fields
     {
         "doctype": "Custom Field",
