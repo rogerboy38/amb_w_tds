@@ -3,6 +3,17 @@ import os
 import glob
 
 
+def before_migrate():
+    """Run before bench migrate to prepare the environment."""
+    try:
+        frappe.logger().info("[amb_w_tds] Running pre-migrate setup...")
+        # This function is called before migrate to prepare the environment
+        # Currently a stub - actual logic is in hooks.py before_migrate list
+        pass
+    except Exception as e:
+        frappe.logger().error(f"[amb_w_tds] before_migrate error: {e}")
+
+
 def after_migrate():
     """Re-sync amb_w_tds DocTypes after migrate to prevent orphan deletion."""
     try:
