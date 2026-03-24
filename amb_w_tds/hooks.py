@@ -172,3 +172,11 @@ before_migrate = [
     "amb_w_tds.install.mark_doctypes_as_owned",
     "amb_w_tds.patches.fix_workspace_orphan.apply_patch"
 ]
+
+# ================================================
+# BUG 74: Add Sample Request AMB to Quotation Connections
+# Shows Sample Request AMB links in Quotation's Connections tab
+# ================================================
+override_doctype_dashboards = {
+    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data"
+}
