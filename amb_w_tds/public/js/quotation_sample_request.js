@@ -1,4 +1,6 @@
 // Sample Request button for Quotation
+console.log('[amb_w_tds] Loading quotation_sample_request.js');
+try {
 frappe.ui.form.on('Quotation', {
     refresh: function(frm) {
         if (frm.is_new()) return;
@@ -18,3 +20,6 @@ frappe.ui.form.on('Quotation', {
         }, __('Create'));
     }
 });
+} catch(e) {
+    console.error('[amb_w_tds] Error loading quotation_sample_request.js:', e);
+}
