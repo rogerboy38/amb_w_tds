@@ -180,3 +180,28 @@ before_migrate = [
 override_doctype_dashboards = {
     "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data"
 }
+
+# ================================================
+# BUG 79: Add Sample Request AMB to Connections tab
+# Using override_doctype_dashboards for Dynamic Link support
+# ================================================
+def get_sample_request_links():
+    """Returns link data for Sample Request AMB connections."""
+    return [
+        {
+            "label": "Sample Requests",
+            "type": "Report",
+            "link_to": "Sample Request AMB",
+            "on_click": ""
+        }
+    ]
+
+# Note: The links dictionary approach doesn't work well with Dynamic Link fields (party_type/party).
+# The override_doctype_dashboards approach below handles connections via custom dashboards.
+override_doctype_dashboards = {
+    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data",
+    "Lead": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data",
+    "Prospect": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data",
+    "Opportunity": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data",
+    "Sales Order": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data",
+}

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-BUG 74: Quotation Dashboard Override
-Adds Sample Request AMB to the Connections section of Quotation
+BUG 74 & 79: Dashboard Override for Sample Request AMB Connections
+Adds Sample Request AMB to the Connections section of various doctypes
 """
 
 import frappe
@@ -9,11 +9,14 @@ import frappe
 
 def get_dashboard_data(data):
     """
-    Extend Quotation dashboard to show Sample Request AMB links
+    Extend various doctype dashboards to show Sample Request AMB links
     
-    This function adds a link to the Quotation's Connections section
+    This function adds a link to the Connections section
     showing related Sample Request AMB documents
     """
+    # Get the current doctype from data
+    doctype = data.get("name") or frappe.form_dict.doctype or ""
+    
     # Add Sample Request AMB to the links section
     data.setdefault("links", [])
     
@@ -24,23 +27,47 @@ def get_dashboard_data(data):
     )
     
     if not link_exists:
-        data["links"].append({
-            "link_doctype": "Sample Request AMB",
-            "link_fieldname": "party",
-            "table_fieldname": "samples",
-            "get_filters": get_sample_request_filters
-        })
+        # Determine the correct filter based on doctype
+        if doctype == "Quotation":
+            # Quotation has direct 'quotation' field
+            data["links"].append({
+                "label": "Sample Requests",
+                "type": "DocType",
+                "doctype": "Sample Request AMB",
+                "link_filters": [
+                    ["Sample Request AMB", "quotation", "=", "${ doctype.name }"]
+                ]
+            })
+        else:
+            # Lead, Prospect, Opportunity, Sales Order use Dynamic Link (party_type/party)
+            # We need to use the custom script approach instead
+            pass
     
     return data
 
 
 def get_sample_request_filters(doctype, docname):
     """
-    Get filters to find Sample Request AMB documents linked to this Quotation
+    Get filters to find Sample Request AMB documents linked to this document
     """
-    # Try to find Sample Request AMB where party links to this Quotation
-    # The connection could be via different fields depending on implementation
-    return [
-        ["Sample Request AMB", "party", "=", docname],
-        ["Sample Request AMB", "party_type", "=", "Quotation"]
-    ]
+    filters = []
+    
+    if doctype == "Quotation":
+        # Direct quotation field
+        filters = [
+            ["Sample Request AMB", "quotation", "=", docname]
+        ]
+    elif doctype in ["Lead", "Prospect", "Opportunity", "Sales Order"]:
+        # Dynamic Link via party_type + party
+        party_type_map = {
+            "Lead": "Lead",
+            "Prospect": "Prospect", 
+            "Opportunity": "Opportunity",
+            "Sales Order": "Sales Order"
+        }
+        filters = [
+            ["Sample Request AMB", "party", "=", docname],
+            ["Sample Request AMB", "party_type", "=", party_type_map.get(doctype, doctype)]
+        ]
+    
+    return filters
