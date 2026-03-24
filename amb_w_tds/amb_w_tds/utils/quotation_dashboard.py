@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BUG 74 & 79: Dashboard Override for Sample Request AMB Connections
+BUG 79: Dashboard Override for Sample Request AMB Connections
 Adds Sample Request AMB to the Connections section of various doctypes
 """
 
@@ -11,63 +11,124 @@ def get_dashboard_data(data):
     """
     Extend various doctype dashboards to show Sample Request AMB links
     
-    This function adds a link to the Connections section
-    showing related Sample Request AMB documents
+    This function calls the original get_data() for each doctype,
+    then appends Sample Request AMB to the transactions/links section
     """
-    # Get the current doctype from data
-    doctype = data.get("name") or frappe.form_dict.doctype or ""
+    # Get current doctype from the form
+    doctype = frappe.form_dict.doctype if hasattr(frappe, 'form_dict') and frappe.form_dict.get('doctype') else None
     
-    # Add Sample Request AMB to the links section
-    data.setdefault("links", [])
+    # If no doctype provided, return data as-is
+    if not doctype:
+        return data
     
-    # Check if Sample Request AMB link already exists
-    link_exists = any(
-        link.get("link_doctype") == "Sample Request AMB" 
-        for link in data.get("links", [])
-    )
-    
-    if not link_exists:
-        # Determine the correct filter based on doctype
-        if doctype == "Quotation":
-            # Quotation has direct 'quotation' field
-            data["links"].append({
-                "label": "Sample Requests",
-                "type": "DocType",
-                "doctype": "Sample Request AMB",
-                "link_filters": [
-                    ["Sample Request AMB", "quotation", "=", "${ doctype.name }"]
-                ]
+    # Call original get_data based on doctype and append Sample Request link
+    if doctype == "Lead":
+        try:
+            original_data = frappe.call({
+                "method": "erpnext.crm.doctype.lead.lead_dashboard.get_data",
             })
-        else:
-            # Lead, Prospect, Opportunity, Sales Order use Dynamic Link (party_type/party)
-            # We need to use the custom script approach instead
+            if original_data:
+                data = original_data
+        except Exception:
             pass
+        
+        # Add Sample Request AMB to transactions
+        add_sample_request_to_transactions(data, doctype)
+        
+    elif doctype == "Prospect":
+        try:
+            original_data = frappe.call({
+                "method": "erpnext.crm.doctype.prospect.prospect_dashboard.get_data",
+            })
+            if original_data:
+                data = original_data
+        except Exception:
+            pass
+        
+        add_sample_request_to_transactions(data, doctype)
+        
+    elif doctype == "Opportunity":
+        try:
+            original_data = frappe.call({
+                "method": "erpnext.crm.doctype.opportunity.opportunity_dashboard.get_data",
+            })
+            if original_data:
+                data = original_data
+        except Exception:
+            pass
+        
+        add_sample_request_to_transactions(data, doctype)
+        
+    elif doctype == "Quotation":
+        try:
+            original_data = frappe.call({
+                "method": "erpnext.selling.doctype.quotation.quotation_dashboard.get_data",
+            })
+            if original_data:
+                data = original_data
+        except Exception:
+            pass
+        
+        add_sample_request_to_transactions(data, doctype)
+        
+    elif doctype == "Sales Order":
+        try:
+            original_data = frappe.call({
+                "method": "erpnext.selling.doctype.sales_order.sales_order_dashboard.get_data",
+            })
+            if original_data:
+                data = original_data
+        except Exception:
+            pass
+        
+        add_sample_request_to_transactions(data, doctype)
     
     return data
 
 
-def get_sample_request_filters(doctype, docname):
+def add_sample_request_to_transactions(data, doctype):
     """
-    Get filters to find Sample Request AMB documents linked to this document
+    Add Sample Request AMB to the transactions section of dashboard data
     """
-    filters = []
+    if not data:
+        return data
     
-    if doctype == "Quotation":
-        # Direct quotation field
-        filters = [
-            ["Sample Request AMB", "quotation", "=", docname]
-        ]
-    elif doctype in ["Lead", "Prospect", "Opportunity", "Sales Order"]:
-        # Dynamic Link via party_type + party
+    # Get or create transactions/transactions_children section
+    transactions = data.get("transactions") or data.get("transaction_details") or []
+    
+    # Check if Sample Request AMB already exists
+    sr_exists = any(
+        (isinstance(t, dict) and t.get("label") == "Sample Request") or
+        (isinstance(t, str) and t == "Sample Request AMB")
+        for t in transactions
+    )
+    
+    if not sr_exists:
+        # Determine the correct filter based on doctype
         party_type_map = {
             "Lead": "Lead",
-            "Prospect": "Prospect", 
+            "Prospect": "Prospect",
             "Opportunity": "Opportunity",
+            "Quotation": "Quotation",
             "Sales Order": "Sales Order"
         }
-        filters = [
-            ["Sample Request AMB", "party", "=", docname],
-            ["Sample Request AMB", "party_type", "=", party_type_map.get(doctype, doctype)]
-        ]
+        
+        # Build the filter based on doctype
+        if doctype == "Quotation":
+            filter_dict = {"quotation": "="${ doctype.name }"}
+        else:
+            # Use Dynamic Link (party_type + party)
+            filter_dict = {"party_type": party_type_map.get(doctype, doctype)}
+        
+        # Add Sample Request AMB to transactions
+        new_entry = {
+            "label": "Sample Request",
+            "doctype": "Sample Request AMB",
+            "type": "Link",
+        }
+        
+        if isinstance(transactions, list):
+            transactions.append(new_entry)
+            data["transactions"] = transactions
     
-    return filters
+    return data
