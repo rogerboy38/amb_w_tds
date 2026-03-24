@@ -38,19 +38,18 @@ doctype_js = {
     # Original doctype scripts (RESTORED - DO NOT REMOVE)
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
-    "Work Order": "public/js/work_order_list.js",
-    # Sample Request buttons (loaded only on these doctypes via doctype_js - works in Docker)
-    "Lead": "public/js/sample_request_buttons.js",
-    "Prospect": "public/js/sample_request_buttons.js",
-    "Opportunity": "public/js/sample_request_buttons.js",
-    "Quotation": "public/js/sample_request_buttons.js",
-    "Sales Order": "public/js/sample_request_buttons.js",
+    "Work Order": "amb_w_tds/public/js/work_order_list.js",
+    # Sample Request buttons (loaded via doctype_js - works in Docker without bench build)
+    "Lead": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Prospect": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Opportunity": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Quotation": "amb_w_tds/public/js/sample_request_buttons.js",
+    "Sales Order": "amb_w_tds/public/js/sample_request_buttons.js",
 }
 
 # Global app-level JS bundles (compiled by bench build)
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
-    "/assets/amb_w_tds/js/sample_request_buttons.js",
 ]
 
 # ========================================
