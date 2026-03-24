@@ -153,3 +153,57 @@ default_mail_footer = """
 override_whitelisted_methods = {
 	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
 }
+
+# ================================================
+# POST-MIGRATE HOOK (protect amb_w_tds DocTypes)
+# ================================================
+after_migrate = [
+    'amb_w_tds.install.after_migrate',
+    'amb_w_tds.install.mark_doctypes_as_owned'
+]
+
+# ================================================
+# WORKSPACE FIXTURES - Prevent standard workspaces from being deleted
+# ================================================
+fixtures = [
+    {
+        "doctype": "Workspace",
+        "filters": [
+            ["name", "in", [
+                "Build", "Financial Reports", "CRM", "Users", "Settings",
+                "Accounting", "Stock", "Buying", "Selling", "Manufacturing",
+                "Projects", "Assets", "Quality", "Support", "Tools",
+                "Website", "Integrations", "ERPNext Settings", "ERPNext Integrations",
+                "Receivables", "Payables", "Home", "Welcome Workspace"
+            ]]
+        ]
+    },
+]
+
+# ================================================
+# WORKSPACE FIXTURES - Protect standard workspaces
+# ================================================
+fixtures = [
+    {
+        "doctype": "Workspace",
+        "filters": [
+            ["name", "in", [
+                "Build", "Financial Reports", "CRM", "Accounting", "Stock", 
+                "Buying", "Selling", "Manufacturing"
+            ]]
+        ]
+    },
+]
+
+# ================================================
+# WORKAROUND: Prevent DocTypes from being deleted as orphans
+# Based on Frappe GitHub Issue #37799
+# ================================================
+override_doctype_class = {
+    "RND Parent DocType": "amb_w_tds.amb_w_tds.doctype.rnd_parent_doctype.rnd_parent_doctype.RNDParentDocType",
+    "Production Plant AMB": "amb_w_tds.amb_w_tds.doctype.production_plant_amb.production_plant_amb.ProductionPlantAMB",
+    "Lote AMB": "amb_w_tds.amb_w_tds.doctype.lote_amb.lote_amb.LoteAMB",
+    "Third Party API": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyAPI",
+    "KPI Cost Breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KPICostBreakdown",
+    "COA AMB2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.COAMB2",
+}

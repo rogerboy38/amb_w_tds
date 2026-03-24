@@ -4,7 +4,7 @@
   "autoname": "naming_series:",
   "beta": 0,
   "creation": "2026-03-14 00:00:00.000000",
-  "custom": 0,
+  "custom": 1,
   "doctype": "DocType",
   "document_type": "Document",
   "editable_grid": 1,
