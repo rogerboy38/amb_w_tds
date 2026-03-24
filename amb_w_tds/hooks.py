@@ -207,3 +207,7 @@ override_doctype_class = {
     "KPI Cost Breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KPICostBreakdown",
     "COA AMB2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.COAMB2",
 }
+
+# Run workspace orphan fix after each migrate
+after_migrate = ["amb_w_tds.patches.fix_workspace_orphan.apply_patch"]
+
