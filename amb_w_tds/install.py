@@ -4,13 +4,21 @@ import glob
 
 
 def before_migrate():
-    """Run before bench migrate to prepare the environment."""
+    """Run before bench migrate to prepare the environment and prevent orphan deletion."""
     try:
+        print("[amb_w_tds] =======================================")
+        print("[amb_w_tds] BEFORE_MIGRATE IS RUNNING - DIAGNOSTIC")
+        print("[amb_w_tds] =======================================")
         frappe.logger().info("[amb_w_tds] Running pre-migrate setup...")
-        # This function is called before migrate to prepare the environment
-        # Currently a stub - actual logic is in hooks.py before_migrate list
-        pass
+        
+        # Call the function to mark custom DocTypes as owned by amb_w_tds
+        # This prevents them from being deleted as "orphans" during migrate
+        print("[amb_w_tds] Calling mark_doctypes_as_owned()...")
+        mark_doctypes_as_owned()
+        
+        print("[amb_w_tds] before_migrate completed successfully")
     except Exception as e:
+        print(f"[amb_w_tds] BEFORE_MIGRATE ERROR: {e}")
         frappe.logger().error(f"[amb_w_tds] before_migrate error: {e}")
 
 
