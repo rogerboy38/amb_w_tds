@@ -50,6 +50,7 @@ doctype_js = {
 # Global app-level JS bundles (compiled by bench build)
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
+    "/assets/amb_w_tds/js/sample_request_buttons.js",
 ]
 
 # ========================================
