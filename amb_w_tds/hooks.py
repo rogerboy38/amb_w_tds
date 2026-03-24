@@ -39,12 +39,12 @@ doctype_js = {
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
     "Work Order": "amb_w_tds/public/js/work_order_list.js",
-    # Sample Request buttons (loaded via doctype_js - works in Docker without bench build)
-    "Lead": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Prospect": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Opportunity": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Quotation": "amb_w_tds/public/js/sample_request_buttons.js",
-    "Sales Order": "amb_w_tds/public/js/sample_request_buttons.js",
+    # Sample Request buttons - separate files per doctype (works without bench build)
+    "Lead": "amb_w_tds/public/js/lead_sample_request.js",
+    "Prospect": "amb_w_tds/public/js/prospect_sample_request.js",
+    "Opportunity": "amb_w_tds/public/js/opportunity_sample_request.js",
+    "Quotation": "amb_w_tds/public/js/quotation_sample_request.js",
+    "Sales Order": "amb_w_tds/public/js/sales_order_sample_request.js",
 }
 
 # Global app-level JS bundles (compiled by bench build)
