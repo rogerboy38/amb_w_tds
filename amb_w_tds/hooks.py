@@ -157,8 +157,8 @@ override_whitelisted_methods = {
 # ================================================
 # POST-MIGRATE HOOK (protect amb_w_tds DocTypes)
 # ================================================
-after_migrate = [
-    'amb_w_tds.install.after_migrate',
+before_migrate = [
+    'amb_w_tds.install.before_migrate',
     'amb_w_tds.install.mark_doctypes_as_owned'
 ]
 
@@ -209,5 +209,5 @@ override_doctype_class = {
 }
 
 # Run workspace orphan fix after each migrate
-after_migrate = ["amb_w_tds.patches.fix_workspace_orphan.apply_patch"]
+before_migrate = ["amb_w_tds.patches.fix_workspace_orphan.apply_patch"]
 
