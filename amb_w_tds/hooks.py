@@ -15,10 +15,19 @@ doctype_class = {
     "Batch AMB":  "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
 }
 
-# Fix freight app's broken Lead override path (DISABLED - freight app may not exist)
-# override_doctype_class = {
-#     "Lead": "freight.freight_management.customization.lead.lead.CustomLead"
-# }
+# Override DocTypes to prevent orphan deletion (Frappe GitHub Issue #37799)
+# These custom DocTypes must be explicitly mapped to their class to prevent
+# bench migrate from incorrectly deleting them as "orphans"
+override_doctype_class = {
+    "Sample Request AMB": "amb_w_tds.amb_w_tds.doctype.sample_request_amb.sample_request_amb.SampleRequestAMB",
+    "Sample Request AMB Item": "amb_w_tds.amb_w_tds.doctype.sample_request_amb_item.sample_request_amb_item.SampleRequestAMBItem",
+    "RND Parent DocType": "amb_w_tds.amb_w_tds.doctype.rnd_parent_doctype.rnd_parent_doctype.RNDParentDocType",
+    "Production Plant AMB": "amb_w_tds.amb_w_tds.doctype.production_plant_amb.production_plant_amb.ProductionPlantAMB",
+    "Lote AMB": "amb_w_tds.amb_w_tds.doctype.lote_amb.lote_amb.LoteAMB",
+    "Third Party API": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyAPI",
+    "KPI Cost Breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KPICostBreakdown",
+    "COA AMB2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.COAMB2",
+}
 
 # ========================================
 #  FRONTEND JS INJECTIONS
@@ -114,7 +123,7 @@ scheduler_events = {
 }
 #
 # ========================================
-#  FIXTURES (sync mandatory custom fields)
+# FIXTURES (sync mandatory custom fields)
 # ========================================
 
 fixtures = [
@@ -155,59 +164,11 @@ override_whitelisted_methods = {
 }
 
 # ================================================
-# POST-MIGRATE HOOK (protect amb_w_tds DocTypes)
+# WORKSPACE ORPHAN FIX (Frappe GitHub Issue #37799)
+# This runs BEFORE migration to prevent Workspace deletion
 # ================================================
 before_migrate = [
-    'amb_w_tds.install.before_migrate',
-    'amb_w_tds.install.mark_doctypes_as_owned'
+    "amb_w_tds.install.before_migrate",
+    "amb_w_tds.install.mark_doctypes_as_owned",
+    "amb_w_tds.patches.fix_workspace_orphan.apply_patch"
 ]
-
-# ================================================
-# WORKSPACE FIXTURES - Prevent standard workspaces from being deleted
-# ================================================
-fixtures = [
-    {
-        "doctype": "Workspace",
-        "filters": [
-            ["name", "in", [
-                "Build", "Financial Reports", "CRM", "Users", "Settings",
-                "Accounting", "Stock", "Buying", "Selling", "Manufacturing",
-                "Projects", "Assets", "Quality", "Support", "Tools",
-                "Website", "Integrations", "ERPNext Settings", "ERPNext Integrations",
-                "Receivables", "Payables", "Home", "Welcome Workspace"
-            ]]
-        ]
-    },
-]
-
-# ================================================
-# WORKSPACE FIXTURES - Protect standard workspaces
-# ================================================
-fixtures = [
-    {
-        "doctype": "Workspace",
-        "filters": [
-            ["name", "in", [
-                "Build", "Financial Reports", "CRM", "Accounting", "Stock", 
-                "Buying", "Selling", "Manufacturing"
-            ]]
-        ]
-    },
-]
-
-# ================================================
-# WORKAROUND: Prevent DocTypes from being deleted as orphans
-# Based on Frappe GitHub Issue #37799
-# ================================================
-override_doctype_class = {
-    "RND Parent DocType": "amb_w_tds.amb_w_tds.doctype.rnd_parent_doctype.rnd_parent_doctype.RNDParentDocType",
-    "Production Plant AMB": "amb_w_tds.amb_w_tds.doctype.production_plant_amb.production_plant_amb.ProductionPlantAMB",
-    "Lote AMB": "amb_w_tds.amb_w_tds.doctype.lote_amb.lote_amb.LoteAMB",
-    "Third Party API": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyAPI",
-    "KPI Cost Breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KPICostBreakdown",
-    "COA AMB2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.COAMB2",
-}
-
-# Run workspace orphan fix after each migrate
-before_migrate = ["amb_w_tds.patches.fix_workspace_orphan.apply_patch"]
-
