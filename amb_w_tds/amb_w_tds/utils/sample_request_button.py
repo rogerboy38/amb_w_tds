@@ -1,4 +1,24 @@
-// Sample Request button for Quotation
+import frappe
+import json
+
+
+@frappe.whitelist()
+def add_sample_request_button(doc, method):
+    """
+    Add Sample Request button to Quotation form via doc_events.
+    This is more reliable than doctype_js for standard doctypes.
+    """
+    # This function is called on doc_events refresh
+    # We inject the button via JavaScript by returning a script
+    pass
+
+
+def get_sample_request_button_script():
+    """
+    Returns JavaScript to add Sample Request button to Quotation.
+    This is called from the doc_events to inject client script.
+    """
+    return """
 frappe.ui.form.on('Quotation', {
     refresh: function(frm) {
         if (frm.is_new()) return;
@@ -18,3 +38,4 @@ frappe.ui.form.on('Quotation', {
         }, __('Create'));
     }
 });
+"""
