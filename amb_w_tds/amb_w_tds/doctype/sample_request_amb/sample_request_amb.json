@@ -9,6 +9,32 @@
   "document_type": "Document",
   "editable_grid": 1,
   "engine": "InnoDB",
+  "links": [
+    {
+      "links": [
+        {
+          "link_doctype": "Lead",
+          "link_fieldname": "party"
+        },
+        {
+          "link_doctype": "Prospect",
+          "link_fieldname": "party"
+        },
+        {
+          "link_doctype": "Opportunity",
+          "link_fieldname": "party"
+        },
+        {
+          "link_doctype": "Quotation",
+          "link_fieldname": "quotation"
+        },
+        {
+          "link_doctype": "Sales Order",
+          "link_fieldname": "party"
+        }
+      ]
+    }
+  ],
   "fields": [
     {
       "fieldname": "naming_series",
