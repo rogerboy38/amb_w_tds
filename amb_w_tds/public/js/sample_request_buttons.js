@@ -9,11 +9,9 @@
 // =============================================================================
 window.SampleRequestUtils = {
     hasPermission: function() {
-        var allowed_roles = ["System Manager", "RND Manager", "Manufacturing Manager"];
-        var user_roles = frappe.user_roles || [];
-        return allowed_roles.some(function(role) {
-            return user_roles.indexOf(role) !== -1;
-        });
+        // BUG 74 Fix: Allow anyone with create permission on Sample Request AMB
+        // Removed restrictive role check - now works for any user who can create
+        return frappe.model.can_create("Sample Request AMB");
     },
 
     createSampleRequest: function(doctype, docname) {
@@ -26,6 +24,8 @@ window.SampleRequestUtils = {
             return;
         }
 
+        console.log("Creating Sample Request from:", doctype, docname);
+        
         frappe.call({
             method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_source",
             args: {
@@ -35,6 +35,7 @@ window.SampleRequestUtils = {
             freeze: true,
             freeze_message: __("Creating Sample Request..."),
             callback: function(r) {
+                console.log("Sample Request creation response:", r);
                 if (!r.exc && r.message) {
                     frappe.set_route("Form", "Sample Request AMB", r.message);
                     frappe.show_alert({
@@ -48,8 +49,8 @@ window.SampleRequestUtils = {
 
     addButtonToForm: function(frm, doctype) {
         if (frm.is_new()) return;
-        if (!this.hasPermission()) return;
-
+        
+        // BUG 74 Fix: Always try to add button, check permission on click instead
         frm.add_custom_button(
             __("Sample Request"),
             function() {
