@@ -113,14 +113,7 @@ def add_sample_request_to_transactions(data, doctype):
             "Sales Order": "Sales Order"
         }
         
-        # Build the filter based on doctype
-        if doctype == "Quotation":
-            filter_dict = {"quotation": "="${ doctype.name }"}
-        else:
-            # Use Dynamic Link (party_type + party)
-            filter_dict = {"party_type": party_type_map.get(doctype, doctype)}
-        
-        # Add Sample Request AMB to transactions
+        # Add Sample Request AMB to transactions (filter is handled by Frappe automatically)
         new_entry = {
             "label": "Sample Request",
             "doctype": "Sample Request AMB",
