@@ -80,6 +80,8 @@ doctype_js = {
     "Opportunity": "amb_w_tds/public/js/opportunity_sample_request.js",
     "Quotation": "amb_w_tds/public/js/quotation_sample_request.js",
     "Sales Order": "amb_w_tds/public/js/sales_order_sample_request.js",
+    # Sample Request AMB
+    "Sample Request AMB": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js",
 }
 
 # Global app-level JS bundles (compiled by bench build)
