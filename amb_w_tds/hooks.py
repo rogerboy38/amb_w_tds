@@ -206,8 +206,6 @@ override_whitelisted_methods = {
 # ================================================
 before_migrate = [
     "amb_w_tds.install.before_migrate",
-    "amb_w_tds.install.mark_doctypes_as_owned",
-    "amb_w_tds.patches.fix_workspace_orphan.apply_patch"
 ]
 
 # ================================================
