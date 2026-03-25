@@ -6,18 +6,10 @@ app_description = "AMB WELLNESS TDS + Migration + Quotation AMB system"
 app_email = "support@amb-wellness.com"
 app_license = "MIT"
 
-# ========================================
-#  MODULE LOAD + PATCH PREPARATION
-# ========================================
-
-# register custom DocTypes for override / extension
 doctype_class = {
     "Batch AMB":  "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
 }
 
-# Override DocTypes to prevent orphan deletion (Frappe GitHub Issue #37799)
-# All 43 custom DocTypes in amb_w_tds must be explicitly mapped to prevent
-# bench migrate from incorrectly deleting them as "orphans"
 override_doctype_class = {
     "amb_kpi_factors": "amb_w_tds.amb_w_tds.doctype.amb_kpi_factors.amb_kpi_factors.AMBKPIFactors",
     "animal_trial": "amb_w_tds.amb_w_tds.doctype.animal_trial.animal_trial.AnimalTrial",
@@ -64,164 +56,50 @@ override_doctype_class = {
     "third_party_api": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyApi",
 }
 
-# ========================================
-#  FRONTEND JS INJECTIONS
-# ========================================
-
-# Doctype-specific JS (loaded dynamically per doctype - works in Docker AND sandbox)
 doctype_js = {
-    # Original doctype scripts (RESTORED - DO NOT REMOVE)
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
     "Work Order": "amb_w_tds/public/js/work_order_list.js",
-    # Sample Request buttons - separate files per doctype (works without bench build)
     "Lead": "amb_w_tds/public/js/lead_sample_request.js",
     "Prospect": "amb_w_tds/public/js/prospect_sample_request.js",
     "Opportunity": "amb_w_tds/public/js/opportunity_sample_request.js",
     "Quotation": "amb_w_tds/public/js/quotation_sample_request.js",
     "Sales Order": "amb_w_tds/public/js/sales_order_sample_request.js",
-    # Sample Request AMB
     "Sample Request AMB": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js",
 }
 
-# Global app-level JS bundles (compiled by bench build)
 app_include_js = [
     "/assets/amb_w_tds/js/batch_widget.js",
 ]
 
-# ========================================
-#  DOCUMENT EVENTS (Critical migration hooks)
-# ========================================
-
 doc_events = {
-
-    # ---- BOM validation hooks (Phase 5)
     "BOM": {
         "on_submit": "amb_w_tds.bom_hooks.on_bom_submit",
         "on_update": "amb_w_tds.bom_hooks.on_bom_update",
     },
-
-    # ---- stock trace / costing / batch migrations
-    "Stock Entry": {
-        "on_submit": [
-            # ""amb_w_tds.stock_entry_hooks.on_stock_entry_submit"",
-            # ""amb_w_tds.raven.utils.on_stock_entry_submit""
-        ],
-        "before_insert": [
-            # ""amb_w_tds.api.agent.pre_stock_entry_agent_validation""
-        ],
-    },
-
-    # ---- AMB Quotation + Sales Partner auto mapping + idempotency
-    "Quotation AMB": {
-
-        # Idempotency + sales_partner assignment
-        "before_insert": [
-            # # ""amb_w_tds.api.agent.apply_agent_hooks"",
-            # ""amb_w_tds.api.quotation_amb.idempotency_check""
-        ],
-
-        # logging + lineage trace + legacy ID mapping
-        "before_save": [
-            # ""amb_w_tds.api.agent.apply_activity_log"",
-            # ""amb_w_tds.api.quotation_amb.audit_linkage""
-        ],
-
-        # enforce workflow + commission + agent
-        "before_submit": [
-            # ""amb_w_tds.api.quotation_amb.validate_commission"",
-            # ""amb_w_tds.api.quotation_amb.ensure_sales_partner""
-        ],
-    },
 }
 
-# ========================================
-#  SCHEDULER EVENTS (background consistency)
-# ========================================
-#
 scheduler_events = {
-
-    "hourly": [
-        # "amb_w_tds.migration.resume_unfinished_migration",
-        # "amb_w_tds.api.agent.hourly_sync_agents"
-    ],
-
-    "daily": [
-        # "amb_w_tds.api.audit.daily_quotation_amb_log_rotation",
-        # "amb_w_tds.migration.verify_pending_documents"
-    ],
-
     "weekly": [
-        # BOM Health Check - runs weekly (Phase 5)
         "amb_w_tds.scripts.scheduled_bom_health.run",
-        # "amb_w_tds.agent.performance.weekly_commission_reconciliation",
-        # "amb_w_tds.migration.cleanup_stale_migration_state"
     ],
 }
-#
-# ========================================
-# FIXTURES (sync mandatory custom fields)
-# ========================================
 
 fixtures = [
-
-    # sales_partner + agent tracking required fields
-    {
-        "doctype": "Custom Field",
-        "filters": [
-            ["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]],
-        ]
-    },
-
-    # AMB workflows + automatic migration workflow states
-    {
-        "doctype": "Workflow",
-        "filters": [
-            ["name", "like", "AMB%"]
-        ]
-    },
+    {"doctype": "Custom Field", "filters": [["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]]]},
+    {"doctype": "Workflow", "filters": [["name", "like", "AMB%"]]},
 ]
 
-# ========================================
-# Webhooks and Portal Exposure (future)
-# ========================================
+override_whitelisted_methods = {
+    "frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
+}
+
+before_migrate = [
+    "amb_w_tds.install.before_migrate",
+]
 
 default_mail_footer = """
     <div>
         Document generated by AMB Frappe Cloud System
     </div>
 """
-
-# ================================================
-# FRAPPE MONKEY PATCHES (BOM Tree Fix v16)
-# ================================================
-
-override_whitelisted_methods = {
-	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
-}
-
-# ================================================
-# WORKSPACE ORPHAN FIX (Frappe GitHub Issue #37799)
-# This runs BEFORE migration to prevent Workspace deletion
-# ================================================
-before_migrate = [
-    "amb_w_tds.install.before_migrate",
-]
-
-# ================================================
-# BUG 74: Add Sample Request AMB to Quotation Connections
-# Shows Sample Request AMB links in Quotation's Connections tab
-# ================================================
-# NOTE: override_doctype_dashboards breaks standard ERPNext doctypes (BUG 79)
-# Use standard 'links' in DocType JSON instead (see sample_request_amb.json)
-# override_doctype_dashboards = {
-#     "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data"
-# }
-
-# ================================================
-# BUG 79: Add Sample Request AMB to Connections tab - REVERTED
-# We use standard Frappe 'links' instead of override_doctype_dashboards
-# because overriding dashboards for standard ERPNext doctypes breaks them
-# ================================================
-# Links are now defined in the Sample Request AMB DocType JSON files
-# See sample_request_amb.json for link definitions
