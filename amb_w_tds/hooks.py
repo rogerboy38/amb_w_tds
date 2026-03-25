@@ -212,9 +212,11 @@ before_migrate = [
 # BUG 74: Add Sample Request AMB to Quotation Connections
 # Shows Sample Request AMB links in Quotation's Connections tab
 # ================================================
-override_doctype_dashboards = {
-    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data"
-}
+# NOTE: override_doctype_dashboards breaks standard ERPNext doctypes (BUG 79)
+# Use standard 'links' in DocType JSON instead (see sample_request_amb.json)
+# override_doctype_dashboards = {
+#     "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_dashboard_data"
+# }
 
 # ================================================
 # BUG 79: Add Sample Request AMB to Connections tab - REVERTED

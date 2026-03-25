@@ -3,6 +3,26 @@ frappe.ui.form.on("Sample Request AMB", {
         // Placeholder for future buttons
     },
 
+    setup(frm) {
+        // BUG 81: Set query for Package Type and Container Type fields to filter by Item Group
+        frm.set_query("package_type", "samples", function() {
+            return {
+                filters: {
+                    item_group: "Sample Packaging Materials"
+                }
+            };
+        });
+        
+        // Also filter container_type if it exists (BUG 72B)
+        frm.set_query("container_type", "samples", function() {
+            return {
+                filters: {
+                    item_group: "Sample Packaging Materials"
+                }
+            };
+        });
+    },
+
     customer(frm) {
         if (frm.doc.customer) {
             frappe.db.get_value("Customer", frm.doc.customer, "customer_name")
