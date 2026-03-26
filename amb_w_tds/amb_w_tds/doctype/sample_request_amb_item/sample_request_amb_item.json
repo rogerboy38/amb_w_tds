@@ -23,6 +23,15 @@
       "label": "Description / Descripci\u00f3n",
       "in_list_view": 1
     },
+        {
+      "fieldname": "item_group",
+      "fieldtype": "Link",
+      "label": "Item Group / Grupo de Producto",
+      "options": "Item Group",
+      "fetch_from": "item.item_group",
+      "fetch_if_empty": 1,
+      "read_only": 1
+    },
     {
       "fieldname": "batch",
       "fieldtype": "Link",
