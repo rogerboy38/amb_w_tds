@@ -65,7 +65,7 @@ doctype_js = {
     "Opportunity": "amb_w_tds/public/js/opportunity_sample_request.js",
     "Quotation": "amb_w_tds/public/js/quotation_sample_request.js",
     "Sales Order": "amb_w_tds/public/js/sales_order_sample_request.js",
-    "Sample Request AMB": "amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js",
+    "Sample Request AMB": "amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js",
 }
 
 app_include_js = [
@@ -88,6 +88,13 @@ scheduler_events = {
 fixtures = [
     {"doctype": "Custom Field", "filters": [["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]]]},
     {"doctype": "Workflow", "filters": [["name", "like", "AMB%"]]},
+    # BUG82: Client Script for Sample Request AMB Link field filters
+    {
+        "doctype": "Client Script",
+        "filters": [
+            ["dt", "=", "Sample Request AMB"]
+        ]
+    },
 ]
 
 override_whitelisted_methods = {
