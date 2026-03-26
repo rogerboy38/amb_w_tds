@@ -1,3 +1,6 @@
+// Sample Request AMB - v10.0.0 Consolidated
+console.log("🔧 Sample Request AMB JS loaded");
+
 frappe.ui.form.on("Sample Request AMB", {
 	refresh(frm) {
 		// BUG 81 – Filter package_type to Sample Packaging Materials

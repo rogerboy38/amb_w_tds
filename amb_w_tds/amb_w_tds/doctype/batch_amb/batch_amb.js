@@ -22,8 +22,7 @@ frappe.ui.form.on('Batch AMB', {
         if (!frm.is_new()) {
             frm.add_custom_button(__("New Sample Request"), () => {
                 frappe.call({
-                    method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_batch",
-                    args: { batch_name: frm.doc.name },
+                    method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request",
                     freeze: true,
                     freeze_message: __("Creating Sample Request..."),
                     callback(r) {
