@@ -28,6 +28,7 @@ doctype_js = {
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
     "Batch AMB": "amb_w_tds/amb_w_tds/doctype/batch_amb/batch_amb.js",
     "Work Order": "public/js/work_order_list.js", 
+	    "Sample Request AMB": "amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js",
 }
 
 app_include_js = [
@@ -124,6 +125,14 @@ fixtures = [
         "doctype": "Workflow",
         "filters": [
             ["name", "like", "AMB%"]
+        ]
+    },
+
+	    # BUG82: Client Script for Sample Request AMB Link field filters
+    {
+        "doctype": "Client Script",
+        "filters": [
+            ["dt", "=", "Sample Request AMB"]
         ]
     },
 ]
