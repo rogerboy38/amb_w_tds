@@ -86,6 +86,15 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "package_type_name",
+      "fieldtype": "Data",
+      "label": "Package Type Name / Descripción Tipo de Empaque",
+      "fetch_from": "package_type.item_name",
+      "fetch_if_empty": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
       "fieldname": "container_type",
       "fieldtype": "Link",
       "label": "Container Type / Tipo de Envase",
@@ -93,9 +102,26 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "container_type_name",
+      "fieldtype": "Data",
+      "label": "Container Type Name / Descripción Tipo de Envase",
+      "fetch_from": "container_type.item_name",
+      "fetch_if_empty": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
       "fieldname": "container_size",
       "fieldtype": "Data",
       "label": "Container Size / Capacidad Envase"
+    },
+    {
+      "fieldname": "container_uom",
+      "fieldtype": "Data",
+      "label": "Container UOM / UOM Capacidad Envase",
+      "fetch_from": "container_type.stock_uom",
+      "fetch_if_empty": 1,
+      "read_only": 1
     },
     {
       "fieldname": "label_text",
