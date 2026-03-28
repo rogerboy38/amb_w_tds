@@ -8,7 +8,7 @@ import frappe
 from frappe import _
 
 
-def get_data():
+def get_data(data=None):
     """
     Add Sample Request AMB to Quotation's connections
     
