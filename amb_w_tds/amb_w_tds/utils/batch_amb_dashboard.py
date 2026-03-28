@@ -1,29 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-BUG 87F: Dashboard Override for Batch AMB Connections
-Adds Sample Request AMB to the Connections section of Batch AMB
-"""
-
-import frappe
 from frappe import _
 
-
-def get_data(data=None):
-    """
-    Add Sample Request AMB to Batch AMB's connections
-    
-    The transactions format should be:
-    {
-        "label": "Display Label",
-        "items": ["DocType1", "DocType2"]
-    }
-    """
-    return {
-        "fieldname": "name",
-        "non_standard_fieldnames": {
-            "Sample Request AMB": "batch_reference",
-        },
-        "transactions": [
-            {"label": _("Sample Request"), "items": ["Sample Request AMB"]},
-        ],
-    }
+def get_data(data):
+    data["transactions"].append(
+        {"label": _("Sample Request"), "items": ["Sample Request AMB"]}
+    )
+    # Add non_standard_fieldnames if not present
+    if "non_standard_fieldnames" not in data:
+        data["non_standard_fieldnames"] = {}
+    data["non_standard_fieldnames"]["Sample Request AMB"] = "party"
+    return data
