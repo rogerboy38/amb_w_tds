@@ -1,25 +1,21 @@
-// Sample Request AMB - BUG 81 & 82 filters
+// Sample Request AMB - v10.0.0 Consolidated
 console.log("🔧 Sample Request AMB JS loaded");
 
 frappe.ui.form.on("Sample Request AMB", {
 	refresh(frm) {
 		// BUG 81 – Filter package_type to Sample Packaging Materials
-		if (frm.fields_dict.samples && frm.fields_dict.samples.grid.get_field("package_type")) {
-			frm.fields_dict.samples.grid.get_field("package_type").get_query = function (doc, cdt, cdn) {
-				return {
-					filters: { item_group: "Sample Packaging Materials" }
-				};
+		frm.fields_dict.samples.grid.get_field("package_type").get_query = function (doc, cdt, cdn) {
+			return {
+				filters: { item_group: "Sample Packaging Materials" }
 			};
-		}
+		};
 
 		// BUG 81 – Filter container_type to FG Packaging Materials
-		if (frm.fields_dict.samples && frm.fields_dict.samples.grid.get_field("container_type")) {
-			frm.fields_dict.samples.grid.get_field("container_type").get_query = function (doc, cdt, cdn) {
-				return {
-					filters: { item_group: "FG Packaging Materials" }
-				};
+		frm.fields_dict.samples.grid.get_field("container_type").get_query = function (doc, cdt, cdn) {
+			return {
+				filters: { item_group: "FG Packaging Materials" }
 			};
-		}
+		};
 	},
 
 	customer(frm) {

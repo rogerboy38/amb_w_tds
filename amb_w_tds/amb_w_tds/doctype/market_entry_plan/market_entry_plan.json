@@ -1,532 +1,532 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2025-06-07 10:31:09.000000",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "plan_title",
-  "published",
-  "route",
-  "target_country",
-  "status",
-  "workflow_state",
-  "column_break_4",
-  "plan_date",
-  "target_launch_date",
-  "priority",
-  "market_analysis_section",
-  "market_size",
-  "target_segments",
-  "competitive_landscape",
-  "column_break_11",
-  "market_potential",
-  "growth_projections",
-  "key_success_factors",
-  "product_strategy_section",
-  "target_products",
-  "product_positioning",
-  "pricing_strategy",
-  "column_break_18",
-  "value_proposition",
-  "differentiation_factors",
-  "product_adaptation_needs",
-  "regulatory_strategy_section",
-  "regulatory_pathway",
-  "required_approvals",
-  "regulatory_timeline",
-  "column_break_25",
-  "regulatory_costs",
-  "compliance_requirements",
-  "regulatory_risks",
-  "business_model_section",
-  "entry_strategy",
-  "distribution_model",
-  "partnership_approach",
-  "column_break_32",
-  "revenue_model",
-  "investment_requirements",
-  "break_even_analysis",
-  "financial_projections_section",
-  "year_1_revenue",
-  "year_2_revenue",
-  "year_3_revenue",
-  "column_break_39",
-  "initial_investment",
-  "ongoing_costs",
-  "roi_projections",
-  "implementation_section",
-  "key_milestones",
-  "implementation_timeline",
-  "resource_requirements",
-  "column_break_46",
-  "success_metrics",
-  "risk_mitigation",
-  "contingency_plans",
-  "team_section",
-  "project_manager",
-  "market_lead",
-  "regulatory_lead",
-  "column_break_52",
-  "local_partner",
-  "consultant_support",
-  "budget_allocation",
-  "progress_tracking_section",
-  "completion_percentage",
-  "current_phase",
-  "next_milestone_date",
-  "column_break_58",
-  "issues_challenges",
-  "lessons_learned",
-  "notes"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "MEP-.####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "plan_title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Plan Title",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "published",
-   "fieldtype": "Check",
-   "label": "Published"
-  },
-  {
-   "fieldname": "route",
-   "fieldtype": "Data",
-   "label": "Route",
-   "read_only": 1
-  },
-  {
-   "fieldname": "target_country",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Target Country",
-   "options": "Country",
-   "reqd": 1
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "Planning\nIn Progress\nApproval Required\nApproved\nImplementing\nCompleted\nOn Hold\nCancelled",
-   "reqd": 1
-  },
-  {
-   "fieldname": "workflow_state",
-   "fieldtype": "Link",
-   "label": "Workflow State",
-   "options": "Workflow State",
-   "read_only": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "plan_date",
-   "fieldtype": "Date",
-   "label": "Plan Date"
-  },
-  {
-   "fieldname": "target_launch_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Target Launch Date"
-  },
-  {
-   "fieldname": "priority",
-   "fieldtype": "Select",
-   "label": "Priority",
-   "options": "High\nMedium\nLow"
-  },
-  {
-   "fieldname": "market_analysis_section",
-   "fieldtype": "Section Break",
-   "label": "Market Analysis"
-  },
-  {
-   "fieldname": "market_size",
-   "fieldtype": "Currency",
-   "label": "Market Size (USD)"
-  },
-  {
-   "fieldname": "target_segments",
-   "fieldtype": "Text Editor",
-   "label": "Target Segments"
-  },
-  {
-   "fieldname": "competitive_landscape",
-   "fieldtype": "Text Editor",
-   "label": "Competitive Landscape"
-  },
-  {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "market_potential",
-   "fieldtype": "Select",
-   "label": "Market Potential",
-   "options": "High\nMedium\nLow"
-  },
-  {
-   "fieldname": "growth_projections",
-   "fieldtype": "Small Text",
-   "label": "Growth Projections"
-  },
-  {
-   "fieldname": "key_success_factors",
-   "fieldtype": "Text Editor",
-   "label": "Key Success Factors"
-  },
-  {
-   "fieldname": "product_strategy_section",
-   "fieldtype": "Section Break",
-   "label": "Product Strategy"
-  },
-  {
-   "fieldname": "target_products",
-   "fieldtype": "Text Editor",
-   "label": "Target Products"
-  },
-  {
-   "fieldname": "product_positioning",
-   "fieldtype": "Text Editor",
-   "label": "Product Positioning"
-  },
-  {
-   "fieldname": "pricing_strategy",
-   "fieldtype": "Text Editor",
-   "label": "Pricing Strategy"
-  },
-  {
-   "fieldname": "column_break_18",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "value_proposition",
-   "fieldtype": "Text Editor",
-   "label": "Value Proposition"
-  },
-  {
-   "fieldname": "differentiation_factors",
-   "fieldtype": "Small Text",
-   "label": "Differentiation Factors"
-  },
-  {
-   "fieldname": "product_adaptation_needs",
-   "fieldtype": "Text Editor",
-   "label": "Product Adaptation Needs"
-  },
-  {
-   "fieldname": "regulatory_strategy_section",
-   "fieldtype": "Section Break",
-   "label": "Regulatory Strategy"
-  },
-  {
-   "fieldname": "regulatory_pathway",
-   "fieldtype": "Text Editor",
-   "label": "Regulatory Pathway"
-  },
-  {
-   "fieldname": "required_approvals",
-   "fieldtype": "Text Editor",
-   "label": "Required Approvals"
-  },
-  {
-   "fieldname": "regulatory_timeline",
-   "fieldtype": "Small Text",
-   "label": "Regulatory Timeline"
-  },
-  {
-   "fieldname": "column_break_25",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "regulatory_costs",
-   "fieldtype": "Currency",
-   "label": "Regulatory Costs"
-  },
-  {
-   "fieldname": "compliance_requirements",
-   "fieldtype": "Text Editor",
-   "label": "Compliance Requirements"
-  },
-  {
-   "fieldname": "regulatory_risks",
-   "fieldtype": "Text Editor",
-   "label": "Regulatory Risks"
-  },
-  {
-   "fieldname": "business_model_section",
-   "fieldtype": "Section Break",
-   "label": "Business Model"
-  },
-  {
-   "fieldname": "entry_strategy",
-   "fieldtype": "Select",
-   "label": "Entry Strategy",
-   "options": "Direct Sales\nDistributor Partnership\nJoint Venture\nLicensing\nAcquisition\nGreenfield Investment"
-  },
-  {
-   "fieldname": "distribution_model",
-   "fieldtype": "Text Editor",
-   "label": "Distribution Model"
-  },
-  {
-   "fieldname": "partnership_approach",
-   "fieldtype": "Text Editor",
-   "label": "Partnership Approach"
-  },
-  {
-   "fieldname": "column_break_32",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "revenue_model",
-   "fieldtype": "Text Editor",
-   "label": "Revenue Model"
-  },
-  {
-   "fieldname": "investment_requirements",
-   "fieldtype": "Currency",
-   "label": "Investment Requirements"
-  },
-  {
-   "fieldname": "break_even_analysis",
-   "fieldtype": "Small Text",
-   "label": "Break Even Analysis"
-  },
-  {
-   "fieldname": "financial_projections_section",
-   "fieldtype": "Section Break",
-   "label": "Financial Projections"
-  },
-  {
-   "fieldname": "year_1_revenue",
-   "fieldtype": "Currency",
-   "label": "Year 1 Revenue"
-  },
-  {
-   "fieldname": "year_2_revenue",
-   "fieldtype": "Currency",
-   "label": "Year 2 Revenue"
-  },
-  {
-   "fieldname": "year_3_revenue",
-   "fieldtype": "Currency",
-   "label": "Year 3 Revenue"
-  },
-  {
-   "fieldname": "column_break_39",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "initial_investment",
-   "fieldtype": "Currency",
-   "label": "Initial Investment"
-  },
-  {
-   "fieldname": "ongoing_costs",
-   "fieldtype": "Currency",
-   "label": "Ongoing Costs (Annual)"
-  },
-  {
-   "fieldname": "roi_projections",
-   "fieldtype": "Small Text",
-   "label": "ROI Projections"
-  },
-  {
-   "fieldname": "implementation_section",
-   "fieldtype": "Section Break",
-   "label": "Implementation Plan"
-  },
-  {
-   "fieldname": "key_milestones",
-   "fieldtype": "Text Editor",
-   "label": "Key Milestones"
-  },
-  {
-   "fieldname": "implementation_timeline",
-   "fieldtype": "Text Editor",
-   "label": "Implementation Timeline"
-  },
-  {
-   "fieldname": "resource_requirements",
-   "fieldtype": "Text Editor",
-   "label": "Resource Requirements"
-  },
-  {
-   "fieldname": "column_break_46",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "success_metrics",
-   "fieldtype": "Text Editor",
-   "label": "Success Metrics"
-  },
-  {
-   "fieldname": "risk_mitigation",
-   "fieldtype": "Text Editor",
-   "label": "Risk Mitigation"
-  },
-  {
-   "fieldname": "contingency_plans",
-   "fieldtype": "Text Editor",
-   "label": "Contingency Plans"
-  },
-  {
-   "fieldname": "team_section",
-   "fieldtype": "Section Break",
-   "label": "Project Team"
-  },
-  {
-   "fieldname": "project_manager",
-   "fieldtype": "Link",
-   "label": "Project Manager",
-   "options": "User"
-  },
-  {
-   "fieldname": "market_lead",
-   "fieldtype": "Link",
-   "label": "Market Lead",
-   "options": "User"
-  },
-  {
-   "fieldname": "regulatory_lead",
-   "fieldtype": "Link",
-   "label": "Regulatory Lead",
-   "options": "User"
-  },
-  {
-   "fieldname": "column_break_52",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "local_partner",
-   "fieldtype": "Link",
-   "label": "Local Partner",
-   "options": "Distribution Organization"
-  },
-  {
-   "fieldname": "consultant_support",
-   "fieldtype": "Small Text",
-   "label": "Consultant Support"
-  },
-  {
-   "fieldname": "budget_allocation",
-   "fieldtype": "Text Editor",
-   "label": "Budget Allocation"
-  },
-  {
-   "fieldname": "progress_tracking_section",
-   "fieldtype": "Section Break",
-   "label": "Progress Tracking"
-  },
-  {
-   "fieldname": "completion_percentage",
-   "fieldtype": "Percent",
-   "label": "Completion Percentage"
-  },
-  {
-   "fieldname": "current_phase",
-   "fieldtype": "Data",
-   "label": "Current Phase"
-  },
-  {
-   "fieldname": "next_milestone_date",
-   "fieldtype": "Date",
-   "label": "Next Milestone Date"
-  },
-  {
-   "fieldname": "column_break_58",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "issues_challenges",
-   "fieldtype": "Text Editor",
-   "label": "Issues & Challenges"
-  },
-  {
-   "fieldname": "lessons_learned",
-   "fieldtype": "Text Editor",
-   "label": "Lessons Learned"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Text Editor",
-   "label": "Notes"
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2025-06-07 10:31:09.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "plan_title",
+    "published",
+    "route",
+    "target_country",
+    "status",
+    "workflow_state",
+    "column_break_4",
+    "plan_date",
+    "target_launch_date",
+    "priority",
+    "market_analysis_section",
+    "market_size",
+    "target_segments",
+    "competitive_landscape",
+    "column_break_11",
+    "market_potential",
+    "growth_projections",
+    "key_success_factors",
+    "product_strategy_section",
+    "target_products",
+    "product_positioning",
+    "pricing_strategy",
+    "column_break_18",
+    "value_proposition",
+    "differentiation_factors",
+    "product_adaptation_needs",
+    "regulatory_strategy_section",
+    "regulatory_pathway",
+    "required_approvals",
+    "regulatory_timeline",
+    "column_break_25",
+    "regulatory_costs",
+    "compliance_requirements",
+    "regulatory_risks",
+    "business_model_section",
+    "entry_strategy",
+    "distribution_model",
+    "partnership_approach",
+    "column_break_32",
+    "revenue_model",
+    "investment_requirements",
+    "break_even_analysis",
+    "financial_projections_section",
+    "year_1_revenue",
+    "year_2_revenue",
+    "year_3_revenue",
+    "column_break_39",
+    "initial_investment",
+    "ongoing_costs",
+    "roi_projections",
+    "implementation_section",
+    "key_milestones",
+    "implementation_timeline",
+    "resource_requirements",
+    "column_break_46",
+    "success_metrics",
+    "risk_mitigation",
+    "contingency_plans",
+    "team_section",
+    "project_manager",
+    "market_lead",
+    "regulatory_lead",
+    "column_break_52",
+    "local_partner",
+    "consultant_support",
+    "budget_allocation",
+    "progress_tracking_section",
+    "completion_percentage",
+    "current_phase",
+    "next_milestone_date",
+    "column_break_58",
+    "issues_challenges",
+    "lessons_learned",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "MEP-.####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "plan_title",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Plan Title",
+      "reqd": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "published",
+      "fieldtype": "Check",
+      "label": "Published"
+    },
+    {
+      "fieldname": "route",
+      "fieldtype": "Data",
+      "label": "Route",
+      "read_only": 1
+    },
+    {
+      "fieldname": "target_country",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Target Country",
+      "options": "Country",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Planning\nIn Progress\nApproval Required\nApproved\nImplementing\nCompleted\nOn Hold\nCancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "workflow_state",
+      "fieldtype": "Link",
+      "label": "Workflow State",
+      "options": "Workflow State",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "plan_date",
+      "fieldtype": "Date",
+      "label": "Plan Date"
+    },
+    {
+      "fieldname": "target_launch_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Target Launch Date"
+    },
+    {
+      "fieldname": "priority",
+      "fieldtype": "Select",
+      "label": "Priority",
+      "options": "High\nMedium\nLow"
+    },
+    {
+      "fieldname": "market_analysis_section",
+      "fieldtype": "Section Break",
+      "label": "Market Analysis"
+    },
+    {
+      "fieldname": "market_size",
+      "fieldtype": "Currency",
+      "label": "Market Size (USD)"
+    },
+    {
+      "fieldname": "target_segments",
+      "fieldtype": "Text Editor",
+      "label": "Target Segments"
+    },
+    {
+      "fieldname": "competitive_landscape",
+      "fieldtype": "Text Editor",
+      "label": "Competitive Landscape"
+    },
+    {
+      "fieldname": "column_break_11",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "market_potential",
+      "fieldtype": "Select",
+      "label": "Market Potential",
+      "options": "High\nMedium\nLow"
+    },
+    {
+      "fieldname": "growth_projections",
+      "fieldtype": "Small Text",
+      "label": "Growth Projections"
+    },
+    {
+      "fieldname": "key_success_factors",
+      "fieldtype": "Text Editor",
+      "label": "Key Success Factors"
+    },
+    {
+      "fieldname": "product_strategy_section",
+      "fieldtype": "Section Break",
+      "label": "Product Strategy"
+    },
+    {
+      "fieldname": "target_products",
+      "fieldtype": "Text Editor",
+      "label": "Target Products"
+    },
+    {
+      "fieldname": "product_positioning",
+      "fieldtype": "Text Editor",
+      "label": "Product Positioning"
+    },
+    {
+      "fieldname": "pricing_strategy",
+      "fieldtype": "Text Editor",
+      "label": "Pricing Strategy"
+    },
+    {
+      "fieldname": "column_break_18",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "value_proposition",
+      "fieldtype": "Text Editor",
+      "label": "Value Proposition"
+    },
+    {
+      "fieldname": "differentiation_factors",
+      "fieldtype": "Small Text",
+      "label": "Differentiation Factors"
+    },
+    {
+      "fieldname": "product_adaptation_needs",
+      "fieldtype": "Text Editor",
+      "label": "Product Adaptation Needs"
+    },
+    {
+      "fieldname": "regulatory_strategy_section",
+      "fieldtype": "Section Break",
+      "label": "Regulatory Strategy"
+    },
+    {
+      "fieldname": "regulatory_pathway",
+      "fieldtype": "Text Editor",
+      "label": "Regulatory Pathway"
+    },
+    {
+      "fieldname": "required_approvals",
+      "fieldtype": "Text Editor",
+      "label": "Required Approvals"
+    },
+    {
+      "fieldname": "regulatory_timeline",
+      "fieldtype": "Small Text",
+      "label": "Regulatory Timeline"
+    },
+    {
+      "fieldname": "column_break_25",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "regulatory_costs",
+      "fieldtype": "Currency",
+      "label": "Regulatory Costs"
+    },
+    {
+      "fieldname": "compliance_requirements",
+      "fieldtype": "Text Editor",
+      "label": "Compliance Requirements"
+    },
+    {
+      "fieldname": "regulatory_risks",
+      "fieldtype": "Text Editor",
+      "label": "Regulatory Risks"
+    },
+    {
+      "fieldname": "business_model_section",
+      "fieldtype": "Section Break",
+      "label": "Business Model"
+    },
+    {
+      "fieldname": "entry_strategy",
+      "fieldtype": "Select",
+      "label": "Entry Strategy",
+      "options": "Direct Sales\nDistributor Partnership\nJoint Venture\nLicensing\nAcquisition\nGreenfield Investment"
+    },
+    {
+      "fieldname": "distribution_model",
+      "fieldtype": "Text Editor",
+      "label": "Distribution Model"
+    },
+    {
+      "fieldname": "partnership_approach",
+      "fieldtype": "Text Editor",
+      "label": "Partnership Approach"
+    },
+    {
+      "fieldname": "column_break_32",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "revenue_model",
+      "fieldtype": "Text Editor",
+      "label": "Revenue Model"
+    },
+    {
+      "fieldname": "investment_requirements",
+      "fieldtype": "Currency",
+      "label": "Investment Requirements"
+    },
+    {
+      "fieldname": "break_even_analysis",
+      "fieldtype": "Small Text",
+      "label": "Break Even Analysis"
+    },
+    {
+      "fieldname": "financial_projections_section",
+      "fieldtype": "Section Break",
+      "label": "Financial Projections"
+    },
+    {
+      "fieldname": "year_1_revenue",
+      "fieldtype": "Currency",
+      "label": "Year 1 Revenue"
+    },
+    {
+      "fieldname": "year_2_revenue",
+      "fieldtype": "Currency",
+      "label": "Year 2 Revenue"
+    },
+    {
+      "fieldname": "year_3_revenue",
+      "fieldtype": "Currency",
+      "label": "Year 3 Revenue"
+    },
+    {
+      "fieldname": "column_break_39",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "initial_investment",
+      "fieldtype": "Currency",
+      "label": "Initial Investment"
+    },
+    {
+      "fieldname": "ongoing_costs",
+      "fieldtype": "Currency",
+      "label": "Ongoing Costs (Annual)"
+    },
+    {
+      "fieldname": "roi_projections",
+      "fieldtype": "Small Text",
+      "label": "ROI Projections"
+    },
+    {
+      "fieldname": "implementation_section",
+      "fieldtype": "Section Break",
+      "label": "Implementation Plan"
+    },
+    {
+      "fieldname": "key_milestones",
+      "fieldtype": "Text Editor",
+      "label": "Key Milestones"
+    },
+    {
+      "fieldname": "implementation_timeline",
+      "fieldtype": "Text Editor",
+      "label": "Implementation Timeline"
+    },
+    {
+      "fieldname": "resource_requirements",
+      "fieldtype": "Text Editor",
+      "label": "Resource Requirements"
+    },
+    {
+      "fieldname": "column_break_46",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "success_metrics",
+      "fieldtype": "Text Editor",
+      "label": "Success Metrics"
+    },
+    {
+      "fieldname": "risk_mitigation",
+      "fieldtype": "Text Editor",
+      "label": "Risk Mitigation"
+    },
+    {
+      "fieldname": "contingency_plans",
+      "fieldtype": "Text Editor",
+      "label": "Contingency Plans"
+    },
+    {
+      "fieldname": "team_section",
+      "fieldtype": "Section Break",
+      "label": "Project Team"
+    },
+    {
+      "fieldname": "project_manager",
+      "fieldtype": "Link",
+      "label": "Project Manager",
+      "options": "User"
+    },
+    {
+      "fieldname": "market_lead",
+      "fieldtype": "Link",
+      "label": "Market Lead",
+      "options": "User"
+    },
+    {
+      "fieldname": "regulatory_lead",
+      "fieldtype": "Link",
+      "label": "Regulatory Lead",
+      "options": "User"
+    },
+    {
+      "fieldname": "column_break_52",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "local_partner",
+      "fieldtype": "Link",
+      "label": "Local Partner",
+      "options": "Distribution Organization"
+    },
+    {
+      "fieldname": "consultant_support",
+      "fieldtype": "Small Text",
+      "label": "Consultant Support"
+    },
+    {
+      "fieldname": "budget_allocation",
+      "fieldtype": "Text Editor",
+      "label": "Budget Allocation"
+    },
+    {
+      "fieldname": "progress_tracking_section",
+      "fieldtype": "Section Break",
+      "label": "Progress Tracking"
+    },
+    {
+      "fieldname": "completion_percentage",
+      "fieldtype": "Percent",
+      "label": "Completion Percentage"
+    },
+    {
+      "fieldname": "current_phase",
+      "fieldtype": "Data",
+      "label": "Current Phase"
+    },
+    {
+      "fieldname": "next_milestone_date",
+      "fieldtype": "Date",
+      "label": "Next Milestone Date"
+    },
+    {
+      "fieldname": "column_break_58",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "issues_challenges",
+      "fieldtype": "Text Editor",
+      "label": "Issues & Challenges"
+    },
+    {
+      "fieldname": "lessons_learned",
+      "fieldtype": "Text Editor",
+      "label": "Lessons Learned"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text Editor",
+      "label": "Notes"
+    }
+  ],
+  "has_web_view": 1,
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-06-07 10:31:09.000000",
+  "modified_by": "Administrator",
+  "module": "amb_w_tds",
+  "name": "Market Entry Plan",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Distribution Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Data Entry Operator",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Compliance Officer"
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "R&D Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "plan_title",
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1,
+  "website": {
+    "condition_field": "published",
+    "page_title_field": "plan_title"
   }
- ],
- "has_web_view": 1,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-07 10:31:09.000000",
- "modified_by": "Administrator",
- "module": "Amb W Tds",
- "name": "Market Entry Plan",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Distribution Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Data Entry Operator",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "Compliance Officer"
-  },
-  {
-   "read": 1,
-   "report": 1,
-   "role": "R&D Manager"
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "title_field": "plan_title",
- "track_changes": 1,
- "track_seen": 1,
- "track_views": 1,
- "website": {
-  "condition_field": "published",
-  "page_title_field": "plan_title"
- }
 }

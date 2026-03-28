@@ -6,7 +6,6 @@
  "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
- "quick_entry": 1,
  "field_order": [
   "batch_info_section",
   "naming_series",
@@ -161,7 +160,6 @@
    "label": "Production Plant Name"
   },
   {
-   "default": "{default_company}",
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
@@ -371,7 +369,7 @@
   {
    "fieldname": "level_2__sub_lots_management_tab",
    "fieldtype": "Tab Break",
-   "label": "Level 2  Sub Lots Management"
+   "label": "Level 2 Sub Lots Management"
   },
   {
    "fieldname": "batch_level_info_column",
