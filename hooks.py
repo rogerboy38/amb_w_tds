@@ -135,3 +135,16 @@ override_whitelisted_methods = {
 	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
 }
 
+# ================================================
+# DASHBOARD OVERRIDES FOR SAMPLE REQUEST AMB CONNECTIONS (Bug 87 series)
+# ================================================
+
+override_doctype_dashboards = {
+    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
+    "Lead": "amb_w_tds.amb_w_tds.utils.lead_dashboard.get_data",
+    "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
+    "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
+    "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
+    "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
+}
+
