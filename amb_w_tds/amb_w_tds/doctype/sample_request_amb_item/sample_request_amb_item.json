@@ -3,7 +3,7 @@
   "allow_import": 0,
   "beta": 0,
   "creation": "2026-03-14 00:00:00.000000",
-  "custom": 0,
+  "custom": 1,
   "doctype": "DocType",
   "document_type": "Document",
   "editable_grid": 1,
@@ -20,8 +20,17 @@
     {
       "fieldname": "description",
       "fieldtype": "Data",
-      "label": "Description / Descripción",
+      "label": "Description / Descripci\u00f3n",
       "in_list_view": 1
+    },
+        {
+      "fieldname": "item_group",
+      "fieldtype": "Link",
+      "label": "Item Group / Grupo de Producto",
+      "options": "Item Group",
+      "fetch_from": "item.item_group",
+      "fetch_if_empty": 1,
+      "read_only": 1
     },
     {
       "fieldname": "batch",
@@ -33,10 +42,9 @@
     {
       "fieldname": "spc_specification",
       "fieldtype": "Link",
-      "label": "SPC Specification / Especificación SPC",
+      "label": "SPC Specification / Especificaci\u00f3n SPC",
       "options": "SPC Specification"
     },
-
     {
       "fieldname": "col_qty",
       "fieldtype": "Column Break"
@@ -44,7 +52,7 @@
     {
       "fieldname": "samples_count",
       "fieldtype": "Int",
-      "label": "Number of Samples / Número de Muestras",
+      "label": "Number of Samples / N\u00famero de Muestras",
       "default": "1",
       "in_list_view": 1
     },
@@ -65,16 +73,42 @@
       "label": "Total Qty / Cantidad Total",
       "read_only": 1
     },
-
     {
       "fieldname": "section_pack",
       "fieldtype": "Section Break",
       "label": "Packaging & Label / Envase y Etiqueta"
     },
     {
-      "fieldname": "container_type",
+      "fieldname": "package_type",
+      "fieldtype": "Link",
+      "label": "Package Type / Tipo de Empaque",
+      "options": "Item",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "package_type_name",
       "fieldtype": "Data",
-      "label": "Container Type / Tipo de Envase"
+      "label": "Package Type Name / Descripción Tipo de Empaque",
+      "fetch_from": "package_type.item_name",
+      "fetch_if_empty": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "container_type",
+      "fieldtype": "Link",
+      "label": "Container Type / Tipo de Envase",
+      "options": "Item",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "container_type_name",
+      "fieldtype": "Data",
+      "label": "Container Type Name / Descripción Tipo de Envase",
+      "fetch_from": "container_type.item_name",
+      "fetch_if_empty": 1,
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldname": "container_size",
@@ -82,11 +116,18 @@
       "label": "Container Size / Capacidad Envase"
     },
     {
+      "fieldname": "container_uom",
+      "fieldtype": "Data",
+      "label": "Container UOM / UOM Capacidad Envase",
+      "fetch_from": "container_type.stock_uom",
+      "fetch_if_empty": 1,
+      "read_only": 1
+    },
+    {
       "fieldname": "label_text",
       "fieldtype": "Small Text",
       "label": "Label Text / Texto de Etiqueta"
     },
-
     {
       "fieldname": "col_flags",
       "fieldtype": "Column Break"
@@ -94,12 +135,12 @@
     {
       "fieldname": "for_retention",
       "fieldtype": "Check",
-      "label": "Retention Sample / Muestra de Retención"
+      "label": "Retention Sample / Muestra de Retenci\u00f3n"
     },
     {
       "fieldname": "for_microbiology",
       "fieldtype": "Check",
-      "label": "Microbiology / Microbiología"
+      "label": "Microbiology / Microbiolog\u00eda"
     },
     {
       "fieldname": "for_customer",
@@ -116,11 +157,10 @@
       "fieldtype": "Check",
       "label": "External Lab / Lab Externo"
     },
-
     {
       "fieldname": "target_warehouse",
       "fieldtype": "Link",
-      "label": "Target Warehouse / Almacén Destino",
+      "label": "Target Warehouse / Almac\u00e9n Destino",
       "options": "Warehouse"
     },
     {
@@ -159,9 +199,9 @@
   "issingle": 0,
   "istable": 1,
   "max_attachments": 0,
-  "modified": "2026-03-14 00:00:00.000000",
+  "modified": "2026-03-25 19:00:00.000000",
   "modified_by": "Administrator",
-  "module": "AMB W TDS",
+  "module": "Amb W Tds",
   "name": "Sample Request AMB Item",
   "owner": "Administrator",
   "permissions": [],
