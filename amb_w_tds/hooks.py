@@ -169,13 +169,8 @@ default_mail_footer = """
 """
 
 # ========================================
-#  DOCTYPE DASHBOARD OVERRIDES (Bug 87 series)
+#  DOCTYPE DASHBOARD OVERRIDES
 # ========================================
 override_doctype_dashboards = {
     "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
-    "Lead": "amb_w_tds.amb_w_tds.utils.lead_dashboard.get_data",
-    "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
-    "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
-    "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
-    "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
 }
