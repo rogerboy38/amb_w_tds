@@ -11,22 +11,31 @@ from frappe import _
 def get_data(data=None):
     """
     Add Sample Request AMB to Prospect's connections
-    
-    The transactions format should be:
-    {
-        "label": "Display Label",
-        "items": ["DocType1", "DocType2"]
-    }
+    Extends the original ERPNext Prospect dashboard
     """
-    return {
-        "fieldname": "name",
-        "non_standard_fieldnames": {
-            "Sample Request AMB": "party",
-        },
-        "transactions": [
-            {"label": _("Opportunities"), "items": ["Opportunity"]},
-            {"label": _("Quotations"), "items": ["Quotation"]},
-            {"label": _("Sales Orders"), "items": ["Sales Order"]},
-            {"label": _("Sample Request"), "items": ["Sample Request AMB"]},
-        ],
-    }
+    # Get original ERPNext Prospect dashboard data
+    try:
+        original_data = frappe.call("erpnext.crm.doctype.prospect.prospect_dashboard.get_data")
+    except:
+        original_data = {"transactions": []}
+    
+    # Add Sample Request to transactions if not already present
+    if original_data:
+        transactions = original_data.get("transactions", [])
+        # Check if Sample Request already exists
+        sr_exists = any(
+            "Sample Request AMB" in t.get("items", [])
+            for t in transactions
+        )
+        if not sr_exists:
+            transactions.append(
+                {"label": _("Sample Request"), "items": ["Sample Request AMB"]}
+            )
+        original_data["transactions"] = transactions
+        
+        # Add non_standard_fieldnames if not present
+        if "non_standard_fieldnames" not in original_data:
+            original_data["non_standard_fieldnames"] = {}
+        original_data["non_standard_fieldnames"]["Sample Request AMB"] = "party"
+    
+    return original_data
