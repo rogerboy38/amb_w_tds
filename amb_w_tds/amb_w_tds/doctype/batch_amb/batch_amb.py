@@ -229,6 +229,15 @@ class BatchAMB(NestedSet):
         if self.title and len(self.title) > 60:
             self.title = self.title[:60]
 
+
+    def set_item_details(self):
+        """Set item details"""
+        if self.item_to_manufacture:
+            item = frappe.get_doc("Item", self.item_to_manufacture)
+            self.item_name = item.item_name
+            if not self.uom:
+                self.uom = item.stock_uom
+
     # -----------------------------
     # Totals and costing
     # -----------------------------
@@ -1463,10 +1472,44 @@ def complete_batch_processing(batch_name, processed_quantity=None):
     batch.save()
     return {"status": "success", "message": f"Batch {batch_name} completed"}
 
+@frappe.whitelist()
+def resolve_container_prefix(batch, default_prefix=None):
+    """Resolve container prefix (BRL / IBC / CTE / SMP) based on packaging/plant.
+
+    For now this is hardcoded mapping; later we can move it to a DocType.
+    """
+    # Try from default_packaging_type + plant
+    packaging_item = getattr(batch, "default_packaging_type", None) or ""
+    plant_name = (batch.production_plant_name or "").lower()
+
+    # Simple heuristic mapping – replace with DocType lookup later
+    # BRL: barrels / juice
+    # IBC: IBC containers
+    # CTE: cuñete / drum
+    # SMP: sample bags
+    prefix = None
+
+    if "ibc" in packaging_item.lower():
+        prefix = "IBC"
+    elif any(k in packaging_item.lower() for k in ["smp", "sample", "bag", "bolsa"]):
+        prefix = "SMP"
+    elif any(k in packaging_item.lower() for k in ["cte", "cunete", "cuñete", "drum"]):
+        prefix = "CTE"
+    elif any(k in plant_name for k in ["juice", "3 (juice)", "3 ( jugo )"]):
+        prefix = "BRL"
+
+    # Fallback
+    return prefix or default_prefix
+
 
 @frappe.whitelist()
 def generate_serial_numbers(batch_name, quantity=1, prefix=None):
-    """Generate serial numbers for batch and add to container_barrels table"""
+    """Generate serial numbers for batch and add to container_barrels table.
+
+    Serial format (golden hierarchy):
+      Level 3/4: <PREFIX>-<GoldenChain>-<NNN>
+      where GoldenChain = title (e.g. 0334925261-1-C1) and NNN is 001..999
+    """
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1475,33 +1518,30 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
 
         batch_level = batch.custom_batch_level or "1"
 
-        if batch_level == "4":
-            if not prefix:
-                prefix = "BRL"
-            base_name = batch.name.replace("LOTE-", "")
-            serial_prefix = f"{prefix}-{base_name}"
-        else:
-            base_name = batch.name
-            serial_prefix = base_name
+        # Use hierarchical title as base (e.g. 0334925261-1-C1)
+        base_title = batch.title or batch.custom_golden_number or batch.name
 
+        # Resolve prefix based on packaging/plant, unless explicitly passed in
+        resolved_prefix = prefix or resolve_container_prefix(batch, default_prefix=None)
+
+        # Collect existing serials in the child table
         existing_serials = []
         for row in batch.container_barrels:
             if row.barrel_serial_number and row.barrel_serial_number.strip():
                 existing_serials.append(row.barrel_serial_number.strip())
 
         existing_count = len(existing_serials)
-
         new_serials = []
+
         for i in range(quantity):
             seq_num = existing_count + i + 1
 
-            if batch_level == "4":
-                short_batch = batch.name.replace("LOTE-", "")
-                serial = f"{prefix}-{short_batch}-{seq_num:03d}"
-            elif batch_level == "3":
-                serial = f"{batch.name}-C{seq_num:03d}"
+            # Level 3/4: PREFIX-GoldenChain-NNN (e.g. BRL-0334925261-1-C1-001)
+            if batch_level in ("3", "4") and resolved_prefix:
+                serial = f"{resolved_prefix}-{base_title}-{seq_num:03d}"
             else:
-                serial = f"{batch.name}-{seq_num:03d}"
+                # Generic fallback: GoldenChain-NNN
+                serial = f"{base_title}-{seq_num:03d}"
 
             if len(serial) > 50:
                 serial = serial[:50]
@@ -1524,6 +1564,7 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
 
             batch.append("container_barrels", row_data)
 
+        # Persist a newline list of serials (for non-Level 4 batches)
         if batch_level != "4":
             existing_text = []
             if batch.custom_serial_numbers:
@@ -1562,7 +1603,6 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
             message=f"Details: {str(e)[:100]}...",
         )
         frappe.throw(f"Failed to generate serial numbers: {str(e)[:200]}")
-
 
 @frappe.whitelist()
 def integrate_serial_tracking(batch_name):
