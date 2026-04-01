@@ -945,7 +945,7 @@ function add_level_specific_buttons(frm) {
 	    const currentLevel = frm.doc.custom_batch_level;
     if (!currentLevel) return;
     
-    // Level 1: Create Sublot button
+    // Level 1: Create Sublot button ONLY (no Create Container - must go through sublot first)
     if (currentLevel === '1') {
         frm.add_custom_button(__('Create Sublot'), function() {
             create_sublot_batch(frm);
@@ -964,9 +964,6 @@ function add_level_specific_buttons(frm) {
     
     // Level 3: handled by existing code below, plus additional buttons
     if (currentLevel === '3') {
-        frm.add_custom_button(__('Create Container'), function() {
-            create_container_batch(frm);
-        });
         frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
             open_bulk_scan_dialog(frm);
         });
@@ -1832,9 +1829,37 @@ function generate_bulk_barrel_serials(frm) {
     dialog.show();
 }
 
-// Generate serials (placeholder)
+// Generate serials - calls server-side method
 function generate_serials_l2(frm, count, prefix) {
-    frappe.msgprint(__('Generating {0} serials with prefix {1}...', [count, prefix]));
+    if (!frm.doc.name || frm.is_new()) {
+        frappe.msgprint(__('Please save the batch first before generating serials.'));
+        return;
+    }
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.generate_serial_numbers',
+        args: {
+            batch_name: frm.doc.name,
+            quantity: count,
+            prefix: prefix || null
+        },
+        freeze: true,
+        freeze_message: __('Generating {0} barrel serials...', [count]),
+        callback: function(r) {
+            if (r.message && r.message.status === 'success') {
+                frappe.show_alert({
+                    message: __('Generated {0} barrel serials', [r.message.count]),
+                    indicator: 'green'
+                }, 5);
+                frm.reload_doc();
+            } else {
+                frappe.msgprint({
+                    title: __('Error'),
+                    message: r.message ? r.message.message : __('Failed to generate serials'),
+                    indicator: 'red'
+                });
+            }
+        }
+    });
 }
 
 // =============================================================================

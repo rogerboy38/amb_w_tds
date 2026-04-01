@@ -112,6 +112,20 @@ class BatchAMB(NestedSet):
                 _("Parent Batch AMB is required for level {0}").format(level)
             )
 
+        # Validate parent is exactly one level above
+        if level > 1 and self.parent_batch_amb:
+            parent_level = frappe.db.get_value(
+                "Batch AMB", self.parent_batch_amb, "custom_batch_level"
+            )
+            expected_parent_level = str(level - 1)
+            if str(parent_level) != expected_parent_level:
+                frappe.throw(
+                    _(
+                        "Level {0} batch requires a Level {1} parent, "
+                        "but {2} is Level {3}"
+                    ).format(level, expected_parent_level, self.parent_batch_amb, parent_level)
+                )
+
     def validate_barrel_weights(self):
         """Validate barrel weights"""
         if self.custom_batch_level != "3":
@@ -1553,9 +1567,9 @@ def integrate_serial_tracking(batch_name):
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
-        default_qty = batch.planned_qty or 5
+        default_qty = int(batch.planned_qty or 5)
 
-        result = fixed_generate_serial_numbers(
+        result = generate_serial_numbers(
             batch_name=batch_name,
             quantity=default_qty,
             prefix="BRL" if batch.custom_batch_level == "4" else None,
