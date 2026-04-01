@@ -160,24 +160,22 @@ class BatchAMB(NestedSet):
     # -----------------------------
 
     def auto_set_title(self):
-        """Auto-generate title based on batch level and parent."""
-        if self.title and len(self.title) > 5:
-            return
+        """Auto-generate title based on batch level and parent using Golden Number."""
+        level = str(self.custom_batch_level or "1")
 
-        level = self.custom_batch_level or "1"
-
+        # Level 1: use Golden Number directly
         if level == "1":
             if self.custom_golden_number:
-                self.title = (
-                    f"{self.item_code or 'BATCH'}-{self.custom_golden_number}"
-                )
+                self.title = self.custom_golden_number
             else:
-                self.title = f"{self.item_code or 'BATCH'}-{self.name}"
+                # Fallback to name
+                self.title = self.name
 
+        # Level 2: <GoldenNumber>-<sub lot index>
         elif level == "2":
             if self.parent_batch_amb:
                 parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
-                parent_title = parent.title or parent.name
+                parent_gn = parent.custom_golden_number or parent.title or parent.name
 
                 siblings = frappe.db.count(
                     "Batch AMB",
@@ -187,10 +185,11 @@ class BatchAMB(NestedSet):
                         "name": ["!=", self.name],
                     },
                 )
-                self.title = f"{parent_title[:15]} - L2-{siblings + 1:02d}"
+                self.title = f"{parent_gn}-{siblings + 1}"
             else:
-                self.title = f"{self.name} - L2"
+                self.title = f"{self.name}-L2"
 
+        # Level 3: <Level2Title>-C<container index>
         elif level == "3":
             if self.parent_batch_amb:
                 parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
@@ -204,20 +203,31 @@ class BatchAMB(NestedSet):
                         "name": ["!=", self.name],
                     },
                 )
-                self.title = f"{parent_title[:15]} - C{siblings + 1:02d}"
+                self.title = f"{parent_title}-C{siblings + 1}"
             else:
-                self.title = f"{self.name} - L3"
+                self.title = f"{self.name}-L3"
 
-        if len(self.title) > 40:
-            self.title = self.title[:40]
+        # Level 4: <Level3Title>-<serial 3-digit>
+        elif level == "4":
+            if self.parent_batch_amb:
+                parent = frappe.get_doc("Batch AMB", self.parent_batch_amb)
+                parent_title = parent.title or parent.name
 
-    def set_item_details(self):
-        """Set item details"""
-        if self.item_to_manufacture:
-            item = frappe.get_doc("Item", self.item_to_manufacture)
-            self.item_name = item.item_name
-            if not self.uom:
-                self.uom = item.stock_uom
+                siblings = frappe.db.count(
+                    "Batch AMB",
+                    {
+                        "parent_batch_amb": self.parent_batch_amb,
+                        "custom_batch_level": "4",
+                        "name": ["!=", self.name],
+                    },
+                )
+                self.title = f"{parent_title}-{siblings + 1:03d}"
+            else:
+                self.title = f"{self.name}-L4"
+
+        # Safety: trim very long titles
+        if self.title and len(self.title) > 60:
+            self.title = self.title[:60]
 
     # -----------------------------
     # Totals and costing
@@ -294,7 +304,12 @@ class BatchAMB(NestedSet):
     # -----------------------------
 
     def set_batch_naming(self):
-        """Generate golden number according to business rules"""
+        """Generate golden number according to business rules (Level 1 only)."""
+        # Only Level 1 should generate a new golden number
+        level = str(self.custom_batch_level or "1")
+        if level != "1":
+            return
+
         if not self.item_to_manufacture:
             return
 
@@ -369,19 +384,21 @@ class BatchAMB(NestedSet):
 
         base_golden_number = f"{product_code}{consecutive}{year}{plant_code}"
 
+        # Only set golden number fields here, NOT the title
         self.custom_golden_number = base_golden_number
         self.custom_generated_batch_name = base_golden_number
-        self.title = base_golden_number
 
         # Decompose golden number into component fields
-        # product_code is 4 digits: e.g., "0334"
-        # Product Family = first 2 digits: "03"
-        # Subfamily = last 2 digits: "34"
-        self.custom_product_family = product_code[:2] or "00"      # First 2 digits = Family
-        self.custom_consecutive = consecutive  # AAA (3 digits from WO)
-        self.custom_subfamily = product_code[2:4] or "00"          # Last 2 digits = Subfamily
+        self.custom_product_family = product_code[:2] or "00"
+        self.custom_consecutive = consecutive
+        self.custom_subfamily = product_code[2:4] or "00"
+
         print(f"✅ Generated Golden Number: {base_golden_number}")
-        print(f"   Product Family: {self.custom_product_family}, Subfamily: {self.custom_subfamily}")
+        print(
+            f"   Product Family: {self.custom_product_family}, "
+            f"Subfamily: {self.custom_subfamily}"
+        )
+
 
     def update_container_sequence(self):
         """Update container sequence"""
