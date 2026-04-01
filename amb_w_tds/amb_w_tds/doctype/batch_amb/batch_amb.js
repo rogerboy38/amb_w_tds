@@ -1834,7 +1834,24 @@ function generate_bulk_barrel_serials(frm) {
 
 // Generate serials (placeholder)
 function generate_serials_l2(frm, count, prefix) {
-    frappe.msgprint(__('Generating {0} serials with prefix {1}...', [count, prefix]));
+    if (!frm.doc.name || frm.is_new()) {
+        frappe.msgprint(__('Please save the batch first.'));
+        return;
+    }
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.generate_serial_numbers',
+        args: { batch_name: frm.doc.name, quantity: count, prefix: prefix || null },
+        freeze: true,
+        freeze_message: __('Generating {0} barrel serials...', [count]),
+        callback: function(r) {
+            if (r.message && r.message.status === 'success') {
+                frappe.show_alert({ message: __('Generated {0} serials', [r.message.count]), indicator: 'green' }, 5);
+                frm.reload_doc();
+            } else {
+                frappe.msgprint({ title: __('Error'), message: r.message ? r.message.message : __('Failed'), indicator: 'red' });
+            }
+        }
+    });
 }
 
 // =============================================================================

@@ -103,14 +103,27 @@ class BatchAMB(NestedSet):
             if not container.container_id:
                 container.container_id = f"CNT-{self.name}-{idx:03d}"
 
+    
     def validate_batch_level_hierarchy(self):
         """Validate batch level hierarchy"""
         level = int(self.custom_batch_level or "1")
-
         if level > 1 and not self.parent_batch_amb:
             frappe.throw(
                 _("Parent Batch AMB is required for level {0}").format(level)
             )
+        # Validate parent is exactly one level above
+        if level > 1 and self.parent_batch_amb:
+            parent_level = frappe.db.get_value(
+                "Batch AMB", self.parent_batch_amb, "custom_batch_level"
+            )
+            expected_parent_level = str(level - 1)
+            if str(parent_level) != expected_parent_level:
+                frappe.throw(
+                    _(
+                        "Level {0} batch requires a Level {1} parent, "
+                        "but {2} is Level {3}"
+                    ).format(level, expected_parent_level, self.parent_batch_amb, parent_level)
+                )
 
     def validate_barrel_weights(self):
         """Validate barrel weights"""
@@ -1604,18 +1617,21 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         )
         frappe.throw(f"Failed to generate serial numbers: {str(e)[:200]}")
 
+
 @frappe.whitelist()
 def integrate_serial_tracking(batch_name):
-    """Fixed integrate function"""
+    """Integrate serial tracking using the real generate_serial_numbers"""
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
+        default_qty = int(batch.planned_qty or 5)
+        prefix = resolve_container_prefix(batch, default_prefix=None)
+        if batch.custom_batch_level == "4" and not prefix:
+            prefix = "BRL"
 
-        default_qty = batch.planned_qty or 5
-
-        result = fixed_generate_serial_numbers(
+        result = generate_serial_numbers(
             batch_name=batch_name,
             quantity=default_qty,
-            prefix="BRL" if batch.custom_batch_level == "4" else None,
+            prefix=prefix,
         )
 
         if result.get("status") == "success":
@@ -1627,15 +1643,9 @@ def integrate_serial_tracking(batch_name):
             }
         else:
             return result
-
     except Exception as e:
         frappe.log_error(f"Integration error: {str(e)}")
-        return {
-            "status": "error",
-            "message": f"Integration failed: {str(e)[:200]}",
-        }
-
-
+        return {"status": "error", "message": f"Integration failed: {str(e)[:200]}"}
 # ============================================
 # QUICK ENTRY HELPER METHODS
 # ============================================
