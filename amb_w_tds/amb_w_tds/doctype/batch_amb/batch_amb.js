@@ -1739,31 +1739,39 @@ function calculate_net_weight_fixed(frm, cdt, cdn) {
 
 // Create Sublot Batch (Level 2) from parent
 function create_sublot_batch(frm) {
+    // Child level = parent level + 1
+    var parent_level = parseInt(frm.doc.custom_batch_level || '1', 10);
+    var child_level = String(parent_level + 1);
+    
     frappe.new_doc('Batch AMB', {
-        'custom_batch_level': '2',
+        'custom_batch_level': child_level,
         'parent_batch_amb': frm.doc.name,
         'work_order_ref': frm.doc.work_order_ref,
         'sales_order_related': frm.doc.sales_order_related,
         'item_to_manufacture': frm.doc.item_to_manufacture,
         'production_plant_name': frm.doc.production_plant_name,
+        'production_plant': frm.doc.production_plant,
         'original_item_code': frm.doc.original_item_code || frm.doc.item_code
     });
-}
+}}
 
 // Create Container Batch (Level 3) from parent
 function create_container_batch(frm) {
+    var parent_level = parseInt(frm.doc.custom_batch_level || '1', 10);
+    var child_level = String(parent_level + 1);
+    
     frappe.new_doc('Batch AMB', {
-        'custom_batch_level': '3',
+        'custom_batch_level': child_level,
         'parent_batch_amb': frm.doc.name,
         'work_order_ref': frm.doc.work_order_ref,
         'sales_order_related': frm.doc.sales_order_related,
         'item_to_manufacture': frm.doc.item_to_manufacture,
         'production_plant_name': frm.doc.production_plant_name,
+        'production_plant': frm.doc.production_plant,
         'original_item_code': frm.doc.original_item_code || frm.doc.item_code,
         'current_item_code': frm.doc.current_item_code || frm.doc.item_code
     });
 }
-
 // Add global buttons (View Batch Tree)
 function add_global_buttons(frm) {
     if (frm.doc.custom_batch_level && frm.doc.custom_batch_level !== '4') {

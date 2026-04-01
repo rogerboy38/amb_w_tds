@@ -98,11 +98,9 @@ class BatchAMB(NestedSet):
         """Validate container data"""
         if not self.container_barrels:
             return
-
         for idx, container in enumerate(self.container_barrels, 1):
-            if not container.container_id:
+            if hasattr(container, "container_id") and not container.container_id:
                 container.container_id = f"CNT-{self.name}-{idx:03d}"
-
     
     def validate_batch_level_hierarchy(self):
         """Validate batch level hierarchy"""
