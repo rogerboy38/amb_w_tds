@@ -129,7 +129,10 @@ class BatchAMB(NestedSet):
         """Before save hook"""
         self.calculate_totals()
         self.set_batch_naming()
-        self.auto_set_title()
+        # FIXED: Only auto-set title for NEW documents to prevent title drift
+        # This prevents serial base from changing between saves
+        if self.is_new():
+            self.auto_set_title()
         # FIXED: Keep custom_generated_batch_name in sync with title
         self.custom_generated_batch_name = self.title
         self.update_container_sequence()
