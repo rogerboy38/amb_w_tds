@@ -15,7 +15,7 @@
   "beta": 0,
   "color": null,
   "colour": null,
-  "custom": 0,
+  "custom": 1,
   "default_email_template": null,
   "default_print_format": "COA AMB",
   "default_view": "List",
@@ -1774,7 +1774,7 @@
   "istable": 0,
   "links": [
     {
-      "custom": 0,
+      "custom": 1,
       "group": "Quality Inspection",
       "hidden": 0,
       "is_child_table": 0,

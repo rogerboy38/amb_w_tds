@@ -2,7 +2,7 @@
   "doctype": "DocType",
   "name": "Amb KPI Factors",
   "module": "amb_w_tds",
-  "custom": 0,
+  "custom": 1,
   "is_submittable": 0,
   "istable": 0,
   "editable_grid": 1,
