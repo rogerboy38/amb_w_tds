@@ -1,0 +1,22 @@
+{
+    "name": "amb-manufacturing-dashboard",
+    "doctype": "Page",
+    "title": "AMB Manufacturing Dashboard",
+    "module": "AMB",
+    "restrict_to_domain": null,
+    "script": null,
+    "style": null,
+    "is_mobile": 0,
+    "hideNavbar": 0,
+    "standard": 1,
+    "icon": null,
+    "color": null,
+    "no_sidebar": 0,
+    "content_class": null,
+    "email_append_to": 0,
+    "showSidebar": 0,
+    "allow_guest": 0,
+    "allow_events": 0,
+    "home_page": 0,
+    "title_prefix": null
+}

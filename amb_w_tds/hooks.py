@@ -89,10 +89,18 @@ doc_events = {
         "on_update": "amb_w_tds.bom_hooks.on_bom_update",
     },
 
-    # ---- stock trace / costing / batch migrations
+    # ---- Pipeline hooks for auto-linking Stock Entry, Quality Inspection, Delivery Note
     "Stock Entry": {
-        "on_submit": [],
+        "on_submit": "amb_w_tds.amb_w_tds.doctype.batch_amb.pipeline_hooks.on_stock_entry_submit",
         "before_insert": [],
+    },
+
+    "Quality Inspection": {
+        "on_submit": "amb_w_tds.amb_w_tds.doctype.batch_amb.pipeline_hooks.on_quality_inspection_submit",
+    },
+
+    "Delivery Note": {
+        "on_submit": "amb_w_tds.amb_w_tds.doctype.batch_amb.pipeline_hooks.on_delivery_note_submit",
     },
 
     # ---- AMB Quotation + Sales Partner auto mapping + idempotency
@@ -174,3 +182,11 @@ default_mail_footer = """
 override_doctype_dashboards = {
     "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
 }
+
+# ========================================
+#  PAGES
+# ========================================
+
+page = [
+    "amb-manufacturing-dashboard"
+]
