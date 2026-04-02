@@ -158,6 +158,14 @@ fixtures = [
             ["dt", "=", "Sample Request AMB"]
         ]
     },
+
+    # PH12.5: Manufacturing Dashboard Page
+    {
+        "doctype": "Page",
+        "filters": [
+            ["name", "=", "amb-manufacturing-dashboard"]
+        ]
+    },
 ]
 
 # ================================================
@@ -191,3 +199,7 @@ override_doctype_dashboards = {
 page_js = {
     "amb-manufacturing-dashboard": "amb_w_tds.public.js.dashboard_override"
 }
+
+page = [
+    "amb-manufacturing-dashboard"
+]
