@@ -301,6 +301,142 @@ class BatchAMB(NestedSet):
                 self.uom = item.stock_uom
 
     # -----------------------------
+    # Weight Calculation & Validation
+    # -----------------------------
+
+    def calculate_barrel_weight(self, barrel_row):
+        """Calculate net weight for a single barrel row.
+        Auto-calculates: net_weight = gross_weight - tara_weight
+        """
+        gross = flt(barrel_row.get('gross_weight') or 0)
+        tara = flt(barrel_row.get('tara_weight') or 0)
+        
+        if gross and tara:
+            barrel_row.net_weight = gross - tara
+        elif gross:
+            barrel_row.net_weight = gross
+        
+        return barrel_row.get('net_weight', 0)
+
+    def get_tara_weight_from_item(self, packaging_type: str) -> float:
+        """Fetch standard tara weight from Item master.
+        Looks for standard_weight on the packaging Item.
+        """
+        if not packaging_type:
+            return 0
+        
+        # Try to find item by packaging type name
+        try:
+            item_code = packaging_type
+            # Try exact match first
+            if frappe.db.exists("Item", item_code):
+                item = frappe.get_doc("Item", item_code)
+                return flt(item.standard_weight or 0)
+            
+            # Try with "Barrel" suffix
+            barrel_item = f"{item_code} Barrel"
+            if frappe.db.exists("Item", barrel_item):
+                item = frappe.get_doc("Item", barrel_item)
+                return flt(item.standard_weight or 0)
+            
+            # Try partial match
+            items = frappe.get_all("Item", 
+                filters={"name": ["like", f"%{item_code}%"], "item_group": "Containers"},
+                fields=["name", "standard_weight"],
+                limit=1
+            )
+            if items:
+                return flt(items[0].standard_weight or 0)
+                
+        except Exception:
+            pass
+        
+        return 0
+
+    def validate_barrel_weight(self, barrel_row) -> dict:
+        """Validate barrel weight against min/max thresholds.
+        Returns: {"valid": bool, "message": str}
+        """
+        packaging_type = barrel_row.get('packaging_type')
+        gross_weight = flt(barrel_row.get('gross_weight') or 0)
+        net_weight = flt(barrel_row.get('net_weight') or 0)
+        
+        # Default thresholds
+        min_weight = 0.1  # kg
+        max_weight = 1000  # kg
+        
+        # Try to get custom thresholds from Item
+        if packaging_type:
+            try:
+                if frappe.db.exists("Item", packaging_type):
+                    item = frappe.get_doc("Item", packaging_type)
+                    # You could add custom fields for min/max weight
+                    # For now, use item standard_weight as reference
+                    if item.standard_weight:
+                        min_weight = item.standard_weight * 0.8
+                        max_weight = item.standard_weight * 1.5
+            except Exception:
+                pass
+        
+        # Validate
+        if net_weight < min_weight:
+            return {"valid": False, "message": f"Weight {net_weight} kg below minimum {min_weight} kg"}
+        if net_weight > max_weight:
+            return {"valid": False, "message": f"Weight {net_weight} kg exceeds maximum {max_weight} kg"}
+        
+        return {"valid": True, "message": "Weight within valid range"}
+
+    def set_barrel_validated(self, barrel_row):
+        """Set weight_validated flag based on validation result."""
+        validation = self.validate_barrel_weight(barrel_row)
+        barrel_row.weight_validated = validation.get("valid", False)
+        return validation
+
+    def update_barrel_weight_from_serial(self, barrel_serial: str, gross_weight: float) -> dict:
+        """Update weight for a specific barrel by serial number.
+        Used by: Manual entry, Raven command, IoT API
+        """
+        if not self.container_barrels:
+            return {"success": False, "error": "No container barrels defined"}
+        
+        # Find barrel by serial
+        barrel = None
+        for row in self.container_barrels:
+            if row.get('serial_number') == barrel_serial:
+                barrel = row
+                break
+        
+        if not barrel:
+            return {"success": False, "error": f"Barrel serial '{barrel_serial}' not found"}
+        
+        # Get tara weight if not set
+        if not barrel.get('tara_weight'):
+            packaging = barrel.get('packaging_type')
+            barrel.tara_weight = self.get_tara_weight_from_item(packaging)
+        
+        # Update gross weight
+        barrel.gross_weight = flt(gross_weight)
+        
+        # Auto-calculate net weight
+        self.calculate_barrel_weight(barrel)
+        
+        # Validate and set flag
+        validation = self.set_barrel_validated(barrel)
+        
+        # Recalculate totals
+        self.calculate_container_weights()
+        
+        return {
+            "success": True,
+            "barrel_serial": barrel_serial,
+            "gross_weight": barrel.gross_weight,
+            "tara_weight": barrel.tara_weight,
+            "net_weight": barrel.net_weight,
+            "validated": barrel.weight_validated,
+            "validation_message": validation.get("message")
+        }
+
+    # -----------------------------
     # Totals and costing
     # -----------------------------
 

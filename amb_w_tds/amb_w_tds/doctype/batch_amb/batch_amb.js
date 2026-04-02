@@ -249,6 +249,55 @@ frappe.ui.form.on('Container Barrels', {
         update_weight_totals(frm);
     },
 
+    // PH12.4: Weight auto-calculation
+    gross_weight: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        // Auto-calculate net weight: net = gross - tara
+        let gross = flt(row.gross_weight) || 0;
+        let tara = flt(row.tara_weight) || 0;
+        
+        if (tara > 0) {
+            row.net_weight = gross - tara;
+        } else {
+            row.net_weight = gross;
+        }
+        
+        // Validate weight
+        let valid = validate_barrow_weight(row);
+        row.weight_validated = valid ? 1 : 0;
+        
+        frm.refresh_field('container_barrels');
+        update_weight_totals(frm);
+    },
+
+    tara_weight: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        // Auto-calculate net weight when tara changes
+        let gross = flt(row.gross_weight) || 0;
+        let tara = flt(row.tara_weight) || 0;
+        
+        if (gross > 0 && tara > 0) {
+            row.net_weight = gross - tara;
+            
+            // Validate weight
+            let valid = validate_barrow_weight(row);
+            row.weight_validated = valid ? 1 : 0;
+        }
+        
+        frm.refresh_field('container_barrels');
+        update_weight_totals(frm);
+    },
+
+    net_weight: function(frm, cdt, cdn) {
+        // Net weight is read-only (calculated from gross - tara)
+        // But we validate on change
+        let row = locals[cdt][cdn];
+        let valid = validate_barrow_weight(row);
+        row.weight_validated = valid ? 1 : 0;
+        
+        frm.refresh_field('container_barrels');
+    },
+
     // BatchL2 enhancements
     barcode_scan_input: function(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
@@ -1316,6 +1365,15 @@ function update_weight_totals(frm) {
     frm.set_value('total_tara_weight', total_tara);
     frm.set_value('total_net_weight', total_net);
     frm.set_value('barrel_count', barrel_count);
+}
+
+// PH12.4: Validate single barrel weight
+function validate_barrow_weight(row) {
+    let net = flt(row.net_weight) || 0;
+    if (net <= 0) return false;
+    if (net < 0.1) return false;  // Min 0.1 kg
+    if (net > 1000) return false; // Max 1000 kg
+    return true;
 }
 
 // ==================== VALIDATION FUNCTIONS ====================
