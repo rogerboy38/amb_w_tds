@@ -39,7 +39,8 @@ def execute():
         
         # Check if this looks like a stale serial (starts with old golden number pattern)
         if old_serial.startswith("0334925261"):
-            new_serial = f"{correct_title}-C{idx:03d}"
+            # Use same format as generate_serial_numbers: {title}-{seq_num:03d}
+            new_serial = f"{correct_title}-{idx:03d}"
             print(f"  Queue update: {old_serial} -> {new_serial}")
             updates.append((row.name, old_serial, new_serial))
     
