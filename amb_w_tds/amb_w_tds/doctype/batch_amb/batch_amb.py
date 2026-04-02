@@ -44,6 +44,7 @@ class BatchAMB(NestedSet):
         self.set_item_details()
         self.validate_processing_dates()
         self.calculate_yield_percentage()
+        self.validate_pipeline_transition()
 
     def _validate_batch_hierarchy(self):
         """Enforce parent-child level rules:
@@ -77,6 +78,51 @@ class BatchAMB(NestedSet):
                 f"Level {level} batch requires a Level {expected} parent, "
                 f"but {parent} is Level {parent_level}."
             )
+
+    def validate_pipeline_transition(self):
+        """Enforce pipeline state machine - no skipping stages"""
+        # Pipeline states in order
+        PIPELINE_ORDER = [
+            "Draft", "WO Linked", "In Production", "Weighing", 
+            "QI Pending", "QI Passed", "COA Ready", 
+            "Ready for Delivery", "Delivered", "Closed"
+        ]
+        
+        # Skip for new documents
+        if self.is_new():
+            return
+        
+        # Get old value from database (not _doc_before_save which may not exist)
+        old_status = frappe.db.get_value("Batch AMB", self.name, "pipeline_status") or "Draft"
+        new_status = self.pipeline_status or "Draft"
+        
+        # Skip if no change
+        if old_status == new_status:
+            return
+        
+        old_idx = PIPELINE_ORDER.index(old_status) if old_status in PIPELINE_ORDER else -1
+        new_idx = PIPELINE_ORDER.index(new_status) if new_status in PIPELINE_ORDER else -1
+        
+        if old_idx < 0 or new_idx < 0:
+            return  # Allow if either status is not in our list
+        
+        diff = new_idx - old_idx
+        
+        # Allow forward by 1 step
+        if diff == 1:
+            return
+        
+        # Allow backward by 1 step ONLY if user has Production Manager role
+        if diff == -1:
+            if frappe.has_permission("Batch AMB", "validate", "Production Manager"):
+                return
+        
+        # Block invalid transitions
+        frappe.throw(
+            _("Invalid pipeline transition from '{0}' to '{1}'. Only adjacent state changes are allowed.").format(
+                old_status, new_status
+            )
+        )
 
     def before_save(self):
         """Before save hook"""
