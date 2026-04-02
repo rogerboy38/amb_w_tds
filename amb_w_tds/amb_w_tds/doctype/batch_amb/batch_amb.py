@@ -1015,6 +1015,156 @@ class BatchAMB(NestedSet):
 
         return 0
 
+    # ==================== PHASE 12.5: PIPELINE STATE MACHINE ====================
+
+    PIPELINE_STATES = [
+        "Draft",
+        "WO Linked",
+        "In Production",
+        "Weighing",
+        "QI Pending",
+        "QI Passed",
+        "COA Ready",
+        "Ready for Delivery",
+        "Delivered",
+        "Closed",
+    ]
+
+    PIPELINE_TRANSITIONS = {
+        "Draft": ["WO Linked"],
+        "WO Linked": ["In Production"],
+        "In Production": ["Weighing"],
+        "Weighing": ["QI Pending"],
+        "QI Pending": ["QI Passed", "In Production"],  # Can retry production
+        "QI Passed": ["COA Ready"],
+        "COA Ready": ["Ready for Delivery"],
+        "Ready for Delivery": ["Delivered"],
+        "Delivered": ["Closed"],
+        "Closed": [],
+    }
+
+    def advance_pipeline_status(self):
+        """
+        Advance pipeline to next state.
+        Validates that no stages are skipped.
+        """
+        if not hasattr(self, "pipeline_status"):
+            frappe.throw("Pipeline status field not found")
+
+        current = self.pipeline_status or "Draft"
+        allowed = self.PIPELINE_TRANSITIONS.get(current, [])
+
+        if not allowed:
+            frappe.throw(f"Cannot advance from {current} - already at final state")
+
+        # Find next allowed state
+        next_state = None
+        for state in self.PIPELINE_STATES:
+            if state in allowed:
+                next_state = state
+                break
+
+        if not next_state:
+            frappe.throw(f"No valid next state from {current}")
+
+        self.pipeline_status = next_state
+        self.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "from": current,
+            "to": next_state,
+            "message": f"Pipeline advanced to {next_state}"
+        }
+
+    def reverse_pipeline_status(self):
+        """
+        Reverse pipeline to previous state.
+        Production Manager role only.
+        """
+        if not hasattr(self, "pipeline_status"):
+            frappe.throw("Pipeline status field not found")
+
+        # Check role
+        user_roles = frappe.get_roles(frappe.session.user)
+        if "Production Manager" not in user_roles:
+            frappe.throw("Only Production Manager can reverse pipeline status")
+
+        current = self.pipeline_status or "Draft"
+
+        # Find previous state
+        prev_state = None
+        for i, state in enumerate(self.PIPELINE_STATES):
+            if state == current and i > 0:
+                prev_state = self.PIPELINE_STATES[i - 1]
+                break
+
+        if not prev_state:
+            frappe.throw(f"Cannot reverse from {current}")
+
+        self.pipeline_status = prev_state
+        self.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "from": current,
+            "to": prev_state,
+            "message": f"Pipeline reverted to {prev_state}"
+        }
+
+    def get_bom_context(self):
+        """
+        Get BOM and TDS context for display on form.
+        Read-only, fetched on form load.
+        """
+        context = {
+            "bom_name": None,
+            "bom_cost": 0,
+            "bom_items": [],
+            "tds_spec": None,
+        }
+
+        if not self.item_to_manufacture:
+            return context
+
+        # Get active BOM
+        bom_name = frappe.db.get_value(
+            "BOM",
+            {"item": self.item_to_manufacture, "is_active": 1},
+            "name"
+        )
+
+        if bom_name:
+            context["bom_name"] = bom_name
+            try:
+                bom = frappe.get_doc("BOM", bom_name)
+                context["bom_cost"] = bom.total_cost
+                context["bom_items"] = [
+                    {"item_code": item.item_code, "qty": item.qty, "rate": item.rate}
+                    for item in bom.items[:5]  # Top 5 items
+                ]
+            except Exception:
+                pass
+
+        # Get TDS spec
+        tds_specs = frappe.get_all(
+            "TDS Product Specification",
+            filters={"item_code": self.item_to_manufacture},
+            limit=1,
+            pluck="name"
+        )
+        if tds_specs:
+            context["tds_spec"] = tds_specs[0]
+
+        return context
+
+    @frappe.whitelist()
+    def get_pipeline_context(self):
+        """API: Get pipeline context for form display"""
+        return self.get_bom_context()
+
 
 # ==================== MANUFACTURING BUTTON METHODS ====================
 

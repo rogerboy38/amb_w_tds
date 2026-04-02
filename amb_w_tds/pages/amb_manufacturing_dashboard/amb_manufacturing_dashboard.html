@@ -1,0 +1,184 @@
+{% extends "templates/pages/empty.html" %}
+
+{% block page_content %}
+<div class="amb-dashboard">
+    {{ brand_html }}
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Batches</h5>
+                    <h2>{{ stats.active or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">In Production</h5>
+                    <h2>{{ stats.get('In Production', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">QI Pending</h5>
+                    <h2>{{ stats.get('QI Pending', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">Ready to Deliver</h5>
+                    <h2>{{ stats.get('Ready for Delivery', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Pipeline Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="pipeline-chart">
+                        {% for status, count in stats.items() %}
+                        <div class="pipeline-stage">
+                            <span class="stage-name">{{ status }}</span>
+                            <span class="stage-count">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Weight Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p>Total Gross: {{ weight_summary.total_gross or 0 }} kg</p>
+                    <p>Total Net: {{ weight_summary.total_net or 0 }} kg</p>
+                    <p>Total Tara: {{ weight_summary.total_tara or 0 }} kg</p>
+                    <p>Batches: {{ weight_summary.batch_count or 0 }}</p>
+                    <p>Barrels: {{ weight_summary.barrel_count or 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Active Batches</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Batch</th>
+                                <th>Level</th>
+                                <th>Status</th>
+                                <th>Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for batch in active_batches %}
+                            <tr>
+                                <td>{{ batch.title or batch.name }}</td>
+                                <td>L{{ batch.custom_batch_level }}</td>
+                                <td>{{ batch.pipeline_status }}</td>
+                                <td>{{ batch.total_net_weight or 0 }} kg</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Pending Actions</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="action-list">
+                        {% for action in pending_actions %}
+                        <li class="action-item {{ action.type }}">
+                            <strong>{{ action.batch }}</strong>: {{ action.action }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.amb-dashboard {
+    padding: 20px;
+}
+.stats-card {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.stats-card h2 {
+    font-size: 2.5rem;
+    margin: 10px 0;
+}
+.pipeline-chart {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.pipeline-stage {
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    min-width: 100px;
+    text-align: center;
+}
+.stage-name {
+    display: block;
+    font-size: 0.8rem;
+}
+.stage-count {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.action-list {
+    list-style: none;
+    padding: 0;
+}
+.action-item {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+.action-item.warning {
+    background: #fff3cd;
+}
+.action-item.info {
+    background: #d1ecf1;
+}
+</style>
+
+<script>
+frappe.router.on("change", function() {
+    // Auto-refresh every 60 seconds
+    setInterval(function() {
+        window.location.reload();
+    }, 60000);
+});
+</script>
+{% endblock %}
