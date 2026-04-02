@@ -43,6 +43,7 @@ class BatchAMB(NestedSet):
         self.validate_barrel_weights()
         self.set_item_details()
         self.validate_processing_dates()
+        self.validate_pipeline_transition()
         self.calculate_yield_percentage()
 
     def _validate_batch_hierarchy(self):
@@ -1043,6 +1044,51 @@ class BatchAMB(NestedSet):
         "Closed": [],
     }
 
+    def validate_pipeline_transition(self):
+        """Prevent invalid pipeline status jumps on direct save"""
+        if not hasattr(self, "pipeline_status"):
+            return
+
+        new_status = (self.pipeline_status or "Draft").strip()
+
+        if new_status not in self.PIPELINE_STATES:
+            frappe.throw(f"Invalid pipeline status: {new_status}")
+
+        # New docs can start normally without transition checks
+        if self.is_new():
+            return
+
+        old_status = frappe.db.get_value(self.doctype, self.name, "pipeline_status") or "Draft"
+        old_status = old_status.strip()
+
+        if old_status == new_status:
+            return
+
+        allowed_next = self.PIPELINE_TRANSITIONS.get(old_status, [])
+
+        # Forward-only enforcement on direct save.
+        # Reverse movement should happen through reverse_pipeline_status()
+        if new_status not in allowed_next:
+            frappe.throw(
+                f"Invalid pipeline transition from '{old_status}' to '{new_status}'. "
+                f"Allowed next state(s): {', '.join(allowed_next) if allowed_next else 'None'}"
+            )
+
+    def get_next_pipeline_states(self, current_status=None):
+        """Return allowed next pipeline states"""
+        current_status = (current_status or self.pipeline_status or "Draft").strip()
+        return self.PIPELINE_TRANSITIONS.get(current_status, [])
+
+    def get_previous_pipeline_state(self, current_status=None):
+        """Return previous pipeline state if any"""
+        current_status = (current_status or self.pipeline_status or "Draft").strip()
+
+        for state, next_states in self.PIPELINE_TRANSITIONS.items():
+            if current_status in next_states:
+                return state
+
+        return None
+
     def advance_pipeline_status(self):
         """
         Advance pipeline to next state.
@@ -1052,21 +1098,12 @@ class BatchAMB(NestedSet):
             frappe.throw("Pipeline status field not found")
 
         current = self.pipeline_status or "Draft"
-        allowed = self.PIPELINE_TRANSITIONS.get(current, [])
+        allowed = self.get_next_pipeline_states(current)
 
         if not allowed:
             frappe.throw(f"Cannot advance from {current} - already at final state")
 
-        # Find next allowed state
-        next_state = None
-        for state in self.PIPELINE_STATES:
-            if state in allowed:
-                next_state = state
-                break
-
-        if not next_state:
-            frappe.throw(f"No valid next state from {current}")
-
+        next_state = allowed[0]
         self.pipeline_status = next_state
         self.save(ignore_permissions=True)
         frappe.db.commit()
@@ -1086,32 +1123,24 @@ class BatchAMB(NestedSet):
         if not hasattr(self, "pipeline_status"):
             frappe.throw("Pipeline status field not found")
 
-        # Check role
-        user_roles = frappe.get_roles(frappe.session.user)
-        if "Production Manager" not in user_roles:
+        if "Production Manager" not in frappe.get_roles():
             frappe.throw("Only Production Manager can reverse pipeline status")
 
         current = self.pipeline_status or "Draft"
+        previous_state = self.get_previous_pipeline_state(current)
 
-        # Find previous state
-        prev_state = None
-        for i, state in enumerate(self.PIPELINE_STATES):
-            if state == current and i > 0:
-                prev_state = self.PIPELINE_STATES[i - 1]
-                break
-
-        if not prev_state:
+        if not previous_state:
             frappe.throw(f"Cannot reverse from {current}")
 
-        self.pipeline_status = prev_state
+        self.pipeline_status = previous_state
         self.save(ignore_permissions=True)
         frappe.db.commit()
 
         return {
             "success": True,
             "from": current,
-            "to": prev_state,
-            "message": f"Pipeline reverted to {prev_state}"
+            "to": previous_state,
+            "message": f"Pipeline reverted to {previous_state}"
         }
 
     def get_bom_context(self):
