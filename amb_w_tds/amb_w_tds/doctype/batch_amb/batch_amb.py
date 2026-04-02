@@ -1900,6 +1900,10 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
             batch.custom_last_api_sync = now_datetime()
             batch.custom_serial_tracking_integrated = 1
 
+        # NOTE: Server Script 'validate_var_code39_ok' must be DISABLED in production.
+        # The flags below are a safety net to bypass old Server Script during serial generation.
+        batch.flags.ignore_validate = False  # Keep our Python validation
+        batch.flags.ignore_server_scripts = True  # Bypass old Server Script
         batch.save(ignore_permissions=True)
         frappe.db.commit()
 

@@ -1550,10 +1550,13 @@ function setup_field_dependencies(frm) {
     frm.toggle_display('total_batch_cost', frm.doc.calculate_cost);
     frm.toggle_display('cost_per_unit', frm.doc.calculate_cost);
 
-    // Container section
-    frm.toggle_display('container_barrels', frm.doc.use_containers);
+    // Container section - show for Level 3 batches OR when use_containers is checked
+    frm.toggle_display('container_barrels', frm.doc.custom_batch_level == '3' || frm.doc.use_containers);
     frm.toggle_display('total_containers', frm.doc.use_containers);
     frm.toggle_display('total_container_qty', frm.doc.use_containers);
+    
+    // Also show/hide the section break
+    frm.toggle_display('container_level_3_section', frm.doc.custom_batch_level == '3' || frm.doc.use_containers);
 }
 
 function show_status_indicators(frm) {
