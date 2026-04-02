@@ -1,6 +1,12 @@
 # Copyright (c) 2024, AMB and contributors
 # For license information, please see license.txt
 
+# NOTE (Phase 12.1): The Server Script 'validate_var_code39_ok' has been
+# retired. Its validation logic (Code-39 format check and gross_weight
+# requirement) is now implemented in validate_containers() and
+# _is_valid_code39() within this controller.
+# The Server Script should be DISABLED in Setup > Server Script.
+
 import json
 import random
 import string
@@ -33,11 +39,44 @@ class BatchAMB(NestedSet):
         self.validate_quantities()
         self.validate_work_order()
         self.validate_containers()
-        self.validate_batch_level_hierarchy()
+        self._validate_batch_hierarchy()
         self.validate_barrel_weights()
         self.set_item_details()
         self.validate_processing_dates()
         self.calculate_yield_percentage()
+
+    def _validate_batch_hierarchy(self):
+        """Enforce parent-child level rules:
+        - L1 (Parent): no parent required
+        - L2 (Sub-lot): parent must be L1
+        - L3 (Container): parent must be L2
+        """
+        level = str(self.custom_batch_level or "1")
+        parent = self.parent_batch_amb
+
+        if level == "1":
+            return  # L1 has no parent requirement
+
+        if not parent:
+            frappe.throw(f"Level {level} batch requires a parent batch.")
+
+        if not frappe.db.exists("Batch AMB", parent):
+            frappe.throw(f"Parent batch {parent} does not exist.")
+
+        parent_level = str(frappe.db.get_value("Batch AMB", parent, "custom_batch_level") or "0")
+
+        expected_parent_levels = {
+            "2": "1",  # L2 parent must be L1
+            "3": "2",  # L3 parent must be L2
+            "4": "3",  # L4 parent must be L3 (future)
+        }
+
+        expected = expected_parent_levels.get(level)
+        if expected and parent_level != expected:
+            frappe.throw(
+                f"Level {level} batch requires a Level {expected} parent, "
+                f"but {parent} is Level {parent_level}."
+            )
 
     def before_save(self):
         """Before save hook"""
@@ -95,34 +134,36 @@ class BatchAMB(NestedSet):
             frappe.throw(_("Work Order {0} does not exist").format(self.work_order))
 
     def validate_containers(self):
-        """Validate container data"""
+        """Validate container barrel rows — with hasattr guards for schema safety."""
         if not self.container_barrels:
             return
-        for idx, container in enumerate(self.container_barrels, 1):
-            if hasattr(container, "container_id") and not container.container_id:
-                container.container_id = f"CNT-{self.name}-{idx:03d}"
-    
-    def validate_batch_level_hierarchy(self):
-        """Validate batch level hierarchy"""
-        level = int(self.custom_batch_level or "1")
-        if level > 1 and not self.parent_batch_amb:
-            frappe.throw(
-                _("Parent Batch AMB is required for level {0}").format(level)
-            )
-        # Validate parent is exactly one level above
-        if level > 1 and self.parent_batch_amb:
-            parent_level = frappe.db.get_value(
-                "Batch AMB", self.parent_batch_amb, "custom_batch_level"
-            )
-            expected_parent_level = str(level - 1)
-            if str(parent_level) != expected_parent_level:
-                frappe.throw(
-                    _(
-                        "Level {0} batch requires a Level {1} parent, "
-                        "but {2} is Level {3}"
-                    ).format(level, expected_parent_level, self.parent_batch_amb, parent_level)
-                )
 
+        seen_serials = set()
+        for i, row in enumerate(self.container_barrels, 1):
+            serial = getattr(row, "barrel_serial_number", None) or ""
+            
+            # Check for duplicate serials
+            if serial and serial in seen_serials:
+                frappe.throw(f"Row {i}: Duplicate barrel serial number: {serial}")
+            if serial:
+                seen_serials.add(serial)
+
+            # Validate Code-39 format if serial exists
+            if serial and not self._is_valid_code39(serial):
+                frappe.throw(f"Row {i}: Invalid CODE-39 barcode format for barrel {serial}")
+
+            # Validate weight if weight_validated is set
+            gross = getattr(row, "gross_weight", None) or 0
+            tara = getattr(row, "tara_weight", None) or 0
+            net = getattr(row, "net_weight", None) or 0
+
+            if getattr(row, "weight_validated", 0) and gross <= 0:
+                frappe.throw(f"Row {i}: Gross weight is required for validated barrel {serial}")
+
+            # Auto-calculate net weight
+            if gross > 0 and tara >= 0:
+                row.net_weight = gross - tara
+    
     def validate_barrel_weights(self):
         """Validate barrel weights"""
         if self.custom_batch_level != "3":
@@ -165,6 +206,16 @@ class BatchAMB(NestedSet):
                     frappe.throw(
                         _("Actual completion date cannot be before actual start date")
                     )
+
+    @staticmethod
+    def _is_valid_code39(serial):
+        """Validate that a serial number conforms to CODE-39 barcode character set.
+        Valid chars: A-Z, 0-9, -, ., $, /, +, %, space
+        """
+        import re
+        if not serial:
+            return True
+        return bool(re.match(r'^[A-Z0-9\-\.\$\/\+\%\s]+$', serial.upper()))
 
     # -----------------------------
     # Presentation / naming
@@ -254,16 +305,13 @@ class BatchAMB(NestedSet):
     # -----------------------------
 
     def calculate_totals(self):
-        """Calculate totals"""
-        if self.container_barrels:
-            self.total_container_qty = sum(
-                flt(c.quantity or 0) for c in self.container_barrels
-            )
-            self.total_containers = len(self.container_barrels)
+        """Calculate container totals from Container Barrels child table.
+        NOTE: Container Barrels has NO 'quantity' field. Use row count only.
+        """
+        self.total_containers = len(self.container_barrels or [])
+        self.total_container_qty = len(self.container_barrels or [])
+        if hasattr(self, 'calculate_container_weights'):
             self.calculate_container_weights()
-        else:
-            self.total_container_qty = 0
-            self.total_containers = 0
 
     def calculate_costs(self):
         """Calculate costs"""
@@ -1561,16 +1609,12 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
 
             row_data = {
                 "barrel_serial_number": serial,
-                "status": "Empty",
+                "status": "New",
                 "packaging_type": batch.default_packaging_type or "",
-                "batch_amb": batch_name,
-                "item_code": batch.item_to_manufacture
-                or getattr(batch, "current_item_code", "")
-                or "",
-                "created_date": nowdate(),
-                "parent": batch.name,
-                "parentfield": "container_barrels",
-                "parenttype": "Batch AMB",
+                "gross_weight": 0.0,
+                "tara_weight": 0.0,
+                "net_weight": 0.0,
+                "weight_validated": 0,
             }
 
             batch.append("container_barrels", row_data)
