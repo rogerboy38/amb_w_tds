@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AMB Manufacturing Dashboard</title>
+    <style>
+        .dashboard-container { padding: 20px; }
+        .status-card { 
+            display: inline-block; 
+            padding: 15px 25px; 
+            margin: 10px; 
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+        .status-card.count { background: #e3f2fd; }
+        .batch-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .batch-table th, .batch-table td { 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            text-align: left; 
+        }
+        .batch-table th { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>{{ title }}</h1>
+        
+        <h2>Pipeline Status Overview</h2>
+        <div class="status-cards">
+            {% for status, count in status_counts.items() %}
+            <div class="status-card count">
+                <strong>{{ status }}</strong>: {{ count }}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <h2>Recent Batches</h2>
+        <table class="batch-table">
+            <thead>
+                <tr>
+                    <th>Batch ID</th>
+                    <th>Item</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for batch in batches %}
+                <tr>
+                    <td>{{ batch.batch_id }}</td>
+                    <td>{{ batch.item_name }}</td>
+                    <td>{{ batch.custom_batch_level }}</td>
+                    <td>{{ batch.pipeline_status }}</td>
+                    <td>{{ batch.creation }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
