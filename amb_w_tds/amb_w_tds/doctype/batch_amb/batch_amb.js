@@ -46,8 +46,13 @@ frappe.ui.form.on('Batch AMB', {
         // Load announcements
         load_batch_announcements(frm);
 
-        // Debug button (optional - remove in production)
-        add_debug_button(frm);
+        // Debug button - only in development mode
+        if (frappe.boot.developer_mode) {
+            add_debug_button(frm);
+        }
+
+        // Render pipeline progress bar
+        render_pipeline_progress(frm);
     },
 
     onload: function(frm) {
@@ -658,6 +663,32 @@ function generateSerialNumbers(frm) {
     }
 }
 
+function render_pipeline_progress(frm) {
+    const stages = [
+        'Draft', 'WO Linked', 'In Production', 'Weighing',
+        'QI Pending', 'QI Passed', 'COA Ready', 'Ready for Delivery',
+        'Delivered', 'Closed'
+    ];
+    const current = frm.doc.pipeline_status || 'Draft';
+    const current_idx = stages.indexOf(current);
+    
+    let html = '<div class="pipeline-progress" style="display:flex; gap:2px; margin:10px 0;">';
+    stages.forEach((stage, idx) => {
+        let color = '#e0e0e0'; // grey (future)
+        if (idx < current_idx) color = '#38a169'; // green (completed)
+        if (idx === current_idx) color = '#3182ce'; // blue (current)
+        
+        html += `<div style="flex:1; height:8px; background:${color}; border-radius:4px;" title="${stage}"></div>`;
+    });
+    html += '</div>';
+    html += `<div style="text-align:center; font-size:12px; color:#666; margin-bottom:15px;">${current}</div>`;
+    
+    // Insert above the form or in pipeline_status wrapper
+    if (frm.fields_dict.pipeline_status && frm.fields_dict.pipeline_status.wrapper) {
+        $(frm.fields_dict.pipeline_status.wrapper).prepend(html);
+    }
+}
+
 // ==================== DEBUG/HELPER FUNCTIONS ====================
 
 function add_debug_button(frm) {
@@ -686,6 +717,54 @@ function add_debug_button(frm) {
             }
         });
     }, __('Debug'));
+}
+
+function show_pipeline_overview(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_pipeline_overview',
+        args: { batch_name: frm.doc.name },
+        callback: function(r) {
+            if (r.message) {
+                const d = new frappe.ui.Dialog({
+                    title: __('Pipeline Overview'),
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            fieldname: 'pipeline_html',
+                            options: r.message
+                        }
+                    ]
+                });
+                d.show();
+            } else {
+                frappe.msgprint(__('No pipeline data available'));
+            }
+        }
+    });
+}
+
+function view_batch_tree(frm) {
+    frappe.call({
+        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_batch_tree_html',
+        args: { batch_name: frm.doc.name },
+        callback: function(r) {
+            if (r.message) {
+                const d = new frappe.ui.Dialog({
+                    title: __('Batch Hierarchy Tree'),
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            fieldname: 'tree_html',
+                            options: r.message
+                        }
+                    ]
+                });
+                d.show();
+            } else {
+                frappe.msgprint(__('No child batches found'));
+            }
+        }
+    });
 }
 
 // ==================== MAIN FUNCTIONALITY ====================
@@ -936,52 +1015,95 @@ function add_bom_button_to_form(frm) {
 // ==================== BATCHL2 ENHANCED FUNCTIONS ====================
 
 function add_level_specific_buttons(frm) {
-    // Add buttons based on batch level
-	    const currentLevel = frm.doc.custom_batch_level;
+    if (frm.is_new()) return;
+    
+    const currentLevel = frm.doc.custom_batch_level;
     if (!currentLevel) return;
+    
+    // Check user roles
+    const has_manager_role = frappe.user_roles.includes('Manufacturing Manager') 
+                          || frappe.user_roles.includes('System Manager')
+                          || frappe.user_roles.includes('Administrator');
+    const has_qa_role = frappe.user_roles.includes('Quality Manager')
+                     || frappe.user_roles.includes('Quality Inspector')
+                     || has_manager_role;
+    const has_operator_role = frappe.user_roles.includes('Manufacturing User')
+                           || has_manager_role;
+    
+    // ========== PRODUCTION OPERATOR BUTTONS ==========
+    if (has_operator_role) {
+        // Level 1: Create Sublot button
+        if (currentLevel === '1') {
+            frm.add_custom_button(__('Create Sublot'), function() {
+                create_sublot_batch(frm);
+            }, __('Create')).addClass('btn-primary');
+        }
 
-    // Level 1: Create Sublot button
-    if (currentLevel === '1') {
-        frm.add_custom_button(__('Create Sublot'), function() {
-            create_sublot_batch(frm);
-        }).addClass('btn-primary');
+        // Level 2: Create Sublot + Create Container buttons
+        if (currentLevel === '2') {
+            frm.add_custom_button(__('Create Sublot'), function() {
+                create_sublot_batch(frm);
+            }, __('Create'));
+            frm.add_custom_button(__('Create Container'), function() {
+                create_container_batch(frm);
+            }, __('Create')).addClass('btn-primary');
+        }
+
+        // Level 3: Container buttons
+        if (currentLevel === '3') {
+            frm.add_custom_button(__('Create Container'), function() {
+                create_container_batch(frm);
+            }, __('Create'));
+            frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+                open_bulk_scan_dialog(frm);
+            }, __('Create'));
+            frm.add_custom_button(__('Generate Barrel Serials'), function() {
+                generate_bulk_barrel_serials(frm);
+            }, __('Create')).addClass('btn-primary');
+        }
+
+        // Level 4: Scan Multiple Barcodes
+        if (currentLevel === '4') {
+            frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
+                open_bulk_scan_dialog(frm);
+            }, __('Create')).addClass('btn-primary');
+        }
     }
-
-    // Level 2: Create Sublot + Create Container buttons
-    if (currentLevel === '2') {
-        frm.add_custom_button(__('Create Sublot'), function() {
-            create_sublot_batch(frm);
-        });
-        frm.add_custom_button(__('Create Container'), function() {
-            create_container_batch(frm);
-        }).addClass('btn-primary');
+    
+    // ========== QA BUTTONS ==========
+    if (has_qa_role) {
+        frm.add_custom_button(__('Sample Request'), function() {
+            frappe.call({
+                method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request",
+                freeze: true,
+                freeze_message: __("Creating Sample Request..."),
+                callback(r) {
+                    if (!r.exc && r.message) {
+                        frappe.set_route("Form", "Sample Request AMB", r.message);
+                    }
+                }
+            });
+        }, __('Quality'));
+        
+        if (frm.doc.pipeline_status === 'QI Passed') {
+            frm.add_custom_button(__('Generate COA'), function() {
+                frappe.msgprint(__('Generate COA functionality - to be implemented'));
+            }, __('Quality')).addClass('btn-primary');
+        }
     }
-
-    // Level 3: handled by existing code below, plus additional buttons
-    if (currentLevel === '3') {
-        frm.add_custom_button(__('Create Container'), function() {
-            create_container_batch(frm);
-        });
-        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
-            open_bulk_scan_dialog(frm);
-        });
-        frm.add_custom_button(__('Generate Barrel Serials'), function() {
-            generate_bulk_barrel_serials(frm);
-        }).addClass('btn-primary');
+    
+    // ========== MANAGER BUTTONS ==========
+    if (has_manager_role) {
+        frm.add_custom_button(__('View Batch Tree'), function() {
+            view_batch_tree(frm);
+        }, __('View'));
+        
+        frm.add_custom_button(__('Pipeline Overview'), function() {
+            show_pipeline_overview(frm);
+        }, __('View'));
     }
-
-    // Level 4: Scan Multiple Barcodes
-    if (currentLevel === '4') {
-        frm.add_custom_button(__('Scan Multiple Barcodes'), function() {
-            open_bulk_scan_dialog(frm);
-        }).addClass('btn-primary');
-    }
-
-    // Add global buttons for non-level-4
-    add_global_buttons(frm);
-
-    // Original Level 3 scanning functionality continues below
-
+    
+    // ========== SCANNING BUTTONS (Level 3) ==========
     if (frm.doc.custom_batch_level == '3') {
         const scan_group = __('🔍 Scanning');
 
