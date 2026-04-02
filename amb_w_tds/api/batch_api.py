@@ -30,6 +30,21 @@ def receive_weight(barrel_serial: str, gross_weight: float, device_id: str = Non
         "message": "Weight captured successfully"
     }
     """
+    # Authentication check - verify API key/token
+    auth_header = frappe.get_request_header("Authorization")
+    if not auth_header:
+        return {"success": False, "error": "Authentication required"}
+    
+    # TODO: Add proper API key validation against AMB W TDS Settings
+    # For now, accept any valid token format (Bearer token)
+    if not auth_header.startswith("Bearer "):
+        return {"success": False, "error": "Invalid authentication format"}
+    
+    # Device validation - check device_id against allowed list
+    allowed_devices = ["raspi-001", "raspi-002", "iot-scale-01", "iot-scale-02"]
+    if device_id and device_id not in allowed_devices:
+        frappe.throw(_("Device not authorized"), frappe.AuthenticationError)
+    
     try:
         # Parse inputs
         barrel_serial = barrel_serial.strip() if barrel_serial else None

@@ -59,10 +59,10 @@ class BatchAMB(NestedSet):
             return  # L1 has no parent requirement
 
         if not parent:
-            frappe.throw(f"Level {level} batch requires a parent batch.")
+            frappe.throw(_("Level {0} batch requires a parent batch.").format(level))
 
         if not frappe.db.exists("Batch AMB", parent):
-            frappe.throw(f"Parent batch {parent} does not exist.")
+            frappe.throw(_("Parent batch {0} does not exist.").format(parent))
 
         parent_level = str(frappe.db.get_value("Batch AMB", parent, "custom_batch_level") or "0")
 
@@ -75,8 +75,9 @@ class BatchAMB(NestedSet):
         expected = expected_parent_levels.get(level)
         if expected and parent_level != expected:
             frappe.throw(
-                f"Level {level} batch requires a Level {expected} parent, "
-                f"but {parent} is Level {parent_level}."
+                _("Level {0} batch requires a Level {1} parent, but {2} is Level {3}.").format(
+                    level, expected, parent, parent_level
+                )
             )
 
     def validate_pipeline_transition(self):
@@ -190,13 +191,13 @@ class BatchAMB(NestedSet):
             
             # Check for duplicate serials
             if serial and serial in seen_serials:
-                frappe.throw(f"Row {i}: Duplicate barrel serial number: {serial}")
+                frappe.throw(_("Row {0}: Duplicate barrel serial number: {1}").format(i, serial))
             if serial:
                 seen_serials.add(serial)
 
             # Validate Code-39 format if serial exists
             if serial and not self._is_valid_code39(serial):
-                frappe.throw(f"Row {i}: Invalid CODE-39 barcode format for barrel {serial}")
+                frappe.throw(_("Row {0}: Invalid CODE-39 barcode format for barrel {1}").format(i, serial))
 
             # Validate weight if weight_validated is set
             gross = getattr(row, "gross_weight", None) or 0
@@ -204,7 +205,7 @@ class BatchAMB(NestedSet):
             net = getattr(row, "net_weight", None) or 0
 
             if getattr(row, "weight_validated", 0) and gross <= 0:
-                frappe.throw(f"Row {i}: Gross weight is required for validated barrel {serial}")
+                frappe.throw(_("Row {0}: Gross weight is required for validated barrel {1}").format(i, serial))
 
             # Auto-calculate net weight
             if gross > 0 and tara >= 0:
@@ -826,6 +827,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def start_processing(self):
         """Method to start processing"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status in ["Draft", "Scheduled"]:
             self.processing_status = "In Progress"
             self.actual_start = now_datetime()
@@ -842,6 +845,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def pause_processing(self):
         """Method to pause processing"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "In Progress":
             self.processing_status = "On Hold"
             self.save()
@@ -853,6 +858,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def resume_processing(self):
         """Method to resume processing"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "On Hold":
             self.processing_status = "In Progress"
             self.save()
@@ -864,6 +871,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def complete_processing(self):
         """Method to complete processing (move to Quality Check)"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "In Progress":
             self.processing_status = "Quality Check"
             self.actual_completion = now_datetime()
@@ -878,6 +887,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def approve_quality(self):
         """Method to approve quality check"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "Quality Check":
             self.processing_status = "Completed"
             if hasattr(self, "quality_status"):
@@ -891,6 +902,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def reject_quality(self):
         """Method to reject quality check"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "Quality Check":
             self.processing_status = "On Hold"
             if hasattr(self, "quality_status"):
@@ -904,6 +917,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def cancel_processing(self):
         """Method to cancel processing"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status not in ["Completed", "Cancelled"]:
             self.processing_status = "Cancelled"
             self.save()
@@ -915,6 +930,8 @@ class BatchAMB(NestedSet):
     @frappe.whitelist()
     def schedule_processing(self, start_date, start_time=None):
         """Method to schedule processing"""
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to process Batch AMB"), frappe.PermissionError)
         if self.processing_status == "Draft":
             self.processing_status = "Scheduled"
             self.scheduled_start_date = start_date
@@ -977,6 +994,8 @@ class BatchAMB(NestedSet):
         Generate serial numbers for this batch.
         Called from client-side.
         """
+        if not frappe.has_permission("Batch AMB", "write"):
+            frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
         try:
             # Your real logic here...
             return {
@@ -988,11 +1007,13 @@ class BatchAMB(NestedSet):
             frappe.log_error(
                 f"Error in fixed_generate_serial_numbers: {str(e)}"
             )
-            frappe.throw(f"Error generating serial numbers: {str(e)}")
+            frappe.throw(_("Error generating serial numbers: {0}").format(str(e)))
 
     @frappe.whitelist()
     def get_processing_metrics(self):
         """Get processing metrics for analytics"""
+        if not frappe.has_permission("Batch AMB", "read"):
+            frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
         metrics = {
             "planned_quantity": self.planned_qty
             if hasattr(self, "planned_qty")
@@ -1059,6 +1080,8 @@ class BatchAMB(NestedSet):
 @frappe.whitelist()
 def create_bom_with_wizard(batch_name, options=None):
     """Create BOM with wizard options - MAIN MANUFACTURING BUTTON - FIXED VERSION"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1169,6 +1192,8 @@ def create_bom_with_wizard(batch_name, options=None):
 @frappe.whitelist()
 def create_work_order_from_batch(batch_name):
     """Create Work Order from Batch"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to create Work Order for Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1201,6 +1226,8 @@ def create_work_order_from_batch(batch_name):
 @frappe.whitelist()
 def assign_golden_number_to_batch(batch_name):
     """Manual trigger for Golden Number assignment"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1229,6 +1256,8 @@ def assign_golden_number_to_batch(batch_name):
 @frappe.whitelist()
 def update_planned_qty_from_work_order(batch_name):
     """Manual trigger to update planned quantity from Work Order"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1262,6 +1291,8 @@ def update_planned_qty_from_work_order(batch_name):
 @frappe.whitelist()
 def calculate_batch_cost(batch_name):
     """Calculate batch cost for the Calculate Cost button"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1289,6 +1320,8 @@ def calculate_batch_cost(batch_name):
 @frappe.whitelist()
 def duplicate_batch(source_name):
     """Duplicate a batch - for Duplicate Batch button"""
+    if not frappe.has_permission("Batch AMB", "create"):
+        frappe.throw(_("No permission to create Batch AMB"), frappe.PermissionError)
     try:
         source_batch = frappe.get_doc("Batch AMB", source_name)
         new_batch = frappe.copy_doc(source_batch)
@@ -1305,12 +1338,14 @@ def duplicate_batch(source_name):
 
     except Exception as e:
         frappe.log_error(f"Batch Duplication Error: {str(e)}")
-        frappe.throw(f"Error duplicating batch: {str(e)}")
+        frappe.throw(_("Error duplicating batch: {0}").format(str(e)))
 
 
 @frappe.whitelist()
 def check_bom_exists(batch_name):
     """Check if BOM already exists for this batch"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     batch = frappe.get_doc("Batch AMB", batch_name)
 
     existing_bom = frappe.db.get_value(
@@ -1341,6 +1376,8 @@ def get_work_order_details(work_order):
 @frappe.whitelist()
 def get_available_containers(warehouse=None):
     """Get available containers"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     return []
 
 
@@ -1349,6 +1386,8 @@ def get_running_batch_announcements(
     include_companies=True, include_plants=True, include_quality=True
 ):
     """Get running batch announcements for widget"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         batches = frappe.get_all(
             "Batch AMB",
@@ -1471,6 +1510,8 @@ def get_running_batch_announcements(
 @frappe.whitelist()
 def get_packaging_from_sales_order(batch_name):
     """Get packaging info from Sales Order and map to Item Codes"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1654,6 +1695,8 @@ def parse_weight_from_text(weight_text):
 @frappe.whitelist()
 def generate_batch_code(parent_batch=None, batch_level=None, work_order=None):
     """Generate batch code for automatic naming"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to access Batch AMB"), frappe.PermissionError)
     try:
         if batch_level == "1":
             code = f"BATCH-{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}"
@@ -1680,6 +1723,8 @@ def generate_batch_code(parent_batch=None, batch_level=None, work_order=None):
 @frappe.whitelist()
 def get_work_order_data(work_order):
     """Get work order data for batch reference"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         wo = frappe.get_doc("Work Order", work_order)
         return {
@@ -1707,6 +1752,8 @@ def get_work_order_data(work_order):
 @frappe.whitelist()
 def schedule_batch(batch_name, scheduled_start):
     """Schedule a batch for processing"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     batch = frappe.get_doc("Batch AMB", batch_name)
     batch.scheduled_start_date = scheduled_start
     batch.processing_status = "Scheduled"
@@ -1717,6 +1764,8 @@ def schedule_batch(batch_name, scheduled_start):
 @frappe.whitelist()
 def start_batch_processing(batch_name):
     """Start processing a batch"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     batch = frappe.get_doc("Batch AMB", batch_name)
     batch.processing_status = "In Progress"
     batch.actual_start = now_datetime()
@@ -1727,6 +1776,8 @@ def start_batch_processing(batch_name):
 @frappe.whitelist()
 def complete_batch_processing(batch_name, processed_quantity=None):
     """Complete batch processing"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     batch = frappe.get_doc("Batch AMB", batch_name)
     batch.processing_status = "Completed"
     batch.actual_completion = now_datetime()
@@ -1741,6 +1792,8 @@ def resolve_container_prefix(batch, default_prefix=None):
 
     For now this is hardcoded mapping; later we can move it to a DocType.
     """
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     # Try from default_packaging_type + plant
     packaging_item = getattr(batch, "default_packaging_type", None) or ""
     plant_name = (batch.production_plant_name or "").lower()
@@ -1773,6 +1826,8 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
       Level 3/4: <PREFIX>-<GoldenChain>-<NNN>
       where GoldenChain = title (e.g. 0334925261-1-C1) and NNN is 001..999
     """
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
 
@@ -1861,12 +1916,14 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
             title=error_msg,
             message=f"Details: {str(e)[:100]}...",
         )
-        frappe.throw(f"Failed to generate serial numbers: {str(e)[:200]}")
+        frappe.throw(_("Failed to generate serial numbers: {0}").format(str(e)[:200]))
 
 
 @frappe.whitelist()
 def integrate_serial_tracking(batch_name):
     """Integrate serial tracking using the real generate_serial_numbers"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to modify Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
         default_qty = int(batch.planned_qty or 5)
@@ -1900,6 +1957,8 @@ def integrate_serial_tracking(batch_name):
 @frappe.whitelist()
 def get_sales_orders_with_work_orders():
     """Get Sales Orders that have linked Work Orders for Quick Entry dropdown."""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         work_orders = frappe.get_all(
             "Work Order",
@@ -2035,6 +2094,8 @@ def get_quick_entry_defaults(work_order_name):
     in the Quick Entry popup. It returns all fields needed to
     create a valid Batch AMB with proper golden number generation.
     """
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         if not work_order_name:
             return {"success": False, "message": "No Work Order provided"}
@@ -2080,6 +2141,8 @@ def get_quick_entry_defaults(work_order_name):
 @frappe.whitelist()
 def create_sample_request(batch_name):
     """Create Sample Request from Batch - for the Sample Request button"""
+    if not frappe.has_permission("Batch AMB", "write"):
+        frappe.throw(_("No permission to create Sample Request for Batch AMB"), frappe.PermissionError)
     try:
         batch = frappe.get_doc("Batch AMB", batch_name)
         
@@ -2125,6 +2188,8 @@ def create_sample_request(batch_name):
 @frappe.whitelist()
 def get_sample_request(batch_name):
     """Get Sample Request for this batch if exists"""
+    if not frappe.has_permission("Batch AMB", "read"):
+        frappe.throw(_("No permission to read Batch AMB"), frappe.PermissionError)
     try:
         existing = frappe.db.get_value(
             "Sample Request AMB",
@@ -2157,6 +2222,8 @@ def make_sample_request_from_source(source_doctype, source_name):
     Create a sample request from any source doctype (Lead, Prospect, Opportunity, Quotation, Sales Order)
     Enhanced to fetch comprehensive data from source documents
     """
+    if not frappe.has_permission("Batch AMB", "create"):
+        frappe.throw(_("No permission to create Sample Request for Batch AMB"), frappe.PermissionError)
     try:
         # Get source document
         source_doc = frappe.get_doc(source_doctype, source_name)
