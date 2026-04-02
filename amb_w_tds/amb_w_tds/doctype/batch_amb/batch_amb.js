@@ -8,7 +8,7 @@ frappe.ui.form.on('Batch AMB', {
     // ==================== FORM EVENTS ====================
 
     refresh: function(frm) {
-        console.log('🔧 Batch AMB Refresh triggered for:', frm.doc.name);
+        //
 
         // Original functionality
         setup_custom_buttons(frm);
@@ -46,21 +46,16 @@ frappe.ui.form.on('Batch AMB', {
         // Load announcements
         load_batch_announcements(frm);
 
-        // Debug button - only in development mode
-        if (frappe.boot.developer_mode) {
-            add_debug_button(frm);
-        }
-
         // Render pipeline progress bar
         render_pipeline_progress(frm);
     },
 
     onload: function(frm) {
-        console.log('📥 Batch AMB Onload for:', frm.doc.name);
+        ('📥 Batch AMB Onload for:', frm.doc.name);
 
         // Apply defaults from frappe.new_doc() / URL parameters
         if (frm.is_new() && frappe.route_options) {
-            console.log('📋 Applying route_options:', frappe.route_options);
+            ('📋 Applying route_options:', frappe.route_options);
             for (let key in frappe.route_options) {
                 if (frappe.route_options.hasOwnProperty(key) && frm.fields_dict[key]) {
                     frm.set_value(key, frappe.route_options[key]);
@@ -500,11 +495,11 @@ function update_weight_totals(frm) {
 // ==================== SERIAL TRACKING FUNCTIONS ====================
 
 function add_serial_tracking_buttons(frm) {
-    console.log('🔗 Adding serial tracking buttons...');
+    ('🔗 Adding serial tracking buttons...');
 
     // Skip for level 4 batches (they have their own system)
     if (frm.doc.custom_batch_level === '4') {
-        console.log('⚠️ Level 4 batch - using existing barrel system, skipping serial tracking buttons');
+        ('⚠️ Level 4 batch - using existing barrel system, skipping serial tracking buttons');
         return;
     }
 
@@ -517,7 +512,7 @@ function add_serial_tracking_buttons(frm) {
                 freeze: true,
                 freeze_message: __('Connecting to Serial Tracking...'),
                 callback: function(r) {
-                    console.log('Integration response:', r);
+                    ('Integration response:', r);
                     if (r.message && r.message.status === 'success') {
                         frappe.show_alert({
                             message: __('✅ Serial Tracking Integrated Successfully!'),
@@ -543,7 +538,7 @@ function add_serial_tracking_buttons(frm) {
             });
         }, __('🔗 SERIAL TRACKING')).addClass('btn-primary');
 
-        console.log('Added: Integrate Serial Tracking button');
+        ('Added: Integrate Serial Tracking button');
     }
 
     // Generate Serial Numbers button
@@ -551,7 +546,7 @@ function add_serial_tracking_buttons(frm) {
         generateSerialNumbers(frm);
     }, __('🔗 SERIAL TRACKING'));
 
-    console.log('Added: Generate Serial Numbers button');
+    ('Added: Generate Serial Numbers button');
 
     // Status display
     if (frm.doc.custom_serial_tracking_integrated) {
@@ -588,7 +583,7 @@ function add_serial_tracking_buttons(frm) {
         `;
 
         frm.dashboard.add_section(statusHTML);
-        console.log('Added: Serial Tracking status display');
+        ('Added: Serial Tracking status display');
     }
 }
 
@@ -633,7 +628,7 @@ function generateSerialNumbers(frm) {
                 freeze: true,
                 freeze_message: __('Generating Barrel Serial Numbers...'),
                 callback: function(r) {
-                    console.log('Generate response:', r);
+                    ('Generate response:', r);
                     if (r.message && r.message.status === 'success') {
                         frappe.show_alert({
                             message: __('✅ Successfully generated ') + r.message.count + __(' barrel serial numbers.'),
@@ -684,7 +679,7 @@ function generateSerialNumbers(frm) {
                 freeze: true,
                 freeze_message: __('Generating Serial Numbers...'),
                 callback: function(r) {
-                    console.log('Generate response:', r);
+                    ('Generate response:', r);
                     if (r.message && r.message.status === 'success') {
                         frappe.show_alert({
                             message: __('✅ Successfully generated ') + r.message.count + __(' serial numbers.'),
@@ -740,34 +735,6 @@ function render_pipeline_progress(frm) {
 
 // ==================== DEBUG/HELPER FUNCTIONS ====================
 
-function add_debug_button(frm) {
-    frm.add_custom_button(__('🐛 Debug Test'), function() {
-        frappe.call({
-            method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.fixed_generate_serial_numbers',
-            args: {
-                batch_name: frm.doc.name,
-                quantity: 1
-            },
-            callback: function(r) {
-                console.log('Debug test response:', r);
-                if (r.message && r.message.status === 'success') {
-                    frappe.show_alert({
-                        message: '✅ Debug test successful! Generated ' + r.message.count + ' serials',
-                        indicator: 'green'
-                    }, 5);
-                    frm.reload_doc();
-                } else {
-                    frappe.msgprint({
-                        title: 'Debug Test Failed',
-                        message: r.message ? r.message.message : 'Unknown error',
-                        indicator: 'red'
-                    });
-                }
-            }
-        });
-    }, __('Debug'));
-}
-
 function show_pipeline_overview(frm) {
     frappe.call({
         method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_pipeline_overview',
@@ -819,7 +786,7 @@ function view_batch_tree(frm) {
 // ==================== MAIN FUNCTIONALITY ====================
 
 function setup_custom_buttons(frm) {
-    console.log('🎯 Setting up custom buttons for:', frm.doc.name);
+    ('🎯 Setting up custom buttons for:', frm.doc.name);
 
     // Clear existing buttons
     if (frm.page && frm.page.clear_actions) {
@@ -1027,14 +994,14 @@ function setup_custom_buttons(frm) {
         });
     }, actions_group);
 
-    console.log('✅ Custom buttons setup completed');
+    ('✅ Custom buttons setup completed');
 }
 
 function add_bom_button_to_form(frm) {
-    console.log('🎯 add_bom_button_to_form called for:', frm.doc.name);
+    ('🎯 add_bom_button_to_form called for:', frm.doc.name);
 
     if (!frm.doc.item_to_manufacture && !frm.doc.current_item_code) {
-        console.log('❌ No item found, skipping BOM button');
+        ('❌ No item found, skipping BOM button');
         return;
     }
 
@@ -1042,17 +1009,17 @@ function add_bom_button_to_form(frm) {
         method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.check_bom_exists',
         args: { batch_name: frm.doc.name },
         callback: function(r) {
-            console.log('BOM check response:', r.message);
+            ('BOM check response:', r.message);
             if (r.message && r.message.exists) {
                 frm.add_custom_button(__('View BOM'), function() {
                     frappe.set_route('Form', 'BOM Creator', r.message.bom_name);
                 }, __('Manufacturing')).css({'background-color': '#28a745', 'color': 'white'});
-                console.log('✅ Added "View BOM" button');
+                ('✅ Added "View BOM" button');
             } else {
                 frm.add_custom_button(__('Create BOM'), function() {
                     open_bom_creation_wizard(frm);
                 }, __('Manufacturing')).addClass('btn-primary');
-                console.log('✅ Added "Create BOM" button');
+                ('✅ Added "Create BOM" button');
             }
         },
         error: function(err) {
@@ -1439,13 +1406,13 @@ function validate_code39_format(barcode) {
 // ==================== ORIGINAL HELPER FUNCTIONS ====================
 
 function load_batch_announcements(frm) {
-    console.log('📢 Loading batch announcements...');
+    ('📢 Loading batch announcements...');
     frappe.call({
         method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_running_batch_announcements',
         args: {},
         callback: function(r) {
             if (r.message && r.message.success) {
-                console.log('Announcements loaded:', r.message.announcements);
+                ('Announcements loaded:', r.message.announcements);
                 display_announcements(frm, r.message.announcements);
             } else {
                 console.error('Failed to load announcements:', r.message);
@@ -1706,7 +1673,7 @@ function fetch_work_order_data(frm) {
             callback: function(r) {
                 if (r.message) {
                     // Process work order data for batch generation
-                    console.log('Work order data loaded:', r.message);
+                    ('Work order data loaded:', r.message);
 											// FIX: Actually populate batch fields from WO data
 						var d = r.message;
 						if (d.production_item) frm.set_value('item_to_manufacture', d.production_item);
@@ -1726,7 +1693,7 @@ function fetch_work_order_data(frm) {
 // ==================== BOM CREATION ====================
 
 function open_bom_creation_wizard(frm) {
-    console.log('🚀 Opening simplified BOM wizard');
+    ('🚀 Opening simplified BOM wizard');
 
     frappe.call({
         method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_packaging_from_sales_order',
@@ -1835,7 +1802,7 @@ function add_announcement_styles() {
 // Initialize styles when DOM is ready
 $(document).ready(function() {
     add_announcement_styles();
-    console.log('✅ Batch AMB Enhanced Script with Serial Tracking loaded');
+    ('✅ Batch AMB Enhanced Script with Serial Tracking loaded');
 });
 
 // ==================== FIXED HELPER FUNCTIONS ====================

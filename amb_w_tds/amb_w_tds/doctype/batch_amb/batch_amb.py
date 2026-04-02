@@ -690,12 +690,6 @@ class BatchAMB(NestedSet):
         self.custom_consecutive = consecutive
         self.custom_subfamily = product_code[2:4] or "00"
 
-        print(f"✅ Generated Golden Number: {base_golden_number}")
-        print(
-            f"   Product Family: {self.custom_product_family}, "
-            f"Subfamily: {self.custom_subfamily}"
-        )
-
 
     def update_container_sequence(self):
         """Update container sequence"""
@@ -984,9 +978,6 @@ class BatchAMB(NestedSet):
         Called from client-side.
         """
         try:
-            frappe.msgprint(
-                f"Generating {quantity} serial numbers for {self.name} with prefix '{prefix}'"
-            )
             # Your real logic here...
             return {
                 "status": "success",
@@ -1069,8 +1060,6 @@ class BatchAMB(NestedSet):
 def create_bom_with_wizard(batch_name, options=None):
     """Create BOM with wizard options - MAIN MANUFACTURING BUTTON - FIXED VERSION"""
     try:
-        print(f"🚀 BOM Creation started for batch: {batch_name}")
-
         batch = frappe.get_doc("Batch AMB", batch_name)
 
         if not batch.item_to_manufacture:
@@ -1090,9 +1079,6 @@ def create_bom_with_wizard(batch_name, options=None):
         item = frappe.get_doc("Item", batch.item_to_manufacture)
         uom = item.stock_uom
 
-        print(f"📦 Item: {batch.item_to_manufacture}")
-        print(f"⚖️ Quantity: {bom_quantity} {uom}")
-
         existing_bom = frappe.db.get_value(
             "BOM",
             {"item": batch.item_to_manufacture, "is_active": 1},
@@ -1100,7 +1086,6 @@ def create_bom_with_wizard(batch_name, options=None):
         )
 
         if existing_bom:
-            print(f"⚠️ BOM already exists: {existing_bom}")
             return {
                 "success": True,
                 "bom_name": existing_bom,
@@ -1125,8 +1110,6 @@ def create_bom_with_wizard(batch_name, options=None):
             "custom_batch_reference": batch.name,
         }
 
-        print(f"📝 Creating BOM with data: {bom_data}")
-
         bom = frappe.new_doc("BOM")
         bom.update(bom_data)
 
@@ -1141,7 +1124,6 @@ def create_bom_with_wizard(batch_name, options=None):
                     "rate": 0,
                 },
             )
-            print("➕ Added raw material: M033")
         else:
             bom.append(
                 "items",
@@ -1152,8 +1134,6 @@ def create_bom_with_wizard(batch_name, options=None):
                     "rate": 0,
                 },
             )
-            print("➕ Added fallback raw material: 0202")
-
         if options.get("include_packaging", 1):
             packaging_item = options.get("primary_packaging", "E001")
             if frappe.db.exists("Item", packaging_item):
@@ -1167,12 +1147,8 @@ def create_bom_with_wizard(batch_name, options=None):
                         "rate": 0,
                     },
                 )
-                print(f"➕ Added packaging: {packaging_item} x {packages_count}")
-
         bom.insert()
         frappe.db.commit()
-
-        print(f"✅ BOM created successfully: {bom.name}")
 
         return {
             "success": True,
@@ -1187,7 +1163,6 @@ def create_bom_with_wizard(batch_name, options=None):
 
     except Exception as e:
         frappe.log_error(f"BOM Creation Error for {batch_name}: {str(e)}")
-        print(f"❌ BOM Creation Error: {str(e)}")
         return {"success": False, "message": f"Error creating BOM: {str(e)}"}
 
 
