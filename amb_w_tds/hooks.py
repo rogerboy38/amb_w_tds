@@ -158,14 +158,6 @@ fixtures = [
             ["dt", "=", "Sample Request AMB"]
         ]
     },
-
-    # PH12.5: Manufacturing Dashboard Page
-    {
-        "doctype": "Page",
-        "filters": [
-            ["name", "=", "amb-manufacturing-dashboard"]
-        ]
-    },
 ]
 
 # ================================================
