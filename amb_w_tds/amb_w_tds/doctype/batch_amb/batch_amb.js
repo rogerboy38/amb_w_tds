@@ -16,6 +16,27 @@ frappe.ui.form.on('Batch AMB', {
         setup_field_dependencies(frm);
         show_status_indicators(frm);
 
+        // Force refresh container_barrels visibility on every refresh
+        // Show for Level 3 batches OR when use_containers is checked
+        const showContainers = frm.doc.custom_batch_level == '3' || frm.doc.use_containers;
+        frm.toggle_display('container_barrels', showContainers);
+        frm.toggle_display('container_level_3_section', showContainers);
+        frm.toggle_display('section_break_llrj', showContainers);
+        frm.toggle_display('total_gross_weight', showContainers);
+        frm.toggle_display('column_break_zspb', showContainers);
+        frm.toggle_display('total_tara_weight', showContainers);
+        frm.toggle_display('column_break_xgwz', showContainers);
+        frm.toggle_display('total_net_weight', showContainers);
+        frm.toggle_display('column_break_sfat', showContainers);
+        frm.toggle_display('barrel_count', showContainers);
+        frm.toggle_display('use_containers', showContainers);
+        frm.toggle_display('total_container_qty', showContainers);
+        
+        // If containers should be shown, scroll to them
+        if (showContainers) {
+            frm.scroll_to_field('container_barrels');
+        }
+
         if (!frm.is_new()) {
             frm.add_custom_button(__("New Sample Request"), () => {
                 frappe.call({
