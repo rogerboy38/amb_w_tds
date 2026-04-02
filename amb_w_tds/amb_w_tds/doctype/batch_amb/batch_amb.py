@@ -1842,9 +1842,6 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         # FIXED: Use only title, no prefix
         base_title = batch.title or batch.name
 
-        # Resolve prefix based on packaging/plant, unless explicitly passed in
-        resolved_prefix = prefix or resolve_container_prefix(batch, default_prefix=None)
-
         # Collect existing serials in the child table
         existing_serials = []
         for row in batch.container_barrels:
@@ -1856,16 +1853,11 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
 
         for i in range(quantity):
             seq_num = existing_count + i + 1
-
-        # SIMPLE FORMAT: {title}-{sequential_number:03d}
-        # Removed prefix logic - use title only
-        serial = f"{base_title}-{seq_num:03d}"
-
+            # SIMPLE FORMAT: {title}-{sequential_number:03d}
+            serial = f"{base_title}-{seq_num:03d}"
             if len(serial) > 50:
                 serial = serial[:50]
-
             new_serials.append(serial)
-
             row_data = {
                 "barrel_serial_number": serial,
                 "status": "New",
@@ -1875,7 +1867,6 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
                 "net_weight": 0.0,
                 "weight_validated": 0,
             }
-
             batch.append("container_barrels", row_data)
 
         # Persist a newline list of serials (for non-Level 4 batches)
