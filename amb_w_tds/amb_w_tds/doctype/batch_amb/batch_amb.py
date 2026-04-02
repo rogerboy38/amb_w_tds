@@ -130,6 +130,8 @@ class BatchAMB(NestedSet):
         self.calculate_totals()
         self.set_batch_naming()
         self.auto_set_title()
+        # FIXED: Keep custom_generated_batch_name in sync with title
+        self.custom_generated_batch_name = self.title
         self.update_container_sequence()
         self.calculate_costs()
         self.update_processing_timestamps()
@@ -1837,7 +1839,8 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         batch_level = batch.custom_batch_level or "1"
 
         # Use hierarchical title as base (e.g. 0334925261-1-C1)
-        base_title = batch.title or batch.custom_golden_number or batch.name
+        # FIXED: Use only title, no prefix
+        base_title = batch.title or batch.name
 
         # Resolve prefix based on packaging/plant, unless explicitly passed in
         resolved_prefix = prefix or resolve_container_prefix(batch, default_prefix=None)
@@ -1854,12 +1857,9 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         for i in range(quantity):
             seq_num = existing_count + i + 1
 
-            # Level 3/4: PREFIX-GoldenChain-NNN (e.g. BRL-0334925261-1-C1-001)
-            if batch_level in ("3", "4") and resolved_prefix:
-                serial = f"{resolved_prefix}-{base_title}-{seq_num:03d}"
-            else:
-                # Generic fallback: GoldenChain-NNN
-                serial = f"{base_title}-{seq_num:03d}"
+        # SIMPLE FORMAT: {title}-{sequential_number:03d}
+        # Removed prefix logic - use title only
+        serial = f"{base_title}-{seq_num:03d}"
 
             if len(serial) > 50:
                 serial = serial[:50]
