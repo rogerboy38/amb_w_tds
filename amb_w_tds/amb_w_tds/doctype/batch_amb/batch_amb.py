@@ -449,6 +449,53 @@ class BatchAMB(NestedSet):
         if hasattr(self, 'calculate_container_weights'):
             self.calculate_container_weights()
 
+    def calculate_weight(self):
+        """Calculate net_weight = gross_weight - tara_weight for all container_barrels rows.
+        Called by validation: T4.1
+        """
+        if not self.container_barrels:
+            return
+        
+        for barrel in self.container_barrels:
+            gross = flt(getattr(barrel, 'gross_weight', None) or 0)
+            tara = flt(getattr(barrel, 'tara_weight', None) or 0)
+            if gross and tara:
+                barrel.net_weight = gross - tara
+            elif gross:
+                barrel.net_weight = gross
+
+    def validate_barrel_weight(self):
+        """Validate each barrel weight against min/max thresholds, set weight_validated flag.
+        Called by validation: T4.1
+        """
+        if not self.container_barrels:
+            return
+        
+        for barrel in self.container_barrels:
+            if not getattr(barrel, 'gross_weight', None):
+                continue
+            
+            packaging_type = getattr(barrel, 'packaging_type', None)
+            net_weight = flt(getattr(barrel, 'net_weight', None) or 0)
+            
+            # Default thresholds
+            min_weight = 0.1
+            max_weight = 1000
+            
+            # Get custom thresholds from Item
+            if packaging_type:
+                try:
+                    if frappe.db.exists("Item", packaging_type):
+                        item = frappe.get_doc("Item", packaging_type)
+                        if item.standard_weight:
+                            min_weight = item.standard_weight * 0.8
+                            max_weight = item.standard_weight * 1.5
+                except Exception:
+                    pass
+            
+            # Set validated flag
+            barrel.weight_validated = 1 if min_weight <= net_weight <= max_weight else 0
+
     def calculate_costs(self):
         """Calculate costs"""
         if not self.calculate_cost:
