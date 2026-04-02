@@ -1792,7 +1792,7 @@
   "menu_index": null,
   "migration_hash": "fa83a65a21f32f20cfeead350f814277",
   "modified": "2025-10-24 11:34:33.303152",
-  "module": "Amb W Tds",
+  "module": "amb_w_tds",
   "app": "amb_w_tds",
   "name": "COA AMB2",
   "naming_rule": "By \"Naming Series\" field",
