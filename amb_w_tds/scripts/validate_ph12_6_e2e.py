@@ -44,6 +44,7 @@ def execute():
         })
         batch_l1.flags.ignore_server_scripts = True
         batch_l1.flags.do_not_validate = True
+        batch_l1.flags.ignore_mandatory = True
         batch_l1.insert()
         frappe.db.commit()
         
@@ -69,6 +70,7 @@ def execute():
         })
         batch_l2.flags.ignore_server_scripts = True
         batch_l2.flags.do_not_validate = True
+        batch_l2.flags.ignore_mandatory = True
         batch_l2.insert()
         frappe.db.commit()
         
@@ -93,6 +95,7 @@ def execute():
         })
         batch_l3.flags.ignore_server_scripts = True
         batch_l3.flags.do_not_validate = True
+        batch_l3.flags.ignore_mandatory = True
         batch_l3.insert()
         frappe.db.commit()
         
