@@ -40,6 +40,7 @@ def execute():
             "item_to_manufacture": item_code,
             "custom_batch_level": "1",
             "pipeline_status": "Draft",
+            "planned_qty": 100,
             "title": f"TEST-L1-{now_datetime().strftime('%Y%m%d%H%M%S')}",
         })
         batch_l1.flags.ignore_server_scripts = True
@@ -67,6 +68,7 @@ def execute():
             "custom_batch_level": "2",
             "parent_batch_amb": l1_name,
             "pipeline_status": "Draft",
+            "planned_qty": 100,
         })
         batch_l2.flags.ignore_server_scripts = True
         batch_l2.flags.do_not_validate = True
@@ -92,6 +94,7 @@ def execute():
             "custom_batch_level": "3",
             "parent_batch_amb": l2_name,
             "pipeline_status": "Draft",
+            "planned_qty": 100,
         })
         batch_l3.flags.ignore_server_scripts = True
         batch_l3.flags.do_not_validate = True

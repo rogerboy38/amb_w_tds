@@ -1899,6 +1899,7 @@ def generate_serial_numbers(batch_name, quantity=1, prefix=None):
         # This prevents the Server Script from running on this specific save.
         batch.flags.do_not_validate = True
         batch.flags.ignore_permissions = True
+        batch.flags.ignore_mandatory = True
         batch.save()
         batch.flags.do_not_validate = False
         frappe.flags.ignore_permissions = False
