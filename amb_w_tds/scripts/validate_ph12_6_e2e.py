@@ -111,7 +111,7 @@ def execute():
     print("\n[E2E-4] Generate Serial Numbers")
     print("-" * 40)
     try:
-        from amb_w_tds.doctype.batch_amb.batch_amb import generate_serial_numbers
+        from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import generate_serial_numbers
         
         result = generate_serial_numbers(l3_name, quantity=3)
         
@@ -165,6 +165,7 @@ def execute():
         batch.pipeline_status = "WO Linked"
         batch.flags.ignore_server_scripts = True
         batch.flags.do_not_validate = True
+        batch.flags.ignore_mandatory = True
         batch.save()
         frappe.db.commit()
         
