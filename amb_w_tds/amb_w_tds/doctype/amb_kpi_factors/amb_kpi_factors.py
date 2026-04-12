@@ -2,7 +2,7 @@
 import frappe
 from frappe.model.document import Document
 
-class AMBKPIFactors(Document):
+class AmbKPIFactors(Document):
     """AMB KPI Factors for manufacturing calculations"""
     
     def before_save(self):
