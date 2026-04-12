@@ -15,12 +15,10 @@ class COAAMB(Document):
 
     def validate(self):
         """Comprehensive validation logic"""
-        super().validate()
         
         # Core validation sequence
         self.validate_linked_tds()
         self.validate_batch_reference()
-        self.set_item_details()
         
         # Enhanced test parameter validation
         self.validate_test_parameters()
@@ -43,7 +41,8 @@ class COAAMB(Document):
         """Before save hook"""
         self.set_coa_number()
         self.set_approval_info()
-        self.calculate_child_table_status()
+        #self.calculate_child_table_status()
+        # to be reviewed freezed on save COA AMB document
 
     def on_submit(self):
         """On submit actions"""
