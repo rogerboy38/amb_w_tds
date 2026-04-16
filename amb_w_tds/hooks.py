@@ -9,15 +9,8 @@ app_license = "MIT"
 #  MODULE LOAD + PATCH PREPARATION
 # ========================================
 
-# register custom DocTypes for override / extension
-doctype_class = {
-    "Batch AMB":  "amb_w_tds.amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
-}
-
-# Fix freight app's broken Lead override path (DISABLED - freight app may not exist)
-# override_doctype_class = {
-#     "Lead": "freight.freight_management.customization.lead.lead.CustomLead"
-# }
+# NOTE: Batch AMB controller migrated to amb_w_spc
+# doctype_class removed - amb_w_spc now owns Batch AMB
 
 # ========================================
 #  FRONTEND JS INJECTIONS
@@ -70,6 +63,9 @@ doc_events = {
             # ""amb_w_tds.api.quotation_amb.ensure_sales_partner""
         ],
     },
+
+    # ---- Batch AMB: Controller migrated to amb_w_spc
+    # "Batch AMB" doc_events removed - now handled by amb_w_spc
 }
 
 # ========================================
@@ -147,4 +143,3 @@ override_doctype_dashboards = {
     "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
     "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
 }
-
