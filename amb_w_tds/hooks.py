@@ -20,7 +20,6 @@ app_license = "MIT"
 # Removed doctype_js entries to avoid asset bundle issues
 
 app_include_js = [
-    "/assets/amb_w_tds/js/batch_widget.js",
     "/assets/amb_w_tds/js/sample_request_utils.js",
     "/assets/amb_w_tds/js/sample_request_buttons.js"
 ]
