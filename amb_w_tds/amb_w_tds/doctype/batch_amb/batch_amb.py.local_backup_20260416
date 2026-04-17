@@ -1,0 +1,72 @@
+import frappe
+from frappe.utils.nestedset import NestedSet
+
+
+class BatchAMB(NestedSet):
+    def validate(self):
+        self._debug_trace("validate")
+        self._populate_test_fields()
+
+    def before_save(self):
+        self._debug_trace("before_save")
+        self._populate_test_fields()
+
+    def _populate_test_fields(self):
+        level = str(
+            getattr(self, "custom_batch_level", None)
+            or getattr(self, "custombatchlevel", None)
+            or "1"
+        )
+
+        item = (
+            getattr(self, "item_to_manufacture", None)
+            or getattr(self, "itemtomanufacture", None)
+            or ""
+        )
+
+        wo_ref = (
+            getattr(self, "work_order_ref", None)
+            or getattr(self, "workorderref", None)
+            or getattr(self, "work_order", None)
+            or getattr(self, "workorder", None)
+            or ""
+        )
+
+        plant_id = (
+            getattr(self, "production_plant_id", None)
+            or getattr(self, "productionplantid", None)
+            or ""
+        )
+
+        plant_name = (
+            getattr(self, "production_plant_name", None)
+            or getattr(self, "productionplantname", None)
+            or ""
+        )
+
+        frappe.logger().info(
+            f"[BatchAMB test] name={self.name}, level={level}, item={item}, "
+            f"wo_ref={wo_ref}, plant_id={plant_id}, plant_name={plant_name}"
+        )
+
+        if level != "1":
+            return
+
+        if item:
+            self.custom_product_family = str(item)[:2].zfill(2)
+            self.custom_subfamily = str(item)[2:4].zfill(2)
+
+        if wo_ref:
+            self.custom_consecutive = wo_ref.split("-")[-1][:3].zfill(3)
+
+        if item and wo_ref:
+            test_value = f"{str(item)[:4].zfill(4)}{wo_ref.split('-')[-1][:3].zfill(3)}99{str(plant_id or 1)}"
+            self.custom_golden_number = test_value
+            self.custom_generated_batch_name = test_value
+            self.title = test_value
+
+    def _debug_trace(self, hook_name):
+        frappe.logger().info(
+            f"[BatchAMB test] hook={hook_name}, class={self.__class__.__name__}, "
+            f"module={self.__class__.__module__}, name={self.name}"
+        )
