@@ -16,6 +16,17 @@ frappe.ui.form.on("Sample Request AMB", {
 				filters: { item_group: "FG Packaging Materials" }
 			};
 		};
+
+		// If batch_reference is set but fields are empty, trigger fetch
+		if (frm.doc.batch_reference) {
+			const needsFetch = !frm.doc.coa_amb || 
+			                   !frm.doc.item || 
+			                   !frm.doc.batch_quantity ||
+			                   !frm.doc.sales_order_related;
+			if (needsFetch) {
+				frm.trigger("batch_reference");
+			}
+		}
 	},
 
 	customer(frm) {
@@ -29,6 +40,135 @@ frappe.ui.form.on("Sample Request AMB", {
 		} else {
 			frm.set_value("customer_name", "");
 		}
+	},
+
+	// Enhanced: Fetch ALL fields when batch reference changes
+	batch_reference(frm) {
+		if (!frm.doc.batch_reference) {
+			// Clear all batch-related fields
+			frm.set_value("coa_amb", "");
+			frm.set_value("item", "");
+			frm.set_value("batch_quantity", "");
+			frm.set_value("item_name", "");
+			frm.set_value("custom_golden_number", "");
+			frm.set_value("production_plant_name", "");
+			frm.set_value("sales_order_related", "");
+			frm.set_value("wo_item_name", "");
+			frm.set_value("item_to_manufacture", "");
+			frm.set_value("planned_qty", "");
+			frm.set_value("total_net_weight", "");
+			frm.set_value("custom_batch_level", "");
+			frm.set_value("title", "");
+			return;
+		}
+
+		// Show loading indicator
+		frm.dashboard.show_progress(__("Loading batch data..."), 0, 1);
+
+		// Fetch ALL fields from Batch AMB
+		const fields = [
+			"coa_amb",
+			"item_to_manufacture",
+			"item_name",
+			"planned_qty",
+			"batch_quantity",
+			"total_net_weight",
+			"custom_golden_number",
+			"production_plant_name",
+			"custom_batch_level",
+			"title",
+			"sales_order_related",
+			"wo_item_name",
+			"work_order_ref",
+			"company",
+			"production_plant",
+			"custom_plant_code"
+		];
+
+		frappe.db.get_value("Batch AMB", frm.doc.batch_reference, fields)
+			.then(r => {
+				frm.dashboard.hide_progress();
+				
+				if (r.message) {
+					const batch = r.message;
+					
+					// Set the fetched values
+					frm.set_value("coa_amb", batch.coa_amb || "");
+					frm.set_value("item", batch.item_to_manufacture || "");
+					frm.set_value("item_name", batch.item_name || "");
+					frm.set_value("batch_quantity", batch.planned_qty || batch.batch_quantity || batch.total_net_weight || 0);
+					
+					// Sales Order and Work Order fields
+					frm.set_value("sales_order_related", batch.sales_order_related || "");
+					frm.set_value("wo_item_name", batch.wo_item_name || "");
+					frm.set_value("item_to_manufacture", batch.item_to_manufacture || "");
+					frm.set_value("planned_qty", batch.planned_qty || 0);
+					frm.set_value("total_net_weight", batch.total_net_weight || 0);
+					
+					// Optional fields (if they exist in your form)
+					if (frm.fields_dict.custom_golden_number) {
+						frm.set_value("custom_golden_number", batch.custom_golden_number || "");
+					}
+					if (frm.fields_dict.production_plant_name) {
+						frm.set_value("production_plant_name", batch.production_plant_name || "");
+					}
+					if (frm.fields_dict.custom_batch_level) {
+						frm.set_value("custom_batch_level", batch.custom_batch_level || "");
+					}
+					if (frm.fields_dict.work_order_ref) {
+						frm.set_value("work_order_ref", batch.work_order_ref || "");
+					}
+					if (frm.fields_dict.company) {
+						frm.set_value("company", batch.company || "");
+					}
+					
+					// Show success message with summary
+					frappe.show_alert({
+						message: __("Batch data loaded: {0} | Item: {1} | Qty: {2}", [
+							batch.title || batch.name,
+							batch.item_to_manufacture || "N/A",
+							batch.planned_qty || 0
+						]),
+						indicator: "green"
+					}, 5);
+					
+					console.log("✅ Batch data fetched:", {
+						batch: frm.doc.batch_reference,
+						coa_amb: batch.coa_amb,
+						item: batch.item_to_manufacture,
+						quantity: batch.planned_qty,
+						sales_order: batch.sales_order_related,
+						wo_item: batch.wo_item_name
+					});
+				}
+			})
+			.catch(err => {
+				frm.dashboard.hide_progress();
+				console.error("Error fetching batch data:", err);
+				frappe.msgprint({
+					title: __("Error"),
+					message: __("Failed to fetch batch data. Please try again."),
+					indicator: "red"
+				});
+			});
+	},
+
+	// When item changes, fetch TDS and additional item details
+	item(frm) {
+		if (frm.doc.item) {
+			const fields = ["custom_product_key_tds", "item_name", "description", "stock_uom"];
+			frappe.db.get_value("Item", frm.doc.item, fields)
+				.then(r => {
+					if (r.message) {
+						if (r.message.custom_product_key_tds) {
+							frm.set_value("custom_product_key_tds", r.message.custom_product_key_tds);
+						}
+						if (r.message.item_name && !frm.doc.item_name) {
+							frm.set_value("item_name", r.message.item_name);
+						}
+					}
+				});
+		}
 	}
 });
 
@@ -38,6 +178,23 @@ frappe.ui.form.on("Sample Request AMB Item", {
 	},
 	qty_per_sample(frm, cdt, cdn) {
 		update_total_qty(cdt, cdn);
+	},
+	item_code(frm, cdt, cdn) {
+		// When item changes in child table, fetch description
+		const row = frappe.get_doc(cdt, cdn);
+		if (row.item_code) {
+			frappe.db.get_value("Item", row.item_code, ["description", "item_name"])
+				.then(r => {
+					if (r.message) {
+						if (r.message.description) {
+							frappe.model.set_value(cdt, cdn, "description", r.message.description);
+						}
+						if (r.message.item_name) {
+							frappe.model.set_value(cdt, cdn, "item_name", r.message.item_name);
+						}
+					}
+				});
+		}
 	}
 });
 

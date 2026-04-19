@@ -111,10 +111,71 @@
       "options": "Batch AMB"
     },
     {
-      "fieldname": "item",
-      "fieldtype": "Link",
-      "label": "Item / Producto",
-      "options": "Item"
+        "fieldname": "item",
+        "fieldtype": "Link",
+        "label": "Item / Producto",
+        "options": "Item",
+        "fetch_from": "batch_reference.item_to_manufacture",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "sales_order_related",
+        "fieldtype": "Link",
+        "label": "Sales Order Related",
+        "options": "Sales Order",
+        "fetch_from": "batch_reference.sales_order_related",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "wo_item_name",
+        "fieldtype": "Data",
+        "label": "Work Order Item Name",
+        "fetch_from": "batch_reference.wo_item_name",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "item_name",
+        "fieldtype": "Data",
+        "label": "Item Name",
+        "fetch_from": "batch_reference.item_name",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "planned_qty",
+        "fieldtype": "Float",
+        "label": "Planned Quantity",
+        "fetch_from": "batch_reference.planned_qty",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "total_net_weight",
+        "fieldtype": "Float",
+        "label": "Total Net Weight",
+        "fetch_from": "batch_reference.total_net_weight",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "work_order_ref",
+        "fieldtype": "Link",
+        "label": "Work Order Reference",
+        "options": "Work Order",
+        "fetch_from": "batch_reference.work_order_ref",
+        "fetch_if_empty": 1,
+        "read_only": 1
+    },
+    {
+        "fieldname": "custom_golden_number",
+        "fieldtype": "Data",
+        "label": "Golden Number",
+        "fetch_from": "batch_reference.custom_golden_number",
+        "fetch_if_empty": 1,
+        "read_only": 1
     },
     {
       "fieldname": "custom_product_key_tds",
@@ -126,9 +187,21 @@
       "read_only": 1
     },
     {
-      "fieldname": "batch_quantity",
-      "fieldtype": "Float",
-      "label": "Batch Quantity"
+      "fieldname": "coa_amb",
+      "fieldtype": "Link",
+      "label": "COA / Cert. Analisis para TDS",
+      "options": "COA AMB",
+      "fetch_from": "batch_reference.coa_amb",
+      "fetch_if_empty": 1,
+      "read_only": 1
+    },
+    {
+        "fieldname": "batch_quantity",
+        "fieldtype": "Float",
+        "label": "Batch Quantity",
+        "fetch_from": "batch_reference.planned_qty",
+        "fetch_if_empty": 1,
+        "read_only": 1
     },
 
     {
