@@ -481,7 +481,7 @@
  "subject": null,
  "subject_field": null,
  "tag_fields": null,
- "timeline_field": "coa_quality_test_parameter",
+ "timeline_field": null,
  "title_field": "coa_number",
  "track_changes": 1,
  "track_seen": 0,
