@@ -88,6 +88,13 @@ doc_events = {
         ],
     },
 
+    # ---- COA AMB DE migrations (TDS-M1 / V13.6.0 P3 - post BUG-117)
+    "COA AMB": {
+        "before_save": [
+            "amb_w_tds.doctype_events.coa_amb.coa_amb_before_save",
+        ],
+    },
+
     # ---- Batch AMB: Controller migrated to amb_w_spc
     # "Batch AMB" doc_events removed - now handled by amb_w_spc
 }
