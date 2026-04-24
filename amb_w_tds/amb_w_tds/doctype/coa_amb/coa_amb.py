@@ -14,19 +14,20 @@ class COAAMB(Document):
     """
 
     def validate(self):
-        """Comprehensive validation logic with BUG 117 B/C fixes"""
+        """Comprehensive validation logic"""
+        
         # Core validation sequence
         self.validate_linked_tds()
         self.validate_batch_reference()
-
-        # Enhanced test parameter validation with title row skipping (BUG 117B)
-        self.validate_test_parameters_with_title_skip()
+        
+        # Enhanced test parameter validation
+        self.validate_test_parameters()
         self.evaluate_overall_result()
-
+        
         # Additional validations
         self.check_mandatory_tds_link()
         self.validate_signature_on_submit()
-
+        
         # Formula evaluation for parameters
         self.evaluate_formula_parameters()
 
@@ -37,17 +38,14 @@ class COAAMB(Document):
         self.set_default_naming_series()
 
     def before_save(self):
-        """Before save hook with auto-clean of empty rows (BUG 117A)"""
+        """Before save hook"""
         self.set_coa_number()
         self.set_approval_info()
-        # Auto-clean completely empty rows (non-title rows only)
-        #self.auto_clean_empty_rows()
         #self.calculate_child_table_status()
         # to be reviewed freezed on save COA AMB document
 
     def on_submit(self):
-        """On submit actions with pre-submit validation (BUG 117A)"""
-        self.validate_before_submit()  # NEW: Strict validation on submit only
+        """On submit actions"""
         self.validate_submission_prerequisites()
         self.generate_coa_pdf()
         self.update_batch_status()
@@ -66,111 +64,6 @@ class COAAMB(Document):
         if self.amended_from:
             self.add_comment('Info', f'Amended from {self.amended_from}')
 
-    # ==================== BUG 117 FIX METHODS ====================
-
-    def auto_clean_empty_rows(self):
-        """BUG 117A: Remove completely empty data rows while preserving title rows"""
-        if not self.coa_quality_test_parameter:
-            return
-        
-        cleaned_rows = []
-        removed_count = 0
-        
-        for row in self.coa_quality_test_parameter:
-            # Keep title rows even if empty
-            if row.custom_is_title_row:
-                cleaned_rows.append(row)
-                continue
-            
-            # Check for ANY content in data rows
-            has_content = any([
-                row.parameter_name,
-                row.specification,
-                row.test_method,
-                row.result,
-                row.remarks,
-                row.value,
-                row.min_value,
-                row.max_value,
-                row.custom_uom
-            ])
-            
-            if has_content:
-                cleaned_rows.append(row)
-            else:
-                removed_count += 1
-        
-        if removed_count > 0:
-            self.coa_quality_test_parameter = cleaned_rows
-            frappe.msgprint(_("Removed {0} empty data rows automatically").format(removed_count), alert=True)
-
-    def validate_test_parameters_with_title_skip(self):
-        """BUG 117B: Comprehensive validation that skips title rows"""
-        if not self.coa_quality_test_parameter and self.docstatus == 1:
-            frappe.throw(_("At least one quality test parameter is required for submission"))
-
-        for idx, row in enumerate(self.coa_quality_test_parameter, 1):
-            # Skip title rows entirely for validation
-            if row.custom_is_title_row:
-                continue
-
-            # Validate numeric fields
-            if row.numeric and row.result:
-                self.validate_numeric_result(row, idx)
-
-            # Validate formula-based criteria
-            if row.formula_based_criteria and row.acceptance_formula:
-                self.validate_formula_criteria(row, idx)
-
-            # Validate min/max consistency
-            if row.get('min_value') is not None and row.get('max_value') is not None:
-                if flt(row.min_value) > flt(row.max_value):
-                    frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
-
-            # Validate mandatory fields for submitted documents
-            if self.docstatus == 1 and not row.result:
-                frappe.throw(_(f"Row {idx}: Result is required for parameter '{row.parameter_name}'"))
-
-    def validate_before_submit(self):
-        """BUG 117A: Strict validation only on submit (not on save)"""
-        errors = []
-        
-        # Validate COA number is set
-        if not self.coa_number:
-            errors.append("COA Number is required before submit")
-        
-        # Validate approval date
-        if not self.approval_date:
-            errors.append("Approval Date is required before submit")
-        
-        # Validate test parameters with full strictness on submit
-        if not self.coa_quality_test_parameter:
-            errors.append("At least one quality test parameter is required")
-        else:
-            for idx, row in enumerate(self.coa_quality_test_parameter, 1):
-                # Skip title rows in validation
-                if row.custom_is_title_row:
-                    continue
-                
-                # Check if row has data (parameter_name or specification present)
-                has_data = any([row.parameter_name, row.specification, row.result])
-                
-                if has_data:
-                    row_errors = []
-                    if not row.parameter_name:
-                        row_errors.append("Parameter Name is required")
-                    if not row.specification:
-                        row_errors.append("Specification is required")
-                    if row_errors:
-                        errors.append(_("Row {0}: {1}").format(idx, ", ".join(row_errors)))
-        
-        # Validate overall result is set
-        if not self.overall_result or self.overall_result == 'Pending':
-            errors.append("Overall Result must be determined before submit")
-        
-        if errors:
-            frappe.throw(_("Validation failed before Submit:\n") + "\n".join(errors))
-
     # ==================== ENHANCED VALIDATION METHODS ====================
 
     def validate_linked_tds(self):
@@ -182,7 +75,7 @@ class COAAMB(Document):
             tds = frappe.get_doc('TDS Product Specification', self.linked_tds)
             if tds.docstatus != 1:
                 frappe.throw(_("TDS {0} is not approved").format(self.linked_tds))
-
+                
             # Additional check for TDS version compatibility
             self.check_tds_version_compatibility(tds)
 
@@ -197,23 +90,46 @@ class COAAMB(Document):
         if self.batch_reference:
             if not frappe.db.exists('Batch AMB', self.batch_reference):
                 frappe.throw(_("Batch {0} does not exist").format(self.batch_reference))
-
+            
             # Check if batch is already closed
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
             if hasattr(batch, 'status') and batch.status == 'Closed':
                 frappe.throw(_("Batch {0} is already closed and cannot be used for COA").format(self.batch_reference))
 
+    def validate_test_parameters(self):
+        """Comprehensive validation for quality test parameters"""
+        if not self.coa_quality_test_parameter and self.docstatus == 1:
+            frappe.throw(_("At least one quality test parameter is required for submission"))
+        
+        for idx, row in enumerate(self.coa_quality_test_parameter, 1):
+            # Validate numeric fields
+            if row.numeric and row.result:
+                self.validate_numeric_result(row, idx)
+            
+            # Validate formula-based criteria
+            if row.formula_based_criteria and row.acceptance_formula:
+                self.validate_formula_criteria(row, idx)
+            
+            # Validate min/max consistency
+            if row.get('min_value') is not None and row.get('max_value') is not None:
+                if flt(row.min_value) > flt(row.max_value):
+                    frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
+            
+            # Validate mandatory fields for submitted documents
+            if self.docstatus == 1 and not row.result and not row.custom_is_title_row:
+                frappe.throw(_(f"Row {idx}: Result is required for parameter '{row.parameter_name}'"))
+
     def validate_numeric_result(self, row, idx):
         """Validate numeric results against min/max values"""
         try:
             result = flt(row.result)
-
+            
             if row.get('min_value') is not None and result < flt(row.min_value):
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-
+            
             if row.get('max_value') is not None and result > flt(row.max_value):
                 frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
-
+                
         except ValueError:
             frappe.throw(_(f"Row {idx}: Invalid numeric result format for parameter '{row.parameter_name}'"))
 
@@ -221,13 +137,13 @@ class COAAMB(Document):
         """Validate formula-based criteria with security measures"""
         if not row.result:
             return
-
+            
         allowed_namespaces = {
             'result': flt(row.result) if row.result else 0,
             'min_value': flt(row.min_value) if row.get('min_value') else None,
             'max_value': flt(row.max_value) if row.get('max_value') else None
         }
-
+        
         try:
             # Use Frappe's safe eval for security
             formula_result = frappe.safe_eval(row.acceptance_formula, allowed_namespaces)
@@ -250,7 +166,7 @@ class COAAMB(Document):
         """Validate all prerequisites before submission"""
         if not self.coa_quality_test_parameter:
             frappe.throw(_("Cannot submit COA without test parameters"))
-
+        
         if not self.overall_result or self.overall_result == 'Pending':
             frappe.throw(_("Cannot submit COA with pending overall result"))
 
@@ -265,25 +181,25 @@ class COAAMB(Document):
         failed_tests = []
         passed_tests = []
         pending_tests = []
-
+        
         total_tests = 0
         tested_tests = 0
 
         for param in self.coa_quality_test_parameter:
             if param.custom_is_title_row:
                 continue
-
+                
             total_tests += 1
-
+            
             if not param.result:
                 pending_tests.append(param.parameter_name)
                 continue
-
+                
             tested_tests += 1
-
+            
             # Check parameter compliance
             is_compliant = self.check_parameter_compliance(param)
-
+            
             if is_compliant:
                 passed_tests.append(param.parameter_name)
                 param.status = 'Pass'
@@ -295,7 +211,7 @@ class COAAMB(Document):
         if total_tests > 0:
             self.pass_percentage = (len(passed_tests) / total_tests) * 100 if tested_tests > 0 else 0
             self.tested_percentage = (tested_tests / total_tests) * 100
-
+        
         # Determine overall result
         if failed_tests:
             self.overall_result = 'Fail'
@@ -318,24 +234,24 @@ class COAAMB(Document):
 
         try:
             result = flt(param.result)
-
+            
             # Priority 1: Use min/max values if available
             if param.get('min_value') is not None and param.get('max_value') is not None:
                 min_val = flt(param.min_value)
                 max_val = flt(param.max_value)
                 return min_val <= result <= max_val
-
+            
             # Priority 2: Parse specification field
             if param.specification:
                 return self.parse_specification_compliance(param.specification, result)
-
+            
             # Priority 3: Formula-based criteria
             if param.formula_based_criteria and param.acceptance_formula:
                 allowed_namespaces = {'result': result}
                 return frappe.safe_eval(param.acceptance_formula, allowed_namespaces)
-
+            
             return True  # No validation criteria specified
-
+            
         except Exception as e:
             frappe.log_error(f"Error checking compliance for parameter {param.parameter_name}: {str(e)}", "COA Compliance Check")
             return False
@@ -344,9 +260,9 @@ class COAAMB(Document):
         """Parse specification string for compliance checking"""
         if not spec:
             return True
-
+            
         spec = cstr(spec).strip()
-
+        
         try:
             # Range format: "10-20", "10 - 20", "10 to 20"
             range_match = re.search(r'([\d\.]+)\s*[-to]+\s*([\d\.]+)', spec, re.IGNORECASE)
@@ -354,28 +270,28 @@ class COAAMB(Document):
                 min_val = flt(range_match.group(1))
                 max_val = flt(range_match.group(2))
                 return min_val <= result <= max_val
-
+            
             # Greater than or equal: "≥10", ">=10", ">10", "min 10"
             if '≥' in spec or '>=' in spec or ('>' in spec and not '>>' in spec):
                 min_val = flt(re.search(r'[\d\.]+', spec.replace('≥', '').replace('>=', '').replace('>', '')).group())
                 return result >= min_val
-
+            
             # Less than or equal: "≤20", "<=20", "<20", "max 20"
             if '≤' in spec or '<=' in spec or ('<' in spec and not '<<' in spec):
                 max_val = flt(re.search(r'[\d\.]+', spec.replace('≤', '').replace('<=', '').replace('<', '')).group())
                 return result <= max_val
-
+            
             # Target value with tolerance: "10 ± 0.5", "10 +/- 0.5"
             tolerance_match = re.search(r'([\d\.]+)\s*[±\+\/-]+\s*([\d\.]+)', spec)
             if tolerance_match:
                 target = flt(tolerance_match.group(1))
                 tolerance = flt(tolerance_match.group(2))
                 return abs(result - target) <= tolerance
-
+            
             # Exact match
             target = flt(spec)
             return abs(result - target) < 0.001
-
+            
         except:
             return True  # Can't parse specification
 
@@ -393,7 +309,7 @@ class COAAMB(Document):
                 'min_value': flt(param.min_value) if param.get('min_value') else None,
                 'max_value': flt(param.max_value) if param.get('max_value') else None
             }
-
+            
             formula_result = frappe.safe_eval(param.acceptance_formula, allowed_namespaces)
             if formula_result:
                 param.status = 'Pass'
@@ -404,55 +320,46 @@ class COAAMB(Document):
 
     # ==================== SYNC & SETUP METHODS ====================
 
-     
     def sync_from_tds(self):
-        """Sync from TDS using correct fields - NO DUPLICATES"""
+        """Enhanced sync from linked TDS with better error handling"""
         if not self.linked_tds:
             return
-    
+
         try:
             tds = frappe.get_doc('TDS Product Specification', self.linked_tds)
-    
+
             # Copy item details
             self.product_item = tds.product_item
             self.item_name = tds.item_name
             self.item_code = tds.item_code
-    
+            
             # Copy additional TDS information
-            for field in ['cas_number', 'inci_name', 'shelf_life', 'packaging', 'storage_and_handling_conditions']:
-                if hasattr(tds, field):
-                    setattr(self, field, getattr(tds, field))
-    
-            # Clear existing parameters
-            self.set('coa_quality_test_parameter', [])
-    
-            # =========================================================
-            # THIS IS THE MISSING PART - COPY PARAMETERS FROM TDS
-            # =========================================================
-            if hasattr(tds, 'item_quality_inspection_parameter') and tds.item_quality_inspection_parameter:
-                param_count = 0
-                for tds_param in tds.item_quality_inspection_parameter:
+            if hasattr(tds, 'cas_number'):
+                self.cas_number = tds.cas_number
+            if hasattr(tds, 'inci_name'):
+                self.inci_name = tds.inci_name
+            if hasattr(tds, 'shelf_life'):
+                self.shelf_life = tds.shelf_life
+            if hasattr(tds, 'packaging'):
+                self.packaging = tds.packaging
+            if hasattr(tds, 'storage_and_handling_conditions'):
+                self.storage_and_handling_conditions = tds.storage_and_handling_conditions
+
+            # Copy specifications to quality parameters
+            if hasattr(tds, 'specifications') and tds.specifications:
+                for spec in tds.specifications:
                     self.append('coa_quality_test_parameter', {
-                        'specification': tds_param.specification,
-                        'parameter_group': tds_param.parameter_group,
-                        'value': tds_param.value or '',
-                        'numeric': tds_param.numeric,
-                        'min_value': tds_param.min_value,
-                        'max_value': tds_param.max_value,
-                        'formula_based_criteria': tds_param.formula_based_criteria,
-                        'acceptance_formula': tds_param.acceptance_formula,
-                        'custom_method': tds_param.custom_method,
-                        'custom_reconstituted_to_05_total_solids_solution': tds_param.custom_reconstituted_to_05_total_solids_solution,
-                        'custom_is_title_row': tds_param.get('is_title', 0),
-                        'status': 'Pending'
+                        'parameter_name': spec.parameter,
+                        'specification': spec.specification,
+                        'test_method': spec.test_method,
+                        'result': '',
+                        'min_value': spec.get('min_value'),
+                        'max_value': spec.get('max_value'),
+                        'custom_uom': spec.get('custom_uom')
                     })
-                    param_count += 1
-                
-                frappe.msgprint(_("Synced {0} parameters from TDS {1}").format(
-                    param_count, self.linked_tds), alert=True)
-            else:
-                frappe.msgprint(_("No parameters found in linked TDS"), alert=True)
-    
+            
+            frappe.msgprint(_("Successfully synced specifications from TDS: {0}").format(self.linked_tds), alert=True)
+            
         except Exception as e:
             frappe.log_error(f"Error syncing from TDS {self.linked_tds}: {str(e)}", "COA TDS Sync")
             frappe.throw(_("Error syncing from TDS: {0}").format(str(e)))
@@ -468,7 +375,7 @@ class COAAMB(Document):
                 # Fallback to custom format
                 from datetime import datetime
                 date_str = datetime.now().strftime('%Y-%m')
-
+                
                 last_coa = frappe.db.sql("""
                     SELECT coa_number 
                     FROM `tabCOA AMB` 
@@ -476,13 +383,13 @@ class COAAMB(Document):
                     ORDER BY creation DESC 
                     LIMIT 1
                 """, (f"COA-{date_str}-%",))
-
+                
                 if last_coa and last_coa[0][0]:
                     last_num = int(last_coa[0][0].split('-')[-1])
                     seq = last_num + 1
                 else:
                     seq = 1
-
+                
                 self.coa_number = f"COA-{date_str}-{seq:04d}"
 
     def set_default_naming_series(self):
@@ -505,11 +412,11 @@ class COAAMB(Document):
             # This would use Frappe's print format system
             # Log the PDF generation request
             self.add_comment('Info', 'COA PDF generation requested on submission')
-
+            
             # In a real implementation, you might trigger an async PDF generation
             # frappe.enqueue('amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.generate_coa_pdf_background', 
             #               coa_name=self.name)
-
+            
         except Exception as e:
             frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA AMB - PDF Generation")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
@@ -521,7 +428,7 @@ class COAAMB(Document):
 
         try:
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
-
+            
             if status:
                 batch.quality_status = status
                 batch.add_comment('Info', f'COA Status: {status} - {self.name}')
@@ -530,7 +437,7 @@ class COAAMB(Document):
                 batch.coa_reference = self.name
                 batch.quality_status = self.overall_result
                 batch.last_coa_date = nowdate()
-
+                
                 # Add COA details to batch
                 if hasattr(batch, 'coa_details'):
                     batch.coa_details = f"""
@@ -539,16 +446,16 @@ class COAAMB(Document):
                         Approved: {self.approval_date}
                         Approved By: {self.approved_by}
                     """
-
+            
             batch.save(ignore_permissions=True)
-
+            
         except Exception as e:
             frappe.log_error(f"Error updating batch {self.batch_reference}: {str(e)}", "COA AMB - Batch Update")
 
     def notify_quality_team(self):
         """Send notifications to relevant teams"""
         recipients = set()
-
+        
         # Get quality team members
         quality_roles = ['Quality Manager', 'Quality Inspector', 'Quality Analyst']
         for role in quality_roles:
@@ -560,22 +467,22 @@ class COAAMB(Document):
                 email = frappe.db.get_value('User', user.parent, 'email')
                 if email:
                     recipients.add(email)
-
+        
         # Add document owner and approver
         if self.owner:
             owner_email = frappe.db.get_value('User', self.owner, 'email')
             if owner_email:
                 recipients.add(owner_email)
-
+        
         if self.approved_by:
             recipients.add(self.approved_by)
-
+        
         # Add production manager if batch exists
         if self.batch_reference:
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
             if hasattr(batch, 'production_manager') and batch.production_manager:
                 recipients.add(batch.production_manager)
-
+        
         if recipients:
             try:
                 frappe.sendmail(
@@ -600,9 +507,9 @@ class COAAMB(Document):
                     now=True,
                     delayed=False
                 )
-
+                
                 self.add_comment('Email', f'Notification sent to {len(recipients)} recipient(s)')
-
+                
             except Exception as e:
                 frappe.log_error(f"Error sending COA notification: {str(e)}", "COA AMB - Notification")
 
@@ -622,9 +529,9 @@ class COAAMB(Document):
                 "audited_by": self.approved_by or frappe.session.user
             })
             audit_doc.insert(ignore_permissions=True)
-
+            
             self.add_comment('Info', f'Quality audit record created: {audit_doc.name}')
-
+            
         except Exception as e:
             frappe.log_error(f"Error creating quality audit: {str(e)}", "COA AMB - Audit Creation")
 
@@ -632,7 +539,7 @@ class COAAMB(Document):
         """Update product master with latest quality status"""
         if not self.product_item:
             return
-
+            
         try:
             # Update item with latest COA information
             frappe.db.set_value('Item', self.product_item, {
@@ -640,7 +547,7 @@ class COAAMB(Document):
                 'last_coa_result': self.overall_result,
                 'last_coa_reference': self.name
             })
-
+            
         except Exception as e:
             frappe.log_error(f"Error updating product quality status: {str(e)}", "COA AMB - Product Update")
 
@@ -648,7 +555,7 @@ class COAAMB(Document):
         """Revert product quality status on COA cancellation"""
         if not self.product_item:
             return
-
+            
         try:
             # Clear COA references from item
             frappe.db.set_value('Item', self.product_item, {
@@ -656,7 +563,7 @@ class COAAMB(Document):
                 'last_coa_result': None,
                 'last_coa_reference': None
             })
-
+            
         except Exception as e:
             frappe.log_error(f"Error reverting product quality status: {str(e)}", "COA AMB - Product Revert")
 
@@ -666,11 +573,11 @@ class COAAMB(Document):
             if param.custom_is_title_row:
                 param.status = 'Title'
                 continue
-
+                
             if not param.result:
                 param.status = 'Pending'
                 continue
-
+                
             # Check compliance
             is_compliant = self.check_parameter_compliance(param)
             param.status = 'Pass' if is_compliant else 'Fail'
@@ -681,12 +588,12 @@ class COAAMB(Document):
         """Get summary of test results"""
         if not self.coa_quality_test_parameter:
             return {}
-
+            
         total = len([p for p in self.coa_quality_test_parameter if not p.custom_is_title_row])
         passed = len([p for p in self.coa_quality_test_parameter if p.status == 'Pass'])
         failed = len([p for p in self.coa_quality_test_parameter if p.status == 'Fail'])
         pending = len([p for p in self.coa_quality_test_parameter if p.status == 'Pending'])
-
+        
         return {
             'total': total,
             'passed': passed,
@@ -694,7 +601,6 @@ class COAAMB(Document):
             'pending': pending,
             'pass_rate': (passed / total * 100) if total > 0 else 0
         }
-
 
 # ==================== WHITELISTED METHODS ====================
 
@@ -704,15 +610,15 @@ def create_coa_from_tds(tds_name, batch_name=None):
     try:
         coa = frappe.new_doc('COA AMB')
         coa.linked_tds = tds_name
-
+        
         if batch_name:
             coa.batch_reference = batch_name
-
+            
         coa.insert()
-
+        
         frappe.msgprint(_("COA created successfully: {0}").format(coa.name), alert=True)
         return coa.name
-
+        
     except Exception as e:
         frappe.log_error(f"Error creating COA from TDS: {str(e)}", "COA Creation")
         frappe.throw(_("Error creating COA: {0}").format(str(e)))
@@ -722,7 +628,7 @@ def get_batch_quality_data(batch_name):
     """Get quality test data for a batch"""
     if not frappe.db.exists('Batch AMB', batch_name):
         return {"error": "Batch not found"}
-
+    
     try:
         # Get COAs for this batch
         coas = frappe.get_all(
@@ -730,7 +636,7 @@ def get_batch_quality_data(batch_name):
             filters={'batch_reference': batch_name, 'docstatus': 1},
             fields=['name', 'coa_number', 'overall_result', 'approval_date', 'approved_by']
         )
-
+        
         # Get quality inspections if available
         inspections = []
         if frappe.db.exists('DocType', 'Quality Inspection'):
@@ -739,13 +645,13 @@ def get_batch_quality_data(batch_name):
                 filters={'reference_name': batch_name},
                 fields=['name', 'inspection_type', 'status', 'report_date', 'inspected_by']
             )
-
+        
         return {
             'coas': coas,
             'inspections': inspections,
             'batch': frappe.get_doc('Batch AMB', batch_name).as_dict()
         }
-
+        
     except Exception as e:
         frappe.log_error(f"Error getting batch quality data: {str(e)}", "Batch Quality Data")
         return {"error": str(e)}
@@ -779,7 +685,7 @@ def fetch_parameter_details(parameter_name):
                 'max_value': param.max_value
             }
         return {}
-
+        
     except Exception as e:
         frappe.log_error(f"Error fetching parameter details: {str(e)}", "Parameter Details")
         return {}
@@ -791,14 +697,14 @@ def validate_all_tests(coa_name):
         coa = frappe.get_doc('COA AMB', coa_name)
         coa.evaluate_overall_result()
         coa.save()
-
+        
         summary = coa.get_test_summary()
-
+        
         return {
             'message': f"Validated {summary['total']} tests: {summary['passed']} passed, {summary['failed']} failed, {summary['pending']} pending",
             'summary': summary
         }
-
+        
     except Exception as e:
         frappe.log_error(f"Error validating tests: {str(e)}", "Test Validation")
         return {"error": str(e)}
@@ -808,20 +714,20 @@ def duplicate_coa(source_coa, new_batch=None):
     """Duplicate an existing COA for a new batch"""
     try:
         source = frappe.get_doc('COA AMB', source_coa)
-
+        
         # Create new COA
         new_coa = frappe.new_doc('COA AMB')
-
+        
         # Copy basic information
         new_coa.linked_tds = source.linked_tds
         new_coa.product_item = source.product_item
         new_coa.item_name = source.item_name
         new_coa.item_code = source.item_code
-
+        
         # Set new batch if provided
         if new_batch:
             new_coa.batch_reference = new_batch
-
+        
         # Copy test parameters
         for param in source.coa_quality_test_parameter:
             new_coa.append('coa_quality_test_parameter', {
@@ -839,15 +745,14 @@ def duplicate_coa(source_coa, new_batch=None):
                 'custom_reconstituted_to_05_total_solids_solution': param.custom_reconstituted_to_05_total_solids_solution,
                 'custom_is_title_row': param.custom_is_title_row
             })
-
+        
         new_coa.insert()
-
+        
         return {
             'message': _("COA duplicated successfully"),
             'new_coa': new_coa.name
         }
-
+        
     except Exception as e:
         frappe.log_error(f"Error duplicating COA: {str(e)}", "COA Duplication")
         frappe.throw(_("Error duplicating COA: {0}").format(str(e)))
-
