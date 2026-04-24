@@ -32,6 +32,7 @@
   "naming_series",
   "column_break_tefy",
   "linked_tds",
+  "show_draft_tds",
   "product_information",
   "product_item",
   "item_name",
@@ -76,7 +77,7 @@
    "in_list_view": 0,
    "label": "COA AMB Nr.",
    "options": "COA-.YY.-.####",
-   "reqd": 0
+   "reqd": 1
   },
   {
    "fieldname": "column_break_tefy",
@@ -88,6 +89,13 @@
    "label": "TDS Product Specification",
    "options": "TDS Product Specification",
    "reqd": 0
+  },
+  {
+   "default": 0,
+   "description": "Check to also show draft (not submitted) TDS documents",
+   "fieldname": "show_draft_tds",
+   "fieldtype": "Check",
+   "label": "Include Draft TDS in selection"
   },
   {
    "fieldname": "product_information",
@@ -190,11 +198,12 @@
   {
    "fieldname": "coa_quality_test_parameter",
    "fieldtype": "Table",
+   "grid_page_length": 10,
    "label": "COA Quality Test Parameter",
    "options": "COA Quality Test Parameter",
    "print_width": "80",
-   "reqd": 1,
-   "width": "80"
+   "reqd": 0,
+   "width": "120"
   },
   {
    "fieldname": "test_results_section",
@@ -481,7 +490,7 @@
  "subject": null,
  "subject_field": null,
  "tag_fields": null,
- "timeline_field": "coa_quality_test_parameter",
+ "timeline_field": null,
  "title_field": "coa_number",
  "track_changes": 1,
  "track_seen": 0,
