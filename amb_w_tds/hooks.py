@@ -64,6 +64,16 @@ doc_events = {
         ],
     },
 
+    # ---- Sales Invoice DE migrations (TDS-M2 / V13.6.0 P3)
+    "Sales Invoice": {
+        "before_insert": [
+            "amb_w_tds.doctype_events.sales_invoice.force_customer_specific_account",
+        ],
+        "before_save": [
+            "amb_w_tds.doctype_events.sales_invoice.set_customer_invoice_currency_from_sales_order",
+        ],
+    },
+
     # ---- Batch AMB: Controller migrated to amb_w_spc
     # "Batch AMB" doc_events removed - now handled by amb_w_spc
 }
