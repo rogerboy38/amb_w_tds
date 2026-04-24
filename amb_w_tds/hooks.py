@@ -74,6 +74,20 @@ doc_events = {
         ],
     },
 
+    # ---- BOM Creator DE migration (TDS-M3 / V13.6.0 P3)
+    "BOM Creator": {
+        "before_save": [
+            "amb_w_tds.doctype_events.bom_creator.calculate_total_cost",
+        ],
+    },
+
+    # ---- TDS Product Specification DE migration (TDS-M3 / V13.6.0 P3)
+    "TDS Product Specification": {
+        "before_insert": [
+            "amb_w_tds.doctype_events.tds_product_specification.fetch_tds_version_validation",
+        ],
+    },
+
     # ---- Batch AMB: Controller migrated to amb_w_spc
     # "Batch AMB" doc_events removed - now handled by amb_w_spc
 }
