@@ -17,7 +17,7 @@ frappe.ui.form.on("Sample Request AMB", {
 			};
 		};
 
-		// BUG 118 – Filter COA choices by item when editable
+		// BUG-118 – Filter COA choices by item when editable
 		frm.fields_dict.coa_amb.get_query = function (doc) {
 			return {
 				filters: { item: doc.item }
