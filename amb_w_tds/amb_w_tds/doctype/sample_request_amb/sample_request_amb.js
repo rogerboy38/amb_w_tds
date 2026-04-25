@@ -17,6 +17,13 @@ frappe.ui.form.on("Sample Request AMB", {
 			};
 		};
 
+		// BUG 118 – Filter COA choices by item when editable
+		frm.fields_dict.coa_amb.get_query = function (doc) {
+			return {
+				filters: { item: doc.item }
+			};
+		};
+
 		// If batch_reference is set but fields are empty, trigger fetch
 		if (frm.doc.batch_reference) {
 			const needsFetch = !frm.doc.coa_amb || 
@@ -131,7 +138,7 @@ frappe.ui.form.on("Sample Request AMB", {
 						]),
 						indicator: "green"
 					}, 5);
-					
+
 					console.log("✅ Batch data fetched:", {
 						batch: frm.doc.batch_reference,
 						coa_amb: batch.coa_amb,

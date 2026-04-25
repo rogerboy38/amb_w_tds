@@ -193,7 +193,8 @@
       "options": "COA AMB",
       "fetch_from": "batch_reference.coa_amb",
       "fetch_if_empty": 1,
-      "read_only": 1
+      "read_only": 0,
+      "read_only_depends_on": "eval:!doc.batch_reference"
     },
     {
         "fieldname": "batch_quantity",
