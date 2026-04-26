@@ -77,7 +77,9 @@
       "fieldtype": "Data",
       "label": "Actual Result",
       "in_list_view": 1,
+      "reqd": 0,
       "width": "100",
+      "allow_bulk_edit": 1,
       "depends_on": "eval:!doc.custom_is_title_row",
       "mandatory_depends_on": "eval:doc.numeric || doc.formula_based_criteria"
     },
@@ -196,6 +198,7 @@
   "permissions": [],
   "row_format": "Dynamic",
   "sort_field": "modified",
+  "editable_grid": 1,
   "sort_order": "DESC",
   "states": [],
   "track_changes": 1,
