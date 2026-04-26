@@ -190,11 +190,12 @@
   {
    "fieldname": "coa_quality_test_parameter",
    "fieldtype": "Table",
+   "grid_page_length": 10,
    "label": "COA Quality Test Parameter",
    "options": "COA Quality Test Parameter",
    "print_width": "80",
-   "reqd": 1,
-   "width": "80"
+   "reqd": 0,
+   "width": "120"
   },
   {
    "fieldname": "test_results_section",

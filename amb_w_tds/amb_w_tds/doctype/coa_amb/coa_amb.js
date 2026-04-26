@@ -90,6 +90,15 @@ frappe.ui.form.on('COA Quality Test Parameter', {
         // Validate result against specification
         let row = locals[cdt][cdn];
         validate_test_result(frm, row);
+    },
+
+    custom_is_title_row: function(frm, cdt, cdn) {
+        // BUG-117B - Skip validation for title rows; clear status/result so save isn't blocked
+        let row = locals[cdt][cdn];
+        if (row.custom_is_title_row) {
+            frappe.model.set_value(cdt, cdn, 'status', 'N/A');
+            frappe.model.set_value(cdt, cdn, 'result', '');
+        }
     }
 });
 
