@@ -10,7 +10,6 @@ frappe.ui.form.on('COA AMB', {
     
     linked_tds: function(frm) {
         if (frm.doc.linked_tds) {
-            // Fetch TDS details and populate COA
             frappe.call({
                 method: 'frappe.client.get',
                 args: {
@@ -19,12 +18,10 @@ frappe.ui.form.on('COA AMB', {
                 },
                 callback: function(r) {
                     if (r.message) {
-                        // Set product details
                         frm.set_value('product_item', r.message.product_item);
                         frm.set_value('item_name', r.message.item_name);
                         frm.set_value('item_code', r.message.item_code);
                         
-                        // Copy specifications to quality parameters
                         if (!frm.doc.coa_quality_test_parameter || 
                             frm.doc.coa_quality_test_parameter.length === 0) {
                             copy_tds_specifications(frm, r.message);
@@ -56,7 +53,6 @@ frappe.ui.form.on('COA AMB', {
     
     batch_reference: function(frm) {
         if (frm.doc.batch_reference) {
-            // Get batch details
             frappe.call({
                 method: 'frappe.client.get',
                 args: {
@@ -76,10 +72,25 @@ frappe.ui.form.on('COA AMB', {
     
     approval_date: function(frm) {
         if (frm.doc.approval_date) {
-            // Auto-set approved by
             if (!frm.doc.approved_by) {
                 frm.set_value('approved_by', frappe.session.user);
             }
+        }
+    },
+    
+    // 117K FIX: Dynamic TDS filter based on show_draft_tds checkbox
+    show_draft_tds: function(frm) {
+        frm.refresh_field('linked_tds');
+        if (frm.doc.show_draft_tds) {
+            frappe.show_alert({
+                message: __('Showing both Draft and Submitted TDS.'),
+                indicator: 'blue'
+            });
+        } else {
+            frappe.show_alert({
+                message: __('Showing only Submitted TDS.'),
+                indicator: 'blue'
+            });
         }
     }
 });
@@ -87,13 +98,11 @@ frappe.ui.form.on('COA AMB', {
 // Child table events
 frappe.ui.form.on('COA Quality Test Parameter', {
     result: function(frm, cdt, cdn) {
-        // Validate result against specification
         let row = locals[cdt][cdn];
         validate_test_result(frm, row);
     },
 
     custom_is_title_row: function(frm, cdt, cdn) {
-        // BUG-117B - Skip validation for title rows; clear status/result so save isn't blocked
         let row = locals[cdt][cdn];
         if (row.custom_is_title_row) {
             frappe.model.set_value(cdt, cdn, 'status', 'N/A');
@@ -104,7 +113,6 @@ frappe.ui.form.on('COA Quality Test Parameter', {
 
 function setup_coa_buttons(frm) {
     if (!frm.doc.__islocal) {
-        // Create from TDS button
         if (!frm.doc.linked_tds) {
             frm.add_custom_button(__('Link TDS'), function() {
                 let d = new frappe.ui.Dialog({
@@ -126,7 +134,6 @@ function setup_coa_buttons(frm) {
             }, __('Actions'));
         }
         
-        // Generate PDF button
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__('Generate PDF'), function() {
                 frappe.call({
@@ -141,7 +148,6 @@ function setup_coa_buttons(frm) {
             }, __('Actions'));
         }
         
-        // View Batch button
         if (frm.doc.batch_reference) {
             frm.add_custom_button(__('View Batch'), function() {
                 frappe.set_route('Form', 'Batch AMB', frm.doc.batch_reference);
@@ -151,32 +157,69 @@ function setup_coa_buttons(frm) {
 }
 
 function apply_coa_filters(frm) {
-    // Filter TDS by product
+    // Dynamic TDS filter based on show_draft_tds checkbox
     frm.set_query('linked_tds', function() {
-        let filters = { 'docstatus': 1 };
-        if (frm.doc.product_item) {
-            filters['product_item'] = frm.doc.product_item;
+        let show_draft = frm.doc.show_draft_tds || 0;
+        let filters = {};
+        
+        if (show_draft) {
+            filters['docstatus'] = ['in', [0, 1]];
+        } else {
+            filters['docstatus'] = 1;
         }
+        
+        if (frm.doc.product_item && frm.doc.product_item !== "") {
+            filters['item_code'] =  ['like', `%${frm.doc.product_item}%`];
+        }
+        
         return { filters: filters };
     });
     
     // Filter batches
     frm.set_query('batch_reference', function() {
         let filters = { 'docstatus': 1 };
-        if (frm.doc.product_item) {
-            filters['item_to_manufacture'] = frm.doc.product_item;
+        if (frm.doc.product_item && frm.doc.product_item !== "") {
+            filters['current_item_code'] = frm.doc.product_item;
         }
         return { filters: filters };
     });
 }
 
 function show_coa_indicators(frm) {
-    if (frm.doc.overall_result) {
-        let color = frm.doc.overall_result === 'Pass' ? 'green' : 'red';
-        frm.dashboard.set_headline_alert(
-            __('Quality: {0}', [frm.doc.overall_result]),
-            color
-        );
+    // Get all quality test parameters that are not title rows
+    let test_rows = (frm.doc.coa_quality_test_parameter || []).filter(row => !row.custom_is_title_row);
+    
+    let total = test_rows.length;
+    let pending = test_rows.filter(row => row.status === 'Pending').length;
+    let passed = test_rows.filter(row => row.status === 'Pass').length;
+    let failed = test_rows.filter(row => row.status === 'Fail').length;
+    
+    // Get COA number
+    let coa_number = frm.doc.coa_number || frm.doc.name || 'New COA';
+    
+    // Build consolidated message
+    let message = '';
+    let color = 'orange';
+    
+    if (failed > 0) {
+        message = `❌ Quality: Fail (${failed}/${total} tests failed) - ${coa_number}`;
+        color = 'red';
+    } else if (pending > 0 && pending === total) {
+        message = `⏳ Quality: Pending (${pending}/${total} tests pending) - ${coa_number}`;
+        color = 'orange';
+    } else if (pending > 0) {
+        message = `🟡 Quality: Partial (${passed} passed, ${pending} pending, ${failed} failed) - ${coa_number}`;
+        color = 'yellow';
+    } else if (passed === total && total > 0) {
+        message = `✅ Quality: Pass (${passed}/${total} tests passed) - ${coa_number}`;
+        color = 'green';
+    } else if (total === 0) {
+        message = `📋 Quality: No Tests - ${coa_number}`;
+        color = 'blue';
+    }
+    
+    if (message) {
+        frm.dashboard.set_headline_alert(message, color);
     }
 }
 
@@ -199,10 +242,8 @@ function copy_tds_specifications(frm, tds) {
 function validate_test_result(frm, row) {
     if (!row.result || !row.specification) return;
     
-    // Simple validation - can be enhanced with complex logic
     let result = parseFloat(row.result);
     if (!isNaN(result)) {
-        // Extract min/max from specification if formatted like "10-20"
         let match = row.specification.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
         if (match) {
             let min = parseFloat(match[1]);
