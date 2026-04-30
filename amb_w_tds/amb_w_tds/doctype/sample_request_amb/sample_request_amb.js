@@ -1,5 +1,5 @@
-// Sample Request AMB - v10.0.0 Consolidated
-console.log("🔧 Sample Request AMB JS loaded");
+// Sample Request AMB - v11.0.0 with Logistics & Paqueteria
+console.log("🔧 Sample Request AMB JS loaded - Logistics & Paqueteria");
 
 frappe.ui.form.on("Sample Request AMB", {
 	refresh(frm) {
@@ -26,6 +26,16 @@ frappe.ui.form.on("Sample Request AMB", {
 			if (needsFetch) {
 				frm.trigger("batch_reference");
 			}
+		}
+
+		// Add custom buttons for logistics
+		frm.add_custom_button(__("Generate Proforma"), function() {
+			frm.print_doc("PROFORMA AMB2");
+		}, __("Print"));
+
+		// Update shipment type checkboxes based on selection
+		if (frm.doc.shipment_type) {
+			update_shipment_checkboxes(frm);
 		}
 	},
 
@@ -105,7 +115,7 @@ frappe.ui.form.on("Sample Request AMB", {
 					frm.set_value("planned_qty", batch.planned_qty || 0);
 					frm.set_value("total_net_weight", batch.total_net_weight || 0);
 					
-					// Optional fields (if they exist in your form)
+					// Optional fields
 					if (frm.fields_dict.custom_golden_number) {
 						frm.set_value("custom_golden_number", batch.custom_golden_number || "");
 					}
@@ -118,11 +128,8 @@ frappe.ui.form.on("Sample Request AMB", {
 					if (frm.fields_dict.work_order_ref) {
 						frm.set_value("work_order_ref", batch.work_order_ref || "");
 					}
-					if (frm.fields_dict.company) {
-						frm.set_value("company", batch.company || "");
-					}
 					
-					// Show success message with summary
+					// Show success message
 					frappe.show_alert({
 						message: __("Batch data loaded: {0} | Item: {1} | Qty: {2}", [
 							batch.title || batch.name,
@@ -136,9 +143,7 @@ frappe.ui.form.on("Sample Request AMB", {
 						batch: frm.doc.batch_reference,
 						coa_amb: batch.coa_amb,
 						item: batch.item_to_manufacture,
-						quantity: batch.planned_qty,
-						sales_order: batch.sales_order_related,
-						wo_item: batch.wo_item_name
+						quantity: batch.planned_qty
 					});
 				}
 			})
@@ -169,8 +174,79 @@ frappe.ui.form.on("Sample Request AMB", {
 					}
 				});
 		}
+	},
+
+	// ========================================
+	// LOGISTICS & PAQUETERIA HANDLERS
+	// ========================================
+	
+	// Update shipment purpose from any of the nature fields
+	shipment_nature(frm) {
+		if (frm.doc.shipment_nature) {
+			update_shipment_checkboxes(frm);
+		}
+	},
+
+	internal_export_type(frm) {
+		if (frm.doc.internal_export_type) {
+			update_shipment_checkboxes(frm);
+		}
+	},
+
+	special_export_type(frm) {
+		if (frm.doc.special_export_type) {
+			update_shipment_checkboxes(frm);
+		}
+	},
+
+	// Update shipment type based on checkboxes
+	cb_muestra(frm) {
+		if (frm.doc.cb_muestra) {
+			frm.set_value("shipment_type", "Muestra");
+			frm.set_value("cb_venta_paqueteria", 0);
+			frm.set_value("cb_forwarder", 0);
+		}
+	},
+
+	cb_venta_paqueteria(frm) {
+		if (frm.doc.cb_venta_paqueteria) {
+			frm.set_value("shipment_type", "Venta; Paqueteria");
+			frm.set_value("cb_muestra", 0);
+			frm.set_value("cb_forwarder", 0);
+		}
+	},
+
+	cb_forwarder(frm) {
+		if (frm.doc.cb_forwarder) {
+			frm.set_value("shipment_type", "Forwarder");
+			frm.set_value("cb_muestra", 0);
+			frm.set_value("cb_venta_paqueteria", 0);
+		}
+	},
+
+	// Validate weight and packages
+	gross_weight_kg(frm) {
+		if (frm.doc.gross_weight_kg < 0) {
+			frm.set_value("gross_weight_kg", 0);
+		}
+	},
+
+	number_of_packages(frm) {
+		if (frm.doc.number_of_packages < 1) {
+			frm.set_value("number_of_packages", 1);
+		}
+	},
+
+	commercial_value_usd(frm) {
+		if (frm.doc.commercial_value_usd < 0) {
+			frm.set_value("commercial_value_usd", 0);
+		}
 	}
 });
+
+// ========================================
+// CHILD TABLE HANDLERS
+// ========================================
 
 frappe.ui.form.on("Sample Request AMB Item", {
 	samples_count(frm, cdt, cdn) {
@@ -198,9 +274,23 @@ frappe.ui.form.on("Sample Request AMB Item", {
 	}
 });
 
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
+
 function update_total_qty(cdt, cdn) {
 	const row = frappe.get_doc(cdt, cdn);
 	const count = flt(row.samples_count) || 0;
 	const per_sample = flt(row.qty_per_sample) || 0;
 	frappe.model.set_value(cdt, cdn, "total_qty", count * per_sample);
+}
+
+function update_shipment_checkboxes(frm) {
+	// This function can be expanded to sync checkbox states
+	// based on the selected shipment purpose
+	console.log("Shipment purpose updated:", {
+		shipment_nature: frm.doc.shipment_nature,
+		internal_export_type: frm.doc.internal_export_type,
+		special_export_type: frm.doc.special_export_type
+	});
 }

@@ -67,7 +67,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nPass\nFail\nTitle",
+   "options": "Pending\nPass\nFail\nN/A\nTitle",
    "read_only": 1,
    "width": "80"
   },
@@ -77,7 +77,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Actual Result",
-   "mandatory_depends_on": "eval:doc.numeric || doc.formula_based_criteria",
    "width": "100"
   },
   {
