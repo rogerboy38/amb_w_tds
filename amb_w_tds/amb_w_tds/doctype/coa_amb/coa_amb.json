@@ -77,7 +77,7 @@
    "in_list_view": 0,
    "label": "COA AMB Nr.",
    "options": "COA-.YY.-.####",
-   "reqd": 0
+   "reqd": 1
   },
   {
    "fieldname": "column_break_tefy",
@@ -202,7 +202,6 @@
    "label": "COA Quality Test Parameter",
    "options": "COA Quality Test Parameter",
    "print_width": "80",
-   "editable_grid":1,
    "reqd": 0,
    "width": "120"
   },
