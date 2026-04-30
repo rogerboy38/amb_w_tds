@@ -101,7 +101,6 @@ doc_events = {
 fixtures = [
     # Workflow for TDS Product Specification
     {"doctype": "Workflow", "filters": [["name", "=", "TDS Approval Workflow"]]},
-    {"doctype": "Workflow State", "filters": [["parent", "=", "TDS Approval Workflow"]]},
     {"doctype": "Workflow Transition", "filters": [["parent", "=", "TDS Approval Workflow"]]},
     
     # AMB workflows + automatic migration workflow states
