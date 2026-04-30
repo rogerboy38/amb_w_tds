@@ -1,5 +1,5 @@
 # amb_w_tds package
-__version__ = "10.0.0"
+__version__ = "13.7.0"
 
 #from . import __version__ as version
 
