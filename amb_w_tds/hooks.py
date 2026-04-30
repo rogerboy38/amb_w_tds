@@ -94,16 +94,16 @@ doc_events = {
 #  FIXTURES (sync mandatory custom fields)
 # ========================================
 
+# ========================================
+#  FIXTURES (sync mandatory custom fields)
+# ========================================
+
 fixtures = [
-
-    # sales_partner + agent tracking required fields
-    {
-        "doctype": "Custom Field",
-        "filters": [
-            ["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]],
-        ]
-    },
-
+    # Workflow for TDS Product Specification
+    {"doctype": "Workflow", "filters": [["name", "=", "TDS Approval Workflow"]]},
+    {"doctype": "Workflow State", "filters": [["parent", "=", "TDS Approval Workflow"]]},
+    {"doctype": "Workflow Transition", "filters": [["parent", "=", "TDS Approval Workflow"]]},
+    
     # AMB workflows + automatic migration workflow states
     {
         "doctype": "Workflow",
@@ -111,8 +111,15 @@ fixtures = [
             ["name", "like", "AMB%"]
         ]
     },
+    
+    # sales_partner + agent tracking required fields
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]],
+        ]
+    },
 ]
-
 # ========================================
 # Webhooks and Portal Exposure (future)
 # ========================================
@@ -141,5 +148,5 @@ override_doctype_dashboards = {
     "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
     "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
     "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
-    "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
+    #     #"Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
 }
