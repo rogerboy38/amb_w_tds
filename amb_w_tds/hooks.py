@@ -103,6 +103,12 @@ fixtures = [
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Print Format",           "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Client Script",       "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Server Script",       "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Workspace",          "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Number Card",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Report",        "filters": [["module", "=", "AMBWTDS"]]},
 ]
 
 # ========================================
