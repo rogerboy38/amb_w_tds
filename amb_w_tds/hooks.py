@@ -97,7 +97,7 @@ doc_events = {
 fixtures = [
     {"doctype": "Custom Field",           "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Property Setter",        "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","TDS Product Specification","Direct Shipping"]]]},
+    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","Direct Shipping"]]]},
     {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
@@ -120,7 +120,7 @@ default_mail_footer = """
 # ================================================
 
 override_whitelisted_methods = {
-	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_w_tds.api.bom_tree_fix.get_all_nodes_fixed"
+	"frappe.desk.treeview.get_all_nodes": "amb_w_tds.amb_tds_core.api.bom_tree_fix.get_all_nodes_fixed"
 }
 
 # ================================================
@@ -128,10 +128,9 @@ override_whitelisted_methods = {
 # ================================================
 
 override_doctype_dashboards = {
-    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
-    "Lead": "amb_w_tds.amb_w_tds.utils.lead_dashboard.get_data",
-    "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
-    "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
-    "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
-    "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
+    "Quotation": "amb_w_tds.amb_tds_core.utils.quotation_dashboard.get_data",
+    "Lead": "amb_w_tds.amb_tds_core.utils.lead_dashboard.get_data",
+    "Prospect": "amb_w_tds.amb_tds_core.utils.prospect_dashboard.get_data",
+    "Opportunity": "amb_w_tds.amb_tds_core.utils.opportunity_dashboard.get_data",
+    "Sales Order": "amb_w_tds.amb_tds_core.utils.sales_order_dashboard.get_data",
 }

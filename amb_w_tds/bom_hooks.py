@@ -14,8 +14,8 @@ Usage:
     Configure in hooks.py:
         doc_events = {
             "BOM": {
-                "on_submit": "amb_w_tds.amb_w_tds.bom_hooks.on_bom_submit",
-                "on_update": "amb_w_tds.amb_w_tds.bom_hooks.on_bom_update"
+                "on_submit": "amb_w_tds.amb_tds_core.bom_hooks.on_bom_submit",
+                "on_update": "amb_w_tds.amb_tds_core.bom_hooks.on_bom_update"
             }
         }
 """
@@ -316,7 +316,7 @@ def validate_bom(bom_name):
     Manually validate a specific BOM.
     
     Usage:
-        bench execute amb_w_tds.amb_w_tds.bom_hooks.validate_bom --kwargs '{"bom_name": "BOM-XXXX-XXX"}'
+        bench execute amb_w_tds.amb_tds_core.bom_hooks.validate_bom --kwargs '{"bom_name": "BOM-XXXX-XXX"}'
     """
     if not frappe.db.exists("BOM", bom_name):
         print(f"❌ BOM {bom_name} not found")

@@ -267,7 +267,7 @@ try:
     # Test scheduling
     print("   Testing schedule method...")
     try:
-        from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import schedule_batch
+        from amb_w_tds.amb_tds_core.doctype.batch_amb.batch_amb import schedule_batch
         schedule_result = schedule_batch(batch.name, nowdate())
         print(f"      ✅ Schedule test: {schedule_result.get('status', 'unknown')}")
     except Exception as e:
@@ -276,7 +276,7 @@ try:
     # Test serial number generation
     print("   Testing serial number generation...")
     try:
-        from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import generate_serial_numbers
+        from amb_w_tds.amb_tds_core.doctype.batch_amb.batch_amb import generate_serial_numbers
         serial_result = generate_serial_numbers(batch.name, 5)
         print(f"      ✅ Serial generation: {serial_result.get('status', 'unknown')}")
         print(f"      Generated {serial_result.get('count', 0)} serials")
@@ -286,7 +286,7 @@ try:
     # Test integration method
     print("   Testing integration method...")
     try:
-        from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import integrate_serial_tracking
+        from amb_w_tds.amb_tds_core.doctype.batch_amb.batch_amb import integrate_serial_tracking
         integrate_result = integrate_serial_tracking(batch.name)
         print(f"      ✅ Integration test: {integrate_result.get('status', 'unknown')}")
     except Exception as e:
