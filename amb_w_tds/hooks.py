@@ -97,7 +97,7 @@ doc_events = {
 fixtures = [
     {"doctype": "Custom Field",           "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Property Setter",        "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","Direct Shipping"]]]},
+    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2"]]]},
     {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
