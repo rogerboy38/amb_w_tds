@@ -10,51 +10,19 @@ doctype_class = {
     "Batch AMB":  "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB"
 }
 
-override_doctype_class = {
-    "amb_kpi_factors": "amb_w_tds.amb_w_tds.doctype.amb_kpi_factors.amb_kpi_factors.AMBKPIFactors",
-    "animal_trial": "amb_w_tds.amb_w_tds.doctype.animal_trial.animal_trial.AnimalTrial",
-    "barrel": "amb_w_tds.amb_w_tds.doctype.barrel.barrel.Barrel",
-    "batch_amb": "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.BatchAMB",
-    "batch_amb_item": "amb_w_tds.amb_w_tds.doctype.batch_amb_item.batch_amb_item.BatchAMBItem",
-    "batch_processing_history": "amb_w_tds.amb_w_tds.doctype.batch_processing_history.batch_processing_history.BatchProcessingHistory",
-    "bom_enhancement": "amb_w_tds.amb_w_tds.doctype.bom_enhancement.bom_enhancement.BOMEnhancement",
-    "bom_formula": "amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula.BOMFormula",
-    "bom_formula_amino_acid": "amb_w_tds.amb_w_tds.doctype.bom_formula_amino_acid.bom_formula_amino_acid.BOMFormulaAminoAcid",
-    "bom_template": "amb_w_tds.amb_w_tds.doctype.bom_template.bom_template.BOMTemplate",
-    "bom_template_item": "amb_w_tds.amb_w_tds.doctype.bom_template_item.bom_template_item.BOMTemplateItem",
-    "bom_version": "amb_w_tds.amb_w_tds.doctype.bom_version.bom_version.BOMVersion",
-    "certification_document": "amb_w_tds.amb_w_tds.doctype.certification_document.certification_document.CertificationDocument",
-    "coa_amb": "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.COAAMB",
-    "coa_amb2": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.CoaAmb",
-    "coa_quality_test_parameter": "amb_w_tds.amb_w_tds.doctype.coa_quality_test_parameter.coa_quality_test_parameter.COAQualityTestParameter",
-    "container_barrels": "amb_w_tds.amb_w_tds.doctype.container_barrels.container_barrels.ContainerBarrels",
-    "container_selection": "amb_w_tds.amb_w_tds.doctype.container_selection.container_selection.ContainerSelection",
-    "container_sync_log": "amb_w_tds.amb_w_tds.doctype.container_sync_log.container_sync_log.ContainerSyncLog",
-    "container_type_rule": "amb_w_tds.amb_w_tds.doctype.container_type_rule.container_type_rule.ContainerTypeRule",
-    "country_regulation": "amb_w_tds.amb_w_tds.doctype.country_regulation.country_regulation.CountryRegulation",
-    "distribution_contact": "amb_w_tds.amb_w_tds.doctype.distribution_contact.distribution_contact.DistributionContact",
-    "distribution_organization": "amb_w_tds.amb_w_tds.doctype.distribution_organization.distribution_organization.DistributionOrganization",
-    "formulation": "amb_w_tds.amb_w_tds.doctype.formulation.formulation.Formulation",
-    "intended_purpose": "amb_w_tds.amb_w_tds.doctype.intended_purpose.intended_purpose.IntendedPurpose",
-    "juice_conversion_config": "amb_w_tds.amb_w_tds.doctype.juice_conversion_config.juice_conversion_config.JuiceConversionConfig",
-    "kpi_cost_breakdown": "amb_w_tds.amb_w_tds.doctype.kpi_cost_breakdown.kpi_cost_breakdown.KpiCostBreakdown",
-    "lote_amb": "amb_w_tds.amb_w_tds.doctype.lote_amb.lote_amb.LoteAmb",
-    "market_entry_plan": "amb_w_tds.amb_w_tds.doctype.market_entry_plan.market_entry_plan.MarketEntryPlan",
-    "market_research": "amb_w_tds.amb_w_tds.doctype.market_research.market_research.MarketResearch",
-    "plant_configuration": "amb_w_tds.amb_w_tds.doctype.plant_configuration.plant_configuration.PlantConfiguration",
-    "product_compliance": "amb_w_tds.amb_w_tds.doctype.product_compliance.product_compliance.ProductCompliance",
-    "product_development_project": "amb_w_tds.amb_w_tds.doctype.product_development_project.product_development_project.ProductDevelopmentProject",
-    "production_plant_amb": "amb_w_tds.amb_w_tds.doctype.production_plant_amb.production_plant_amb.ProductionPlantAmb",
-    "quotation_amb": "amb_w_tds.amb_w_tds.doctype.quotation_amb.quotation_amb.QuotationAMB",
-    "quotation_amb_sales_partner": "amb_w_tds.amb_w_tds.doctype.quotation_amb_sales_partner.quotation_amb_sales_partner.QuotationAMBSalesPartner",
-    "rnd_parent_doctype": "amb_w_tds.amb_w_tds.doctype.rnd_parent_doctype.rnd_parent_doctype.RndParentDoctype",
-    "sample_request_amb": "amb_w_tds.amb_w_tds.doctype.sample_request_amb.sample_request_amb.SampleRequestAMB",
-    "sample_request_amb_item": "amb_w_tds.amb_w_tds.doctype.sample_request_amb_item.sample_request_amb_item.SampleRequestAMBItem",
-    "tds_product_specification": "amb_w_tds.amb_w_tds.doctype.tds_product_specification.tds_product_specification.TDSProductSpecification",
-    "tds_product_specification_v2": "amb_w_tds.amb_w_tds.doctype.tds_product_specification_v2.tds_product_specification_v2.TDSProductSpecificationv",
-    "tds_settings": "amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.TDSSettings",
-    "third_party_api": "amb_w_tds.amb_w_tds.doctype.third_party_api.third_party_api.ThirdPartyApi",
-}
+# Donor-cleanup 2026-05-12: removed 43 lowercase_snake_case override_doctype_class entries.
+# All keys used the wrong shape — Frappe expects "Title Case With Spaces" DocType names, not
+# module slugs. 40 of those entries silently never matched anything (Frappe DB lookup returns
+# no row for lowercase_snake_case names). The other 3 (`barrel`, `formulation`, `tds_settings`)
+# matched DB rows via MariaDB case-insensitive collation but then triggered TypeError on
+# `issubclass(custom_class_, None)` because vanilla class lookup was case-sensitive (modules
+# had `Barrel` / `Formulation` / `TDSSettings`, not `barrel` / `formulation` / `tds_settings`).
+# This caused SessionBootFailed runtime errors during desk render.
+#
+# If specific DocType behavior overrides are needed in amb_w_tds going forward, add them as
+# `"Canonical DocType Name": "amb_w_tds....module...Class"` entries. For DocTypes migrated to
+# amb_w_spc (Batch AMB, TDS Product Specification, etc.), the override belongs in amb_w_spc/hooks.py.
+override_doctype_class = {}
 
 doctype_js = {
     "Quotation AMB": "amb_w_tds/amb_w_tds/doctype/quotation_amb/quotation_amb.js",
@@ -89,6 +57,17 @@ doc_events = {
         ],
         "before_insert": [
             # ""amb_w_tds.api.agent.pre_stock_entry_agent_validation""
+        ],
+    },
+
+    # Phase 1A Step 2B (relocated here Phase 1A.5) — TDS Product Specification form-derivation + flag-row handling.
+    # custom=1 DocType so override_doctype_class is silently ignored; doc_events is the working hook.
+    "TDS Product Specification": {
+        "validate": [
+            "amb_w_tds.overrides.tds_product_specification.derive_form",
+        ],
+        "before_save": [
+            "amb_w_tds.overrides.tds_product_specification.propagate_flag_row_groups",
         ],
     },
 
