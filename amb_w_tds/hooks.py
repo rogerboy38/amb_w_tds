@@ -9,8 +9,21 @@ app_license = "MIT"
 #  MODULE LOAD + PATCH PREPARATION
 # ========================================
 
-# NOTE: Batch AMB controller migrated to amb_w_spc
-# doctype_class removed - amb_w_spc now owns Batch AMB
+# NOTE: Batch AMB controller migrated to amb_w_spc — see amb_w_spc/hooks.py.
+#
+# Donor-cleanup 2026-05-12: removed 43 lowercase_snake_case override_doctype_class entries.
+# All keys used the wrong shape — Frappe expects "Title Case With Spaces" DocType names, not
+# module slugs. 40 of those entries silently never matched anything (Frappe DB lookup returns
+# no row for lowercase_snake_case names). The other 3 (`barrel`, `formulation`, `tds_settings`)
+# matched DB rows via MariaDB case-insensitive collation but then triggered TypeError on
+# `issubclass(custom_class_, None)` because vanilla class lookup was case-sensitive (modules
+# had `Barrel` / `Formulation` / `TDSSettings`, not `barrel` / `formulation` / `tds_settings`).
+# This caused SessionBootFailed runtime errors during desk render.
+#
+# If specific DocType behavior overrides are needed in amb_w_tds going forward, add them as
+# `"Canonical DocType Name": "amb_w_tds....module...Class"` entries. For DocTypes migrated to
+# amb_w_spc (Batch AMB, TDS Product Specification, etc.), the override belongs in amb_w_spc/hooks.py.
+override_doctype_class = {}
 
 # ========================================
 #  FRONTEND JS INJECTIONS
@@ -39,6 +52,17 @@ doc_events = {
         ],
         "before_insert": [
             # ""amb_w_tds.api.agent.pre_stock_entry_agent_validation""
+        ],
+    },
+
+    # Phase 1A Step 2B (relocated here Phase 1A.5) — TDS Product Specification form-derivation + flag-row handling.
+    # custom=1 DocType so override_doctype_class is silently ignored; doc_events is the working hook.
+    "TDS Product Specification": {
+        "validate": [
+            "amb_w_tds.overrides.tds_product_specification.derive_form",
+        ],
+        "before_save": [
+            "amb_w_tds.overrides.tds_product_specification.propagate_flag_row_groups",
         ],
     },
 
