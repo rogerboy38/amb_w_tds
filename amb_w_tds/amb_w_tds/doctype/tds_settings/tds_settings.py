@@ -2,4 +2,6 @@ import frappe
 from frappe.model.document import Document
 
 class TDSSettings(Document):
-	pass
+    """TDS Settings Doctype"""
+    
+    pass
