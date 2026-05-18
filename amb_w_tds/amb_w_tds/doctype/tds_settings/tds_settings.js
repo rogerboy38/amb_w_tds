@@ -69,7 +69,7 @@ function setup_tds_settings_buttons(frm) {
 // Load Settings Information
 function load_settings_info(frm) {
     frappe.call({
-        method: 'amb_w_spc.sfc_manufacturing.doctype.tds_settings.tds_settings.get_tds_settings',
+        method: 'amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.get_tds_settings',
         callback: function(r) {
             if (r.message && r.message.success) {
                 console.log('TDS Settings loaded:', r.message.settings);
@@ -99,7 +99,7 @@ function update_settings_display(frm, version_info) {
 // Generate Next Naming Series
 function generate_next_naming_series(frm) {
     frappe.call({
-        method: 'amb_w_spc.sfc_manufacturing.doctype.tds_settings.tds_settings.generate_next_naming_series',
+        method: 'amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.generate_next_naming_series',
         callback: function(r) {
             if (r.message && r.message.success) {
                 frm.set_value('naming_series', r.message.naming_series);
@@ -123,7 +123,7 @@ function generate_next_naming_series(frm) {
 // Manual Sequence Increment
 function increment_sequence_manual(frm) {
     frappe.call({
-        method: 'amb_w_spc.sfc_manufacturing.doctype.tds_settings.tds_settings.increment_sequence',
+        method: 'amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.increment_sequence',
         callback: function(r) {
             if (r.message && r.message.success) {
                 frm.set_value('last_sequence_used', r.message.new_sequence);
@@ -144,7 +144,7 @@ function apply_settings_to_all_tds(frm) {
         __('Are you sure you want to apply these settings to all TDS Product Specification documents?'),
         function() {
             frappe.call({
-                method: 'amb_w_spc.sfc_manufacturing.doctype.tds_settings.tds_settings.apply_settings_to_all_tds',
+                method: 'amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.apply_settings_to_all_tds',
                 callback: function(r) {
                     if (r.message && r.message.success) {
                         frappe.show_alert({
@@ -167,7 +167,7 @@ function apply_settings_to_all_tds(frm) {
 // Show Settings Information
 function show_settings_info(frm) {
     frappe.call({
-        method: 'amb_w_spc.sfc_manufacturing.doctype.tds_settings.tds_settings.get_tds_settings',
+        method: 'amb_w_tds.amb_w_tds.doctype.tds_settings.tds_settings.get_tds_settings',
         callback: function(r) {
             if (r.message && r.message.success) {
                 var settings = r.message.settings;
