@@ -1,0 +1,278 @@
+/* Phase 1C-B — Parameter Selection tab CSS for TDS Product Specification
+ *
+ * V14.3.0 — promoted post Phase 1C-A prod-green.
+ * 3-level hierarchy support (Family → Sub-group → QIP) + singleton/unassigned treatment
+ * per comet 2026-05-19T01:21Z prod QIP audit findings.
+ *
+ * Registered via hooks.py app_include_css.
+ */
+
+
+/* ---------- Master controls bar (Expand All / Collapse All / summary) ---------- */
+.phase-1c-master-controls {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color, #d1d8dd);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.phase-1c-master-controls .phase-1c-summary {
+    margin-left: auto;
+    font-size: 12px;
+}
+
+.phase-1c-summary-warn {
+    color: #d9822b;
+    font-weight: 600;
+}
+
+
+/* ---------- L2 Family container ---------- */
+.phase-1c-family {
+    border: 1px solid var(--border-color, #d1d8dd);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    background: var(--card-bg, #fff);
+}
+
+.phase-1c-family-header {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    background: var(--bg-light-gray, #f5f7fa);
+    border-radius: 4px;
+}
+
+.phase-1c-family-header:hover {
+    background: var(--bg-gray, #ebeef2);
+}
+
+.phase-1c-family-name {
+    font-weight: 600;
+    color: var(--text-color, #1f272e);
+    flex: 1;
+}
+
+.phase-1c-family-count {
+    font-size: 11px;
+    color: var(--text-muted, #768599);
+    background: var(--bg-color, #fff);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #d1d8dd);
+}
+
+.phase-1c-family-body {
+    padding: 8px 12px 12px 32px;
+}
+
+
+/* ---------- "Other" family (groups that didn't match any auto-detected family prefix) ---------- */
+.phase-1c-family-other > .phase-1c-family-header {
+    background: var(--bg-light-gray, #f5f7fa);
+    font-style: italic;
+}
+
+
+/* ---------- "Needs Categorization" / unassigned bucket — visual distinction per comet ---------- */
+.phase-1c-family-unassigned {
+    border: 1px dashed #d9822b;
+    background: rgba(217, 130, 43, 0.03);
+}
+
+.phase-1c-family-header-unassigned {
+    background: rgba(217, 130, 43, 0.08);
+}
+
+.phase-1c-family-header-unassigned:hover {
+    background: rgba(217, 130, 43, 0.15);
+}
+
+.phase-1c-needs-attention-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #d9822b;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+/* ---------- L3 Sub-group container (multi-QIP sub-groups, count>=2) ---------- */
+.phase-1c-subgroup {
+    border-left: 2px solid var(--border-color, #d1d8dd);
+    margin: 6px 0 6px 8px;
+    padding-left: 8px;
+}
+
+.phase-1c-subgroup-header {
+    padding: 4px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 3px;
+}
+
+.phase-1c-subgroup-header:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.phase-1c-subgroup-name {
+    flex: 1;
+    color: var(--text-color, #1f272e);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.phase-1c-subgroup-count {
+    font-size: 10px;
+    color: var(--text-muted, #768599);
+    background: var(--bg-color, #fff);
+    padding: 1px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #d1d8dd);
+}
+
+.phase-1c-chevron-sub {
+    display: inline-block;
+    width: 10px;
+    color: var(--text-muted, #768599);
+    font-size: 9px;
+}
+
+.phase-1c-subgroup-leaves {
+    padding: 4px 0 8px 16px;
+}
+
+
+/* ---------- Singleton block — inline at family level, no L3 header ---------- */
+.phase-1c-singletons-block {
+    margin-top: 8px;
+    padding: 8px 0 4px 8px;
+    border-top: 1px dashed var(--border-color, #d1d8dd);
+}
+
+.phase-1c-singletons-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+
+/* ---------- Common: chevron ---------- */
+.phase-1c-chevron {
+    display: inline-block;
+    width: 12px;
+    color: var(--text-muted, #768599);
+    font-size: 10px;
+}
+
+
+/* ---------- Leaf (QIP row) ---------- */
+.phase-1c-leaf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+    user-select: none;
+    flex-wrap: wrap;
+}
+
+.phase-1c-leaf:hover {
+    background: var(--bg-light-gray, #f5f7fa);
+    border-radius: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    margin-left: -4px;
+    margin-right: -4px;
+}
+
+.phase-1c-leaf-name {
+    flex: 1;
+    color: var(--text-color, #1f272e);
+    min-width: 200px;
+}
+
+.phase-1c-leaf-context {
+    font-size: 10px;
+    font-style: italic;
+    margin-left: 8px;
+}
+
+
+/* ---------- Badges (choices / numeric / text indicators) ---------- */
+.phase-1c-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.phase-1c-badge-choices {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.phase-1c-badge-numeric {
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.phase-1c-badge-text {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+
+/* ---------- Action bar (Add Selected button + Clear + summary) ---------- */
+#phase-1c-action-bar {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--bg-light-gray, #f5f7fa);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phase-1c-selection-summary {
+    margin-left: auto;
+    font-size: 12px;
+}
+
+
+/* ---------- Print view (deferred — Print Format customization at deploy) ---------- */
+@media print {
+    .phase-1c-master-controls,
+    #phase-1c-action-bar,
+    .phase-1c-family-toggle,
+    .phase-1c-subgroup-toggle {
+        display: none;
+    }
+
+    .phase-1c-family-unassigned {
+        display: none;  /* don't print curation-queue items */
+    }
+
+    .frappe-list .qi-parameter-row[data-is-title-row="1"] {
+        display: none;
+    }
+}
