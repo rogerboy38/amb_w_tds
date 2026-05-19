@@ -107,7 +107,9 @@ function deriveSubgroup(groupName, familyName) {
 async function renderParameterPicker(frm) {
     // Fetch ALL QIPs (including unassigned per comet audit — they're a curation queue, not orphans).
     const allQips = await frappe.db.get_list('Quality Inspection Parameter', {
-        fields: ['name', 'parameter', 'parameter_group', 'custom_choices', 'custom_is_numeric', 'custom_method', 'custom_unit'],
+        // NOTE: QIP has `custom_specification` (Link → Quality Inspection Method) as its method field.
+        // IQI child row has `custom_method` (Link → same Method). The transfer is QIP.custom_specification → IQI.custom_method.
+        fields: ['name', 'parameter', 'parameter_group', 'custom_choices', 'custom_is_numeric', 'custom_specification', 'custom_unit'],
         order_by: 'parameter_group asc, parameter asc',
         limit: 0
     });
@@ -496,7 +498,9 @@ async function addSelectedParameters(frm) {
                 if (qipDoc.custom_is_numeric) {
                     row.numeric = 1;
                 }
-                if (qipDoc.custom_method) row.custom_method = qipDoc.custom_method;
+                // QIP's method lives on `custom_specification` (Link → Quality Inspection Method).
+                // IQI child row's method field is `custom_method` (also Link → Method) — value transfers as the linked name.
+                if (qipDoc.custom_specification) row.custom_method = qipDoc.custom_specification;
                 if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
             } catch (err) {
                 console.warn(`Phase 1C-B: could not fetch QIP defaults for ${qipName}:`, err);
