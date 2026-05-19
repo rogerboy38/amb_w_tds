@@ -38,6 +38,17 @@ app_include_js = [
     # "/assets/amb_w_tds/js/sample_request_buttons.js"
 ]
 
+# Phase 1C-B (V14.3.1) — Parameter Selection picker stylesheet.
+app_include_css = [
+    "/assets/amb_w_tds/css/phase_1c_tab.css",
+]
+
+# Phase 1C-B (V14.3.1) — Parameter Selection picker JS, composes with the canonical
+# tds_product_specification.js (Frappe merges frappe.ui.form.on() calls across files).
+doctype_js = {
+    "TDS Product Specification": "public/js/phase_1c_tab.js",
+}
+
 # ========================================
 #  DOCUMENT EVENTS (Critical migration hooks)
 # ========================================
