@@ -1,35 +1,49 @@
 // Phase 1C-B — Parameter Selection tab JS for TDS Product Specification
 //
-// V14.3.0 — promoted post Phase 1C-A prod-green (2026-05-19T02:30Z comet 5/5 GREEN ratified).
-// Doctype-driven, 3-level hierarchy (Family → Sub-group → QIP) with singleton + unassigned handling.
+// V14.3.3-live (post Phase 1C-E QIPG parent repair) — picker now queries the
+// canonical Quality Inspection Parameter Group NestedSet tree DIRECTLY for L1-L3
+// hierarchy, rather than parsing parameter_group strings.
 //
-// Architectural rules (Hugh + Alicia confirmed):
-//   1. ZERO hardcoded choice strings. All Posibles Valores come from
-//      frappe.db.get_doc('Quality Inspection Parameter', name).custom_choices (split by '\n').
-//   2. ZERO hardcoded family/group structure. Families are auto-detected as common
-//      prefixes among parameter_group values (>=2 distinct groups share a prefix → family).
-//   3. Singleton sub-groups (count=1) render inline at family level (no L3 header per comet).
-//   4. NULL/empty parameter_group → "Needs Categorization (N)" section at end.
-//
-// Composes with existing tds_product_specification.js — registered via doctype_js hook in hooks.py.
-//
-// References:
-//   ADR-001 — Parameter Selection tab
-//   ADR-002 — depth-4 data-driven L2 catalog
-//   Comet 2026-05-19T01:21Z prod QIP audit (90 QIPs / 41 groups / 13 unassigned / 22 singletons)
-//   Cowork-ops 2026-05-19T02:34Z — V14.3.0 promotion authorization
-//   Phase 1C-A migration — populates QIP custom_choices, custom_is_numeric, parameter_group
+// Architecture per Hugh's QE clarification + cowork-ops 00:02Z Path Y disposition:
+//   L1 = QIPG root (Products Liquid Concentrated Parameter Group, etc.)
+//   L2 = QIPG branch (Contaminant LQDC, Microbiological LQDC, etc.) — is_group=1
+//   L3 = QIPG leaf  (Microbiological LQDC Aerobic Plate Count, etc.) — is_group=0
+//   L4 = QIP records (Quality Inspection Parameter) where parameter_group=L3-name
+//   L5 = QIP.custom_choices lines (virtual; expandable on click)
 
+
+// V14.3.3-live — listen for live edits on IQI row's `value` cell. When user changes the
+// value (e.g., "NMT 10 PPM" → "NMT 12 PPM"), re-parse the formula and update min/max/numeric
+// in-place. Fires on the child doctype, applies on any parent form that uses it (TDS Product
+// Specification + future COA AMB / Quality Inspection forms inherit this behavior).
+frappe.ui.form.on('Item Quality Inspection Parameter', {
+    value: function(frm, cdt, cdn) {
+        const row = locals[cdt] && locals[cdt][cdn];
+        if (!row || !row.value) return;
+        const formula = parseValueFormula(row.value);
+        if (formula) {
+            const newMin = (formula.min === null || formula.min === undefined) ? 0 : formula.min;
+            const newMax = (formula.max === null || formula.max === undefined) ? 0 : formula.max;
+            if (row.min_value !== newMin) frappe.model.set_value(cdt, cdn, 'min_value', newMin);
+            if (row.max_value !== newMax) frappe.model.set_value(cdt, cdn, 'max_value', newMax);
+            if (formula.isNumeric && row.numeric !== 1) frappe.model.set_value(cdt, cdn, 'numeric', 1);
+        } else {
+            // Value is textual (no formula pattern) — reset min/max to 0 if they were
+            // previously auto-populated by a prior formula value. Heuristic: only reset
+            // if both min and max look formula-derived (one of them non-zero).
+            if ((row.min_value && row.min_value !== 0) || (row.max_value && row.max_value !== 0)) {
+                frappe.model.set_value(cdt, cdn, 'min_value', 0);
+                frappe.model.set_value(cdt, cdn, 'max_value', 0);
+            }
+        }
+    }
+});
 
 frappe.ui.form.on('TDS Product Specification', {
     refresh: async function(frm) {
         const pickerEl = document.getElementById('phase-1c-tree-picker');
         const actionEl = document.getElementById('phase-1c-action-bar');
-        if (!pickerEl || !actionEl) {
-            // HTML fields not on this doctype yet (Phase 1C-B deploy directive will add them)
-            // — silent no-op. Don't render anything. When deploy schema lands, this becomes active.
-            return;
-        }
+        if (!pickerEl || !actionEl) return;  // HTML containers not on doctype yet — silent no-op
 
         if (frm.is_new() || !frm.doc.product_item) {
             pickerEl.innerHTML = `<i class="text-muted">${__('Save the document and set a Product Item to enable Parameter Selection.')}</i>`;
@@ -42,484 +56,872 @@ frappe.ui.form.on('TDS Product Specification', {
     }
 });
 
+
 // ---------------------------------------------------------------------------
-// Family auto-detection (data-driven; no hardcoded family names)
+// Substrate token mapping
 // ---------------------------------------------------------------------------
 
-function detectFamilies(parameterGroupNames) {
-    // Generate all prefixes of length 1..N words for each group name.
-    // A prefix "qualifies" as a family if it appears as a prefix in >=2 distinct group names.
-    // Pick the LONGEST qualifying prefix per group → that's the group's family.
-    //
-    // Examples on prod data:
-    //   "Physicochemical LQD"          → family "Physicochemical LQD"     sub-group ""
-    //   "Physicochemical LQD pH"       → family "Physicochemical LQD"     sub-group "pH"
-    //   "Other Analysis LQD"           → family "Other Analysis LQD"      sub-group ""
-    //   "Other Analysis LQD Preservatives" → family "Other Analysis LQD"  sub-group "Preservatives"
+const SUBSTRATE_TO_ROOT = {
+    'LQDC': 'Products Liquid Concentrated Parameter Group',
+    'LQDF': 'Products Liquid Formulated Parameter Group',
+    'LQD':  'Products Liquid Parameter Group',
+    'PWD':  'Products Powder Parameter Group',
+    'PWDF': 'Products Powder Formulated Parameter Group',
+};
 
-    const prefixOccurrences = {};  // prefix → Set of group names it prefixes
-    for (const gname of parameterGroupNames) {
-        const parts = gname.split(/\s+/);
-        for (let n = 1; n <= parts.length; n++) {
-            const prefix = parts.slice(0, n).join(' ');
-            if (!prefixOccurrences[prefix]) prefixOccurrences[prefix] = new Set();
-            prefixOccurrences[prefix].add(gname);
+const TOKEN_LABELS = {
+    'LQDC': 'Liquid Concentrated',
+    'LQDF': 'Liquid Formulated',
+    'LQD':  'Liquid',
+    'PWD':  'Powder',
+    'PWDF': 'Powder Formulated',
+};
+
+
+// ---------------------------------------------------------------------------
+// Form-aware substrate detection — walks Item → Item Group ancestry
+// ---------------------------------------------------------------------------
+
+async function detectPreferredSubstrate(frm) {
+    if (!frm.doc.product_item) return null;
+    try {
+        const itemRes = await frappe.db.get_value('Item', frm.doc.product_item, ['item_group']);
+        const itemGroup = itemRes && itemRes.message && itemRes.message.item_group;
+        if (!itemGroup) return null;
+        let currentGroup = itemGroup;
+        for (let depth = 0; depth < 4; depth++) {
+            const groupRes = await frappe.db.get_value('Item Group', currentGroup, ['parent_item_group', 'is_group']);
+            const parent = groupRes && groupRes.message && groupRes.message.parent_item_group;
+            if (!parent) break;
+            const token = parseSubstrateToken(parent);
+            if (token) return { token, sourceGroup: parent };
+            currentGroup = parent;
         }
+        return null;
+    } catch (err) {
+        console.warn('Phase 1C-B: detectPreferredSubstrate failed:', err);
+        return null;
     }
-
-    // A prefix qualifies as family if it's prefix of >=2 distinct group names.
-    const qualifiedFamilies = new Set();
-    for (const [prefix, groupSet] of Object.entries(prefixOccurrences)) {
-        if (groupSet.size >= 2) qualifiedFamilies.add(prefix);
-    }
-
-    // For each group, pick the LONGEST qualifying prefix that prefixes it.
-    const groupToFamily = {};
-    for (const gname of parameterGroupNames) {
-        const parts = gname.split(/\s+/);
-        let best = null;  // longest qualifying prefix
-        for (let n = parts.length; n >= 1; n--) {
-            const candidate = parts.slice(0, n).join(' ');
-            if (qualifiedFamilies.has(candidate)) {
-                best = candidate;
-                break;
-            }
-        }
-        groupToFamily[gname] = best || '__OTHER__';  // unmatched → "Other"
-    }
-    return groupToFamily;
 }
 
-function deriveSubgroup(groupName, familyName) {
-    // Sub-group = group name with family prefix removed.
-    // If group name == family, sub-group is "" (general bucket within family).
-    if (groupName === familyName) return '';
-    if (groupName.startsWith(familyName + ' ')) {
-        return groupName.slice(familyName.length + 1);
-    }
-    return groupName;  // unmatched fallback
+function parseSubstrateToken(itemGroupName) {
+    if (!itemGroupName) return null;
+    const lc = itemGroupName.toLowerCase();
+    if (lc.includes('powder formulated')) return 'PWDF';
+    if (lc.includes('liquid concentrated')) return 'LQDC';
+    if (lc.includes('liquid formulated')) return 'LQDF';
+    if (lc.includes('powder')) return 'PWD';
+    if (lc.includes('liquid')) return 'LQD';
+    return null;
 }
 
+
 // ---------------------------------------------------------------------------
-// Tree picker rendering
+// QIPG tree + QIP fetch — fetch-all-then-filter-in-JS pattern
+// (catalog is small: ~732 QIPGs + ~82 QIPs total — single get_list call each is fast,
+// avoids the IN-many-values + lft/rgt-filter quirks of frappe.db.get_list)
+// ---------------------------------------------------------------------------
+
+async function loadAllQIPGs() {
+    return await frappe.db.get_list('Quality Inspection Parameter Group', {
+        fields: ['name', 'is_group', 'old_parent', 'lft', 'rgt'],
+        order_by: 'lft asc',
+        limit: 0,
+    });
+}
+
+async function loadAllQIPsByGroup() {
+    const qips = await frappe.db.get_list('Quality Inspection Parameter', {
+        fields: ['name', 'parameter', 'parameter_group', 'custom_choices',
+                 'custom_is_numeric', 'custom_specification', 'custom_unit',
+                 'custom_specification_text', 'custom_specification_min', 'custom_specification_max'],
+        order_by: 'parameter asc',
+        limit: 0,
+    });
+    const byGroup = {};
+    qips.forEach(q => {
+        const g = q.parameter_group || '__UNASSIGNED__';
+        if (!byGroup[g]) byGroup[g] = [];
+        byGroup[g].push(q);
+    });
+    return byGroup;
+}
+
+// Filter QIPG list to a single root's subtree using lft/rgt containment.
+function filterSubtree(allQIPGs, rootName) {
+    const root = allQIPGs.find(n => n.name === rootName);
+    if (!root) return [];
+    return allQIPGs.filter(n => n.lft >= root.lft && n.rgt <= root.rgt);
+}
+
+
+// ---------------------------------------------------------------------------
+// Top-level render
 // ---------------------------------------------------------------------------
 
 async function renderParameterPicker(frm) {
-    // Fetch ALL QIPs (including unassigned per comet audit — they're a curation queue, not orphans).
-    const allQips = await frappe.db.get_list('Quality Inspection Parameter', {
-        // NOTE: QIP has `custom_specification` (Link → Quality Inspection Method) as its method field.
-        // IQI child row has `custom_method` (Link → same Method). The transfer is QIP.custom_specification → IQI.custom_method.
-        fields: ['name', 'parameter', 'parameter_group', 'custom_choices', 'custom_is_numeric', 'custom_specification', 'custom_unit'],
-        order_by: 'parameter_group asc, parameter asc',
-        limit: 0
+    const substrateInfo = await detectPreferredSubstrate(frm);
+    const preferredToken = substrateInfo && substrateInfo.token;
+
+    // Cache so filter-change re-render doesn't refetch (the QIPG tree is large).
+    // Single-substrate fetch is fast (~50-300 nodes); changing filter triggers re-fetch.
+    frm._phase1c = frm._phase1c || {};
+    frm._phase1c.substrateInfo = substrateInfo;
+
+    const initialFilter = preferredToken || 'LQDC';  // default to LQDC if no detection
+    await renderPickerWithFilter(frm, initialFilter);
+}
+
+async function renderPickerWithFilter(frm, activeToken) {
+    const pickerEl = document.getElementById('phase-1c-tree-picker');
+    if (!pickerEl) return;
+
+    pickerEl.innerHTML = `<div class="text-muted" style="padding:16px;">${__('Loading parameter tree')}…</div>`;
+
+    const substrateInfo = frm._phase1c && frm._phase1c.substrateInfo;
+    const availableTokens = Object.keys(SUBSTRATE_TO_ROOT);
+
+    // Cache catalog data on frm — invalidate either independently
+    // (allQIPGs ~732 records; qipsByGroup ~82 records; tree-only edits OR choices-only edits
+    //  can invalidate just the affected cache, not both, to keep re-render fast)
+    try {
+        if (!frm._phase1c.allQIPGs) {
+            frm._phase1c.allQIPGs = await loadAllQIPGs();
+        }
+        if (!frm._phase1c.qipsByGroup) {
+            frm._phase1c.qipsByGroup = await loadAllQIPsByGroup();
+        }
+    } catch (err) {
+        console.error('Phase 1C-B: catalog fetch failed:', err);
+        pickerEl.innerHTML = `<div class="phase-1c-empty-state"><p class="text-danger">Error loading catalog: ${escapeHtml(String(err && err.message || err))}</p></div>`;
+        return;
+    }
+    const allQIPGs = frm._phase1c.allQIPGs;
+    const qipsByGroup = frm._phase1c.qipsByGroup;
+
+    // Decide which root(s) to render
+    let rootsToRender = [];
+    if (activeToken && SUBSTRATE_TO_ROOT[activeToken]) {
+        rootsToRender = [SUBSTRATE_TO_ROOT[activeToken]];
+    } else {
+        rootsToRender = availableTokens.map(t => SUBSTRATE_TO_ROOT[t]);
+    }
+
+    // Filter QIPG list to the selected substrate subtree(s)
+    let allNodes = [];
+    for (const root of rootsToRender) {
+        allNodes = allNodes.concat(filterSubtree(allQIPGs, root));
+    }
+
+    // Compute totals (QIPs in this subtree only)
+    let totalQips = 0;
+    allNodes.forEach(n => { if (qipsByGroup[n.name]) totalQips += qipsByGroup[n.name].length; });
+
+    // Build parent→children map (using old_parent)
+    const byName = {};
+    allNodes.forEach(n => { n.children = []; byName[n.name] = n; });
+    const treeRoots = [];
+    allNodes.forEach(n => {
+        if (n.old_parent && byName[n.old_parent]) {
+            byName[n.old_parent].children.push(n);
+        } else {
+            treeRoots.push(n);
+        }
     });
 
-    // Partition: assigned vs unassigned
-    const assigned = [];
-    const unassigned = [];
-    for (const q of allQips) {
-        if (!q.parameter_group || q.parameter_group === '') {
-            unassigned.push(q);
-        } else {
-            assigned.push(q);
+    // Render master controls + tree
+    let html = renderMasterControls(rootsToRender.length, totalQips, substrateInfo, availableTokens, activeToken);
+    if (treeRoots.length === 0) {
+        html += `
+            <div class="phase-1c-empty-state">
+                <p>${__('No QIPG subtree found for')} <b>${escapeHtml(activeToken || 'All')}</b>.</p>
+                <p class="text-muted">${__('Check that the substrate root QIPG exists and has children.')}</p>
+            </div>
+        `;
+    } else {
+        for (const root of treeRoots) {
+            html += renderQIPGNode(root, qipsByGroup, 0);
         }
     }
 
-    // Group assigned QIPs by parameter_group
-    const qipsByGroup = {};
-    for (const q of assigned) {
-        if (!qipsByGroup[q.parameter_group]) qipsByGroup[q.parameter_group] = [];
-        qipsByGroup[q.parameter_group].push(q);
-    }
-    const allGroupNames = Object.keys(qipsByGroup);
-
-    // Auto-detect families
-    const groupToFamily = detectFamilies(allGroupNames);
-
-    // Reorganize: family → { '<subgroup>': [qips], ... }
-    // Sub-group '' is the "general" bucket (parameter_group exactly equals family name).
-    const familyTree = {};
-    for (const gname of allGroupNames) {
-        const family = groupToFamily[gname];
-        const subgroup = deriveSubgroup(gname, family);
-        if (!familyTree[family]) familyTree[family] = {};
-        if (!familyTree[family][subgroup]) familyTree[family][subgroup] = { groupName: gname, qips: [] };
-        familyTree[family][subgroup].qips = qipsByGroup[gname];
-    }
-
-    // Counts for master controls
-    const familyCount = Object.keys(familyTree).filter(f => f !== '__OTHER__').length
-                       + (familyTree['__OTHER__'] ? 1 : 0)
-                       + (unassigned.length > 0 ? 1 : 0);
-
-    let html = renderMasterControls(familyCount, allQips.length, unassigned.length);
-
-    // Render canonical families (sorted), then __OTHER__, then unassigned bucket last
-    const sortedFamilies = Object.keys(familyTree)
-        .filter(f => f !== '__OTHER__')
-        .sort();
-    for (const family of sortedFamilies) {
-        html += renderFamily(family, familyTree[family]);
-    }
-    if (familyTree['__OTHER__']) {
-        html += renderFamily(__('Other'), familyTree['__OTHER__'], { otherBucket: true });
-    }
-    if (unassigned.length > 0) {
-        html += renderUnassignedBucket(unassigned);
-    }
-
-    document.getElementById('phase-1c-tree-picker').innerHTML = html;
+    pickerEl.innerHTML = html;
     attachEventHandlers(frm);
 }
 
-function renderMasterControls(familyCount, qipCount, unassignedCount) {
-    const unassignedSpan = unassignedCount > 0
-        ? ` · <span class="phase-1c-summary-warn">${unassignedCount} ${__('need categorization')}</span>`
-        : '';
+
+// ---------------------------------------------------------------------------
+// Master controls (top bar)
+// ---------------------------------------------------------------------------
+
+function renderMasterControls(rootCount, qipCount, substrateInfo, availableTokens, activeToken) {
+    let detectedSpan = '';
+    if (substrateInfo && substrateInfo.token) {
+        detectedSpan = ` · <span class="phase-1c-summary-matched">${__('Product form detected')}: <b>${escapeHtml(substrateInfo.token)}</b></span>`;
+    }
+    let optionsHtml = `<option value="" ${activeToken === '' ? 'selected' : ''}>${__('All families')}</option>`;
+    for (const t of availableTokens) {
+        const label = TOKEN_LABELS[t] || t;
+        const sel = (t === activeToken) ? 'selected' : '';
+        optionsHtml += `<option value="${escapeHtml(t)}" ${sel}>${escapeHtml(label)} (${escapeHtml(t)})</option>`;
+    }
     return `
         <div class="phase-1c-master-controls">
+            <label class="phase-1c-filter-label">
+                ${__('Substrate filter')}:
+                <select id="phase-1c-substrate-filter" class="form-control input-xs phase-1c-filter-select">
+                    ${optionsHtml}
+                </select>
+            </label>
             <button class="btn btn-sm btn-default" id="phase-1c-expand-all">${__('Expand All')}</button>
             <button class="btn btn-sm btn-default" id="phase-1c-collapse-all">${__('Collapse All')}</button>
             <span class="phase-1c-summary text-muted">
-                ${familyCount} ${__('families')} · ${qipCount} ${__('parameters')}${unassignedSpan}
+                ${rootCount} ${__('substrate root(s)')} · ${qipCount} ${__('parameters')}${detectedSpan}
             </span>
         </div>
     `;
 }
 
-function renderFamily(familyName, subgroups, opts) {
-    opts = opts || {};
-    const subgroupKeys = Object.keys(subgroups);
 
-    // Separate sub-groups: "" (general) | singletons (count=1) | multi (count>=2)
-    const general = subgroups[''] || null;
-    const singletons = [];
-    const multi = [];
-    for (const sk of subgroupKeys) {
-        if (sk === '') continue;
-        const sg = subgroups[sk];
-        if (sg.qips.length === 1) singletons.push(sg);
-        else multi.push(sg);
-    }
-    multi.sort((a, b) => a.groupName.localeCompare(b.groupName));
-    singletons.sort((a, b) => a.qips[0].parameter.localeCompare(b.qips[0].parameter));
+// ---------------------------------------------------------------------------
+// Recursive QIPG node renderer (L1 / L2 / L3)
+// ---------------------------------------------------------------------------
 
-    // Count total QIPs in this family
-    let totalQips = 0;
-    for (const sk of subgroupKeys) totalQips += subgroups[sk].qips.length;
+function renderQIPGNode(node, qipsByGroup, depth) {
+    const children = node.children || [];
+    const qips = qipsByGroup[node.name] || [];
+    const isLeafGroup = node.is_group === 0;
+
+    // Skip empty leaf nodes (no QIPs and no children) to reduce noise
+    if (isLeafGroup && qips.length === 0 && children.length === 0) return '';
+
+    // Count descendant QIPs for header summary
+    let totalDescQips = qips.length;
+    children.forEach(ch => { totalDescQips += countDescendantQips(ch, qipsByGroup); });
 
     let body = '';
+    // Render direct QIPs (L4) at this node if it's a leaf-style QIPG with QIPs
+    for (const q of qips) body += renderQIPLeaf(q, node.name);
+    // Render child QIPGs
+    for (const child of children) body += renderQIPGNode(child, qipsByGroup, depth + 1);
 
-    // 1. General bucket (parameter_group == family name exactly)
-    if (general) {
-        body += general.qips.map(q => renderLeaf(q, general.groupName)).join('');
-    }
+    // Skip if no body content
+    if (!body) return '';
 
-    // 2. Multi-QIP sub-groups (collapsible L3 sub-sections)
-    for (const sg of multi) {
-        body += renderSubgroup(sg);
-    }
+    const defaultOpen = depth === 0;  // L1 root open by default
+    const chevron = defaultOpen ? '▼' : '▶';
+    const bodyStyle = defaultOpen ? '' : 'style="display: none;"';
+    const depthClass = `phase-1c-qipg-depth-${depth}`;
 
-    // 3. Singletons — rendered inline at family level (no L3 header per comet adjustment 2)
-    if (singletons.length > 0) {
-        const singletonLeaves = singletons.map(sg => renderLeaf(sg.qips[0], sg.groupName, { singleton: true })).join('');
-        body += `
-            <div class="phase-1c-singletons-block">
-                <div class="phase-1c-singletons-label text-muted">${__('Other parameters')} (${singletons.length}):</div>
-                ${singletonLeaves}
-            </div>
-        `;
-    }
-
-    const familyClass = opts.otherBucket ? 'phase-1c-family phase-1c-family-other' : 'phase-1c-family';
     return `
-        <div class="${familyClass}" data-family="${escapeHtml(familyName)}">
-            <div class="phase-1c-family-header">
-                <span class="phase-1c-chevron">▶</span>
-                <input type="checkbox" class="phase-1c-family-toggle" />
-                <span class="phase-1c-family-name">${escapeHtml(familyName)}</span>
-                <span class="phase-1c-family-count">${totalQips} ${__('params')}</span>
+        <div class="phase-1c-qipg-node ${depthClass}" data-qipg="${escapeHtml(node.name)}">
+            <div class="phase-1c-qipg-header">
+                <span class="phase-1c-chevron">${chevron}</span>
+                <input type="checkbox" class="phase-1c-qipg-toggle" />
+                <span class="phase-1c-qipg-name">${escapeHtml(node.name)}</span>
+                <span class="phase-1c-qipg-count">${totalDescQips}</span>
             </div>
-            <div class="phase-1c-family-body" style="display: none;">
+            <div class="phase-1c-qipg-body" ${bodyStyle}>
                 ${body}
             </div>
         </div>
     `;
 }
 
-function renderSubgroup(sg) {
-    // L3 sub-group section (collapsible) — only for sub-groups with >=2 QIPs.
-    const leaves = sg.qips.map(q => renderLeaf(q, sg.groupName)).join('');
-    const subgroupLabel = deriveSubgroup(sg.groupName, sg.groupName.split(/\s+/).slice(0, -1).join(' '))
-                          || sg.groupName;
-    // Use the FULL group name as the visible sub-header for clarity (e.g. "Physicochemical LQD pH")
+function countDescendantQips(node, qipsByGroup) {
+    let total = (qipsByGroup[node.name] || []).length;
+    for (const ch of (node.children || [])) total += countDescendantQips(ch, qipsByGroup);
+    return total;
+}
+
+
+// ---------------------------------------------------------------------------
+// QIP leaf (L4) with virtual L5 (custom_choices) expansion
+// ---------------------------------------------------------------------------
+
+function renderQIPLeaf(qip, parentGroup) {
+    const choiceLines = qip.custom_choices ? qip.custom_choices.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    const klass = classifyQip(qip);
+    const hasL5 = choiceLines.length > 0;
+
+    let badge;
+    if (hasL5) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-choices">${choiceLines.length} ${__('values')}</span>`;
+    } else if (qip.custom_is_numeric) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-numeric">${__('numeric')}</span>`;
+    } else if (qip.custom_specification_text) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-text">${__('text')}</span>`;
+    } else if (klass === 'label') {
+        badge = `<span class="phase-1c-badge phase-1c-badge-label">${__('section')}</span>`;
+    } else {
+        badge = `<span class="phase-1c-badge phase-1c-badge-suspect" title="${escapeHtml(__('No defaults set; likely a mis-classified L5 value (data hygiene Phase 1C-D)'))}">${__('value?')}</span>`;
+    }
+
+    // L5 — radios for each choice line. Picking a radio sets the value for the IQI row.
+    // "No choice" radio at the top so user can add the QIP without committing to a specific value.
+    let l5Html = '';
+    if (hasL5) {
+        const radioName = `phase-1c-choice-${qip.name}`;
+        l5Html = `
+            <div class="phase-1c-qip-choices" style="display: none;">
+                <label class="phase-1c-choice phase-1c-choice-default">
+                    <input type="radio" name="${escapeHtml(radioName)}" value=""
+                           data-qip-name="${escapeHtml(qip.name)}"
+                           data-param-group="${escapeHtml(parentGroup)}" checked />
+                    <span class="text-muted">${__('(default — first choice on add)')}</span>
+                </label>
+        `;
+        for (const choice of choiceLines) {
+            l5Html += `
+                <label class="phase-1c-choice">
+                    <input type="radio" name="${escapeHtml(radioName)}" value="${escapeHtml(choice)}"
+                           data-qip-name="${escapeHtml(qip.name)}"
+                           data-param-group="${escapeHtml(parentGroup)}" />
+                    <span>${escapeHtml(choice)}</span>
+                </label>
+            `;
+        }
+        l5Html += `</div>`;
+    }
+
+    const leafClass = (klass === 'value') ? 'phase-1c-qip-leaf phase-1c-qip-suspect' : 'phase-1c-qip-leaf';
+    const chevronChar = hasL5 ? '▶' : '·';
+
+    // Inline edit button — opens a modal for editing custom_choices (Posibles Valores)
+    const editBtn = `<button class="phase-1c-qip-edit-btn" data-qip-name="${escapeHtml(qip.name)}" title="${escapeHtml(__('Edit Posibles Valores'))}">✏</button>`;
+
     return `
-        <div class="phase-1c-subgroup" data-subgroup="${escapeHtml(sg.groupName)}">
-            <div class="phase-1c-subgroup-header">
-                <span class="phase-1c-chevron-sub">▶</span>
-                <input type="checkbox" class="phase-1c-subgroup-toggle" />
-                <span class="phase-1c-subgroup-name">${escapeHtml(sg.groupName)}</span>
-                <span class="phase-1c-subgroup-count">${sg.qips.length}</span>
+        <div class="${leafClass}" data-qip-name="${escapeHtml(qip.name)}">
+            <div class="phase-1c-qip-header">
+                <span class="phase-1c-chevron-qip">${chevronChar}</span>
+                <input type="checkbox" class="phase-1c-qip-cb"
+                       data-qip-name="${escapeHtml(qip.name)}"
+                       data-param-group="${escapeHtml(parentGroup)}"
+                       data-qip-class="${escapeHtml(klass)}" />
+                <span class="phase-1c-qip-name">${escapeHtml(qip.parameter || qip.name)}</span>
+                ${badge}
+                ${editBtn}
             </div>
-            <div class="phase-1c-subgroup-leaves" style="display: none;">
-                ${leaves}
-            </div>
+            ${l5Html}
         </div>
     `;
 }
 
-function renderUnassignedBucket(unassignedQips) {
-    // Per comet adjustment 3: explicit "Needs Categorization (N)" section at end.
-    // Dashed border + secondary color to signal Alicia attention. Items are pickable
-    // (they're still valid QIPs), just visually distinct.
-    const leaves = unassignedQips.map(q => renderLeaf(q, '__UNASSIGNED__')).join('');
-    return `
-        <div class="phase-1c-family phase-1c-family-unassigned" data-family="__UNASSIGNED__">
-            <div class="phase-1c-family-header phase-1c-family-header-unassigned">
-                <span class="phase-1c-chevron">▶</span>
-                <input type="checkbox" class="phase-1c-family-toggle" />
-                <span class="phase-1c-family-name">${__('Needs Categorization')}</span>
-                <span class="phase-1c-family-count">${unassignedQips.length}</span>
-                <span class="phase-1c-needs-attention-badge">${__('Alicia review')}</span>
-            </div>
-            <div class="phase-1c-family-body" style="display: none;">
-                ${leaves}
-            </div>
-        </div>
-    `;
+
+// ---------------------------------------------------------------------------
+// Edit Posibles Valores — inline modal dialog
+// ---------------------------------------------------------------------------
+
+async function editQIPChoices(frm, qipName) {
+    let qipDoc;
+    try {
+        qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', qipName);
+    } catch (err) {
+        frappe.show_alert({
+            message: __('Could not load QIP {0}: {1}', [qipName, err && err.message || err]),
+            indicator: 'red',
+        });
+        return;
+    }
+
+    const parameter = qipDoc.parameter || qipName;
+    const currentChoices = qipDoc.custom_choices || '';
+
+    // Preserve current substrate-filter state so the re-render after save lands on the same view
+    const filterEl = document.getElementById('phase-1c-substrate-filter');
+    const activeToken = filterEl ? filterEl.value : '';
+
+    const dlg = new frappe.ui.Dialog({
+        title: __('Edit Posibles Valores: {0}', [parameter]),
+        fields: [
+            {
+                fieldtype: 'Long Text',
+                fieldname: 'custom_choices',
+                label: __('Acceptance Choices (one per line)'),
+                description: __('Each line becomes an L5 selectable value. Save → picker re-renders with updated list.'),
+                default: currentChoices,
+            },
+            {
+                fieldtype: 'HTML',
+                fieldname: 'help_html',
+                options: `<div class="text-muted" style="font-size: 11px; margin-top: 6px;">
+                    ${__('QIP record: <a href="/app/quality-inspection-parameter/{0}" target="_blank">{0}</a> (open full form to edit other fields)', [escapeHtml(qipName)])}
+                </div>`,
+            },
+        ],
+        primary_action_label: __('Save'),
+        primary_action: async (values) => {
+            const newChoices = (values.custom_choices || '').trim();
+            try {
+                await frappe.db.set_value('Quality Inspection Parameter', qipName, 'custom_choices', newChoices);
+                const lineCount = newChoices.split('\n').map(l => l.trim()).filter(Boolean).length;
+                frappe.show_alert({
+                    message: __('Saved {0} choice(s) for {1}', [lineCount, parameter]),
+                    indicator: 'green',
+                });
+                dlg.hide();
+                // Invalidate cache + re-render picker preserving current filter
+                if (frm._phase1c) frm._phase1c.qipsByGroup = null;
+                await renderPickerWithFilter(frm, activeToken);
+            } catch (err) {
+                frappe.show_alert({
+                    message: __('Save failed: {0}', [err && err.message || err]),
+                    indicator: 'red',
+                });
+            }
+        },
+    });
+    dlg.show();
 }
 
-function renderLeaf(qip, groupName, opts) {
-    opts = opts || {};
-    const choiceCount = qip.custom_choices ? qip.custom_choices.split('\n').filter(s => s.trim()).length : 0;
-    const badge = choiceCount > 0
-        ? `<span class="phase-1c-badge phase-1c-badge-choices">${choiceCount} ${__('choices')}</span>`
-        : (qip.custom_is_numeric
-            ? `<span class="phase-1c-badge phase-1c-badge-numeric">${__('numeric')}</span>`
-            : `<span class="phase-1c-badge phase-1c-badge-text">${__('text')}</span>`);
-    const escapedName = escapeHtml(qip.parameter);
-    // Show full group name as subscript on singletons + unassigned for context (since no sub-group header)
-    const contextTag = (opts.singleton || groupName === '__UNASSIGNED__')
-        ? `<span class="phase-1c-leaf-context text-muted">${escapeHtml(groupName === '__UNASSIGNED__' ? __('(no group)') : groupName)}</span>`
-        : '';
-    return `
-        <label class="phase-1c-leaf">
-            <input type="checkbox" class="phase-1c-leaf-cb"
-                   data-qip-name="${escapeHtml(qip.name)}"
-                   data-param-group="${escapeHtml(groupName === '__UNASSIGNED__' ? '' : groupName)}" />
-            <span class="phase-1c-leaf-name">${escapedName}</span>
-            ${badge}
-            ${contextTag}
-        </label>
-    `;
+
+// ---------------------------------------------------------------------------
+// QIP classification — keeps badge logic
+// ---------------------------------------------------------------------------
+
+function classifyQip(qip) {
+    const hasData = qip.custom_choices
+        || qip.custom_specification_text
+        || qip.custom_is_numeric
+        || (qip.custom_specification_min && qip.custom_specification_min !== 0)
+        || (qip.custom_specification_max && qip.custom_specification_max !== 0);
+    if (hasData) return 'real';
+    if (!qip.parameter_group) return 'value';
+    const groupWords = qip.parameter_group.split(/\s+/);
+    if (qip.name === groupWords[0]) return 'label';
+    if (groupWords.length >= 2 && qip.name === groupWords.slice(0, -1).join(' ')) return 'label';
+    return 'value';
 }
+
+
+// ---------------------------------------------------------------------------
+// Action bar (Add Selected, Clear)
+// ---------------------------------------------------------------------------
 
 function renderActionBar(frm) {
-    document.getElementById('phase-1c-action-bar').innerHTML = `
-        <button class="btn btn-primary" id="phase-1c-add-selected">
-            ${__('+ Add Selected Parameters')}
-        </button>
-        <button class="btn btn-default" id="phase-1c-clear-selections">
-            ${__('Clear Selections')}
-        </button>
+    const bar = document.getElementById('phase-1c-action-bar');
+    bar.innerHTML = `
+        <button class="btn btn-primary" id="phase-1c-add-selected">${__('+ Add Selected Parameters')}</button>
+        <button class="btn btn-default" id="phase-1c-clear-selections">${__('Clear Selections')}</button>
         <span class="phase-1c-selection-summary text-muted"></span>
     `;
+    // V14.3.3-live FIX: attach Add/Clear listeners HERE (not in attachEventHandlers).
+    // Reason: attachEventHandlers runs on every picker re-render (filter change, edit-save).
+    // The Add/Clear buttons live in the action bar (separate DOM from picker tree),
+    // so re-running attachEventHandlers would STACK multiple click listeners on the same
+    // button → click would fire handler N times → N× row insertion. Putting listeners
+    // here ensures they're re-attached only when the action bar is re-rendered (once per
+    // refresh: event), and innerHTML replacement guarantees old listeners die with old DOM.
+    const addBtn = document.getElementById('phase-1c-add-selected');
+    if (addBtn) addBtn.addEventListener('click', () => addSelectedParameters(frm));
+    const clearBtn = document.getElementById('phase-1c-clear-selections');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => {
+                cb.checked = false;
+                cb.indeterminate = false;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            document.querySelectorAll('.phase-1c-qip-choices').forEach(choices => {
+                const defaultRadio = choices.querySelector('input[type=radio][value=""]');
+                if (defaultRadio) defaultRadio.checked = true;
+            });
+            updateSelectionSummary();
+        });
+    }
 }
+
 
 // ---------------------------------------------------------------------------
 // Event handlers
 // ---------------------------------------------------------------------------
 
 function attachEventHandlers(frm) {
-    // Family header expand/collapse
-    document.querySelectorAll('.phase-1c-family-header').forEach(header => {
+    // QIPG header — expand/collapse
+    document.querySelectorAll('.phase-1c-qipg-header').forEach(header => {
         header.addEventListener('click', function(e) {
             if (e.target.tagName === 'INPUT') return;
-            const family = this.closest('.phase-1c-family');
-            const body = family.querySelector('.phase-1c-family-body');
-            const chevron = family.querySelector('.phase-1c-chevron');
+            e.stopPropagation();
+            const node = this.closest('.phase-1c-qipg-node');
+            const body = node.querySelector(':scope > .phase-1c-qipg-body');
+            const chevron = this.querySelector('.phase-1c-chevron');
             const isOpen = body.style.display !== 'none';
             body.style.display = isOpen ? 'none' : 'block';
             chevron.textContent = isOpen ? '▶' : '▼';
         });
     });
 
-    // Sub-group header expand/collapse
-    document.querySelectorAll('.phase-1c-subgroup-header').forEach(header => {
+    // QIPG toggle checkbox — check/uncheck all descendant QIPs (with confirmation for large cascades)
+    const CASCADE_CONFIRM_THRESHOLD = 20;
+    document.querySelectorAll('.phase-1c-qipg-toggle').forEach(cb => {
+        cb.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const self = this;
+            const node = this.closest('.phase-1c-qipg-node');
+            const leafCheckboxes = node.querySelectorAll('.phase-1c-qip-cb');
+            const totalLeaves = leafCheckboxes.length;
+
+            // For large cascading SELECTS (not deselects), confirm first
+            if (self.checked && totalLeaves > CASCADE_CONFIRM_THRESHOLD) {
+                const groupName = node.querySelector(':scope > .phase-1c-qipg-header > .phase-1c-qipg-name').textContent.trim();
+                // Revert checkbox visually until user confirms
+                self.checked = false;
+                frappe.confirm(
+                    __('About to select {0} parameters under "{1}". Proceed?', [totalLeaves, groupName]),
+                    () => {
+                        // User confirmed — apply cascade
+                        self.checked = true;
+                        leafCheckboxes.forEach(q => { q.checked = true; });
+                        node.querySelectorAll('.phase-1c-qipg-toggle').forEach(t => { if (t !== self) t.checked = true; });
+                        updateSelectionSummary();
+                    }
+                    // Cancel callback omitted — checkbox already unchecked
+                );
+                return;
+            }
+
+            // Direct cascade (small set OR deselect)
+            leafCheckboxes.forEach(q => { q.checked = self.checked; });
+            node.querySelectorAll('.phase-1c-qipg-toggle').forEach(t => { if (t !== self) t.checked = self.checked; });
+            updateSelectionSummary();
+        });
+    });
+
+    // QIP leaf header (chevron click) — expand/collapse L5 choices
+    document.querySelectorAll('.phase-1c-qip-header').forEach(header => {
         header.addEventListener('click', function(e) {
             if (e.target.tagName === 'INPUT') return;
             e.stopPropagation();
-            const sg = this.closest('.phase-1c-subgroup');
-            const leaves = sg.querySelector('.phase-1c-subgroup-leaves');
-            const chevron = sg.querySelector('.phase-1c-chevron-sub');
-            const isOpen = leaves.style.display !== 'none';
-            leaves.style.display = isOpen ? 'none' : 'block';
-            chevron.textContent = isOpen ? '▶' : '▼';
+            const leaf = this.closest('.phase-1c-qip-leaf');
+            const choices = leaf.querySelector('.phase-1c-qip-choices');
+            if (!choices) return;  // no L5 to show
+            const chevron = this.querySelector('.phase-1c-chevron-qip');
+            const isOpen = choices.style.display !== 'none';
+            choices.style.display = isOpen ? 'none' : 'block';
+            if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
         });
     });
 
-    // Family-level checkbox toggles ALL leaves in the family (including sub-groups + singletons)
-    document.querySelectorAll('.phase-1c-family-toggle').forEach(cb => {
-        cb.addEventListener('click', function(e) {
+    // Inline edit button — opens modal to edit custom_choices for the QIP
+    document.querySelectorAll('.phase-1c-qip-edit-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const family = this.closest('.phase-1c-family');
-            const leafCheckboxes = family.querySelectorAll('.phase-1c-leaf-cb');
-            leafCheckboxes.forEach(leaf => leaf.checked = this.checked);
-            // Also sync sub-group toggles within
-            family.querySelectorAll('.phase-1c-subgroup-toggle').forEach(sgt => sgt.checked = this.checked);
+            e.preventDefault();
+            const qipName = this.dataset.qipName;
+            editQIPChoices(frm, qipName);
+        });
+    });
+
+    // QIP checkbox — selection
+    document.querySelectorAll('.phase-1c-qip-cb').forEach(cb => {
+        cb.addEventListener('change', function() {
+            // If user checks a QIP, auto-expand its L5 so they can pick a value
+            if (this.checked) {
+                const leaf = this.closest('.phase-1c-qip-leaf');
+                const choices = leaf.querySelector('.phase-1c-qip-choices');
+                if (choices) {
+                    choices.style.display = 'block';
+                    const chev = leaf.querySelector('.phase-1c-chevron-qip');
+                    if (chev) chev.textContent = '▼';
+                }
+            }
             updateSelectionSummary();
         });
     });
 
-    // Sub-group-level checkbox toggles all leaves in the sub-group
-    document.querySelectorAll('.phase-1c-subgroup-toggle').forEach(cb => {
-        cb.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const sg = this.closest('.phase-1c-subgroup');
-            const leafCheckboxes = sg.querySelectorAll('.phase-1c-leaf-cb');
-            leafCheckboxes.forEach(leaf => leaf.checked = this.checked);
-            updateSelectionSummary();
+    // L5 radio change — auto-check the parent QIP so it's included in "Add Selected"
+    document.querySelectorAll('.phase-1c-qip-choices input[type=radio]').forEach(r => {
+        r.addEventListener('change', function() {
+            const leaf = this.closest('.phase-1c-qip-leaf');
+            const cb = leaf.querySelector('.phase-1c-qip-cb');
+            if (cb && !cb.checked && this.value) {
+                cb.checked = true;
+                updateSelectionSummary();
+            }
         });
     });
 
-    // Leaf-level checkbox updates selection summary
-    document.querySelectorAll('.phase-1c-leaf-cb').forEach(cb => {
-        cb.addEventListener('change', updateSelectionSummary);
-    });
+    // Substrate filter selector
+    const filterSel = document.getElementById('phase-1c-substrate-filter');
+    if (filterSel) {
+        filterSel.addEventListener('change', async function() {
+            await renderPickerWithFilter(frm, this.value);
+        });
+    }
 
-    // Expand all / Collapse all (operates on both family bodies + sub-group leaves)
+    // Expand all / Collapse all
     const expandAll = document.getElementById('phase-1c-expand-all');
     if (expandAll) {
         expandAll.addEventListener('click', () => {
-            document.querySelectorAll('.phase-1c-family-body, .phase-1c-subgroup-leaves')
-                .forEach(el => el.style.display = 'block');
-            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-sub')
-                .forEach(el => el.textContent = '▼');
+            document.querySelectorAll('.phase-1c-qipg-body, .phase-1c-qip-choices').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-qip').forEach(el => {
+                if (el.textContent === '▶') el.textContent = '▼';
+            });
         });
     }
     const collapseAll = document.getElementById('phase-1c-collapse-all');
     if (collapseAll) {
         collapseAll.addEventListener('click', () => {
-            document.querySelectorAll('.phase-1c-family-body, .phase-1c-subgroup-leaves')
-                .forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-sub')
-                .forEach(el => el.textContent = '▶');
+            document.querySelectorAll('.phase-1c-qipg-body, .phase-1c-qip-choices').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-qip').forEach(el => {
+                if (el.textContent === '▼') el.textContent = '▶';
+            });
         });
     }
 
-    // Add Selected
-    const addBtn = document.getElementById('phase-1c-add-selected');
-    if (addBtn) {
-        addBtn.addEventListener('click', () => addSelectedParameters(frm));
-    }
-    // Clear selections
-    const clearBtn = document.getElementById('phase-1c-clear-selections');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => cb.checked = false);
-            updateSelectionSummary();
-        });
-    }
+    // NOTE: Add Selected + Clear Selections listeners are attached in renderActionBar (NOT here).
+    // See comment in renderActionBar for the stacked-listener bug history.
 }
+
 
 function updateSelectionSummary() {
-    const checked = document.querySelectorAll('.phase-1c-leaf-cb:checked').length;
+    const checked = document.querySelectorAll('.phase-1c-qip-cb:checked').length;
     const summary = document.querySelector('.phase-1c-selection-summary');
     if (summary) {
-        summary.textContent = checked > 0
-            ? __(`${checked} parameter(s) selected`)
-            : '';
+        summary.textContent = checked > 0 ? __(`${checked} parameter(s) selected`) : '';
     }
 }
 
+
 // ---------------------------------------------------------------------------
-// Add Selected Parameters — bulk-insert with dedupe
+// Add Selected Parameters
 // ---------------------------------------------------------------------------
 
 async function addSelectedParameters(frm) {
-    const checked = document.querySelectorAll('.phase-1c-leaf-cb:checked');
+    const checked = document.querySelectorAll('.phase-1c-qip-cb:checked');
     if (checked.length === 0) {
-        frappe.show_alert({
-            message: __('Select at least one parameter first.'),
-            indicator: 'orange'
-        });
+        frappe.show_alert({ message: __('Select at least one parameter first.'), indicator: 'orange' });
         return;
     }
 
-    // Group selections by parameter_group (the value stored on data-param-group,
-    // which is the FULL parameter_group string — empty for unassigned QIPs).
-    const selectionsByGroup = {};
+    const existingRows = frm.doc.item_quality_inspection_parameter || [];
+    const existingSpecs = new Set();
+    for (const r of existingRows) {
+        if (r.custom_is_title_row !== 1 && r.specification) existingSpecs.add(r.specification);
+    }
+
+    let dupeCount = 0;
+    let newCount = 0;
+    const selections = [];
     checked.forEach(cb => {
-        const groupName = cb.dataset.paramGroup || '';  // '' for unassigned
         const qipName = cb.dataset.qipName;
-        if (!selectionsByGroup[groupName]) selectionsByGroup[groupName] = [];
-        selectionsByGroup[groupName].push(qipName);
+        const groupName = cb.dataset.paramGroup || '';
+        const qipClass = cb.dataset.qipClass || 'real';
+
+        // Find the chosen L5 value for this QIP (radio selection)
+        const radioName = `phase-1c-choice-${qipName}`;
+        let chosenChoice = '';
+        const checkedRadio = document.querySelector(`input[type=radio][name="${CSS.escape(radioName)}"]:checked`);
+        if (checkedRadio) chosenChoice = checkedRadio.value;
+
+        if (existingSpecs.has(qipName)) {
+            dupeCount++;
+        } else {
+            newCount++;
+            selections.push({ qipName, groupName, qipClass, chosenChoice });
+        }
     });
 
+    if (newCount === 0 && dupeCount > 0) {
+        frappe.confirm(
+            __('All {0} selected parameter(s) are already on this TDS Product Spec. Add them again as duplicates?', [dupeCount]),
+            () => {
+                const forceSelections = [];
+                checked.forEach(cb => {
+                    const radioName = `phase-1c-choice-${cb.dataset.qipName}`;
+                    const checkedRadio = document.querySelector(`input[type=radio][name="${CSS.escape(radioName)}"]:checked`);
+                    forceSelections.push({
+                        qipName: cb.dataset.qipName,
+                        groupName: cb.dataset.paramGroup || '',
+                        qipClass: cb.dataset.qipClass || 'real',
+                        chosenChoice: checkedRadio ? checkedRadio.value : '',
+                    });
+                });
+                _doAddRows(frm, forceSelections, false, 0);
+            },
+            () => frappe.show_alert({ message: __('No rows added.'), indicator: 'orange' })
+        );
+        return;
+    }
+
+    selections.sort((a, b) => {
+        if (a.groupName !== b.groupName) return a.groupName.localeCompare(b.groupName);
+        const rank = (c) => c === 'label' ? 0 : (c === 'real' ? 1 : 2);
+        if (a.qipClass !== b.qipClass) return rank(a.qipClass) - rank(b.qipClass);
+        return a.qipName.localeCompare(b.qipName);
+    });
+
+    await _doAddRows(frm, selections, true, dupeCount);
+}
+
+async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
+    alreadySkipped = alreadySkipped || 0;
     let added = 0;
-    let skipped = 0;
-    const sortedGroups = Object.keys(selectionsByGroup).sort();
+    let brokenMethodCount = 0;
 
-    for (const groupName of sortedGroups) {
-        // Title row insertion — skip for unassigned (empty group name has no title)
-        if (groupName !== '') {
-            const existingRows = frm.doc.item_quality_inspection_parameter || [];
-            const existingTitle = existingRows.find(
-                r => r.parameter_group === groupName && r.custom_is_title_row === 1
-            );
-            if (!existingTitle) {
-                const titleRow = frm.add_child('item_quality_inspection_parameter');
-                titleRow.parameter_group = groupName;
-                titleRow.custom_is_title_row = 1;
-                titleRow.value = '';
-            }
-        }
+    let validMethodSet = new Set();
+    try {
+        const methods = await frappe.db.get_list('Quality Inspection Method', { fields: ['name'], limit: 0 });
+        validMethodSet = new Set(methods.map(m => m.name));
+    } catch (err) {
+        console.warn('Phase 1C-B: could not pre-fetch Method catalog:', err);
+        validMethodSet = null;
+    }
 
-        for (const qipName of selectionsByGroup[groupName]) {
-            // Dedupe per (parameter_group, specification)
-            const duplicate = (frm.doc.item_quality_inspection_parameter || []).find(
-                r => (r.parameter_group || '') === groupName
-                  && r.specification === qipName
-                  && r.custom_is_title_row !== 1
-            );
-            if (duplicate) {
-                skipped++;
+    for (const sel of selections) {
+        const qipName = sel.qipName;
+        const groupName = sel.groupName;
+        const chosenChoice = sel.chosenChoice;
+
+        try {
+            // V14.3.5 — null-guard on frm.add_child return value. If the form
+            // meta hasn't loaded the child table field (e.g., from a partial
+            // sync_fixtures import after an L156 silent file-level abort, or
+            // form in unusual state), add_child can return null. Without this
+            // guard, the next line `row.specification = qipName` throws an
+            // uncaught TypeError — handler aborts mid-loop, leaving checkboxes
+            // un-cleared and no toast (the visible symptom comet observed on
+            // hostinger-vpt 2026-05-21T07:00Z). Skip + log, continue with rest.
+            const row = frm.add_child('item_quality_inspection_parameter');
+            if (!row) {
+                console.warn(`Phase 1C-B V14.3.5: frm.add_child returned null for QIP "${qipName}" — skipping. Form meta may be missing item_quality_inspection_parameter child table (check bench migrate completion + fixture sync).`);
                 continue;
             }
-
-            const row = frm.add_child('item_quality_inspection_parameter');
             row.specification = qipName;
             if (groupName !== '') row.parameter_group = groupName;
-            row.custom_is_title_row = 0;
-
-            // Fetch QIP defaults from doctype-driven source (NO hardcoded choices)
-            try {
-                const qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', qipName);
-                if (qipDoc.custom_is_numeric) {
-                    row.numeric = 1;
+            const qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', qipName);
+            if (sel.qipClass === 'label') {
+                row.value = 'Specification';
+            } else if (qipDoc.custom_is_numeric) {
+                row.numeric = 1;
+                if (qipDoc.custom_specification_min !== null && qipDoc.custom_specification_min !== undefined) {
+                    row.min_value = qipDoc.custom_specification_min;
                 }
-                // QIP's method lives on `custom_specification` (Link → Quality Inspection Method).
-                // IQI child row's method field is `custom_method` (also Link → Method) — value transfers as the linked name.
-                if (qipDoc.custom_specification) row.custom_method = qipDoc.custom_specification;
-                if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
-            } catch (err) {
-                console.warn(`Phase 1C-B: could not fetch QIP defaults for ${qipName}:`, err);
+                if (qipDoc.custom_specification_max !== null && qipDoc.custom_specification_max !== undefined) {
+                    row.max_value = qipDoc.custom_specification_max;
+                }
+            } else {
+                // L5 chosen-choice takes priority; else custom_specification_text; else first choice
+                let effectiveValue = null;
+                if (chosenChoice) {
+                    effectiveValue = chosenChoice;
+                } else if (qipDoc.custom_specification_text) {
+                    effectiveValue = qipDoc.custom_specification_text;
+                } else if (qipDoc.custom_choices) {
+                    const firstChoice = qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0];
+                    if (firstChoice) effectiveValue = firstChoice;
+                }
+                if (effectiveValue) {
+                    row.value = effectiveValue;
+                    // V14.3.3-live — parse QC formula patterns from value to auto-populate min/max
+                    // (Hugh QE convention: "NMT 10%" → min=0, max=10; "NLT 70%" → min=70, max=null; etc.)
+                    const formula = parseValueFormula(effectiveValue);
+                    if (formula) {
+                        if (formula.min !== null && formula.min !== undefined) row.min_value = formula.min;
+                        if (formula.max !== null && formula.max !== undefined) row.max_value = formula.max;
+                        if (formula.isNumeric) row.numeric = 1;
+                    }
+                }
             }
-
-            added++;
+            // V14.3.5 — Pattern B defensive null-guard on custom_method assignment.
+            // Existing if-guard on qipDoc.custom_specification already prevents
+            // null-throw at this site (comet's stated hypothesis), but adding
+            // explicit `|| ''` chain as belt-and-suspenders per ops directive.
+            // The fallback to custom_choices[0] is a no-op while the outer
+            // if-guard is in place (we only enter when custom_specification is
+            // truthy) — preserved as forward-compatible defensive hardening
+            // for future refactors that may remove the outer guard.
+            if (qipDoc.custom_specification) {
+                if (validMethodSet === null || validMethodSet.has(qipDoc.custom_specification)) {
+                    row.custom_method = qipDoc.custom_specification
+                                    || (qipDoc.custom_choices && qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0])
+                                    || '';
+                } else {
+                    brokenMethodCount++;
+                    console.warn(`Phase 1C-B: QIP "${qipName}" has stale Method "${qipDoc.custom_specification}" — leaving row.custom_method blank`);
+                }
+            }
+            if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
+        } catch (err) {
+            console.warn(`Phase 1C-B: could not fetch QIP defaults for ${qipName}:`, err);
         }
+        added++;
     }
 
     frm.refresh_field('item_quality_inspection_parameter');
 
-    document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => {
+        cb.checked = false;
+        cb.indeterminate = false;
+    });
+    document.querySelectorAll('.phase-1c-qip-choices').forEach(choices => {
+        const defaultRadio = choices.querySelector('input[type=radio][value=""]');
+        if (defaultRadio) defaultRadio.checked = true;
+    });
     updateSelectionSummary();
 
+    let resultMsg = __('Added {0} parameter(s)', [added]);
+    if (alreadySkipped > 0) resultMsg += __(' · {0} duplicate(s) skipped', [alreadySkipped]);
+    if (brokenMethodCount > 0) {
+        resultMsg += __(' · {0} row(s) with stale Method ref (fix in QIP master)', [brokenMethodCount]);
+    }
     frappe.show_alert({
-        message: __(`Added ${added} parameter(s); ${skipped} duplicate(s) skipped.`),
-        indicator: 'green'
+        message: resultMsg,
+        indicator: brokenMethodCount > 0 ? 'orange' : (added > 0 ? 'green' : 'orange'),
     });
 }
+
+
+// ---------------------------------------------------------------------------
+// QC value-formula parser — extracts min/max bounds from acceptance-value strings
+// ---------------------------------------------------------------------------
+//
+// Hugh's QE convention: an acceptance value like "NMT 10%" means a numeric criterion
+// with implicit bounds (min=0, max=10). This parser detects common QC patterns and
+// returns {min, max, isNumeric} so the IQI row gets auto-populated.
+//
+// Patterns supported (case-insensitive on prefix; trailing % / PPM / CFU/G etc. ignored):
+//   NMT X   "Not More Than"    → min=0, max=X
+//   NLT X   "Not Less Than"    → min=X, max=null
+//   < X                        → min=0, max=X
+//   > X                        → min=X, max=null
+//   <= X / ≤ X / LE X          → min=0, max=X
+//   >= X / ≥ X / GE X          → min=X, max=null
+//   X - Y / X-Y (range)        → min=X, max=Y
+//
+// Returns null if no pattern matches (caller leaves row.min/max untouched).
+//
+function parseValueFormula(valueStr) {
+    if (!valueStr) return null;
+    const s = String(valueStr).trim();
+
+    // Range pattern: "X - Y", "X-Y", "X – Y" (en-dash), with optional decimals + units
+    const rangeMatch = s.match(/^\s*([\-+]?\d+(?:[\.,]\d+)?)\s*[-–—]\s*([\-+]?\d+(?:[\.,]\d+)?)/);
+    if (rangeMatch) {
+        const lo = parseFloat(rangeMatch[1].replace(',', '.'));
+        const hi = parseFloat(rangeMatch[2].replace(',', '.'));
+        if (!isNaN(lo) && !isNaN(hi)) return { min: lo, max: hi, isNumeric: true };
+    }
+
+    // Strip unit-suffix noise (% / PPM / CFU/G / MG/L etc.) before matching upper-bound patterns
+    const stripped = s.replace(/\s*(%|PPM|PPB|CFU\/?[A-Z]+|MG\/[A-Z]+|G\/[A-Z]+|ML)\b.*$/i, '').trim();
+
+    // "Not More Than" — NMT X, < X, <= X, ≤ X, LE X
+    const nmtMatch = stripped.match(/^\s*(?:NMT|LE|<=?|≤)\s*([\-+]?\d+(?:[\.,]\d+)?)/i);
+    if (nmtMatch) {
+        const v = parseFloat(nmtMatch[1].replace(',', '.'));
+        if (!isNaN(v)) return { min: 0, max: v, isNumeric: true };
+    }
+
+    // "Not Less Than" — NLT X, > X, >= X, ≥ X, GE X
+    const nltMatch = stripped.match(/^\s*(?:NLT|GE|>=?|≥)\s*([\-+]?\d+(?:[\.,]\d+)?)/i);
+    if (nltMatch) {
+        const v = parseFloat(nltMatch[1].replace(',', '.'));
+        if (!isNaN(v)) return { min: v, max: null, isNumeric: true };
+    }
+
+    return null;
+}
+
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -534,7 +936,3 @@ function escapeHtml(s) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
-
-// ---------------------------------------------------------------------------
-// Print view handling (directive §1.3) — deferred to Print Format customization at deploy.
-// ---------------------------------------------------------------------------
