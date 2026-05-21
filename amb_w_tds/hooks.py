@@ -126,24 +126,103 @@ doc_events = {
 #}
 #
 # ========================================
-#  FIXTURES (sync mandatory custom fields)
+#  FIXTURES (L153 fixtures-discipline rollout 2026-05-20)
 # ========================================
+# For Custom Field / Property Setter / Client Script / Server Script: filter
+# by DocType (dt / doc_type / reference_doctype) rather than module. Module
+# attribution drifts on records created via UI; DocType-level filtering captures
+# all customizations belonging to this app regardless of which module they
+# happened to land in. Per cowork-ops 2026-05-20T21:44Z directive (post L153
+# ratification).
+#
+# Split with amb_w_spc: amb_w_tds claims TDS / Sales / COA / BOM / Customer /
+# CRM / HR-light / Logistics / Quotation domain DocTypes; amb_w_spc claims
+# QC / Manufacturing / SPC / Stock / Warehouse / Work Order domain DocTypes.
+# Shared ERPNext DocTypes go to whichever app has the dominant use case.
+
+_AMB_W_TDS_DOCTYPES = [
+    # Owned by amb_w_tds (defined in this app)
+    "AMB KPI Factors", "Animal Trial", "Barrel", "BOM Enhancement",
+    "BOM Formula", "BOM Formula Amino Acid", "BOM Template", "BOM Template Item",
+    "BOM Version", "Certification Document", "COA AMB", "COA AMB2",
+    "COA Quality Test Parameter", "Container Selection", "Container Sync Log",
+    "Container Type Rule", "Country Regulation", "Distribution Contact",
+    "Distribution Organization", "Formulation", "Intended Purpose",
+    "Juice Conversion Config", "KPI Cost Breakdown", "Lote AMB",
+    "Market Entry Plan", "Market Research", "Plant Configuration",
+    "Product Compliance", "Product Development Project", "Production Plant AMB",
+    "Quotation AMB", "Quotation AMB Sales Partner", "RND Parent Doctype",
+    "Sample Request AMB", "Sample Request AMB Item", "TDS Default Parameter",
+    "TDS Product Specification", "TDS Product Specification V2", "TDS Settings",
+    "Third Party API",
+    # ERPNext DocTypes amb_w_tds customizes (sales / COA / BOM / TDS-driven)
+    "Address", "Asset", "Asset Maintenance Log", "Asset Repair",
+    "Assignment Rule", "Attendance", "BOM", "BOM Creator", "Communication",
+    "Company", "Contact", "Cost Center", "CRM Deal", "CRM Lead", "CRM Product",
+    "Customer", "Customer Item", "Delivery Note", "Delivery Note Item",
+    "Department", "Designation", "Email Account", "Employee", "Event",
+    "Event Category AMB", "Freight Location", "GoCardless Mandate",
+    "HD Ticket Type", "Incoterm", "Industry Type", "Issue", "Item",
+    "Item Group", "Item Tax Template Detail", "Item Variant", "Lead",
+    "Mode of Payment", "Operation", "Opportunity", "Packed Item",
+    "Packing Slip", "Payment Entry", "Payment Term",
+    "Payroll Employee Detail", "Payroll Entry", "Pick List", "POS Invoice",
+    "POS Invoice Item", "Pricing Rule", "Print Format", "Print Settings",
+    "Production Plan", "Project", "Project Update", "Prospect",
+    "Purchase Invoice", "Purchase Invoice Item", "Purchase Order",
+    "Purchase Order Item", "Purchase Receipt", "Purchase Receipt Item",
+    "Quality Goal Objective", "Quality Procedure", "Quality Review",
+    "Quality Review Objective", "Quotation", "Quotation Item",
+    "Quotation Item Escalated", "Request for Quotation",
+    "Request for Quotation Item", "Salary Slip", "Sales Invoice",
+    "Sales Invoice Item", "Sales Order", "Sales Order Item", "Sales Stage",
+    "Sales Taxes and Charges", "Shipment", "Shipment Parcel", "Shipping Rule",
+    "Subscription", "Supplier", "Supplier Quotation", "Supplier Quotation Item",
+    "Task", "Terms and Conditions", "Timesheet", "UTM Campaign", "Web Form",
+]
+
+# L153 §4.1 follow-on: Server Scripts with reference_doctype=NULL (scheduled /
+# API / cron-driven) aren't captured by the dt-based filter above. Cowork-ops's
+# proposed module-based catch-all (AMBWTDS + reference_doctype is not set)
+# would match 0 records because none of these scripts have module=AMBWTDS —
+# module attribution drift bites here too. Explicit name list instead, per
+# triage 2026-05-20T23:30Z.
+_AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
+    "Create Sample Request from Lead",  # Lead → TDS sample request pipeline
+    "coa_amb_api",                       # COA AMB API
+    "fix_invoice_debit_to",              # Sales Invoice fix
+    "load_tds_parameters",               # TDS Product Specification loader
+]
 
 fixtures = [
-    {"doctype": "Custom Field",           "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Property Setter",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Custom Field",           "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
+    {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
+    {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
+    # Server Script: UNION via or_filters only (empty filters) — Frappe's
+    # get_list semantics are: filters=AND, or_filters=OR, combined=AND-of-both.
+    # So filters + or_filters in same dict means BOTH must match (intersection,
+    # not union). For UNION, put both conditions inside or_filters (one list,
+    # all OR'd). Two separate fixture entries for same doctype also fails — the
+    # second one's export_json call overwrites the first one's JSON file
+    # (frappe/utils/fixtures.py L94 — one filename per (doctype, prefix)).
+    # The `prefix` key would let two entries write separate files but UNION is
+    # cleaner for "any of these conditions" semantics.
+    {
+        "doctype": "Server Script",
+        "or_filters": [
+            ["reference_doctype", "in", _AMB_W_TDS_DOCTYPES],
+            ["name", "in", _AMB_W_TDS_NOREF_SERVER_SCRIPTS],
+        ],
+    },
     {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","TDS Product Specification","Direct Shipping"]]]},
     {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
-    {"doctype": "Print Format",           "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
-    {"doctype": "Client Script",       "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Server Script",       "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Workspace",          "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Workspace",              "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Number Card",        "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Report",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Number Card",            "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Report",                 "filters": [["module", "=", "AMBWTDS"]]},
 ]
 
 # ========================================
