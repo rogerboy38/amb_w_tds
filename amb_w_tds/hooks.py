@@ -161,8 +161,15 @@ _AMB_W_TDS_DOCTYPES = [
     "Company", "Contact", "Cost Center", "CRM Deal", "CRM Lead", "CRM Product",
     "Customer", "Customer Item", "Delivery Note", "Delivery Note Item",
     "Department", "Designation", "Email Account", "Employee", "Event",
-    "Event Category AMB", "Freight Location", "GoCardless Mandate",
-    "HD Ticket Type", "Incoterm", "Industry Type", "Issue", "Item",
+    # Removed in V14.3.4 (2026-05-21T05:21Z corrective): 5 orphan-drift entries
+    # below were never present in any AMB substrate (provenance probe confirmed
+    # NOT IN VM3 EITHER — pure stale claim list residue). Triggered L156
+    # silent file-level abort on sync_fixtures during sysmayal hostinger-vpt
+    # rehearsal pull. Excluding them prevents future fixture re-capture.
+    # Excluded: HD Ticket Type, Freight Location, Event Category AMB,
+    # Custom Clearance (workflow-only ref), Direct Shipping (workflow-only ref).
+    "GoCardless Mandate",
+    "Incoterm", "Industry Type", "Issue", "Item",
     "Item Group", "Item Tax Template Detail", "Item Variant", "Lead",
     "Mode of Payment", "Operation", "Opportunity", "Packed Item",
     "Packing Slip", "Payment Entry", "Payment Term",
@@ -214,7 +221,8 @@ fixtures = [
             ["name", "in", _AMB_W_TDS_NOREF_SERVER_SCRIPTS],
         ],
     },
-    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","TDS Product Specification","Direct Shipping"]]]},
+    # V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
+    {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification"]]]},
     {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
