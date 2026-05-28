@@ -318,7 +318,23 @@ function copy_tds_specifications(frm, tds) {
             row.custom_is_title_row = 0;
             row.parameter_name = spec.parameter_name || spec.parameter || spec.specification;
             row.specification = spec.value || spec.specification || '';
-            row.test_method = spec.test_method || '';
+            // Task #60 (2026-05-28) — TDS IQI rows carry `custom_method` (Link →
+            // Quality Inspection Method); COA QTP has BOTH `custom_method` (Link)
+            // and `test_method` (Data, in_list_view). Pre-fix only `test_method`
+            // was assigned from a non-existent `spec.test_method`, leaving the
+            // Test Method column empty across all rows (Hugh's 2026-05-28 07:52
+            // browser observation on COA2-26-0002). Set both: the Link for
+            // referential integrity, the Data field with the same value so the
+            // grid column renders the method code at-a-glance.
+            row.custom_method = spec.custom_method || null;
+            row.test_method = spec.custom_method || spec.test_method || '';
+            // Task #60 — `custom_uom` is on both sides but missed by the clone
+            // dict. TDS-side is Data (string); COA-side is Link → UOM. Pass-
+            // through copy: if the source string happens to match a UOM record
+            // name it'll resolve as a Link; if it's a stray free-text, Frappe
+            // will fail validation on save (visible to the user, fixable from
+            // the TDS row). Leaving the source-side hygiene to a separate task.
+            row.custom_uom = spec.custom_uom || null;
             row.min_value = spec.min_value;
             row.max_value = spec.max_value;
             row.numeric = spec.numeric || 0;
@@ -326,6 +342,10 @@ function copy_tds_specifications(frm, tds) {
             row.acceptance_formula = spec.acceptance_formula || '';
             row.parameter_group = spec.parameter_group;
             row.acceptance_choice = spec.acceptance_choice || null;
+            // Task #60 — propagate the 0.5%-diluted convention marker too.
+            // Field exists on both sides; absence was a pure-omission gap.
+            row.custom_reconstituted_to_05_total_solids_solution =
+                spec.custom_reconstituted_to_05_total_solids_solution ? 1 : 0;
             row.status = 'Pending';
         }
     });

@@ -318,7 +318,12 @@ function copy_tds_specifications(frm, tds) {
             row.custom_is_title_row = 0;
             row.parameter_name = spec.parameter_name || spec.parameter || spec.specification;
             row.specification = spec.value || spec.specification || '';
-            row.test_method = spec.test_method || '';
+            // Task #60 (2026-05-28) — mirror of coa_amb.js. TDS IQI carries
+            // `custom_method` (Link); pre-fix only `test_method` was set from
+            // a non-existent `spec.test_method`, leaving Test Method column empty.
+            row.custom_method = spec.custom_method || null;
+            row.test_method = spec.custom_method || spec.test_method || '';
+            row.custom_uom = spec.custom_uom || null;
             row.min_value = spec.min_value;
             row.max_value = spec.max_value;
             row.numeric = spec.numeric || 0;
@@ -326,6 +331,8 @@ function copy_tds_specifications(frm, tds) {
             row.acceptance_formula = spec.acceptance_formula || '';
             row.parameter_group = spec.parameter_group;
             row.acceptance_choice = spec.acceptance_choice || null;
+            row.custom_reconstituted_to_05_total_solids_solution =
+                spec.custom_reconstituted_to_05_total_solids_solution ? 1 : 0;
             row.status = 'Pending';
         }
     });

@@ -382,17 +382,34 @@ class COAAMB(Document):
             if hasattr(tds, 'storage_and_handling_conditions'):
                 self.storage_and_handling_conditions = tds.storage_and_handling_conditions
 
-            # Copy specifications to quality parameters
+            # Copy specifications to quality parameters.
+            #
+            # Note (2026-05-27): this branch is currently DEAD CODE — `tds.specifications`
+            # isn't the real TDS child-table fieldname (the real one is
+            # `tds.item_quality_inspection_parameter`), so `hasattr(...) and …`
+            # evaluates False and the loop never runs. The browser clone path
+            # (coa_amb.js → `copy_tds_specifications`) is what populates the table
+            # at runtime. Field copies are extended here in parity with the JS path
+            # so that if/when the gate is fixed in a future task, the Python path
+            # carries the same field set.
+            #
+            # Task #60 additions (2026-05-28): `custom_method` (Link → Quality Inspection
+            # Method) — the source side has this; pre-fix `test_method` was empty post-
+            # clone because it was being copied from a non-existent `spec.test_method`.
+            # Also propagate `custom_reconstituted_to_05_total_solids_solution`.
             if hasattr(tds, 'specifications') and tds.specifications:
                 for spec in tds.specifications:
                     self.append('coa_quality_test_parameter', {
                         'parameter_name': spec.parameter,
                         'specification': spec.specification,
-                        'test_method': spec.test_method,
+                        'test_method': spec.get('custom_method') or spec.get('test_method'),
+                        'custom_method': spec.get('custom_method'),
                         'result': '',
                         'min_value': spec.get('min_value'),
                         'max_value': spec.get('max_value'),
-                        'custom_uom': spec.get('custom_uom')
+                        'custom_uom': spec.get('custom_uom'),
+                        'custom_reconstituted_to_05_total_solids_solution':
+                            spec.get('custom_reconstituted_to_05_total_solids_solution') or 0,
                     })
 
             # Task #46 (2026-05-27) — Clone preservative system + composition from TDS.

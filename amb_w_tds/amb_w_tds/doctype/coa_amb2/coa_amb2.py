@@ -382,17 +382,26 @@ class COAAMB2(Document):
             if hasattr(tds, 'storage_and_handling_conditions'):
                 self.storage_and_handling_conditions = tds.storage_and_handling_conditions
 
-            # Copy specifications to quality parameters
+            # Copy specifications to quality parameters.
+            #
+            # Note: this branch is currently dead code on COA AMB2 too — mirrors coa_amb.py
+            # one-for-one. Task #60 (2026-05-28) extends the dict with `custom_method`
+            # and `custom_reconstituted_to_05_total_solids_solution` in parity with the
+            # JS path (coa_amb2.js → copy_tds_specifications) which is what actually
+            # populates the COA child table at runtime.
             if hasattr(tds, 'specifications') and tds.specifications:
                 for spec in tds.specifications:
                     self.append('coa_quality_test_parameter', {
                         'parameter_name': spec.parameter,
                         'specification': spec.specification,
-                        'test_method': spec.test_method,
+                        'test_method': spec.get('custom_method') or spec.get('test_method'),
+                        'custom_method': spec.get('custom_method'),
                         'result': '',
                         'min_value': spec.get('min_value'),
                         'max_value': spec.get('max_value'),
-                        'custom_uom': spec.get('custom_uom')
+                        'custom_uom': spec.get('custom_uom'),
+                        'custom_reconstituted_to_05_total_solids_solution':
+                            spec.get('custom_reconstituted_to_05_total_solids_solution') or 0,
                     })
 
             # Task #46 (2026-05-27) — Clone preservative system + composition from TDS.
