@@ -115,13 +115,20 @@ function add_custom_buttons(frm) {
         frm.add_custom_button(__('Create New Version'), function() {
             create_new_tds_version(frm);
         }, __('Actions'));
-        
+
         // Button to create Quality Inspection Template
         frm.add_custom_button(__('Create Inspection Template'), function() {
             create_quality_inspection_template(frm);
         }, __('Actions'));
+
+        // Task #33 v2 (2026-05-27): discoverability for COA generation.
+        // Opens a new COA AMB with linked_tds pre-filled; the COA's sync_from_tds
+        // runs on save and clones the IQI grid (including acceptance_choice).
+        frm.add_custom_button(__('Generate COA AMB'), function() {
+            frappe.new_doc('COA AMB', { linked_tds: frm.doc.name });
+        }, __('Actions'));
     }
-    
+
     if (!frm.is_new() && frm.doc.docstatus === 0) {
         // Button to copy from latest version
         frm.add_custom_button(__('Copy from Latest'), function() {

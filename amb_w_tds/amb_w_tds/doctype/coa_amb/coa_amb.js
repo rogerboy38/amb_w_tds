@@ -54,11 +54,18 @@ frappe.ui.form.on('COA AMB', {
                         frm.set_value('item_code', r.message.item_code);
                         
                         // Copy specifications to quality parameters
-                        if (!frm.doc.coa_quality_test_parameter || 
+                        if (!frm.doc.coa_quality_test_parameter ||
                             frm.doc.coa_quality_test_parameter.length === 0) {
                             copy_tds_specifications(frm, r.message);
                         }
-                        
+
+                        // Task #46 v3 (2026-05-27): preservative clone in-memory for UX.
+                        // Mirrors the server-side branch in coa_amb.py sync_from_tds(). Both
+                        // run; Python is the source of truth on persistence, JS makes the
+                        // section populate immediately on linked_tds change instead of only
+                        // appearing post-save.
+                        copy_tds_preservatives(frm, r.message);
+
                         frappe.show_alert({
                             message: __('TDS specifications loaded'),
                             indicator: 'green'
@@ -318,16 +325,47 @@ function copy_tds_specifications(frm, tds) {
             row.formula_based_criteria = spec.formula_based_criteria || 0;
             row.acceptance_formula = spec.acceptance_formula || '';
             row.parameter_group = spec.parameter_group;
+            row.acceptance_choice = spec.acceptance_choice || null;
             row.status = 'Pending';
         }
     });
     
     frm.refresh_field('coa_quality_test_parameter');
-    
+
     frappe.show_alert({
         message: __('Copied {0} parameters from TDS', [specifications.length]),
         indicator: 'green'
     });
+}
+
+// Task #46 v3 (2026-05-27): mirror the Python sync_from_tds preservative branch in JS so
+// the COA's preservative section populates immediately on linked_tds change (UX), not just
+// after save. Python remains source of truth for persistence; JS is for the in-memory render.
+function copy_tds_preservatives(frm, tds) {
+    const presSystem = tds.preservative_system || null;
+    const presRows = tds.tds_preservatives || [];
+
+    frm.set_value('preservative_system', presSystem);
+
+    frm.clear_table('coa_preservatives');
+    presRows.forEach(function(row) {
+        const r = frm.add_child('coa_preservatives');
+        r.compound = row.compound;
+        r.percentage = row.percentage;
+        r.compound_item = row.compound_item;
+        r.e_number = row.e_number;
+        r.is_override = row.is_override ? 1 : 0;
+    });
+    frm.refresh_field('coa_preservatives');
+    frm.refresh_field('preservative_system');
+
+    if (presRows.length > 0) {
+        frappe.show_alert({
+            message: __('Cloned preservative system "{0}" ({1} composition row(s))',
+                        [presSystem || '—', presRows.length]),
+            indicator: 'green'
+        });
+    }
 }
 
 function validate_test_result(frm, row) {
