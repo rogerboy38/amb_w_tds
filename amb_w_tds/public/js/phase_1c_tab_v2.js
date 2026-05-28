@@ -533,7 +533,8 @@ function sc5v2_renderLeafRow(qip, cat, cavMap, acceptanceChoicesMap) {
                            data-qip-name="${frappe.utils.escape_html(qip.name)}"
                            data-param-group="${frappe.utils.escape_html(qip.parameter_group || '')}"
                            data-l2-key="${frappe.utils.escape_html(cat.key)}"
-                           data-l2-name="${frappe.utils.escape_html(cat.en)}">
+                           data-l2-name="${frappe.utils.escape_html(cat.en)}"
+                           data-l2-qipg="${frappe.utils.escape_html(cat.qipg)}">
                     <span>${frappe.utils.escape_html(qip.parameter || qip.name)}</span>
                 </label>
                 ${editPencil}
@@ -838,6 +839,7 @@ async function sc5v2_addSelected(frm) {
             paramGroup: cb.dataset.paramGroup,
             l2Key: cb.dataset.l2Key,
             l2Name: cb.dataset.l2Name,
+            l2Qipg: cb.dataset.l2Qipg,   // Task #62 — QIPG link for title-row's parameter_group
             choice,
         });
     });
@@ -859,13 +861,25 @@ async function sc5v2_addSelected(frm) {
     const today = frappe.datetime.get_today();
 
     for (const sel of selections) {
-        // Section header (once per L2)
+        // Section header (once per L2) — Task #62 (2026-05-28) Convention (B).
+        //
+        // IQI.specification is reqd=1 (erpnext Stock core; `mandatory_depends_on`
+        // is client-side only — server's _get_missing_mandatory_fields checks
+        // reqd=1 unconditionally per frappe/model/base_document.py:962). So the
+        // title row's specification MUST point to a real Quality Inspection
+        // Parameter record. The 7 L1 category names are pre-existing as QIP
+        // synthetic placeholders (5 were already there pre-Task-#62; the missing
+        // 2 — 'Contaminants', 'Aloe Vera Nutrients' — are added via this task's
+        // QIP fixture entries).
+        //
+        // specification → cat.en (display label, matches the user-facing UI text)
+        // parameter_group → cat.qipg (the QIPG record; all 7 L1 QIPGs pre-exist)
         if (sel.l2Name && !existingTitles.has(sel.l2Name) && !wroteHeader.has(sel.l2Name)) {
             try {
                 const hr = frm.add_child('item_quality_inspection_parameter');
                 if (hr) {
                     hr.specification = sel.l2Name;
-                    hr.parameter_group = sel.l2Name;
+                    hr.parameter_group = sel.l2Qipg || sel.l2Name;
                     hr.custom_is_title_row = 1;
                     wroteHeader.add(sel.l2Name);
                     headerCount++;
