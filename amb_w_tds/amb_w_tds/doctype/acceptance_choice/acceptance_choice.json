@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "creation": "2026-05-27 11:06:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "text_label",
+  "sub_spec",
+  "is_default",
+  "column_break_bounds",
+  "min_value",
+  "max_value",
+  "target_value",
+  "unit",
+  "section_break_context",
+  "applicable_substrates",
+  "reconstituted_to_05_solids",
+  "legacy_text_match"
+ ],
+ "fields": [
+  {
+   "description": "Human-readable spec name, e.g., '80% THROUGH NO. 100 MESH'",
+   "fieldname": "text_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Etiqueta",
+   "length": 200,
+   "reqd": 1
+  },
+  {
+   "description": "Optional sub-identifier, e.g., sieve 'NO. 100 MESH'",
+   "fieldname": "sub_spec",
+   "fieldtype": "Data",
+   "label": "Sub-Spec",
+   "length": 100
+  },
+  {
+   "default": "0",
+   "description": "First choice on add — surfaced in picker as '(default — first choice on add)'",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default Choice"
+  },
+  {
+   "fieldname": "column_break_bounds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "SPC lower threshold (USL for >= specs)",
+   "fieldname": "min_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Min",
+   "precision": "4"
+  },
+  {
+   "description": "SPC upper threshold",
+   "fieldname": "max_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Max",
+   "precision": "4"
+  },
+  {
+   "description": "SPC center value, optional",
+   "fieldname": "target_value",
+   "fieldtype": "Float",
+   "label": "Target",
+   "precision": "4"
+  },
+  {
+   "fieldname": "unit",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "section_break_context",
+   "fieldtype": "Section Break",
+   "label": "Substrate / Convention"
+  },
+  {
+   "description": "Empty = inherits parent QIPG's substrates; populate only if this choice differs",
+   "fieldname": "applicable_substrates",
+   "fieldtype": "Table MultiSelect",
+   "label": "Substratos",
+   "options": "Parameter Group Substrate"
+  },
+  {
+   "default": "0",
+   "description": "AMB 0.5%-diluted convention marker; affects how the measurement is taken",
+   "fieldname": "reconstituted_to_05_solids",
+   "fieldtype": "Check",
+   "label": "Reconstituted to 0.5% Solids"
+  },
+  {
+   "description": "Migration trace: the custom_choices Long Text line this row was parsed from",
+   "fieldname": "legacy_text_match",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Legacy Text Match",
+   "length": 200
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-27 11:06:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Acceptance Choice",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
