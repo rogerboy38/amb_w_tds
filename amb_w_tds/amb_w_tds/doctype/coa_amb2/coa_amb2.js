@@ -341,7 +341,15 @@ function copy_tds_specifications(frm, tds) {
 // Task #46 v3 (2026-05-27): mirror the Python sync_from_tds preservative branch in JS so
 // the COA's preservative section populates immediately on linked_tds change (UX), not just
 // after save. Python remains source of truth for persistence; JS is for the in-memory render.
+//
+// Task #59 follow-up (2026-05-28): `frm.meta.fields.some(...)` guard makes this polymorphic
+// across COA AMB (has preservative Custom Fields) and COA AMB2 (doesn't). Skip cleanly on
+// COA AMB2 rather than no-op-or-throw depending on Frappe version.
 function copy_tds_preservatives(frm, tds) {
+    const hasPresFields = (frm.meta.fields || []).some(f => f.fieldname === 'preservative_system')
+                       && (frm.meta.fields || []).some(f => f.fieldname === 'coa_preservatives');
+    if (!hasPresFields) return;
+
     const presSystem = tds.preservative_system || null;
     const presRows = tds.tds_preservatives || [];
 

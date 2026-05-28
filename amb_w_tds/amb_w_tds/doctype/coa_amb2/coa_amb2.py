@@ -398,17 +398,25 @@ class COAAMB2(Document):
             # Task #46 (2026-05-27) — Clone preservative system + composition from TDS.
             # Mirrors the analysis-table clone above. Read-only on COA side; refresh per
             # COA generation (overwrites any stale prior state).
-            self.preservative_system = tds.get('preservative_system')
-            self.set('coa_preservatives', [])
-            tds_pres = tds.get('tds_preservatives') or []
-            for row in tds_pres:
-                self.append('coa_preservatives', {
-                    'compound': row.compound,
-                    'percentage': row.percentage,
-                    'compound_item': row.get('compound_item'),
-                    'e_number': row.get('e_number'),
-                    'is_override': row.get('is_override') or 0,
-                })
+            #
+            # Task #59 follow-up (2026-05-28) — `has_field` guard makes this branch
+            # polymorphic across COA AMB (where preservative_system + coa_preservatives
+            # are v1 Custom Fields) and COA AMB2 (where they're deliberately excluded).
+            # Skip the branch cleanly on COA AMB2 rather than crash with "Field
+            # preservative_system not found."
+            if (self.meta.has_field('preservative_system')
+                    and self.meta.has_field('coa_preservatives')):
+                self.preservative_system = tds.get('preservative_system')
+                self.set('coa_preservatives', [])
+                tds_pres = tds.get('tds_preservatives') or []
+                for row in tds_pres:
+                    self.append('coa_preservatives', {
+                        'compound': row.compound,
+                        'percentage': row.percentage,
+                        'compound_item': row.get('compound_item'),
+                        'e_number': row.get('e_number'),
+                        'is_override': row.get('is_override') or 0,
+                    })
 
             frappe.msgprint(_("Successfully synced specifications from TDS: {0}").format(self.linked_tds), alert=True)
             

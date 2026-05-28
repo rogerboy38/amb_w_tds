@@ -45,8 +45,22 @@ class COAAMB(Document):
         self.evaluate_formula_parameters()
 
     def before_insert(self):
-        """Before insert - sync from TDS"""
-        if self.linked_tds and not self.coa_quality_test_parameter:
+        """Before insert — sync from TDS.
+
+        Task #46 v3 (2026-05-27): the previous gate `not self.coa_quality_test_parameter`
+        let sync_from_tds() be skipped whenever the form-script JS had already pre-populated
+        the basic-param table on linked_tds change. That skip meant the preservative branch
+        inside sync_from_tds() never ran, so `preservative_system` / `coa_preservatives` stayed
+        empty on every COA created through the UI (basic params worked because JS handled them;
+        preservatives broke because only this Python path handled them).
+
+        Fix: always run sync_from_tds() when linked_tds is set. The basic-param block inside
+        it is dead anyway (`hasattr(tds, 'specifications')` resolves but `tds.specifications`
+        is None — the real field is `tds.item_quality_inspection_parameter`), so removing
+        the gate doesn't double-add basic rows. The item-details and preservative blocks
+        are idempotent (`self.set('coa_preservatives', [])` clears before re-append).
+        """
+        if self.linked_tds:
             self.sync_from_tds()
         self.set_default_naming_series()
 
@@ -380,7 +394,31 @@ class COAAMB(Document):
                         'max_value': spec.get('max_value'),
                         'custom_uom': spec.get('custom_uom')
                     })
-            
+
+            # Task #46 (2026-05-27) — Clone preservative system + composition from TDS.
+            # Mirrors the analysis-table clone above. Read-only on COA side; refresh per
+            # COA generation (overwrites any stale prior state).
+            #
+            # Task #59 follow-up (2026-05-28) — `has_field` guard makes this branch
+            # polymorphic across COA AMB (where preservative_system + coa_preservatives
+            # are v1 Custom Fields) and clones like COA AMB2 (where those fields are
+            # deliberately excluded). On a doctype without the fields, skip cleanly
+            # rather than crash with "Field preservative_system not found." which is
+            # what Hugh hit creating COA2-26-0002 on 2026-05-28.
+            if (self.meta.has_field('preservative_system')
+                    and self.meta.has_field('coa_preservatives')):
+                self.preservative_system = tds.get('preservative_system')
+                self.set('coa_preservatives', [])
+                tds_pres = tds.get('tds_preservatives') or []
+                for row in tds_pres:
+                    self.append('coa_preservatives', {
+                        'compound': row.compound,
+                        'percentage': row.percentage,
+                        'compound_item': row.get('compound_item'),
+                        'e_number': row.get('e_number'),
+                        'is_override': row.get('is_override') or 0,
+                    })
+
             frappe.msgprint(_("Successfully synced specifications from TDS: {0}").format(self.linked_tds), alert=True)
             
         except Exception as e:
@@ -779,3 +817,117 @@ def duplicate_coa(source_coa, new_batch=None):
     except Exception as e:
         frappe.log_error(f"Error duplicating COA: {str(e)}", "COA Duplication")
         frappe.throw(_("Error duplicating COA: {0}").format(str(e)))
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# SC4 — Customer Acceptable Value validation hook (wired in hooks.py doc_events)
+# ────────────────────────────────────────────────────────────────────────────
+
+def validate_cav_on_submit(doc, method=None):
+    """On COA AMB submit, cross-reference each measured parameter row against
+    approved Customer Acceptable Value records for every customer in custom_coa_customers.
+
+    Behavior controlled by TDS Settings.cav_block_on_mismatch (Check):
+      0 (default) — warn-only: shows frappe.msgprint for each mismatch
+      1           — block:     raises frappe.throw with the full mismatch list
+
+    Skips silently if:
+      - No customers in custom_coa_customers (no customer context)
+      - No coa_quality_test_parameter rows (no measurements)
+      - No matching CAV found for a (param, customer) pair (no expectation to validate against)
+    """
+    if not doc.get('custom_coa_customers'):
+        return
+
+    customers = [c.customer for c in doc.custom_coa_customers if c.customer]
+    if not customers:
+        return
+
+    errors = []
+    warnings = []
+
+    for row in (doc.coa_quality_test_parameter or []):
+        param = row.parameter_name
+        if not param:
+            continue
+
+        for customer in customers:
+            cavs = frappe.db.get_list(
+                'Customer Acceptable Value',
+                filters={
+                    'parameter': param,
+                    'customer': customer,
+                    'status': 'Approved',
+                    'is_active': 1,
+                    'effective_from': ['<=', frappe.utils.today()],
+                },
+                fields=[
+                    'name', 'value_type', 'value_text', 'value_min', 'value_max',
+                    'unit_of_measurement', 'regulatory_reference', 'effective_to',
+                ],
+                order_by='effective_from DESC',
+            )
+
+            for cav in cavs:
+                if cav.get('effective_to') and cav['effective_to'] < frappe.utils.today():
+                    continue
+
+                if _row_value_matches_cav(row, cav):
+                    continue
+
+                expected = (
+                    cav.get('value_text')
+                    or f"{cav.get('value_min')}-{cav.get('value_max')}"
+                )
+                ref = f" [ref: {cav['regulatory_reference']}]" if cav.get('regulatory_reference') else ''
+                msg = _(
+                    "Row {idx} (parameter {param!r}, value {val!r}): "
+                    "does not match Customer Acceptable Value <a href=\"/app/customer-acceptable-value/{cav}\">{cav}</a> "
+                    "for {customer} (expected: {expected}){ref}"
+                ).format(
+                    idx=row.idx, param=param, val=row.value,
+                    cav=cav['name'], customer=customer, expected=expected, ref=ref,
+                )
+
+                if frappe.db.get_single_value('TDS Settings', 'cav_block_on_mismatch'):
+                    errors.append(msg)
+                else:
+                    warnings.append(msg)
+
+    if errors:
+        frappe.throw('<br>'.join(errors), title=_('CAV Validation Failed'))
+
+    if warnings:
+        for w in warnings:
+            frappe.msgprint(w, indicator='orange', alert=True, title=_('CAV Warning'))
+
+
+def _row_value_matches_cav(row, cav):
+    """True if a COA Quality Test Parameter row's value satisfies the CAV expectation."""
+    vt = cav.get('value_type')
+
+    if vt == 'Choice':
+        return (row.value or '').strip().upper() == (cav.get('value_text') or '').strip().upper()
+
+    if vt == 'Numeric Range':
+        try:
+            v = float(row.value)
+            vmin = cav.get('value_min')
+            vmax = cav.get('value_max')
+            if vmin is None and vmax is None:
+                return True
+            if vmin is not None and v < vmin:
+                return False
+            if vmax is not None and v > vmax:
+                return False
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    if vt == 'Both':
+        return (
+            _row_value_matches_cav(row, {**cav, 'value_type': 'Choice'})
+            or _row_value_matches_cav(row, {**cav, 'value_type': 'Numeric Range'})
+        )
+
+    return True
