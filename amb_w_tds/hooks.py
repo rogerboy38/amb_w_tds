@@ -205,6 +205,15 @@ fixtures = [
     {"doctype": "Custom Field",           "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
+    # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
+    # Parameter records. These are the Link targets the picker's title-row
+    # injection in phase_1c_tab_v2.js writes into IQI.specification when
+    # users add params from each L1 category. Tight `name in [...]` filter
+    # so re-export only picks up the 7 placeholders, not all 60+ QIP records.
+    {"doctype": "Quality Inspection Parameter",
+     "filters": [["name", "in", ["Organoleptic", "Physicochemical", "Microbiological",
+                                  "Pesticides", "Contaminants", "Other Analysis",
+                                  "Aloe Vera Nutrients"]]]},
     # Server Script: UNION via or_filters only (empty filters) — Frappe's
     # get_list semantics are: filters=AND, or_filters=OR, combined=AND-of-both.
     # So filters + or_filters in same dict means BOTH must match (intersection,
