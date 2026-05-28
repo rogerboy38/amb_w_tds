@@ -246,6 +246,17 @@ async function sc5v2_fetchTreeData(substrateCode) {
         throw new Error(__('Could not load parameters: {0}', [String(e.message || e)]));
     }
 
+    // Task #66 (2026-05-29) — Hide the 7 L1-category placeholder QIPs from the picker.
+    // Task #63 (commit c56e023) added these as fixtures so the auto-injected title rows
+    // could satisfy IQI.specification's reqd=1 (Convention B / Task #62). They have no
+    // role as user-selectable parameters; surfacing them in the picker UI let users add
+    // them as regular IQI rows whose `specification` matched a title row's text, producing
+    // visual "duplicate title" artifacts on 0303-EJEMPLO 2 (real diagnosis: spurious
+    // placeholder param rows, not title-row dedup failure). Data-driven (single source
+    // of truth = SC5V2_L2_CATEGORIES) per ADR-002.
+    const L1_PLACEHOLDER_QIPS = new Set(SC5V2_L2_CATEGORIES.map(c => c.en));
+    qips = qips.filter(qip => !L1_PLACEHOLDER_QIPS.has(qip.name));
+
     // M3.5 substrate map (whitelisted server method — returns {} on any failure)
     const substrateMap = await sc5v2_fetchSubstrateMap();
     const substrateMapPresent = Object.keys(substrateMap).length > 0;
