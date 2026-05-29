@@ -46,7 +46,11 @@ app_include_css = [
 # Phase 1C-B (V14.3.1) — Parameter Selection picker JS, composes with the canonical
 # tds_product_specification.js (Frappe merges frappe.ui.form.on() calls across files).
 doctype_js = {
-    "TDS Product Specification": "public/js/phase_1c_tab.js",
+    "TDS Product Specification": [
+        "public/js/phase_1c_tab_v2.js",
+        "public/js/tds_product_specification.js",
+    ],
+    "COA AMB": "public/js/coa_amb.js",
 }
 
 # ========================================
@@ -101,6 +105,16 @@ doc_events = {
 
     # ---- Batch AMB: Controller migrated to amb_w_spc
     # "Batch AMB" doc_events removed - now handled by amb_w_spc
+
+    # SC4 — CAV validation hook fires on COA AMB submit. Reads custom_coa_customers,
+    # cross-references each row in coa_quality_test_parameter against approved Customer
+    # Acceptable Value records. Configurable via TDS Settings.cav_block_on_mismatch
+    # (default 0 = warn-only; set 1 to block submit).
+    "COA AMB": {
+        "on_submit": [
+            "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_cav_on_submit",
+        ],
+    },
 }
 
 # ========================================
@@ -201,8 +215,29 @@ _AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
     "load_tds_parameters",               # TDS Product Specification loader
 ]
 
+# Task #67 (2026-05-29) — Custom Fields on doctypes NOT in _AMB_W_TDS_DOCTYPES
+# that amb_w_tds owns by virtue of which app's code consumes them. UNIONed into
+# the Custom Field fixture filter via or_filters so re-export captures the entry
+# (without these names, export would silently drop these CFs because their `dt`
+# misses the doctype-list filter — same trap as L156).
+#
+# QIPG.applicable_substrates: dt=Quality Inspection Parameter Group (module=Core
+# SPC, shared with amb_w_spc) but the picker in amb_w_tds (phase_1c_tab_v2.js)
+# is the only consumer for substrate-driven filtering. amb_w_spc's hooks.py
+# fixture filter also matches QIPG CFs by `dt in _AMB_W_SPC_DOCTYPES`, so
+# running `bench export-fixtures --app amb_w_spc` would capture this CF too —
+# accepted as latent dual-capture per Hugh 2026-05-29 (Task #67 directive:
+# "Custom Fields stay in amb_w_tds fixtures").
+_AMB_W_TDS_CF_EXCEPTIONS = [
+    "Quality Inspection Parameter Group-applicable_substrates",
+]
+
 fixtures = [
-    {"doctype": "Custom Field",           "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
+    {"doctype": "Custom Field",
+     "or_filters": [
+         ["dt", "in", _AMB_W_TDS_DOCTYPES],
+         ["name", "in", _AMB_W_TDS_CF_EXCEPTIONS],
+     ]},
     {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
