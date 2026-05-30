@@ -121,6 +121,43 @@ function sc5v2_renderErrorPanel(title, detail) {
 }
 
 
+// ─── Substrate detection — Task #74 (2026-05-29): direct read from Item.substrate ───
+//
+// Path Y populated Item.substrate (PWD/LQD/LQDC/LQDF/PWDF). Bundle 1 added an
+// item_substrate field on TDS Product Specification with fetch_from='product_item.substrate',
+// so the substrate is available synchronously on the form via frm.doc.item_substrate.
+//
+// Returns: string ('PWD' | 'LQD' | 'LQDC' | 'LQDF' | 'PWDF') or null when the item
+// has no substrate set (LBL/MAQ/MIG_QITEM orphans — picker shows ALL parameters when null).
+function deriveSubstrate(frm) {
+    return frm.doc.item_substrate || null;
+}
+
+
+// ─── Combined fetch — Task #74 (2026-05-29): substrate (sync) + itemGroup (1 db read) ───
+//
+// Replaces sc5v2_deriveItemGroup chain-walk. substrate comes from frm.doc (zero roundtrip
+// after Bundle 1's fetch_from populates it). itemGroup still needed for header display.
+//
+// Returns: { itemGroup, substrateCode, chain } — chain kept for return-shape compat (empty).
+async function sc5v2_deriveSubstrateAndItemGroup(frm) {
+    const substrateCode = deriveSubstrate(frm);
+    if (!frm.doc.product_item) return { itemGroup: null, substrateCode, chain: [] };
+    try {
+        const r = await frappe.db.get_value('Item', frm.doc.product_item, ['item_group']);
+        const ig = r && r.message && r.message.item_group;
+        return { itemGroup: ig || null, substrateCode, chain: [] };
+    } catch (e) {
+        console.warn('SC5 v2 Task #74: itemGroup fetch failed', e);
+        return { itemGroup: null, substrateCode, chain: [] };
+    }
+}
+
+
+// ─── DEPRECATED 2026-05-29 Task #74 — use deriveSubstrate(frm) or ─────────────────
+//     sc5v2_deriveSubstrateAndItemGroup(frm) instead. Kept for one release cycle for
+//     rollback safety; remove after Task #74 verified on PROD.
+//
 // ─── Substrate detection — M3.5 v2 (2026-05-27): walk Item Group parent chain ───
 //
 // The leaf Item Group (e.g., 'FG 0300') has zero substrate-related fields. The substrate
@@ -235,10 +272,15 @@ async function sc5v2_fetchTreeData(substrateCode) {
 
     try {
         qips = await frappe.db.get_list('Quality Inspection Parameter', {
+            // Task #74 V14.3.2-port (2026-05-30): custom_method, custom_value_text,
+            // custom_value_min, custom_value_max do NOT exist on QIP master. Read
+            // custom_specification + custom_specification_text/min/max instead.
+            // l4_migration_status removed (doesn't exist as DocField or CF on QIP master).
+            // V14.3.2 fixed this for phase_1c_tab.js (v1); this is the full port to v2.
             fields: ['name', 'parameter', 'parameter_group', 'custom_choices',
-                     'custom_is_numeric', 'custom_method', 'custom_unit',
-                     'custom_value_text', 'custom_value_min', 'custom_value_max',
-                     'l4_migration_status'],
+                     'custom_is_numeric', 'custom_specification', 'custom_unit',
+                     'custom_specification_text', 'custom_specification_min',
+                     'custom_specification_max'],
             order_by: 'parameter asc', limit: 0,
         });
     } catch (e) {
@@ -344,8 +386,9 @@ async function sc5v2_renderParameterPicker(frm) {
     const pickerEl = document.getElementById('phase-1c-tree-picker');
 
     let itemGroup = null, substrateCode = null;
-    try { ({ itemGroup, substrateCode } = await sc5v2_deriveItemGroup(frm)); }
-    catch (e) { console.warn('SC5 v2: deriveItemGroup threw (using nulls)', e); }
+    // Task #74 (2026-05-29): swap chain-walk for direct Item.substrate read via fetch_from.
+    try { ({ itemGroup, substrateCode } = await sc5v2_deriveSubstrateAndItemGroup(frm)); }
+    catch (e) { console.warn('SC5 v2 Task #74: deriveSubstrateAndItemGroup threw (using nulls)', e); }
 
     // fetchTreeData rethrows with a meaningful error if tree can't load — that's
     // intentional (no tree = no picker, surface to user via the top-level catch).
@@ -372,6 +415,11 @@ async function sc5v2_renderParameterPicker(frm) {
     } else if (substrateCode) {
         html += `<div style="background:#e8f5e9; border-left:4px solid #4caf50; padding:8px 14px; margin:10px 0; border-radius:4px; color:#1b5e20; font-size:13px;">
             🧪 ${__('Substrate filter active: {0} — showing {1} applicable parameter(s)', [substrateCode, totalParams])}
+        </div>`;
+    } else {
+        // Task #74 (2026-05-29): NULL Item.substrate — picker shows ALL parameters with explanation.
+        html += `<div style="background:#e3f2fd; border-left:4px solid #2196f3; padding:8px 14px; margin:10px 0; border-radius:4px; color:#0d47a1; font-size:13px;">
+            ℹ ${__('No substrate set on this item — showing all parameters. Set Item.substrate to filter.')}
         </div>`;
     }
 
@@ -964,11 +1012,11 @@ async function sc5v2_addSelected(frm) {
                 if (!sel.choice) {
                     if (qipDoc.custom_is_numeric) {
                         row.numeric = 1;
-                        if (qipDoc.custom_value_min != null) row.min_value = qipDoc.custom_value_min;
-                        if (qipDoc.custom_value_max != null) row.max_value = qipDoc.custom_value_max;
-                    } else if (qipDoc.custom_value_text) {
-                        row.value = qipDoc.custom_value_text;
-                        const formula = sc5v2_parseValueFormula(qipDoc.custom_value_text);
+                        if (qipDoc.custom_specification_min != null) row.min_value = qipDoc.custom_specification_min;
+                        if (qipDoc.custom_specification_max != null) row.max_value = qipDoc.custom_specification_max;
+                    } else if (qipDoc.custom_specification_text) {
+                        row.value = qipDoc.custom_specification_text;
+                        const formula = sc5v2_parseValueFormula(qipDoc.custom_specification_text);
                         if (formula) {
                             if (formula.min != null) row.min_value = formula.min;
                             if (formula.max != null) row.max_value = formula.max;
@@ -979,11 +1027,11 @@ async function sc5v2_addSelected(frm) {
                         if (first) row.value = first;
                     }
                 }
-                if (qipDoc.custom_method) {
-                    if (validMethodSet === null || validMethodSet.has(qipDoc.custom_method)) {
-                        row.custom_method = qipDoc.custom_method;
+                if (qipDoc.custom_specification) {
+                    if (validMethodSet === null || validMethodSet.has(qipDoc.custom_specification)) {
+                        row.custom_method = qipDoc.custom_specification;
                     } else {
-                        console.warn(`SC5 v2: QIP "${sel.qipName}" has stale Method "${qipDoc.custom_method}" — leaving row.custom_method blank`);
+                        console.warn(`SC5 v2: QIP "${sel.qipName}" has stale Method "${qipDoc.custom_specification}" — leaving row.custom_method blank`);
                     }
                 }
                 if (qipDoc.custom_unit && !row.custom_uom) row.custom_uom = qipDoc.custom_unit;

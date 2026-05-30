@@ -16,3 +16,7 @@ amb_w_tds.patches.v13_6.fix_tds_workflow_docstatus
 # Quality Inspection Parameter Group records. Default = all 5 substrates;
 # Specific Gravity / Total Solids leaves get LQD family only.
 amb_w_tds.patches.v14_3_6.install_m35_substrate_baseline
+
+# V14.3.7: Task #74 backfill — populate item_substrate on existing TDS records (Path Y picker JS refactor consumer).
+# fetch_from on item_substrate field handles new + edited records; this patch handles existing records.
+amb_w_tds.patches.v14_3_7.backfill_tds_item_substrate
