@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:preservative_name",
+ "creation": "2026-05-27 04:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "preservative_name",
+  "code",
+  "is_active",
+  "column_break_1",
+  "applicable_substrates",
+  "description_section",
+  "description",
+  "composition_section",
+  "composition"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity"
+  },
+  {
+   "fieldname": "preservative_name",
+   "fieldtype": "Data",
+   "label": "Nombre",
+   "reqd": 1,
+   "unique": 1,
+   "length": 20,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "code",
+   "fieldtype": "Data",
+   "label": "Identificador",
+   "reqd": 1,
+   "unique": 1,
+   "length": 2,
+   "description": "Single-letter code embedded in TDS version string (V1.0705F → F)",
+   "in_list_view": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Activo",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applicable_substrates",
+   "fieldtype": "Table MultiSelect",
+   "label": "Sustratos Aplicables",
+   "options": "Parameter Group Substrate",
+   "description": "L1 substrates where this system is typically applied (e.g., LQD/LQDC/LQDF for liquid juices)"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Description",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Descripción"
+  },
+  {
+   "fieldname": "composition_section",
+   "fieldtype": "Section Break",
+   "label": "Composición"
+  },
+  {
+   "fieldname": "composition",
+   "fieldtype": "Table",
+   "label": "Composición",
+   "options": "Preservative Composition",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-27 04:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Preservative System",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Quality Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Production User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

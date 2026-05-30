@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "creation": "2026-05-27 04:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "compound",
+  "percentage",
+  "e_number",
+  "compound_item",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "compound",
+   "fieldtype": "Data",
+   "label": "Compuesto",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "length": 50,
+   "columns": 4
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "% (w/w)",
+   "reqd": 1,
+   "in_list_view": 1,
+   "precision": "4",
+   "columns": 2
+  },
+  {
+   "fieldname": "e_number",
+   "fieldtype": "Data",
+   "label": "E-Number",
+   "length": 10,
+   "description": "Optional EU food additive code (e.g., E211 for Sodium Benzoate)",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "compound_item",
+   "fieldtype": "Link",
+   "label": "Item (futuro)",
+   "options": "Item",
+   "description": "Optional — for future inventory/lot tracking integration",
+   "columns": 2
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notas"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-27 04:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Preservative Composition",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "creation": "2026-05-27 04:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "compound",
+  "percentage",
+  "e_number",
+  "compound_item",
+  "is_override"
+ ],
+ "fields": [
+  {
+   "fieldname": "compound",
+   "fieldtype": "Data",
+   "label": "Compuesto",
+   "reqd": 1,
+   "in_list_view": 1,
+   "length": 50,
+   "columns": 4
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "% (w/w)",
+   "reqd": 1,
+   "in_list_view": 1,
+   "precision": "4",
+   "columns": 2
+  },
+  {
+   "fieldname": "e_number",
+   "fieldtype": "Data",
+   "label": "E-Number",
+   "length": 10,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "compound_item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item",
+   "columns": 2
+  },
+  {
+   "default": "0",
+   "fieldname": "is_override",
+   "fieldtype": "Check",
+   "label": "Override del catálogo",
+   "read_only": 1,
+   "description": "Auto-set when user edits a row after auto-populate from selector",
+   "in_list_view": 1,
+   "columns": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-27 04:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "TDS Preservative",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

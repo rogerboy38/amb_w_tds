@@ -200,6 +200,18 @@ _AMB_W_TDS_DOCTYPES = [
     "Sales Taxes and Charges", "Shipment", "Shipment Parcel", "Shipping Rule",
     "Subscription", "Supplier", "Supplier Quotation", "Supplier Quotation Item",
     "Task", "Terms and Conditions", "Timesheet", "UTM Campaign", "Web Form",
+    # Task #14 (2026-05-30) — Preservative integration doctypes (module=Amb W
+    # Tds). Adding to this list ensures future CFs/Property Setters/Client
+    # Scripts on these doctypes auto-capture in bench export-fixtures.
+    # The 4 doctype JSONs themselves are shipped in this commit at
+    # apps/amb_w_tds/amb_w_tds/doctype/{preservative_system, tds_preservative,
+    # coa_preservative, preservative_composition}/. Their 3 CFs on TDS Product
+    # Specification (preservative_tab, preservative_system, tds_preservatives)
+    # are appended to fixtures/custom_field.json. Discovered via Task #14
+    # investigation of missing "Sistema de Conservadores" tab on vpt-docker
+    # (browser smoke Hugh 2026-05-30 ~15:30 local). L173/L180 pattern.
+    "Preservative System", "TDS Preservative", "COA Preservative",
+    "Preservative Composition",
 ]
 
 # L153 §4.1 follow-on: Server Scripts with reference_doctype=NULL (scheduled /
