@@ -277,6 +277,14 @@ fixtures = [
             ["name", "in", _AMB_W_TDS_NOREF_SERVER_SCRIPTS],
         ],
     },
+    # Task #15 §1 (2026-05-31 Alicia-ratified) — Preservative System data fixture.
+    # Ships 15 active Preservative System records on first export; child rows
+    # (composition: tabPreservative Composition + applicable_substrates:
+    # tabParameter Group Substrate filtered by parenttype=Preservative System)
+    # auto-include via parent.as_dict() child-table embedding. Filter is_active=1
+    # so future inactive records don't accidentally export. L191 fixture hygiene:
+    # strip volatile fields post-export (handled at commit time, not here).
+    {"doctype": "Preservative System",    "filters": [["is_active", "=", 1]]},
     # V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
     {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification"]]]},
     {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},

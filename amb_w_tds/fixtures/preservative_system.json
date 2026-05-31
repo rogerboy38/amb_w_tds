@@ -1,0 +1,616 @@
+[
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "N",
+  "composition": [
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "ANTIMICROBIAL",
+  "preservative_name": "ANTIMICROBIAL"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "A",
+  "composition": [
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.05
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.08
+   },
+   {
+    "compound": "SODIUM METABISULFITE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.01
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "AVON PRODUCTS",
+  "preservative_name": "AVON PRODUCTS"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "R",
+  "composition": [
+   {
+    "compound": "ASCORBIC ACID (E 300)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "CALCIUM  LACTATE (E 327)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   },
+   {
+    "compound": "CITRIC ACID (E 330)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   },
+   {
+    "compound": "GELLAN GUM (E 418)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "POTASSIUM SORBATE (E 202)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE (E 211)",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "BIOFARMA",
+  "preservative_name": "BIOFARMA"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "B",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "BIOVERA",
+  "preservative_name": "BIOVERA"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "C",
+  "composition": [
+   {
+    "compound": "ASCORBIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "COSMETIC",
+  "preservative_name": "COSMETIC"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "S",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "COSMETIC2",
+  "preservative_name": "COSMETIC2"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "M",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "COSMOS / ORGANIC",
+  "preservative_name": "COSMOS / ORGANIC"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "O",
+  "composition": [
+   {
+    "compound": "ASCORBIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "COSMOS GRADE",
+  "preservative_name": "COSMOS GRADE"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "D",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   },
+   {
+    "compound": "DERMOSOFT 700B",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.4
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "DERMOSOFT",
+  "preservative_name": "DERMOSOFT"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "V",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.2
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "DIVA",
+  "preservative_name": "DIVA"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "I",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "DONINI",
+  "preservative_name": "DONINI"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "E",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.3
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "EQUILIBRA (B.S.)",
+  "preservative_name": "EQUILIBRA (B.S.)"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "F",
+  "composition": [
+   {
+    "compound": "ASCORBIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "FOOD",
+  "preservative_name": "FOOD"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "G",
+  "composition": [
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.15
+   },
+   {
+    "compound": "POTASSIUM SORBATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.15
+   },
+   {
+    "compound": "SODIUM BENZOATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.15
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "FOOD 2",
+  "preservative_name": "FOOD 2"
+ },
+ {
+  "applicable_substrates": [
+   {
+    "substrate": "LQD"
+   },
+   {
+    "substrate": "LQDF"
+   }
+  ],
+  "code": "H",
+  "composition": [
+   {
+    "compound": "ASCORBIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.025
+   },
+   {
+    "compound": "CITRIC ACID",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   },
+   {
+    "compound": "SODIUM CITRATE",
+    "compound_item": null,
+    "e_number": null,
+    "notes": null,
+    "percentage": 0.1
+   }
+  ],
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Preservative System",
+  "is_active": 1,
+  "name": "ORGANIC",
+  "preservative_name": "ORGANIC"
+ }
+]
