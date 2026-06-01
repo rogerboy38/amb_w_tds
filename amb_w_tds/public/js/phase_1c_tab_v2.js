@@ -272,15 +272,26 @@ async function sc5v2_fetchTreeData(substrateCode) {
 
     try {
         qips = await frappe.db.get_list('Quality Inspection Parameter', {
-            // Task #74 V14.3.2-port (2026-05-30): custom_method, custom_value_text,
-            // custom_value_min, custom_value_max do NOT exist on QIP master. Read
+            // Task #74 V14.3.2-port (2026-05-30): an earlier revision claimed
+            // custom_method, custom_value_text, custom_value_min, custom_value_max
+            // do NOT exist on QIP master and that we should read
             // custom_specification + custom_specification_text/min/max instead.
+            // T21 correction (2026-06-01): VM3 DIAG verified the canonical
+            // Custom Fields on Quality Inspection Parameter are now
+            // custom_method, custom_value_text, custom_value_min, custom_value_max,
+            // custom_unit, custom_is_numeric, custom_choices. The
+            // custom_specification* names were either pre-renamed away OR were
+            // never present (V14.3.2 assumption was stale). Path Y picker was
+            // failing with "Field not permitted in query: custom_specification"
+            // → "Catalog load timed out (10s)" red banner. Fix: switch field
+            // list + row population to the canonical custom_value_*/custom_method
+            // names. See L193 cand for the renamed-CF-vs-stale-JS-references
+            // hazard pattern.
             // l4_migration_status removed (doesn't exist as DocField or CF on QIP master).
-            // V14.3.2 fixed this for phase_1c_tab.js (v1); this is the full port to v2.
             fields: ['name', 'parameter', 'parameter_group', 'custom_choices',
-                     'custom_is_numeric', 'custom_specification', 'custom_unit',
-                     'custom_specification_text', 'custom_specification_min',
-                     'custom_specification_max'],
+                     'custom_is_numeric', 'custom_method', 'custom_unit',
+                     'custom_value_text', 'custom_value_min',
+                     'custom_value_max'],
             order_by: 'parameter asc', limit: 0,
         });
     } catch (e) {
@@ -1012,11 +1023,11 @@ async function sc5v2_addSelected(frm) {
                 if (!sel.choice) {
                     if (qipDoc.custom_is_numeric) {
                         row.numeric = 1;
-                        if (qipDoc.custom_specification_min != null) row.min_value = qipDoc.custom_specification_min;
-                        if (qipDoc.custom_specification_max != null) row.max_value = qipDoc.custom_specification_max;
-                    } else if (qipDoc.custom_specification_text) {
-                        row.value = qipDoc.custom_specification_text;
-                        const formula = sc5v2_parseValueFormula(qipDoc.custom_specification_text);
+                        if (qipDoc.custom_value_min != null) row.min_value = qipDoc.custom_value_min;
+                        if (qipDoc.custom_value_max != null) row.max_value = qipDoc.custom_value_max;
+                    } else if (qipDoc.custom_value_text) {
+                        row.value = qipDoc.custom_value_text;
+                        const formula = sc5v2_parseValueFormula(qipDoc.custom_value_text);
                         if (formula) {
                             if (formula.min != null) row.min_value = formula.min;
                             if (formula.max != null) row.max_value = formula.max;
@@ -1027,11 +1038,11 @@ async function sc5v2_addSelected(frm) {
                         if (first) row.value = first;
                     }
                 }
-                if (qipDoc.custom_specification) {
-                    if (validMethodSet === null || validMethodSet.has(qipDoc.custom_specification)) {
-                        row.custom_method = qipDoc.custom_specification;
+                if (qipDoc.custom_method) {
+                    if (validMethodSet === null || validMethodSet.has(qipDoc.custom_method)) {
+                        row.custom_method = qipDoc.custom_method;
                     } else {
-                        console.warn(`SC5 v2: QIP "${sel.qipName}" has stale Method "${qipDoc.custom_specification}" — leaving row.custom_method blank`);
+                        console.warn(`SC5 v2: QIP "${sel.qipName}" has stale Method "${qipDoc.custom_method}" — leaving row.custom_method blank`);
                     }
                 }
                 if (qipDoc.custom_unit && !row.custom_uom) row.custom_uom = qipDoc.custom_unit;
