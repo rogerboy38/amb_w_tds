@@ -970,15 +970,16 @@ async function sc5v2_addSelected(frm) {
             // Task #33: if user picked an L4 acceptance-choice radio, set the row's
             // acceptance_choice Link + clone min/max from the choice. This precedes
             // CAV / QIP-default lookups so an explicit L4 selection wins.
-            // L194 (2026-06-01): if choice has text_label like "4 - 4.5%" or "NMT 10"
-            // but its parsed min/max columns are null, fall through to formula parser
-            // so the row still gets numeric bounds (legacy choices without min/max).
+            // L195 (2026-06-01 v2): if choice has text_label like "4 - 4.5%" or "NMT 20"
+            // but its parsed min/max columns are 0/0 (DB enforces NOT NULL default 0.0000
+            // on Acceptance Choice — so unset bounds appear as 0 not null), fall through
+            // to formula parser so the row still gets numeric bounds.
             if (sel.choice) {
                 row.acceptance_choice = sel.choice.name;
                 if (sel.choice.text_label) row.value = sel.choice.text_label;
                 let cMin = (sel.choice.min_value != null && !isNaN(sel.choice.min_value)) ? sel.choice.min_value : null;
                 let cMax = (sel.choice.max_value != null && !isNaN(sel.choice.max_value)) ? sel.choice.max_value : null;
-                if (cMin == null && cMax == null && sel.choice.text_label) {
+                if ((!cMin && !cMax) && sel.choice.text_label) {
                     const cf = sc5v2_parseValueFormula(sel.choice.text_label);
                     if (cf) {
                         if (cf.min != null) cMin = cf.min;
@@ -1017,8 +1018,19 @@ async function sc5v2_addSelected(frm) {
                     v = cav.value_max != null ? `${cav.value_min} - ${cav.value_max}` : `${cav.value_min}`;
                 }
                 if (v) row.value = v;
-                if (cav.value_min != null) row.min_value = cav.value_min;
-                if (cav.value_max != null) row.max_value = cav.value_max;
+                // L195 v2: CAV value_min/value_max are NOT NULL default 0; if both
+                // unset (0/0) but value_text is parseable, recover bounds from prose.
+                let cavMin = (cav.value_min != null) ? cav.value_min : null;
+                let cavMax = (cav.value_max != null) ? cav.value_max : null;
+                if ((!cavMin && !cavMax) && v) {
+                    const cavF = sc5v2_parseValueFormula(v);
+                    if (cavF) {
+                        if (cavF.min != null) cavMin = cavF.min;
+                        if (cavF.max != null) cavMax = cavF.max;
+                    }
+                }
+                if (cavMin != null) row.min_value = cavMin;
+                if (cavMax != null) row.max_value = cavMax;
                 if (cav.method) {
                     if (validMethodSet === null || validMethodSet.has(cav.method)) {
                         row.custom_method = cav.method;
