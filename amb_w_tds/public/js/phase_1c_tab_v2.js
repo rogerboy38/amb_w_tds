@@ -28,21 +28,25 @@ const SC5V2_L2_CATEGORIES = [
 ];
 
 
-// ─── IQI value-change handler (preserved verbatim from V14.3.3) ───
+// ─── IQI value-change handler (L194-hardened 2026-06-01) ───
+// L194: never CLOBBER explicit min/max already on the row. The pre-L194 version
+// (a) overwrote min/max with formula matches even when row already had explicit
+// values from the picker, and (b) ZEROED min/max destructively when value text
+// was unparseable — the latter is the root cause of "0/0 min/max" reports in
+// Path Y picker-added rows after the user edits the value field.
 frappe.ui.form.on('Item Quality Inspection Parameter', {
     value: function(frm, cdt, cdn) {
         const row = locals[cdt] && locals[cdt][cdn];
         if (!row || !row.value) return;
         const formula = sc5v2_parseValueFormula(row.value);
         if (formula) {
-            const newMin = (formula.min === null || formula.min === undefined) ? 0 : formula.min;
-            const newMax = (formula.max === null || formula.max === undefined) ? 0 : formula.max;
-            if (row.min_value !== newMin) frappe.model.set_value(cdt, cdn, 'min_value', newMin);
-            if (row.max_value !== newMax) frappe.model.set_value(cdt, cdn, 'max_value', newMax);
+            if (formula.min != null && (!row.min_value || row.min_value === 0)) {
+                frappe.model.set_value(cdt, cdn, 'min_value', formula.min);
+            }
+            if (formula.max != null && (!row.max_value || row.max_value === 0)) {
+                frappe.model.set_value(cdt, cdn, 'max_value', formula.max);
+            }
             if (formula.isNumeric && row.numeric !== 1) frappe.model.set_value(cdt, cdn, 'numeric', 1);
-        } else if ((row.min_value && row.min_value !== 0) || (row.max_value && row.max_value !== 0)) {
-            frappe.model.set_value(cdt, cdn, 'min_value', 0);
-            frappe.model.set_value(cdt, cdn, 'max_value', 0);
         }
     }
 });
@@ -966,13 +970,25 @@ async function sc5v2_addSelected(frm) {
             // Task #33: if user picked an L4 acceptance-choice radio, set the row's
             // acceptance_choice Link + clone min/max from the choice. This precedes
             // CAV / QIP-default lookups so an explicit L4 selection wins.
+            // L194 (2026-06-01): if choice has text_label like "4 - 4.5%" or "NMT 10"
+            // but its parsed min/max columns are null, fall through to formula parser
+            // so the row still gets numeric bounds (legacy choices without min/max).
             if (sel.choice) {
                 row.acceptance_choice = sel.choice.name;
                 if (sel.choice.text_label) row.value = sel.choice.text_label;
-                if (sel.choice.min_value != null && !isNaN(sel.choice.min_value)) row.min_value = sel.choice.min_value;
-                if (sel.choice.max_value != null && !isNaN(sel.choice.max_value)) row.max_value = sel.choice.max_value;
+                let cMin = (sel.choice.min_value != null && !isNaN(sel.choice.min_value)) ? sel.choice.min_value : null;
+                let cMax = (sel.choice.max_value != null && !isNaN(sel.choice.max_value)) ? sel.choice.max_value : null;
+                if (cMin == null && cMax == null && sel.choice.text_label) {
+                    const cf = sc5v2_parseValueFormula(sel.choice.text_label);
+                    if (cf) {
+                        if (cf.min != null) cMin = cf.min;
+                        if (cf.max != null) cMax = cf.max;
+                    }
+                }
+                if (cMin != null) row.min_value = cMin;
+                if (cMax != null) row.max_value = cMax;
                 if (sel.choice.unit) row.custom_uom = sel.choice.unit;
-                row.numeric = (sel.choice.min_value != null || sel.choice.max_value != null) ? 1 : 0;
+                row.numeric = (cMin != null || cMax != null) ? 1 : 0;
             }
 
             // QIP defaults (still fetched for method/uom fallback even when L4 picked)
@@ -1019,12 +1035,25 @@ async function sc5v2_addSelected(frm) {
 
             // Standard FoxPro flow — skip value/min/max set when L4 already populated them
             // (sel.choice is the user's explicit picker selection; don't overwrite).
+            // L194 (2026-06-01): if is_numeric=1 but DB has 0/0 (uninitialized for legacy
+            // QIPs whose ranges live only in custom_value_text prose), fall through to
+            // formula parser so the row still gets numeric bounds. Fixes Alicia's 2026-06-01
+            // report where new TDS rows for pH / Moisture / Aloin etc. showed min=0/max=0.
             if (qipDoc) {
                 if (!sel.choice) {
                     if (qipDoc.custom_is_numeric) {
                         row.numeric = 1;
-                        if (qipDoc.custom_value_min != null) row.min_value = qipDoc.custom_value_min;
-                        if (qipDoc.custom_value_max != null) row.max_value = qipDoc.custom_value_max;
+                        let qMin = (qipDoc.custom_value_min != null) ? qipDoc.custom_value_min : null;
+                        let qMax = (qipDoc.custom_value_max != null) ? qipDoc.custom_value_max : null;
+                        if ((!qMin && !qMax) && qipDoc.custom_value_text) {
+                            const qf = sc5v2_parseValueFormula(qipDoc.custom_value_text);
+                            if (qf) {
+                                if (qf.min != null) qMin = qf.min;
+                                if (qf.max != null) qMax = qf.max;
+                            }
+                        }
+                        if (qMin != null) row.min_value = qMin;
+                        if (qMax != null) row.max_value = qMax;
                     } else if (qipDoc.custom_value_text) {
                         row.value = qipDoc.custom_value_text;
                         const formula = sc5v2_parseValueFormula(qipDoc.custom_value_text);
