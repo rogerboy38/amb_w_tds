@@ -1080,7 +1080,19 @@ async function sc5v2_addSelected(frm) {
                         }
                     } else if (qipDoc.custom_choices) {
                         const first = qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0];
-                        if (first) row.value = first;
+                        if (first) {
+                            row.value = first;
+                            // L195 v3: parse first choice for bounds. When user picks a
+                            // QIP (not a specific L4 choice), picker writes the first
+                            // choice as row.value; previously didn't recover min/max
+                            // even when the choice text was a parseable formula.
+                            const choF = sc5v2_parseValueFormula(first);
+                            if (choF) {
+                                if (choF.min != null) row.min_value = choF.min;
+                                if (choF.max != null) row.max_value = choF.max;
+                                if (choF.isNumeric) row.numeric = 1;
+                            }
+                        }
                     }
                 }
                 if (qipDoc.custom_method) {
