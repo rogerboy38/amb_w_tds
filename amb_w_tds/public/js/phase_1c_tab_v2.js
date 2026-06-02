@@ -955,6 +955,10 @@ async function sc5v2_addSelected(frm) {
                     hr.specification = sel.l2Name;
                     hr.parameter_group = sel.l2Qipg || sel.l2Name;
                     hr.custom_is_title_row = 1;
+                    // L195: header rows have no measurements; force numeric=0 so the
+                    // IQI doctype's depends_on='eval:(...doc.numeric)' hides the
+                    // min/max cells (otherwise they render "0.000000" placeholders).
+                    hr.numeric = 0;
                     wroteHeader.add(sel.l2Name);
                     headerCount++;
                 }
