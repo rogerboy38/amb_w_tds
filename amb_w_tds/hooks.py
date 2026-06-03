@@ -106,13 +106,13 @@ doc_events = {
     # ---- Batch AMB: Controller migrated to amb_w_spc
     # "Batch AMB" doc_events removed - now handled by amb_w_spc
 
-    # SC4 — CAV validation hook fires on COA AMB submit. Reads custom_coa_customers,
-    # cross-references each row in coa_quality_test_parameter against approved Customer
-    # Acceptable Value records. Configurable via TDS Settings.cav_block_on_mismatch
-    # (default 0 = warn-only; set 1 to block submit).
+    # SC4 — CSS validation hook fires on COA AMB submit. Reads custom_coa_customers,
+    # cross-references each row in coa_quality_test_parameter against approved
+    # Customer-Specific Specification records. Configurable via the
+    # TDS Settings.css_block_on_mismatch check (0 = warn-only default; 1 = block submit).
     "COA AMB": {
         "on_submit": [
-            "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_cav_on_submit",
+            "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_css_on_submit",
         ],
     },
 }

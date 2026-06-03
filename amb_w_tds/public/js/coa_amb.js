@@ -35,7 +35,7 @@ async function fetch_customers_for_coa(frm) {
             if (tds_custs.length > 0) {
                 return { source: 'linked_tds', source_ref: frm.doc.linked_tds, rows: tds_custs };
             }
-        } catch (e) { console.warn('SC4 CAV: TDS fetch failed', e); }
+        } catch (e) { console.warn('SC4 CSS: TDS fetch failed', e); }
     }
 
     // Tier 2: from Item's custom_amb_customer_items (broader fallback)
@@ -47,7 +47,7 @@ async function fetch_customers_for_coa(frm) {
             if (item_custs.length > 0) {
                 return { source: 'item', source_ref: item_ref, rows: item_custs };
             }
-        } catch (e) { console.warn('SC4 CAV: Item fetch failed', e); }
+        } catch (e) { console.warn('SC4 CSS: Item fetch failed', e); }
     }
 
     return { source: null, source_ref: null, rows: [] };

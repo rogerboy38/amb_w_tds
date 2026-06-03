@@ -358,11 +358,11 @@ async function sc5v2_fetchTreeData(substrateCode) {
 }
 
 
-// ─── CAV map fetch — wrapped, returns empty on any failure ───
+// ─── CSS map fetch — wrapped, returns empty on any failure ───
 async function sc5v2_fetchCAVMap(customers, qipNames) {
     if (!customers || !customers.length || !qipNames || !qipNames.length) return {};
     try {
-        const rows = await frappe.db.get_list('Customer Acceptable Value', {
+        const rows = await frappe.db.get_list('Customer-Specific Specification', {
             filters: {
                 parameter: ['in', qipNames],
                 customer: ['in', customers],
@@ -376,15 +376,15 @@ async function sc5v2_fetchCAVMap(customers, qipNames) {
         });
         const today = frappe.datetime.get_today();
         const map = {};
-        rows.forEach(cav => {
-            if (cav.effective_from && cav.effective_from > today) return;
-            if (cav.effective_to && cav.effective_to < today) return;
-            if (!map[cav.parameter]) map[cav.parameter] = [];
-            map[cav.parameter].push(cav);
+        rows.forEach(css => {
+            if (css.effective_from && css.effective_from > today) return;
+            if (css.effective_to && css.effective_to < today) return;
+            if (!map[css.parameter]) map[css.parameter] = [];
+            map[css.parameter].push(css);
         });
         return map;
     } catch (e) {
-        console.warn('SC5 v2 CAV: fetch failed, continuing without CAV badges', e);
+        console.warn('SC5 v2 CSS: fetch failed, continuing without CSS badges', e);
         return {};
     }
 }
@@ -413,15 +413,15 @@ async function sc5v2_renderParameterPicker(frm) {
 
     const customers = (frm.doc.custom_tds_customers || []).map(r => r.customer).filter(Boolean);
     const qipNames = hierarchy.flatMap(c => c.params.map(p => p.name));
-    let cavMap = {};
+    let cssMap = {};
     if (customers.length > 0) {
-        try { cavMap = await sc5v2_fetchCAVMap(customers, qipNames); }
-        catch (e) { console.warn('SC5 v2: CAV map threw (continuing without badges)', e); }
+        try { cssMap = await sc5v2_fetchCAVMap(customers, qipNames); }
+        catch (e) { console.warn('SC5 v2: CSS map threw (continuing without badges)', e); }
     }
-    const cavCount = Object.keys(cavMap).length;
+    const cssCount = Object.keys(cssMap).length;
 
     let html = '';
-    html += sc5v2_renderHeader({ itemGroup, substrateCode, totalParams, customers, cavCount });
+    html += sc5v2_renderHeader({ itemGroup, substrateCode, totalParams, customers, cssCount });
 
     if (!substrateMapPresent) {
         html += `<div style="background:#fff3e0; border-left:4px solid #ff9800; padding:10px 14px; margin:10px 0; border-radius:4px; color:#5d4037; font-size:13px;">
@@ -440,7 +440,7 @@ async function sc5v2_renderParameterPicker(frm) {
 
     html += sc5v2_renderMasterControls();
     html += '<div style="margin-top:8px;">';
-    hierarchy.forEach(cat => { html += sc5v2_renderL2Section(cat, cavMap, acceptanceChoicesMap); });
+    hierarchy.forEach(cat => { html += sc5v2_renderL2Section(cat, cssMap, acceptanceChoicesMap); });
     html += '</div>';
 
     pickerEl.innerHTML = html;
@@ -449,18 +449,18 @@ async function sc5v2_renderParameterPicker(frm) {
 }
 
 
-function sc5v2_renderHeader({ itemGroup, substrateCode, totalParams, customers, cavCount }) {
+function sc5v2_renderHeader({ itemGroup, substrateCode, totalParams, customers, cssCount }) {
     const headerLabel = itemGroup
         ? `${frappe.utils.escape_html(itemGroup)}${substrateCode ? ' (' + substrateCode + ')' : ''}`
         : __('Unknown Item Group');
-    const cavBlurb = customers.length > 0
-        ? ` · 🎯 ${__('{0} customer(s), {1} active CAV(s)', [customers.length, cavCount])}`
+    const cssBlurb = customers.length > 0
+        ? ` · 🎯 ${__('{0} customer(s), {1} active CSS record(s)', [customers.length, cssCount])}`
         : '';
     return `
         <div style="padding:10px 14px; background:#f5f6f8; border:1px solid #d1d8dd; border-radius:6px; margin-bottom:10px; font-size:13px;">
             <b>${__('Form (L1)')}:</b> ${headerLabel}
             · ${__('{0} L2 categories', [SC5V2_L2_CATEGORIES.length])}
-            · ${__('{0} parameters', [totalParams])}${cavBlurb}
+            · ${__('{0} parameters', [totalParams])}${cssBlurb}
         </div>`;
 }
 
@@ -476,7 +476,7 @@ function sc5v2_renderMasterControls() {
 }
 
 
-function sc5v2_renderL2Section(cat, cavMap, acceptanceChoicesMap) {
+function sc5v2_renderL2Section(cat, cssMap, acceptanceChoicesMap) {
     const params = cat.params;
     const headerExtras = cat.missing
         ? `<span style="background:#ffcdd2;color:#c62828;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:auto;">${__('⚠ QIPG missing')}</span>`
@@ -484,7 +484,7 @@ function sc5v2_renderL2Section(cat, cavMap, acceptanceChoicesMap) {
 
     const leavesHtml = (params.length === 0 && !cat.missing)
         ? `<div style="padding:8px 0; color:#9e9e9e; font-style:italic;">${__('No parameters in this category yet.')}</div>`
-        : params.map(qip => sc5v2_renderLeafRow(qip, cat, cavMap, acceptanceChoicesMap)).join('');
+        : params.map(qip => sc5v2_renderLeafRow(qip, cat, cssMap, acceptanceChoicesMap)).join('');
 
     return `
         <div class="sc5v2-l2-section" data-l2-key="${frappe.utils.escape_html(cat.key)}" style="margin-bottom:8px; border:1px solid #d1d8dd; border-radius:6px; overflow:hidden;">
@@ -506,7 +506,7 @@ function sc5v2_renderL2Section(cat, cavMap, acceptanceChoicesMap) {
 }
 
 
-function sc5v2_renderLeafRow(qip, cat, cavMap, acceptanceChoicesMap) {
+function sc5v2_renderLeafRow(qip, cat, cssMap, acceptanceChoicesMap) {
     // Task #33: prefer L4 child rows; fall back to legacy custom_choices Long Text
     const l4Choices = (acceptanceChoicesMap && acceptanceChoicesMap[qip.name]) || [];
     const legacyLines = qip.custom_choices
@@ -515,14 +515,14 @@ function sc5v2_renderLeafRow(qip, cat, cavMap, acceptanceChoicesMap) {
     const choiceCount = l4Choices.length > 0 ? l4Choices.length : legacyLines.length;
     const hasChoices = choiceCount > 0;
 
-    const cavMatches = cavMap[qip.name] || [];
+    const cssMatches = cssMap[qip.name] || [];
     const needsReview = (qip.l4_migration_status === 'Manual Review')
         || (l4Choices.length === 0 && legacyLines.length === 0 && !qip.custom_is_numeric);
 
     let badges = '';
-    if (cavMatches.length > 0) {
-        const tip = cavMatches.length === 1 ? `CAV ${cavMatches[0].name}` : `${cavMatches.length} CAVs`;
-        badges += `<span title="${frappe.utils.escape_html(tip)}" style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:8px;">🎯 ${__('CAV')}</span>`;
+    if (cssMatches.length > 0) {
+        const tip = cssMatches.length === 1 ? `CSS ${cssMatches[0].name}` : `${cssMatches.length} CSS records`;
+        badges += `<span title="${frappe.utils.escape_html(tip)}" style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:8px;">🎯 ${__('CSS')}</span>`;
     }
     if (hasChoices) {
         badges += `<span style="background:#c8e6c9;color:#1b5e20;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:8px;">${__('{0} choices', [choiceCount])}</span>`;
@@ -921,16 +921,16 @@ async function sc5v2_addSelected(frm) {
     selections.sort((a, b) => a.l2Key.localeCompare(b.l2Key) || a.qipName.localeCompare(b.qipName));
 
     // Customer derivation (custom_tds_customers preferred, Item.customer fallback)
-    let cavCustomers = (frm.doc.custom_tds_customers || []).map(r => r.customer).filter(Boolean);
-    if (cavCustomers.length === 0 && frm.doc.product_item) {
+    let cssCustomers = (frm.doc.custom_tds_customers || []).map(r => r.customer).filter(Boolean);
+    if (cssCustomers.length === 0 && frm.doc.product_item) {
         try {
             const r = await frappe.db.get_value('Item', frm.doc.product_item, ['customer']);
             const c = r && r.message && r.message.customer;
-            if (c) cavCustomers = [c];
+            if (c) cssCustomers = [c];
         } catch (e) { console.warn('SC5 v2: customer fallback failed', e); }
     }
 
-    let added = 0, cavCount = 0, headerCount = 0;
+    let added = 0, cssCount = 0, headerCount = 0;
     const wroteHeader = new Set();
     const today = frappe.datetime.get_today();
 
@@ -973,7 +973,7 @@ async function sc5v2_addSelected(frm) {
 
             // Task #33: if user picked an L4 acceptance-choice radio, set the row's
             // acceptance_choice Link + clone min/max from the choice. This precedes
-            // CAV / QIP-default lookups so an explicit L4 selection wins.
+            // CSS / QIP-default lookups so an explicit L4 selection wins.
             // L195 (2026-06-01 v2): if choice has text_label like "4 - 4.5%" or "NMT 20"
             // but its parsed min/max columns are 0/0 (DB enforces NOT NULL default 0.0000
             // on Acceptance Choice — so unset bounds appear as 0 not null), fall through
@@ -1001,50 +1001,50 @@ async function sc5v2_addSelected(frm) {
             try { qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', sel.qipName); }
             catch (e) { console.warn('SC5 v2: QIP doc fetch failed for', sel.qipName, e); }
 
-            // CAV consultation
-            let cav = null;
-            if (cavCustomers.length > 0) {
+            // CSS consultation
+            let css = null;
+            if (cssCustomers.length > 0) {
                 try {
-                    const rows = await frappe.db.get_list('Customer Acceptable Value', {
-                        filters: { parameter: sel.qipName, customer: ['in', cavCustomers], status: 'Approved', is_active: 1 },
+                    const rows = await frappe.db.get_list('Customer-Specific Specification', {
+                        filters: { parameter: sel.qipName, customer: ['in', cssCustomers], status: 'Approved', is_active: 1 },
                         fields: ['name', 'customer', 'value_type', 'value_text', 'value_min', 'value_max',
                                  'method', 'unit_of_measurement', 'effective_from', 'effective_to'],
                         order_by: 'effective_from desc', limit: 5,
                     });
-                    cav = rows.find(c => (!c.effective_from || c.effective_from <= today)
+                    css = rows.find(c => (!c.effective_from || c.effective_from <= today)
                                      && (!c.effective_to || c.effective_to >= today));
-                } catch (e) { console.warn('SC5 v2: CAV lookup failed for', sel.qipName, e); }
+                } catch (e) { console.warn('SC5 v2: CSS lookup failed for', sel.qipName, e); }
             }
 
-            if (cav) {
-                let v = cav.value_text;
-                if (!v && cav.value_min != null) {
-                    v = cav.value_max != null ? `${cav.value_min} - ${cav.value_max}` : `${cav.value_min}`;
+            if (css) {
+                let v = css.value_text;
+                if (!v && css.value_min != null) {
+                    v = css.value_max != null ? `${css.value_min} - ${css.value_max}` : `${css.value_min}`;
                 }
                 if (v) row.value = v;
-                // L195 v2: CAV value_min/value_max are NOT NULL default 0; if both
+                // L195 v2: CSS value_min/value_max are NOT NULL default 0; if both
                 // unset (0/0) but value_text is parseable, recover bounds from prose.
-                let cavMin = (cav.value_min != null) ? cav.value_min : null;
-                let cavMax = (cav.value_max != null) ? cav.value_max : null;
-                if ((!cavMin && !cavMax) && v) {
+                let cssMin = (css.value_min != null) ? css.value_min : null;
+                let cssMax = (css.value_max != null) ? css.value_max : null;
+                if ((!cssMin && !cssMax) && v) {
                     const cavF = sc5v2_parseValueFormula(v);
                     if (cavF) {
-                        if (cavF.min != null) cavMin = cavF.min;
-                        if (cavF.max != null) cavMax = cavF.max;
+                        if (cavF.min != null) cssMin = cavF.min;
+                        if (cavF.max != null) cssMax = cavF.max;
                     }
                 }
-                if (cavMin != null) row.min_value = cavMin;
-                if (cavMax != null) row.max_value = cavMax;
-                if (cav.method) {
-                    if (validMethodSet === null || validMethodSet.has(cav.method)) {
-                        row.custom_method = cav.method;
+                if (cssMin != null) row.min_value = cssMin;
+                if (cssMax != null) row.max_value = cssMax;
+                if (css.method) {
+                    if (validMethodSet === null || validMethodSet.has(css.method)) {
+                        row.custom_method = css.method;
                     } else {
-                        console.warn(`SC5 v2: CAV "${cav.name}" has stale Method "${cav.method}" — leaving row.custom_method blank`);
+                        console.warn(`SC5 v2: CSS "${css.name}" has stale Method "${css.method}" — leaving row.custom_method blank`);
                     }
                 }
-                if (cav.unit_of_measurement) row.custom_uom = cav.unit_of_measurement;
+                if (css.unit_of_measurement) row.custom_uom = css.unit_of_measurement;
                 else if (qipDoc && qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
-                cavCount++;
+                cssCount++;
                 added++;
                 continue;
             }
@@ -1118,7 +1118,7 @@ async function sc5v2_addSelected(frm) {
     let msg = __('Added {0} parameter(s)', [added]);
     if (headerCount > 0) msg += __(' · {0} section header(s)', [headerCount]);
     if (dupeCount > 0) msg += __(' · {0} duplicate(s) skipped', [dupeCount]);
-    if (cavCount > 0) msg += __(' · {0} from CAV', [cavCount]);
+    if (cssCount > 0) msg += __(' · {0} from CSS', [cssCount]);
     frappe.show_alert({ message: msg, indicator: added > 0 ? 'green' : 'orange' });
 }
 

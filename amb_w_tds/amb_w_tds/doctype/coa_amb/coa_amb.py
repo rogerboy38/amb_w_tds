@@ -837,21 +837,21 @@ def duplicate_coa(source_coa, new_batch=None):
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# SC4 — Customer Acceptable Value validation hook (wired in hooks.py doc_events)
+# SC4 — Customer-Specific Specification validation hook (wired in hooks.py doc_events)
 # ────────────────────────────────────────────────────────────────────────────
 
-def validate_cav_on_submit(doc, method=None):
+def validate_css_on_submit(doc, method=None):
     """On COA AMB submit, cross-reference each measured parameter row against
-    approved Customer Acceptable Value records for every customer in custom_coa_customers.
+    approved Customer-Specific Specification records for every customer in custom_coa_customers.
 
-    Behavior controlled by TDS Settings.cav_block_on_mismatch (Check):
+    Behavior controlled by TDS Settings.css_block_on_mismatch (Check):
       0 (default) — warn-only: shows frappe.msgprint for each mismatch
       1           — block:     raises frappe.throw with the full mismatch list
 
     Skips silently if:
       - No customers in custom_coa_customers (no customer context)
       - No coa_quality_test_parameter rows (no measurements)
-      - No matching CAV found for a (param, customer) pair (no expectation to validate against)
+      - No matching CSS found for a (param, customer) pair (no expectation to validate against)
     """
     if not doc.get('custom_coa_customers'):
         return
@@ -869,8 +869,8 @@ def validate_cav_on_submit(doc, method=None):
             continue
 
         for customer in customers:
-            cavs = frappe.db.get_list(
-                'Customer Acceptable Value',
+            css_records = frappe.db.get_list(
+                'Customer-Specific Specification',
                 filters={
                     'parameter': param,
                     'customer': customer,
@@ -885,52 +885,52 @@ def validate_cav_on_submit(doc, method=None):
                 order_by='effective_from DESC',
             )
 
-            for cav in cavs:
-                if cav.get('effective_to') and cav['effective_to'] < frappe.utils.today():
+            for css in css_records:
+                if css.get('effective_to') and css['effective_to'] < frappe.utils.today():
                     continue
 
-                if _row_value_matches_cav(row, cav):
+                if _row_value_matches_css(row, css):
                     continue
 
                 expected = (
-                    cav.get('value_text')
-                    or f"{cav.get('value_min')}-{cav.get('value_max')}"
+                    css.get('value_text')
+                    or f"{css.get('value_min')}-{css.get('value_max')}"
                 )
-                ref = f" [ref: {cav['regulatory_reference']}]" if cav.get('regulatory_reference') else ''
+                ref = f" [ref: {css['regulatory_reference']}]" if css.get('regulatory_reference') else ''
                 msg = _(
                     "Row {idx} (parameter {param!r}, value {val!r}): "
-                    "does not match Customer Acceptable Value <a href=\"/app/customer-acceptable-value/{cav}\">{cav}</a> "
+                    "does not match Customer-Specific Specification <a href=\"/app/customer-specific-specification/{css}\">{css}</a> "
                     "for {customer} (expected: {expected}){ref}"
                 ).format(
                     idx=row.idx, param=param, val=row.value,
-                    cav=cav['name'], customer=customer, expected=expected, ref=ref,
+                    css=css['name'], customer=customer, expected=expected, ref=ref,
                 )
 
-                if frappe.db.get_single_value('TDS Settings', 'cav_block_on_mismatch'):
+                if frappe.db.get_single_value('TDS Settings', 'css_block_on_mismatch'):
                     errors.append(msg)
                 else:
                     warnings.append(msg)
 
     if errors:
-        frappe.throw('<br>'.join(errors), title=_('CAV Validation Failed'))
+        frappe.throw('<br>'.join(errors), title=_('CSS Validation Failed'))
 
     if warnings:
         for w in warnings:
-            frappe.msgprint(w, indicator='orange', alert=True, title=_('CAV Warning'))
+            frappe.msgprint(w, indicator='orange', alert=True, title=_('CSS Warning'))
 
 
-def _row_value_matches_cav(row, cav):
-    """True if a COA Quality Test Parameter row's value satisfies the CAV expectation."""
-    vt = cav.get('value_type')
+def _row_value_matches_css(row, css):
+    """True if a COA Quality Test Parameter row's value satisfies the CSS expectation."""
+    vt = css.get('value_type')
 
     if vt == 'Choice':
-        return (row.value or '').strip().upper() == (cav.get('value_text') or '').strip().upper()
+        return (row.value or '').strip().upper() == (css.get('value_text') or '').strip().upper()
 
     if vt == 'Numeric Range':
         try:
             v = float(row.value)
-            vmin = cav.get('value_min')
-            vmax = cav.get('value_max')
+            vmin = css.get('value_min')
+            vmax = css.get('value_max')
             if vmin is None and vmax is None:
                 return True
             if vmin is not None and v < vmin:
@@ -943,8 +943,8 @@ def _row_value_matches_cav(row, cav):
 
     if vt == 'Both':
         return (
-            _row_value_matches_cav(row, {**cav, 'value_type': 'Choice'})
-            or _row_value_matches_cav(row, {**cav, 'value_type': 'Numeric Range'})
+            _row_value_matches_css(row, {**css, 'value_type': 'Choice'})
+            or _row_value_matches_css(row, {**css, 'value_type': 'Numeric Range'})
         )
 
     return True

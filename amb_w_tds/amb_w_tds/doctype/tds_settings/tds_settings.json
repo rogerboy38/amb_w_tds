@@ -2118,7 +2118,7 @@
    "doctype": "DocField"
   },
   {
-   "name": "sc4_cav_block_on_mismatch",
+   "name": "sc4_css_block_on_mismatch",
    "creation": "2026-05-25 14:45:00.000000",
    "modified": "2026-05-25 14:45:00.000000",
    "modified_by": "Administrator",
@@ -2128,8 +2128,8 @@
    "parentfield": "fields",
    "parenttype": "DocType",
    "idx": 27,
-   "fieldname": "cav_block_on_mismatch",
-   "label": "CAV: Block COA Submit on Mismatch",
+   "fieldname": "css_block_on_mismatch",
+   "label": "CSS: Block COA Submit on Mismatch",
    "fieldtype": "Check",
    "options": null,
    "search_index": 0,
@@ -2157,7 +2157,7 @@
    "print_width": null,
    "columns": 0,
    "default": "0",
-   "description": "When OFF (default): COA AMB submit with values outside Customer Acceptable Value tolerance shows warnings only. When ON: blocks the submit with frappe.throw. Toggle ON after Alicia validates the warn-mode behavior in production.",
+   "description": "When OFF (default): COA AMB submit with values outside Customer-Specific Specification tolerance shows warnings only. When ON: blocks the submit with frappe.throw. Toggle ON after Alicia validates the warn-mode behavior in production.",
    "in_list_view": 0,
    "fetch_if_empty": 0,
    "in_filter": 0,

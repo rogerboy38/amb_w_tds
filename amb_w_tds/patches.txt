@@ -20,3 +20,12 @@ amb_w_tds.patches.v14_3_6.install_m35_substrate_baseline
 # V14.3.7: Task #74 backfill — populate item_substrate on existing TDS records (Path Y picker JS refactor consumer).
 # fetch_from on item_substrate field handles new + edited records; this patch handles existing records.
 amb_w_tds.patches.v14_3_7.backfill_tds_item_substrate
+
+# V14.3.8 (2026-06-03) — Mavis peer review companion. Renames TDS Settings
+# field `cav_block_on_mismatch` -> `css_block_on_mismatch` to align with
+# amb_w_spc v15_4_0 CAV-DocType -> CSS-DocType rename. Standard Frappe
+# tabSingles INSERT-on-duplicate + DELETE pattern. Idempotent. Brown-field
+# VM3 migrates the existing row; fresh-install vpt-docker no-ops at the
+# guard and schema_sync creates the column from the updated JSON directly.
+# Pair-companion to amb_w_spc v15_4_0.rename_cav_to_css.
+amb_w_tds.patches.v14_3_8.rename_cav_block_on_mismatch
