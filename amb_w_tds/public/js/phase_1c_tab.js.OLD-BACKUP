@@ -133,8 +133,8 @@ async function loadAllQIPGs() {
 async function loadAllQIPsByGroup() {
     const qips = await frappe.db.get_list('Quality Inspection Parameter', {
         fields: ['name', 'parameter', 'parameter_group', 'custom_choices',
-                 'custom_is_numeric', 'custom_specification', 'custom_unit',
-                 'custom_specification_text', 'custom_specification_min', 'custom_specification_max'],
+                 'custom_is_numeric', 'custom_method', 'custom_unit',
+                 'custom_value_text', 'custom_value_min', 'custom_value_max'],
         order_by: 'parameter asc',
         limit: 0,
     });
@@ -170,6 +170,21 @@ async function renderParameterPicker(frm) {
 
     const initialFilter = preferredToken || 'LQDC';  // default to LQDC if no detection
     await renderPickerWithFilter(frm, initialFilter);
+
+    // SC5 v2 fix (2026-05-25) — defensive substrate-dropdown sync. The HTML render in
+    // renderMasterControls() emits the matching <option> with `selected`, but in some
+    // browser/render-order conditions the <select> element shows the first option
+    // instead. After the picker DOM is in place, force the dropdown value to match the
+    // detected token and dispatch 'change' so the parameter tree re-renders against
+    // the correct substrate. No-op when the dropdown already matches.
+    if (preferredToken) {
+        const filterEl = document.getElementById('phase-1c-substrate-filter');
+        if (filterEl && filterEl.value !== preferredToken) {
+            console.log(`SC5 v2: dropdown showed "${filterEl.value}" but detection says "${preferredToken}" — syncing`);
+            filterEl.value = preferredToken;
+            filterEl.dispatchEvent(new Event('change'));
+        }
+    }
 }
 
 async function renderPickerWithFilter(frm, activeToken) {
@@ -348,7 +363,7 @@ function renderQIPLeaf(qip, parentGroup) {
         badge = `<span class="phase-1c-badge phase-1c-badge-choices">${choiceLines.length} ${__('values')}</span>`;
     } else if (qip.custom_is_numeric) {
         badge = `<span class="phase-1c-badge phase-1c-badge-numeric">${__('numeric')}</span>`;
-    } else if (qip.custom_specification_text) {
+    } else if (qip.custom_value_text) {
         badge = `<span class="phase-1c-badge phase-1c-badge-text">${__('text')}</span>`;
     } else if (klass === 'label') {
         badge = `<span class="phase-1c-badge phase-1c-badge-label">${__('section')}</span>`;
@@ -480,10 +495,10 @@ async function editQIPChoices(frm, qipName) {
 
 function classifyQip(qip) {
     const hasData = qip.custom_choices
-        || qip.custom_specification_text
+        || qip.custom_value_text
         || qip.custom_is_numeric
-        || (qip.custom_specification_min && qip.custom_specification_min !== 0)
-        || (qip.custom_specification_max && qip.custom_specification_max !== 0);
+        || (qip.custom_value_min && qip.custom_value_min !== 0)
+        || (qip.custom_value_max && qip.custom_value_max !== 0);
     if (hasData) return 'real';
     if (!qip.parameter_group) return 'value';
     const groupWords = qip.parameter_group.split(/\s+/);
@@ -767,6 +782,20 @@ async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
         validMethodSet = null;
     }
 
+    // SC3 (Path A) — derive customer once for CAV consultation. TDS Product Specification
+    // has no `customer` field; the canonical derivation is Item.customer via product_item.
+    // If no customer derivable → CAV consultation is a no-op; existing flow runs unchanged.
+    let cavCustomer = null;
+    if (frm.doc.product_item) {
+        try {
+            const itemRes = await frappe.db.get_value('Item', frm.doc.product_item, ['customer']);
+            cavCustomer = (itemRes && itemRes.message && itemRes.message.customer) || null;
+        } catch (e) {
+            console.warn('SC3 CAV: could not derive customer from Item:', e);
+        }
+    }
+    let cavOverrideCount = 0;
+
     for (const sel of selections) {
         const qipName = sel.qipName;
         const groupName = sel.groupName;
@@ -789,23 +818,75 @@ async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
             row.specification = qipName;
             if (groupName !== '') row.parameter_group = groupName;
             const qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', qipName);
+
+            // SC3 (Path A) — consult Customer Acceptable Value catalog. If an Approved+active
+            // CAV exists for (parameter, customer) and the effective window covers today, that
+            // overrides the FoxPro choice flow. Uses the cav_param_cust_active_eff compound index.
+            // Skips silently when no customer derivable or no CAV match.
+            let cavOverride = null;
+            if (cavCustomer) {
+                try {
+                    const cavRows = await frappe.db.get_list('Customer Acceptable Value', {
+                        filters: {
+                            parameter: qipName,
+                            customer: cavCustomer,
+                            status: 'Approved',
+                            is_active: 1,
+                        },
+                        fields: ['name', 'value_type', 'value_text', 'value_min', 'value_max',
+                                 'method', 'unit_of_measurement', 'regulatory_reference',
+                                 'effective_from', 'effective_to'],
+                        order_by: 'effective_from desc',
+                        limit: 5,
+                    });
+                    const today = frappe.datetime.get_today();
+                    cavOverride = cavRows.find(c =>
+                        (!c.effective_from || c.effective_from <= today) &&
+                        (!c.effective_to   || c.effective_to   >= today)
+                    );
+                } catch (e) {
+                    console.warn(`SC3 CAV: lookup failed for ${qipName}:`, e);
+                }
+            }
+            if (cavOverride) {
+                // CAV override: pre-fill value (text || min-max), method, unit; skip FoxPro flow.
+                let cavValue = cavOverride.value_text;
+                if (!cavValue && cavOverride.value_min !== null && cavOverride.value_min !== undefined) {
+                    cavValue = (cavOverride.value_max !== null && cavOverride.value_max !== undefined)
+                               ? `${cavOverride.value_min} - ${cavOverride.value_max}`
+                               : `${cavOverride.value_min}`;
+                }
+                if (cavValue) row.value = cavValue;
+                if (cavOverride.value_min !== null && cavOverride.value_min !== undefined) row.min_value = cavOverride.value_min;
+                if (cavOverride.value_max !== null && cavOverride.value_max !== undefined) row.max_value = cavOverride.value_max;
+                if (cavOverride.method) row.custom_method = cavOverride.method;
+                if (cavOverride.unit_of_measurement) row.custom_uom = cavOverride.unit_of_measurement;
+                else if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
+                row._cav_locked = true;  // transient JS flag (not persisted) — UI hook for badge/lock indicator
+                row._cav_name = cavOverride.name;
+                cavOverrideCount++;
+                added++;
+                continue;  // skip the FoxPro default-value flow; CAV is authoritative
+            }
+            // SC3 end — no CAV override; existing FoxPro choice flow runs below unchanged.
+
             if (sel.qipClass === 'label') {
                 row.value = 'Specification';
             } else if (qipDoc.custom_is_numeric) {
                 row.numeric = 1;
-                if (qipDoc.custom_specification_min !== null && qipDoc.custom_specification_min !== undefined) {
-                    row.min_value = qipDoc.custom_specification_min;
+                if (qipDoc.custom_value_min !== null && qipDoc.custom_value_min !== undefined) {
+                    row.min_value = qipDoc.custom_value_min;
                 }
-                if (qipDoc.custom_specification_max !== null && qipDoc.custom_specification_max !== undefined) {
-                    row.max_value = qipDoc.custom_specification_max;
+                if (qipDoc.custom_value_max !== null && qipDoc.custom_value_max !== undefined) {
+                    row.max_value = qipDoc.custom_value_max;
                 }
             } else {
-                // L5 chosen-choice takes priority; else custom_specification_text; else first choice
+                // L5 chosen-choice takes priority; else custom_value_text; else first choice
                 let effectiveValue = null;
                 if (chosenChoice) {
                     effectiveValue = chosenChoice;
-                } else if (qipDoc.custom_specification_text) {
-                    effectiveValue = qipDoc.custom_specification_text;
+                } else if (qipDoc.custom_value_text) {
+                    effectiveValue = qipDoc.custom_value_text;
                 } else if (qipDoc.custom_choices) {
                     const firstChoice = qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0];
                     if (firstChoice) effectiveValue = firstChoice;
@@ -823,21 +904,21 @@ async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
                 }
             }
             // V14.3.5 — Pattern B defensive null-guard on custom_method assignment.
-            // Existing if-guard on qipDoc.custom_specification already prevents
+            // Existing if-guard on qipDoc.custom_method already prevents
             // null-throw at this site (comet's stated hypothesis), but adding
             // explicit `|| ''` chain as belt-and-suspenders per ops directive.
             // The fallback to custom_choices[0] is a no-op while the outer
-            // if-guard is in place (we only enter when custom_specification is
+            // if-guard is in place (we only enter when custom_method is
             // truthy) — preserved as forward-compatible defensive hardening
             // for future refactors that may remove the outer guard.
-            if (qipDoc.custom_specification) {
-                if (validMethodSet === null || validMethodSet.has(qipDoc.custom_specification)) {
-                    row.custom_method = qipDoc.custom_specification
+            if (qipDoc.custom_method) {
+                if (validMethodSet === null || validMethodSet.has(qipDoc.custom_method)) {
+                    row.custom_method = qipDoc.custom_method
                                     || (qipDoc.custom_choices && qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0])
                                     || '';
                 } else {
                     brokenMethodCount++;
-                    console.warn(`Phase 1C-B: QIP "${qipName}" has stale Method "${qipDoc.custom_specification}" — leaving row.custom_method blank`);
+                    console.warn(`Phase 1C-B: QIP "${qipName}" has stale Method "${qipDoc.custom_method}" — leaving row.custom_method blank`);
                 }
             }
             if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
@@ -863,6 +944,10 @@ async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
     if (alreadySkipped > 0) resultMsg += __(' · {0} duplicate(s) skipped', [alreadySkipped]);
     if (brokenMethodCount > 0) {
         resultMsg += __(' · {0} row(s) with stale Method ref (fix in QIP master)', [brokenMethodCount]);
+    }
+    // SC3 (Path A) — surface CAV override count + customer
+    if (cavOverrideCount > 0) {
+        resultMsg += __(' · {0} pre-filled from Customer Acceptable Value ({1})', [cavOverrideCount, cavCustomer]);
     }
     frappe.show_alert({
         message: resultMsg,
