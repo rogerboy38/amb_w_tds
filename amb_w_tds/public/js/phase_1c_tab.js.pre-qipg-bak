@@ -1,0 +1,813 @@
+// Phase 1C-B — Parameter Selection tab JS for TDS Product Specification
+//
+// V14.3.0 — promoted post Phase 1C-A prod-green (2026-05-19T02:30Z comet 5/5 GREEN ratified).
+// Doctype-driven, 3-level hierarchy (Family → Sub-group → QIP) with singleton + unassigned handling.
+//
+// Architectural rules (Hugh + Alicia confirmed):
+//   1. ZERO hardcoded choice strings. All Posibles Valores come from
+//      frappe.db.get_doc('Quality Inspection Parameter', name).custom_choices (split by '\n').
+//   2. ZERO hardcoded family/group structure. Families are auto-detected as common
+//      prefixes among parameter_group values (>=2 distinct groups share a prefix → family).
+//   3. Singleton sub-groups (count=1) render inline at family level (no L3 header per comet).
+//   4. NULL/empty parameter_group → "Needs Categorization (N)" section at end.
+//
+// Composes with existing tds_product_specification.js — registered via doctype_js hook in hooks.py.
+//
+// References:
+//   ADR-001 — Parameter Selection tab
+//   ADR-002 — depth-4 data-driven L2 catalog
+//   Comet 2026-05-19T01:21Z prod QIP audit (90 QIPs / 41 groups / 13 unassigned / 22 singletons)
+//   Cowork-ops 2026-05-19T02:34Z — V14.3.0 promotion authorization
+//   Phase 1C-A migration — populates QIP custom_choices, custom_is_numeric, parameter_group
+
+
+frappe.ui.form.on('TDS Product Specification', {
+    refresh: async function(frm) {
+        const pickerEl = document.getElementById('phase-1c-tree-picker');
+        const actionEl = document.getElementById('phase-1c-action-bar');
+        if (!pickerEl || !actionEl) {
+            // HTML fields not on this doctype yet (Phase 1C-B deploy directive will add them)
+            // — silent no-op. Don't render anything. When deploy schema lands, this becomes active.
+            return;
+        }
+
+        if (frm.is_new() || !frm.doc.product_item) {
+            pickerEl.innerHTML = `<i class="text-muted">${__('Save the document and set a Product Item to enable Parameter Selection.')}</i>`;
+            actionEl.innerHTML = '';
+            return;
+        }
+
+        await renderParameterPicker(frm);
+        renderActionBar(frm);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Family auto-detection (data-driven; no hardcoded family names)
+// ---------------------------------------------------------------------------
+
+function detectFamilies(parameterGroupNames) {
+    // Generate all prefixes of length 1..N words for each group name.
+    // A prefix "qualifies" as a family if it appears as a prefix in >=2 distinct group names.
+    // Pick the LONGEST qualifying prefix per group → that's the group's family.
+    //
+    // Examples on prod data:
+    //   "Physicochemical LQD"          → family "Physicochemical LQD"     sub-group ""
+    //   "Physicochemical LQD pH"       → family "Physicochemical LQD"     sub-group "pH"
+    //   "Other Analysis LQD"           → family "Other Analysis LQD"      sub-group ""
+    //   "Other Analysis LQD Preservatives" → family "Other Analysis LQD"  sub-group "Preservatives"
+
+    const prefixOccurrences = {};  // prefix → Set of group names it prefixes
+    for (const gname of parameterGroupNames) {
+        const parts = gname.split(/\s+/);
+        for (let n = 1; n <= parts.length; n++) {
+            const prefix = parts.slice(0, n).join(' ');
+            if (!prefixOccurrences[prefix]) prefixOccurrences[prefix] = new Set();
+            prefixOccurrences[prefix].add(gname);
+        }
+    }
+
+    // A prefix qualifies as family if it's prefix of >=2 distinct group names.
+    const qualifiedFamilies = new Set();
+    for (const [prefix, groupSet] of Object.entries(prefixOccurrences)) {
+        if (groupSet.size >= 2) qualifiedFamilies.add(prefix);
+    }
+
+    // For each group, pick the LONGEST qualifying prefix that prefixes it.
+    const groupToFamily = {};
+    for (const gname of parameterGroupNames) {
+        const parts = gname.split(/\s+/);
+        let best = null;  // longest qualifying prefix
+        for (let n = parts.length; n >= 1; n--) {
+            const candidate = parts.slice(0, n).join(' ');
+            if (qualifiedFamilies.has(candidate)) {
+                best = candidate;
+                break;
+            }
+        }
+        groupToFamily[gname] = best || '__OTHER__';  // unmatched → "Other"
+    }
+    return groupToFamily;
+}
+
+function deriveSubgroup(groupName, familyName) {
+    // Sub-group = group name with family prefix removed.
+    // If group name == family, sub-group is "" (general bucket within family).
+    if (groupName === familyName) return '';
+    if (groupName.startsWith(familyName + ' ')) {
+        return groupName.slice(familyName.length + 1);
+    }
+    return groupName;  // unmatched fallback
+}
+
+// ---------------------------------------------------------------------------
+// Form-aware substrate detection (V14.3.3) — walks Item Group ancestry to detect
+// product substrate token (PWD / LQD / LQDC / LQDF / PWDF) so the picker can highlight
+// the families relevant to the current product's form-type.
+//
+// Chain: TDS Product Spec.product_item → Item.item_group → Item Group.parent_item_group
+//   → (walk up further until is_group=1 keyword container)
+// Keywords (longer compounds first to avoid early-match):
+//   "Powder Formulated" → PWDF | "Liquid Concentrated" → LQDC | "Liquid Formulated" → LQDF
+//   "Powder" → PWD     | "Liquid" → LQD
+// ---------------------------------------------------------------------------
+
+async function detectPreferredSubstrate(frm) {
+    if (!frm.doc.product_item) return null;
+    try {
+        const itemRes = await frappe.db.get_value('Item', frm.doc.product_item, ['item_group']);
+        const itemGroup = itemRes && itemRes.message && itemRes.message.item_group;
+        if (!itemGroup) return null;
+
+        // Walk up the Item Group ancestry to find the keyword container.
+        let currentGroup = itemGroup;
+        let candidateName = '';
+        for (let depth = 0; depth < 4; depth++) {
+            const groupRes = await frappe.db.get_value('Item Group', currentGroup, ['parent_item_group', 'is_group']);
+            const parent = groupRes && groupRes.message && groupRes.message.parent_item_group;
+            if (!parent) break;
+            candidateName = parent;  // remember latest seen; substrate keyword is usually on the 1-2 levels up
+            // Test if candidate has a substrate keyword — if yes, use it; otherwise walk further.
+            const token = parseSubstrateToken(candidateName);
+            if (token) return { token, sourceGroup: candidateName };
+            currentGroup = parent;
+        }
+        return null;
+    } catch (err) {
+        console.warn('Phase 1C-B: detectPreferredSubstrate failed:', err);
+        return null;
+    }
+}
+
+function parseSubstrateToken(itemGroupName) {
+    if (!itemGroupName) return null;
+    const lc = itemGroupName.toLowerCase();
+    // Order matters: longer compound keywords first.
+    if (lc.includes('powder formulated')) return 'PWDF';
+    if (lc.includes('liquid concentrated')) return 'LQDC';
+    if (lc.includes('liquid formulated')) return 'LQDF';
+    if (lc.includes('powder')) return 'PWD';
+    if (lc.includes('liquid')) return 'LQD';
+    return null;
+}
+
+function familyMatchesSubstrate(familyName, substrateToken) {
+    if (!substrateToken) return false;
+    // A family matches the substrate if its name ends with the token (e.g., "Physicochemical PWD" matches "PWD").
+    // Also tolerate the token being a sub-string token (e.g., "PWD" matches families containing "PWDF" if PWD detected).
+    return familyName.endsWith(' ' + substrateToken) || familyName === substrateToken;
+}
+
+// ---------------------------------------------------------------------------
+// Tree picker rendering
+// ---------------------------------------------------------------------------
+
+async function renderParameterPicker(frm) {
+    // Fetch ALL QIPs (including unassigned per comet audit — they're a curation queue, not orphans).
+    const allQips = await frappe.db.get_list('Quality Inspection Parameter', {
+        // NOTE: QIP has `custom_specification` (Link → Quality Inspection Method) as its method field.
+        // IQI child row has `custom_method` (Link → same Method). The transfer is QIP.custom_specification → IQI.custom_method.
+        fields: ['name', 'parameter', 'parameter_group', 'custom_choices', 'custom_is_numeric', 'custom_specification', 'custom_unit'],
+        order_by: 'parameter_group asc, parameter asc',
+        limit: 0
+    });
+
+    // Partition: assigned vs unassigned
+    const assigned = [];
+    const unassigned = [];
+    for (const q of allQips) {
+        if (!q.parameter_group || q.parameter_group === '') {
+            unassigned.push(q);
+        } else {
+            assigned.push(q);
+        }
+    }
+
+    // Group assigned QIPs by parameter_group
+    const qipsByGroup = {};
+    for (const q of assigned) {
+        if (!qipsByGroup[q.parameter_group]) qipsByGroup[q.parameter_group] = [];
+        qipsByGroup[q.parameter_group].push(q);
+    }
+    const allGroupNames = Object.keys(qipsByGroup);
+
+    // Auto-detect families
+    const groupToFamily = detectFamilies(allGroupNames);
+
+    // Reorganize: family → { '<subgroup>': [qips], ... }
+    // Sub-group '' is the "general" bucket (parameter_group exactly equals family name).
+    const familyTree = {};
+    for (const gname of allGroupNames) {
+        const family = groupToFamily[gname];
+        const subgroup = deriveSubgroup(gname, family);
+        if (!familyTree[family]) familyTree[family] = {};
+        if (!familyTree[family][subgroup]) familyTree[family][subgroup] = { groupName: gname, qips: [] };
+        familyTree[family][subgroup].qips = qipsByGroup[gname];
+    }
+
+    // V14.3.3 — detect preferred substrate from product's Item Group ancestry (auto-default for selector)
+    const substrateInfo = await detectPreferredSubstrate(frm);
+    const preferredToken = substrateInfo && substrateInfo.token;
+
+    // V14.3.3 — derive available substrate tokens from data + always include the auto-detected token
+    // (so user sees the token in the selector even if 0 families match on this site).
+    const availableTokensSet = new Set();
+    for (const f of Object.keys(familyTree)) {
+        if (f === '__OTHER__') continue;
+        const parts = f.split(/\s+/);
+        if (parts.length >= 2) availableTokensSet.add(parts[parts.length - 1]);
+    }
+    if (preferredToken) availableTokensSet.add(preferredToken);
+    const availableTokens = Array.from(availableTokensSet).sort();
+
+    // Cache the data on the frm so the selector change handler can re-render without re-fetching.
+    frm._phase1c_familyTree = familyTree;
+    frm._phase1c_unassigned = unassigned;
+    frm._phase1c_substrateInfo = substrateInfo;
+    frm._phase1c_availableTokens = availableTokens;
+    frm._phase1c_totalQips = allQips.length;
+
+    // Initial render with the auto-detected token (or 'all' if none detected)
+    const initialFilter = preferredToken || '';
+    renderPickerWithFilter(frm, initialFilter);
+}
+
+// V14.3.3 — separated render step so selector change can re-render without re-fetching QIP data.
+function renderPickerWithFilter(frm, activeToken) {
+    const familyTree = frm._phase1c_familyTree;
+    const unassigned = frm._phase1c_unassigned;
+    const substrateInfo = frm._phase1c_substrateInfo;
+    const availableTokens = frm._phase1c_availableTokens;
+    const totalQips = frm._phase1c_totalQips;
+    if (!familyTree) return;
+
+    const sortedFamilies = Object.keys(familyTree).filter(f => f !== '__OTHER__').sort();
+    const visibleFamilies = activeToken
+        ? sortedFamilies.filter(f => familyMatchesSubstrate(f, activeToken))
+        : sortedFamilies;
+    const visibleFamilyCount = visibleFamilies.length + (familyTree['__OTHER__'] && !activeToken ? 1 : 0)
+                              + (unassigned.length > 0 && !activeToken ? 1 : 0);
+
+    let html = renderMasterControls(visibleFamilyCount, totalQips, unassigned.length, substrateInfo, visibleFamilies.length, availableTokens, activeToken);
+
+    if (visibleFamilies.length === 0 && activeToken) {
+        html += `
+            <div class="phase-1c-empty-state">
+                <p>${__('No families match the')} <b>${escapeHtml(activeToken)}</b> ${__('substrate on this site.')}</p>
+                <p class="text-muted">${__('Switch the filter to "All families" to view available substrates, or add')} ${escapeHtml(activeToken)} ${__('QIPs to the Quality Inspection Parameter catalog.')}</p>
+            </div>
+        `;
+    } else {
+        for (const family of visibleFamilies) {
+            html += renderFamily(family, familyTree[family], { matched: !!activeToken });
+        }
+        // Show __OTHER__ + unassigned ONLY when filter is "All families"
+        if (!activeToken) {
+            if (familyTree['__OTHER__']) {
+                html += renderFamily(__('Other'), familyTree['__OTHER__'], { otherBucket: true });
+            }
+            if (unassigned.length > 0) {
+                html += renderUnassignedBucket(unassigned);
+            }
+        }
+    }
+
+    document.getElementById('phase-1c-tree-picker').innerHTML = html;
+    attachEventHandlers(frm);
+}
+
+function renderMasterControls(visibleFamilyCount, qipCount, unassignedCount, substrateInfo, visibleMatched, availableTokens, activeToken) {
+    const unassignedSpan = unassignedCount > 0 && !activeToken
+        ? ` · <span class="phase-1c-summary-warn">${unassignedCount} ${__('need categorization')}</span>`
+        : '';
+    let detectedSpan = '';
+    if (substrateInfo && substrateInfo.token) {
+        detectedSpan = ` · <span class="phase-1c-summary-matched">${__('Product form detected')}: <b>${escapeHtml(substrateInfo.token)}</b></span>`;
+    }
+
+    // Substrate-filter selector (V14.3.3) — data-driven options
+    const tokens = availableTokens || [];
+    const TOKEN_LABELS = {
+        'LQD': __('Liquid'),
+        'LQDC': __('Liquid Concentrated'),
+        'LQDF': __('Liquid Formulated'),
+        'PWD': __('Powder'),
+        'PWDF': __('Powder Formulated'),
+    };
+    let optionsHtml = `<option value="" ${activeToken === '' ? 'selected' : ''}>${__('All families')}</option>`;
+    for (const t of tokens) {
+        const label = TOKEN_LABELS[t] || t;
+        const sel = (t === activeToken) ? 'selected' : '';
+        optionsHtml += `<option value="${escapeHtml(t)}" ${sel}>${escapeHtml(label)} (${escapeHtml(t)})</option>`;
+    }
+
+    return `
+        <div class="phase-1c-master-controls">
+            <label class="phase-1c-filter-label">
+                ${__('Substrate filter')}:
+                <select id="phase-1c-substrate-filter" class="form-control input-xs phase-1c-filter-select">
+                    ${optionsHtml}
+                </select>
+            </label>
+            <button class="btn btn-sm btn-default" id="phase-1c-expand-all">${__('Expand All')}</button>
+            <button class="btn btn-sm btn-default" id="phase-1c-collapse-all">${__('Collapse All')}</button>
+            <span class="phase-1c-summary text-muted">
+                ${visibleFamilyCount} ${__('families')} · ${qipCount} ${__('parameters')}${detectedSpan}${unassignedSpan}
+            </span>
+        </div>
+    `;
+}
+
+function renderFamily(familyName, subgroups, opts) {
+    opts = opts || {};
+    const subgroupKeys = Object.keys(subgroups);
+
+    // Separate sub-groups: "" (general) | singletons (count=1) | multi (count>=2)
+    const general = subgroups[''] || null;
+    const singletons = [];
+    const multi = [];
+    for (const sk of subgroupKeys) {
+        if (sk === '') continue;
+        const sg = subgroups[sk];
+        if (sg.qips.length === 1) singletons.push(sg);
+        else multi.push(sg);
+    }
+    multi.sort((a, b) => a.groupName.localeCompare(b.groupName));
+    singletons.sort((a, b) => a.qips[0].parameter.localeCompare(b.qips[0].parameter));
+
+    // Count total QIPs in this family
+    let totalQips = 0;
+    for (const sk of subgroupKeys) totalQips += subgroups[sk].qips.length;
+
+    let body = '';
+
+    // 1. General bucket (parameter_group == family name exactly)
+    if (general) {
+        body += general.qips.map(q => renderLeaf(q, general.groupName)).join('');
+    }
+
+    // 2. Multi-QIP sub-groups (collapsible L3 sub-sections)
+    for (const sg of multi) {
+        body += renderSubgroup(sg);
+    }
+
+    // 3. Singletons — rendered inline at family level (no L3 header per comet adjustment 2)
+    if (singletons.length > 0) {
+        const singletonLeaves = singletons.map(sg => renderLeaf(sg.qips[0], sg.groupName, { singleton: true })).join('');
+        body += `
+            <div class="phase-1c-singletons-block">
+                <div class="phase-1c-singletons-label text-muted">${__('Other parameters')} (${singletons.length}):</div>
+                ${singletonLeaves}
+            </div>
+        `;
+    }
+
+    // V14.3.3 — form-aware classes:
+    //   matched      → highlighted + default-expanded (chevron ▼, body display:block)
+    //   dimmed       → non-matched when substrate detected (opacity reduction)
+    //   otherBucket  → italic muted (existing)
+    let familyClass = 'phase-1c-family';
+    if (opts.otherBucket) familyClass += ' phase-1c-family-other';
+    if (opts.matched) familyClass += ' phase-1c-family-matched';
+    if (opts.dimmed) familyClass += ' phase-1c-family-dimmed';
+
+    const defaultExpanded = !!opts.matched;
+    const chevronChar = defaultExpanded ? '▼' : '▶';
+    const bodyStyle = defaultExpanded ? '' : 'style="display: none;"';
+    const matchedBadge = opts.matched
+        ? `<span class="phase-1c-matched-badge">${__('matches product form')}</span>`
+        : '';
+
+    return `
+        <div class="${familyClass}" data-family="${escapeHtml(familyName)}">
+            <div class="phase-1c-family-header">
+                <span class="phase-1c-chevron">${chevronChar}</span>
+                <input type="checkbox" class="phase-1c-family-toggle" />
+                <span class="phase-1c-family-name">${escapeHtml(familyName)}</span>
+                <span class="phase-1c-family-count">${totalQips} ${__('params')}</span>
+                ${matchedBadge}
+            </div>
+            <div class="phase-1c-family-body" ${bodyStyle}>
+                ${body}
+            </div>
+        </div>
+    `;
+}
+
+function renderSubgroup(sg) {
+    // L3 sub-group section (collapsible) — only for sub-groups with >=2 QIPs.
+    const leaves = sg.qips.map(q => renderLeaf(q, sg.groupName)).join('');
+    const subgroupLabel = deriveSubgroup(sg.groupName, sg.groupName.split(/\s+/).slice(0, -1).join(' '))
+                          || sg.groupName;
+    // Use the FULL group name as the visible sub-header for clarity (e.g. "Physicochemical LQD pH")
+    return `
+        <div class="phase-1c-subgroup" data-subgroup="${escapeHtml(sg.groupName)}">
+            <div class="phase-1c-subgroup-header">
+                <span class="phase-1c-chevron-sub">▶</span>
+                <input type="checkbox" class="phase-1c-subgroup-toggle" />
+                <span class="phase-1c-subgroup-name">${escapeHtml(sg.groupName)}</span>
+                <span class="phase-1c-subgroup-count">${sg.qips.length}</span>
+            </div>
+            <div class="phase-1c-subgroup-leaves" style="display: none;">
+                ${leaves}
+            </div>
+        </div>
+    `;
+}
+
+function renderUnassignedBucket(unassignedQips) {
+    // Per comet adjustment 3: explicit "Needs Categorization (N)" section at end.
+    // Dashed border + secondary color to signal Alicia attention. Items are pickable
+    // (they're still valid QIPs), just visually distinct.
+    const leaves = unassignedQips.map(q => renderLeaf(q, '__UNASSIGNED__')).join('');
+    return `
+        <div class="phase-1c-family phase-1c-family-unassigned" data-family="__UNASSIGNED__">
+            <div class="phase-1c-family-header phase-1c-family-header-unassigned">
+                <span class="phase-1c-chevron">▶</span>
+                <input type="checkbox" class="phase-1c-family-toggle" />
+                <span class="phase-1c-family-name">${__('Needs Categorization')}</span>
+                <span class="phase-1c-family-count">${unassignedQips.length}</span>
+                <span class="phase-1c-needs-attention-badge">${__('Alicia review')}</span>
+            </div>
+            <div class="phase-1c-family-body" style="display: none;">
+                ${leaves}
+            </div>
+        </div>
+    `;
+}
+
+// V14.3.3 — classify QIPs by data completeness + name-vs-group analysis
+//   "real"    → has custom_choices OR custom_specification_text OR is_numeric=1 OR min/max set
+//   "label"   → no data AND name matches parameter_group base (e.g., QIP "Organoleptic" in group "Organoleptic LQD")
+//   "value"   → no data AND name does NOT match group base (likely a Posibles Valor mis-seeded as a QIP)
+function classifyQip(qip) {
+    const hasData = qip.custom_choices
+        || qip.custom_specification_text
+        || qip.custom_is_numeric
+        || (qip.custom_specification_min && qip.custom_specification_min !== 0)
+        || (qip.custom_specification_max && qip.custom_specification_max !== 0);
+    if (hasData) return 'real';
+    if (!qip.parameter_group) return 'value';
+    // Match name against parameter_group base (first word OR group minus trailing substrate token)
+    const groupWords = qip.parameter_group.split(/\s+/);
+    if (qip.name === groupWords[0]) return 'label';
+    if (groupWords.length >= 2 && qip.name === groupWords.slice(0, -1).join(' ')) return 'label';
+    return 'value';
+}
+
+function renderLeaf(qip, groupName, opts) {
+    opts = opts || {};
+    const choiceLines = qip.custom_choices ? qip.custom_choices.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    const choiceCount = choiceLines.length;
+    const choicesPreview = choiceLines.length > 0
+        ? choiceLines.slice(0, 12).join('\n') + (choiceLines.length > 12 ? `\n…(+${choiceLines.length - 12} more)` : '')
+        : '';
+    const klass = classifyQip(qip);
+    let badge;
+    if (choiceCount > 0) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-choices" title="${escapeHtml(choicesPreview)}">${choiceCount} ${__('choices')}</span>`;
+    } else if (qip.custom_is_numeric) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-numeric">${__('numeric')}</span>`;
+    } else if (qip.custom_specification_text) {
+        badge = `<span class="phase-1c-badge phase-1c-badge-text">${__('text')}</span>`;
+    } else if (klass === 'label') {
+        badge = `<span class="phase-1c-badge phase-1c-badge-label" title="${escapeHtml(__('Section divider — value defaults to \"Specification\" on add'))}">${__('section')}</span>`;
+    } else {
+        // klass === 'value' — likely mis-seeded value-as-QIP
+        badge = `<span class="phase-1c-badge phase-1c-badge-suspect" title="${escapeHtml(__('No defaults set + name doesn\'t match group base. Likely a Posibles Valor mis-recorded as a QIP. Check data hygiene before adding.'))}">${__('value?')}</span>`;
+    }
+    const escapedName = escapeHtml(qip.parameter);
+    const contextTag = (opts.singleton || groupName === '__UNASSIGNED__')
+        ? `<span class="phase-1c-leaf-context text-muted">${escapeHtml(groupName === '__UNASSIGNED__' ? __('(no group)') : groupName)}</span>`
+        : '';
+    const leafClass = (klass === 'value') ? 'phase-1c-leaf phase-1c-leaf-suspect' : 'phase-1c-leaf';
+    return `
+        <label class="${leafClass}" data-qip-class="${klass}">
+            <input type="checkbox" class="phase-1c-leaf-cb"
+                   data-qip-name="${escapeHtml(qip.name)}"
+                   data-param-group="${escapeHtml(groupName === '__UNASSIGNED__' ? '' : groupName)}"
+                   data-qip-class="${klass}" />
+            <span class="phase-1c-leaf-name">${escapedName}</span>
+            ${badge}
+            ${contextTag}
+        </label>
+    `;
+}
+
+function renderActionBar(frm) {
+    document.getElementById('phase-1c-action-bar').innerHTML = `
+        <button class="btn btn-primary" id="phase-1c-add-selected">
+            ${__('+ Add Selected Parameters')}
+        </button>
+        <button class="btn btn-default" id="phase-1c-clear-selections">
+            ${__('Clear Selections')}
+        </button>
+        <span class="phase-1c-selection-summary text-muted"></span>
+    `;
+}
+
+// ---------------------------------------------------------------------------
+// Event handlers
+// ---------------------------------------------------------------------------
+
+function attachEventHandlers(frm) {
+    // Family header expand/collapse
+    document.querySelectorAll('.phase-1c-family-header').forEach(header => {
+        header.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            const family = this.closest('.phase-1c-family');
+            const body = family.querySelector('.phase-1c-family-body');
+            const chevron = family.querySelector('.phase-1c-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.textContent = isOpen ? '▶' : '▼';
+        });
+    });
+
+    // Sub-group header expand/collapse
+    document.querySelectorAll('.phase-1c-subgroup-header').forEach(header => {
+        header.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            e.stopPropagation();
+            const sg = this.closest('.phase-1c-subgroup');
+            const leaves = sg.querySelector('.phase-1c-subgroup-leaves');
+            const chevron = sg.querySelector('.phase-1c-chevron-sub');
+            const isOpen = leaves.style.display !== 'none';
+            leaves.style.display = isOpen ? 'none' : 'block';
+            chevron.textContent = isOpen ? '▶' : '▼';
+        });
+    });
+
+    // Family-level checkbox toggles ALL leaves in the family (including sub-groups + singletons)
+    document.querySelectorAll('.phase-1c-family-toggle').forEach(cb => {
+        cb.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const family = this.closest('.phase-1c-family');
+            const leafCheckboxes = family.querySelectorAll('.phase-1c-leaf-cb');
+            leafCheckboxes.forEach(leaf => leaf.checked = this.checked);
+            // Also sync sub-group toggles within
+            family.querySelectorAll('.phase-1c-subgroup-toggle').forEach(sgt => sgt.checked = this.checked);
+            updateSelectionSummary();
+        });
+    });
+
+    // Sub-group-level checkbox toggles all leaves in the sub-group
+    document.querySelectorAll('.phase-1c-subgroup-toggle').forEach(cb => {
+        cb.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const sg = this.closest('.phase-1c-subgroup');
+            const leafCheckboxes = sg.querySelectorAll('.phase-1c-leaf-cb');
+            leafCheckboxes.forEach(leaf => leaf.checked = this.checked);
+            updateSelectionSummary();
+        });
+    });
+
+    // Leaf-level checkbox updates selection summary
+    document.querySelectorAll('.phase-1c-leaf-cb').forEach(cb => {
+        cb.addEventListener('change', updateSelectionSummary);
+    });
+
+    // V14.3.3 — substrate filter selector — re-renders picker with selected token (or '' = all)
+    const filterSel = document.getElementById('phase-1c-substrate-filter');
+    if (filterSel) {
+        filterSel.addEventListener('change', function() {
+            renderPickerWithFilter(frm, this.value);
+        });
+    }
+
+    // Expand all / Collapse all (operates on both family bodies + sub-group leaves)
+    const expandAll = document.getElementById('phase-1c-expand-all');
+    if (expandAll) {
+        expandAll.addEventListener('click', () => {
+            document.querySelectorAll('.phase-1c-family-body, .phase-1c-subgroup-leaves')
+                .forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-sub')
+                .forEach(el => el.textContent = '▼');
+        });
+    }
+    const collapseAll = document.getElementById('phase-1c-collapse-all');
+    if (collapseAll) {
+        collapseAll.addEventListener('click', () => {
+            document.querySelectorAll('.phase-1c-family-body, .phase-1c-subgroup-leaves')
+                .forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.phase-1c-chevron, .phase-1c-chevron-sub')
+                .forEach(el => el.textContent = '▶');
+        });
+    }
+
+    // Add Selected
+    const addBtn = document.getElementById('phase-1c-add-selected');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => addSelectedParameters(frm));
+    }
+    // Clear selections — DEBUG-V14.3.3: also clear indeterminate state + dispatch change event
+    // so parent (family/sub-group) checkboxes visually re-render unchecked, not "mixed".
+    const clearBtn = document.getElementById('phase-1c-clear-selections');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => {
+                cb.checked = false;
+                cb.indeterminate = false;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            updateSelectionSummary();
+        });
+    }
+}
+
+function updateSelectionSummary() {
+    const checked = document.querySelectorAll('.phase-1c-leaf-cb:checked').length;
+    const summary = document.querySelector('.phase-1c-selection-summary');
+    if (summary) {
+        summary.textContent = checked > 0
+            ? __(`${checked} parameter(s) selected`)
+            : '';
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Add Selected Parameters — bulk-insert with dedupe
+// ---------------------------------------------------------------------------
+
+async function addSelectedParameters(frm) {
+    const checked = document.querySelectorAll('.phase-1c-leaf-cb:checked');
+    if (checked.length === 0) {
+        frappe.show_alert({
+            message: __('Select at least one parameter first.'),
+            indicator: 'orange'
+        });
+        return;
+    }
+
+    // V14.3.3 — strengthened dedupe via Set lookup of existing specifications in IQI table
+    const existingRows = frm.doc.item_quality_inspection_parameter || [];
+    const existingSpecs = new Set();
+    for (const r of existingRows) {
+        if (r.custom_is_title_row !== 1 && r.specification) {
+            existingSpecs.add(r.specification);
+        }
+    }
+
+    // Pre-scan: how many of the selections are dupes vs new? Also capture qipClass.
+    let dupeCount = 0;
+    let newCount = 0;
+    const selections = [];
+    checked.forEach(cb => {
+        const qipName = cb.dataset.qipName;
+        const groupName = cb.dataset.paramGroup || '';
+        const qipClass = cb.dataset.qipClass || 'real';
+        if (existingSpecs.has(qipName)) {
+            dupeCount++;
+        } else {
+            newCount++;
+            selections.push({ qipName, groupName, qipClass });
+        }
+    });
+
+    // V14.3.3 — sort selections: labels first within each group, then alphabetically by qipName
+    // (matches Hugh's manual convention: section divider, then params)
+    selections.sort((a, b) => {
+        if (a.groupName !== b.groupName) return a.groupName.localeCompare(b.groupName);
+        if (a.qipClass !== b.qipClass) {
+            // labels first, then real, then value-like at end
+            const rank = (c) => c === 'label' ? 0 : (c === 'real' ? 1 : 2);
+            return rank(a.qipClass) - rank(b.qipClass);
+        }
+        return a.qipName.localeCompare(b.qipName);
+    });
+
+    // V14.3.3 — if ALL selections are duplicates, prompt with confirmation (don't silently no-op)
+    if (newCount === 0 && dupeCount > 0) {
+        frappe.confirm(
+            __('All {0} selected parameter(s) are already on this TDS Product Spec. Add them again as duplicates?', [dupeCount]),
+            () => {
+                // User confirmed — fall through and add anyway
+                const selectionsForceAdd = [];
+                checked.forEach(cb => {
+                    selectionsForceAdd.push({ qipName: cb.dataset.qipName, groupName: cb.dataset.paramGroup || '' });
+                });
+                _doAddRows(frm, selectionsForceAdd, false /* dedupe off */);
+            },
+            () => {
+                // User cancelled
+                frappe.show_alert({ message: __('No rows added.'), indicator: 'orange' });
+            }
+        );
+        return;
+    }
+
+    // V14.3.3 — partial dupes: just inform via the result alert at end
+    await _doAddRows(frm, selections, true /* dedupe enforced (already filtered above) */, dupeCount);
+}
+
+// V14.3.3 — extracted row-insertion helper. No title rows (removed per Hugh feedback —
+// they were creating empty rows in the IQI table; picker UI already conveys grouping).
+// V14.3.3 — validates QIP.custom_specification (Method) against actual Quality Inspection Method
+// catalog before copying to IQI row to prevent the "Could not find Row #N: Method: <stale name>"
+// save-time error. Broken Method refs leave row.custom_method blank + counted in summary alert
+// (per L119 preserve-by-default: don't silently fail, surface to user).
+async function _doAddRows(frm, selections, dedupeEnforced, alreadySkipped) {
+    alreadySkipped = alreadySkipped || 0;
+    let added = 0;
+    let brokenMethodCount = 0;
+
+    // V14.3.3 — pre-fetch all valid Quality Inspection Method names once for validation.
+    let validMethodSet = new Set();
+    try {
+        const methods = await frappe.db.get_list('Quality Inspection Method', {
+            fields: ['name'],
+            limit: 0
+        });
+        validMethodSet = new Set(methods.map(m => m.name));
+    } catch (err) {
+        console.warn('Phase 1C-B: could not pre-fetch Quality Inspection Method list (validation skipped):', err);
+        // If we can't fetch the list, fall back to "assume valid" — still better than blocking the user
+        validMethodSet = null;  // null = skip validation
+    }
+
+    for (const sel of selections) {
+        const qipName = sel.qipName;
+        const groupName = sel.groupName;
+
+        const row = frm.add_child('item_quality_inspection_parameter');
+        row.specification = qipName;
+        if (groupName !== '') row.parameter_group = groupName;
+
+        // Fetch QIP defaults — populate value/min/max/method/uom from canonical QIP record
+        try {
+            const qipDoc = await frappe.db.get_doc('Quality Inspection Parameter', qipName);
+            // V14.3.3 — label QIPs (section dividers): set value="Specification" per Hugh's manual convention
+            if (sel.qipClass === 'label') {
+                row.value = 'Specification';
+            } else if (qipDoc.custom_is_numeric) {
+                row.numeric = 1;
+                if (qipDoc.custom_specification_min !== null && qipDoc.custom_specification_min !== undefined) {
+                    row.min_value = qipDoc.custom_specification_min;
+                }
+                if (qipDoc.custom_specification_max !== null && qipDoc.custom_specification_max !== undefined) {
+                    row.max_value = qipDoc.custom_specification_max;
+                }
+            } else {
+                if (qipDoc.custom_specification_text) {
+                    row.value = qipDoc.custom_specification_text;
+                } else if (qipDoc.custom_choices) {
+                    const firstChoice = qipDoc.custom_choices.split('\n').map(s => s.trim()).filter(Boolean)[0];
+                    if (firstChoice) row.value = firstChoice;
+                }
+                // For sel.qipClass === 'value' (suspect), leave value empty — let user fix manually
+            }
+            // V14.3.3 — Method validation: only copy if target Method exists in catalog
+            if (qipDoc.custom_specification) {
+                if (validMethodSet === null || validMethodSet.has(qipDoc.custom_specification)) {
+                    row.custom_method = qipDoc.custom_specification;
+                } else {
+                    // Stale Method reference — leave custom_method blank to avoid save-time validation error
+                    brokenMethodCount++;
+                    console.warn(`Phase 1C-B: QIP "${qipName}" has stale custom_specification "${qipDoc.custom_specification}" — not a valid Quality Inspection Method; leaving IQI row.custom_method blank`);
+                }
+            }
+            if (qipDoc.custom_unit) row.custom_uom = qipDoc.custom_unit;
+        } catch (err) {
+            console.warn(`Phase 1C-B: could not fetch QIP defaults for ${qipName}:`, err);
+        }
+
+        added++;
+    }
+
+    frm.refresh_field('item_quality_inspection_parameter');
+
+    document.querySelectorAll('#phase-1c-tree-picker input[type=checkbox]').forEach(cb => {
+        cb.checked = false;
+        cb.indeterminate = false;
+    });
+    updateSelectionSummary();
+
+    // V14.3.3 — result alert now reports brokenMethodCount too so user knows there's data hygiene work
+    let resultMsg = __('Added {0} parameter(s)', [added]);
+    if (alreadySkipped > 0) resultMsg += __(' · {0} duplicate(s) skipped', [alreadySkipped]);
+    if (brokenMethodCount > 0) {
+        resultMsg += __(' · {0} row(s) with stale QIP Method ref (custom_method left blank — fix in QIP master)', [brokenMethodCount]);
+    }
+    frappe.show_alert({
+        message: resultMsg,
+        indicator: brokenMethodCount > 0 ? 'orange' : (added > 0 ? 'green' : 'orange')
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// ---------------------------------------------------------------------------
+// Print view handling (directive §1.3) — deferred to Print Format customization at deploy.
+// ---------------------------------------------------------------------------
