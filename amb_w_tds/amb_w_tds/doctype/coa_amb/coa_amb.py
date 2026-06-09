@@ -641,6 +641,12 @@ class COAAMB(Document):
 
     def create_quality_audit(self):
         """Create audit record for submitted COA"""
+        # T96 2026-06-11: skip silently if Quality Audit DocType doesn't exist.
+        # Frappe Core removed this DocType in newer ERPNext versions. The audit
+        # intent will be picked up by the project-local COA Audit DocType when
+        # T97 (COA AMB2 inspector notebook) lands. Until then, no-op.
+        if not frappe.db.exists("DocType", "Quality Audit"):
+            return
         try:
             audit_doc = frappe.get_doc({
                 "doctype": "Quality Audit",
