@@ -29,6 +29,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.792217",
   "name": "ANTIMICROBIAL",
   "preservative_name": "ANTIMICROBIAL"
  },
@@ -69,6 +70,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.807177",
   "name": "AVON PRODUCTS",
   "preservative_name": "AVON PRODUCTS"
  },
@@ -130,6 +132,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.823021",
   "name": "BIOFARMA",
   "preservative_name": "BIOFARMA"
  },
@@ -170,6 +173,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.844113",
   "name": "BIOVERA",
   "preservative_name": "BIOVERA"
  },
@@ -217,6 +221,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.857987",
   "name": "COSMETIC",
   "preservative_name": "COSMETIC"
  },
@@ -257,6 +262,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.872063",
   "name": "COSMETIC2",
   "preservative_name": "COSMETIC2"
  },
@@ -283,6 +289,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.883347",
   "name": "COSMOS / ORGANIC",
   "preservative_name": "COSMOS / ORGANIC"
  },
@@ -330,6 +337,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.895791",
   "name": "COSMOS GRADE",
   "preservative_name": "COSMOS GRADE"
  },
@@ -370,6 +378,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.909081",
   "name": "DERMOSOFT",
   "preservative_name": "DERMOSOFT"
  },
@@ -403,6 +412,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.921434",
   "name": "DIVA",
   "preservative_name": "DIVA"
  },
@@ -443,6 +453,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.937635",
   "name": "DONINI",
   "preservative_name": "DONINI"
  },
@@ -483,6 +494,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.952350",
   "name": "EQUILIBRA (B.S.)",
   "preservative_name": "EQUILIBRA (B.S.)"
  },
@@ -530,6 +542,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.969805",
   "name": "FOOD",
   "preservative_name": "FOOD"
  },
@@ -570,6 +583,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:40.987564",
   "name": "FOOD 2",
   "preservative_name": "FOOD 2"
  },
@@ -610,6 +624,7 @@
   "docstatus": 0,
   "doctype": "Preservative System",
   "is_active": 1,
+  "modified": "2026-06-03 17:18:41.014234",
   "name": "ORGANIC",
   "preservative_name": "ORGANIC"
  }
