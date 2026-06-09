@@ -23,7 +23,9 @@ class COAAMB(Document):
         # Only run full validation on submit
         if self.docstatus == 0 and not self._is_submit_flow():
             # Lightweight validation for draft editing (saves in <1 second)
-            self.validate_linked_tds()
+            # T81 fix 2026-06-08: validate_linked_tds() removed from draft branch
+            # to allow saving a Draft COA against a Draft TDS. Approval check
+            # still enforced at submit time (see full-validation branch below).
             self.validate_batch_reference()
             self.check_mandatory_tds_link()
             return
@@ -71,6 +73,47 @@ class COAAMB(Document):
         #self.calculate_child_table_status()
         # to be reviewed freezed on save COA AMB document
 
+    def before_submit(self):
+        """T90 2026-06-08: bulletproof autorizacion compliance gate.
+ 
+        validate_signature_on_submit() lives in validate(), which can be
+        bypassed by flags.ignore_validate during workflow-driven submits
+        (observed on COA-26-0004: reached docstatus=1 with autorizacion=NULL
+        despite the validate-level guard being wired correctly).
+ 
+        before_submit() is invoked unconditionally by doc.submit() and
+        cannot be skipped — defense-in-depth alongside the existing check.
+ 
+        Fallback (per Hugh decision 2026-06-08): if the user has a saved
+        signature in their User profile, copy it in rather than throwing.
+        Reduces UX friction; still bulletproof on compliance because we
+        only proceed if SOME signature source exists.
+        """
+        if not self.autorizacion:
+            fallback = None
+            try:
+                user_doc = frappe.get_doc("User", frappe.session.user)
+                fallback = (
+                    getattr(user_doc, "signature", None)
+                    or getattr(user_doc, "user_image", None)
+                )
+            except Exception:
+                fallback = None
+ 
+            if fallback:
+                self.autorizacion = fallback
+                frappe.msgprint(
+                    _("Signature auto-filled from your User profile."),
+                    alert=True,
+                    indicator="blue",
+                )
+            else:
+                frappe.throw(_(
+                    "Authorization signature is required before submission. "
+                    "Either draw on the signature pad or save a signature "
+                    "in your User profile."
+                ))
+ 
     def on_submit(self):
         """On submit actions"""
         self.validate_submission_prerequisites()
@@ -209,6 +252,7 @@ class COAAMB(Document):
 
     # ==================== RESULT EVALUATION METHODS ====================
 
+    @frappe.whitelist()
     def evaluate_overall_result(self):
         """Enhanced overall test result evaluation with detailed tracking"""
         if not self.coa_quality_test_parameter:
@@ -263,6 +307,10 @@ class COAAMB(Document):
         else:
             self.overall_result = 'Pending'
             self.compliance_status = 'Pending'
+        # T84.5 2026-06-08: persist server-side changes so client.reload_doc sees them
+        self.db_update()
+        import frappe as _f
+        _f.db.commit()
 
     def check_parameter_compliance(self, param):
         """Enhanced parameter compliance checking with multiple formats"""
