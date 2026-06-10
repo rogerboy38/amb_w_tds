@@ -242,6 +242,11 @@ _AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
 # "Custom Fields stay in amb_w_tds fixtures").
 _AMB_W_TDS_CF_EXCEPTIONS = [
     "Quality Inspection Parameter Group-applicable_substrates",
+    # T90.3 (2026-06-12) — User-level signature Custom Field for compliance
+    # gate (before_submit fallback chain prefers User.signature_image over
+    # User.user_image; see commit 4047ea8). Not in _AMB_W_TDS_DOCTYPES (User
+    # is core), so listed here by-name to force fixture capture.
+    "User-signature_image",
 ]
 
 fixtures = [
