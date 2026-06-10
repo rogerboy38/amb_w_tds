@@ -29,3 +29,9 @@ amb_w_tds.patches.v14_3_7.backfill_tds_item_substrate
 # guard and schema_sync creates the column from the updated JSON directly.
 # Pair-companion to amb_w_spc v15_4_0.rename_cav_to_css.
 amb_w_tds.patches.v14_3_8.rename_cav_block_on_mismatch
+# V14.3.9 (2026-06-12) — T98.2 bulletproof signature compliance gate.
+# Adds MariaDB CHECK constraint to tabCOA AMB preventing docstatus=1 with
+# NULL/empty autorizacion. Closes the entire bypass class (direct SQL,
+# db.set_value, workflow_action without submit). Pre-flight bails if any
+# existing records would violate; operator must resolve first.
+amb_w_tds.patches.v14_3_9.add_autorizacion_check_constraint
