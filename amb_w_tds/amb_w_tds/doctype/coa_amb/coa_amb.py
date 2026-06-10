@@ -249,6 +249,22 @@ class COAAMB(Document):
         
         if not self.overall_result or self.overall_result == 'Pending':
             frappe.throw(_("Cannot submit COA with pending overall result"))
+        
+        # T98 2026-06-11: triple-defense signature gate. Called from on_submit so
+        # fires after docstatus=1 is set but BEFORE the doc persists; throwing here
+        # triggers transaction rollback. Catches submits that bypass validate()
+        # (flags.ignore_validate=True) AND before_submit() (workflow-driven paths
+        # that mark workflow_state but skip the submit lifecycle).
+        # Forensic: COA-26-0008 reached docstatus=1 with autorizacion=NULL via
+        # incomplete workflow action (Approved→Certificate Shared never marked
+        # Completed) — proves the two existing gates can be bypassed.
+        # T98.2 will add a DB CHECK constraint for paths that bypass on_submit too
+        # (direct SQL UPDATE), but requires fixing the 2 known-bad records first.
+        if not self.autorizacion:
+            frappe.throw(_(
+                "Authorization signature is mandatory for submission. "
+                "Draw a signature on the Autorizacion pad before submitting."
+            ))
 
     # ==================== RESULT EVALUATION METHODS ====================
 
