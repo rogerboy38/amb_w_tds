@@ -93,8 +93,13 @@ class COAAMB(Document):
             fallback = None
             try:
                 user_doc = frappe.get_doc("User", frappe.session.user)
+                # T90.3 2026-06-11: extended fallback chain. Prefer the dedicated
+                # signature_image Custom Field (semantic match) over user_image
+                # (avatar; non-semantic for compliance use). Pre-existing signature
+                # attribute kept as first priority for backward compat.
                 fallback = (
                     getattr(user_doc, "signature", None)
+                    or getattr(user_doc, "signature_image", None)
                     or getattr(user_doc, "user_image", None)
                 )
             except Exception:
