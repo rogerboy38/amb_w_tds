@@ -12,7 +12,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Auto-Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Organoleptic",
   "parameter": "Organoleptic",
   "parameter_group": "Organoleptic"
@@ -30,7 +30,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Auto-Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Physicochemical",
   "parameter": "Physicochemical",
   "parameter_group": "Physicochemical"
@@ -48,7 +48,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Auto-Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Microbiological",
   "parameter": "Microbiological",
   "parameter_group": "Microbiological"
@@ -56,21 +56,10 @@
  {
   "acceptance_choices": [
    {
-    "creation": "2025-08-26 16:40:35.710304",
-    "docstatus": 0,
-    "doctype": "Acceptance Choice",
-    "idx": 1,
     "is_default": 1,
     "legacy_text_match": "NEGATIVE",
     "max_value": 0.0,
     "min_value": 0.0,
-    "modified": "2026-05-28 12:37:48.064262",
-    "modified_by": "Administrator",
-    "name": "vasa9kird8",
-    "owner": "Administrator",
-    "parent": "Pesticides",
-    "parentfield": "acceptance_choices",
-    "parenttype": "Quality Inspection Parameter",
     "reconstituted_to_05_solids": 0,
     "sub_spec": null,
     "target_value": 0.0,
@@ -78,21 +67,10 @@
     "unit": null
    },
    {
-    "creation": "2025-08-26 16:40:35.710304",
-    "docstatus": 0,
-    "doctype": "Acceptance Choice",
-    "idx": 2,
     "is_default": 0,
     "legacy_text_match": "NOT DETECTABLE",
     "max_value": 0.0,
     "min_value": 0.0,
-    "modified": "2026-05-28 12:37:48.064262",
-    "modified_by": "Administrator",
-    "name": "vasrjguvqs",
-    "owner": "Administrator",
-    "parent": "Pesticides",
-    "parentfield": "acceptance_choices",
-    "parenttype": "Quality Inspection Parameter",
     "reconstituted_to_05_solids": 0,
     "sub_spec": null,
     "target_value": 0.0,
@@ -111,7 +89,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Auto-Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Pesticides",
   "parameter": "Pesticides",
   "parameter_group": "Pesticides"
@@ -129,7 +107,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Not Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Contaminants",
   "parameter": "Contaminants",
   "parameter_group": "Contaminant"
@@ -147,7 +125,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Auto-Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Other Analysis",
   "parameter": "Other Analysis",
   "parameter_group": "Other Analysis"
@@ -165,7 +143,7 @@
   "docstatus": 0,
   "doctype": "Quality Inspection Parameter",
   "l4_migration_status": "Not Migrated",
-  "modified": "2026-05-28 18:00:00.000000",
+  "modified": "2026-05-28 18:00:00",
   "name": "Aloe Vera Nutrients",
   "parameter": "Aloe Vera Nutrients",
   "parameter_group": "Aloe Vera Nutrients"
