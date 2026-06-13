@@ -41,10 +41,13 @@ frappe.ui.form.on("Sample Request AMB", {
 
 	customer(frm) {
 		if (frm.doc.customer) {
-			frappe.db.get_value("Customer", frm.doc.customer, "customer_name")
+			frappe.db.get_value("Customer", frm.doc.customer,
+				["customer_name", "customer_primary_address", "customer_primary_contact"])
 				.then(r => {
 					if (r && r.message) {
 						frm.set_value("customer_name", r.message.customer_name);
+						if (r.message.customer_primary_address) frm.set_value("address", r.message.customer_primary_address);
+						if (r.message.customer_primary_contact) frm.set_value("contact_person", r.message.customer_primary_contact);
 					}
 				});
 		} else {
@@ -255,11 +258,11 @@ frappe.ui.form.on("Sample Request AMB Item", {
 	qty_per_sample(frm, cdt, cdn) {
 		update_total_qty(cdt, cdn);
 	},
-	item_code(frm, cdt, cdn) {
+	item(frm, cdt, cdn) {
 		// When item changes in child table, fetch description
 		const row = frappe.get_doc(cdt, cdn);
-		if (row.item_code) {
-			frappe.db.get_value("Item", row.item_code, ["description", "item_name"])
+		if (row.item) {
+			frappe.db.get_value("Item", row.item, ["description", "item_name"])
 				.then(r => {
 					if (r.message) {
 						if (r.message.description) {
