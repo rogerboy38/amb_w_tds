@@ -26,6 +26,11 @@ def execute():
     except Exception as e:
         frappe.logger().warning(f"Task #74 backfill: reload_doc raised (continuing): {e}")
 
+    # T117 guard: skip if Item.substrate column isn't present on this site
+    if "substrate" not in frappe.db.get_table_columns("Item"):
+        frappe.logger().warning("Task #74 backfill (T117): Item.substrate absent — skipping")
+        return
+
     tds_recs = frappe.db.sql(
         """
         SELECT name, product_item FROM `tabTDS Product Specification`

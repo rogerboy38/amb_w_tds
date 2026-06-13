@@ -42,6 +42,11 @@ LIQUID_ONLY_KEYWORDS = (
 
 
 def execute():
+    # T117 guard: skip if the QIPG NestedSet schema isn't present on this site
+    if not frappe.db.table_exists("Quality Inspection Parameter Group") or \
+       "is_group" not in frappe.db.get_table_columns("Quality Inspection Parameter Group"):
+        frappe.logger().warning("M3.5 baseline (T117): QIPG.is_group absent — skipping")
+        return
     leaves = frappe.db.sql(
         """
         SELECT name
