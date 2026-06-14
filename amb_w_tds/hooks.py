@@ -113,8 +113,17 @@ doc_events = {
     "COA AMB": {
         "on_submit": [
             "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_css_on_submit",
+            # P1.4 QR Phase-1: mint token + attach shared PDF (signature-guarded, never breaks submit)
+            "amb_w_tds.coa_qr.on_coa_submit",
         ],
     },
+}
+
+# P1.4 — expose the defensive COA QR helper to Jinja print formats: {{ coa_qr_img(doc) }}
+jinja = {
+    "methods": [
+        "amb_w_tds.coa_qr.coa_qr_img",
+    ],
 }
 
 # ========================================

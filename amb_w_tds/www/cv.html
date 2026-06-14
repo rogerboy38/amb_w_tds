@@ -1,0 +1,24 @@
+{% extends "templates/web.html" %}
+{% block page_content %}
+<div style="max-width:520px;margin:8vh auto;text-align:center;font-family:sans-serif">
+  {% if coa and released %}
+    <div style="font-size:48px;color:#1f9d55">✓</div>
+    <h2>Authentic AMB certificate</h2>
+    <p><b>{{ coa.item_name or "Aloe vera product" }}</b></p>
+    <p>COA Number: <b>{{ coa.coa_number or coa.name }}</b><br>
+       Status: <b>Released</b> · Approved by Ing. Daniel Flores</p>
+    <p style="color:#888;font-size:13px">The full certificate PDF is the source of truth.
+       If a PDF did not open, online verification is temporarily unavailable — the printed
+       document in hand remains valid.</p>
+  {% elif coa %}
+    <div style="font-size:48px;color:#e0a800">!</div>
+    <h2>Certificate found — not yet released</h2>
+    <p>COA {{ coa.coa_number or coa.name }} exists but is not in a Released state.</p>
+  {% else %}
+    <div style="font-size:48px;color:#888">?</div>
+    <h2>No matching certificate</h2>
+    <p>This code did not match a current AMB certificate. The printed PDF document in hand
+       remains the source of truth; contact AMB Wellness to verify.</p>
+  {% endif %}
+</div>
+{% endblock %}
