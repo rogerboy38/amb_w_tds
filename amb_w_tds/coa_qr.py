@@ -17,6 +17,9 @@ Phase-2 GS1 Digital Link (GTIN+lot) is deferred until GTINs are assigned.
 """
 import base64
 import io
+import mimetypes
+import os
+import re
 
 import frappe
 
@@ -60,13 +63,63 @@ def shared_pdf_url(coa_name):
     return rows[0].file_url if rows else None
 
 
+def _local_path(url):
+    """Map a /assets/... or /files/... URL to its on-disk path, or None."""
+    url = url.split("?", 1)[0].split("#", 1)[0]
+    sites = frappe.local.sites_path  # <bench>/sites
+    if url.startswith("/assets/"):
+        p = os.path.join(sites, url.lstrip("/"))
+    elif url.startswith("/files/"):
+        p = os.path.join(sites, frappe.local.site, "public", url.lstrip("/"))
+        if not os.path.exists(p):
+            p = os.path.join(sites, frappe.local.site, "private", url.lstrip("/"))
+    else:
+        return None
+    return p if os.path.exists(p) else None
+
+
+def _inline_assets(html):
+    """Embed the COA's local CSS/images so the background PDF render fetches NOTHING.
+
+    Frappe's get_pdf scrubs relative URLs to absolute and wkhtmltopdf then tries to fetch
+    them over the network from a worker context — which HANGS. Inlining (CSS -> <style>,
+    images -> data: URIs) removes every network fetch. Unresolved refs are dropped/blanked
+    rather than left to hang. Fully defensive.
+    """
+    def repl_css(m):
+        p = _local_path(m.group(1))
+        if p and p.endswith(".css"):
+            try:
+                return "<style>" + open(p, encoding="utf-8").read() + "</style>"
+            except Exception:
+                pass
+        return ""  # drop the <link> so wkhtmltopdf cannot try to fetch it
+
+    def repl_img(m):
+        whole, src = m.group(0), m.group(1)
+        if src.startswith("data:"):
+            return whole
+        p = _local_path(src)
+        if p:
+            try:
+                mime = mimetypes.guess_type(p)[0] or "image/png"
+                data = base64.b64encode(open(p, "rb").read()).decode()
+                return whole.replace(src, "data:%s;base64,%s" % (mime, data))
+            except Exception:
+                pass
+        return whole.replace('src="%s"' % src, 'src=""')  # blank -> no fetch
+
+    html = re.sub(r'<link[^>]+href="([^"]+\.css[^"]*)"[^>]*>', repl_css, html)
+    html = re.sub(r'<img[^>]+src="([^"]+)"[^>]*>', repl_img, html)
+    return html
+
+
 def _render_and_attach_shared_pdf(doc):
     from frappe.utils.pdf import get_pdf
 
     pf = frappe.get_meta("COA AMB").default_print_format or "COA AMB FoxPro"
-    html = frappe.get_print("COA AMB", doc.name, print_format=pf)
-    # ignore load/media errors so a stray/unresolvable asset URL can never HANG wkhtmltopdf
-    # (observed: COA FoxPro triggers a ProtocolUnknownError; default get_pdf would stall).
+    html = _inline_assets(frappe.get_print("COA AMB", doc.name, print_format=pf))
+    # assets are now embedded; ignore any residual load error so the render can never hang.
     pdf = get_pdf(html, options={"load-error-handling": "ignore", "load-media-error-handling": "ignore"})
     fname = "COA-{}.pdf".format(doc.get("coa_number") or doc.name)
     fname = fname.replace("/", "-").replace(" ", "_")
