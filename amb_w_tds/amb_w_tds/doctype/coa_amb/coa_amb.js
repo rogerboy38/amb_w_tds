@@ -223,6 +223,36 @@ function setup_coa_buttons(frm) {
             }, __('View'));
         }
         
+        // T137-b: restore manual "Load TDS Parameters" (re-fetch spec from TDS).
+        // linked_tds auto-loads only when the table is empty; this lets users (re)load
+        // on an existing COA. Confirms first if results are already entered (data-safe).
+        if (frm.doc.linked_tds) {
+            frm.add_custom_button(__('Load TDS Parameters'), function() {
+                var has_results = (frm.doc.coa_quality_test_parameter || [])
+                    .some(function(r){ return !r.custom_is_title_row && r.result; });
+                var do_load = function() {
+                    frappe.call({
+                        method: 'frappe.client.get',
+                        args: { doctype: 'TDS Product Specification', name: frm.doc.linked_tds },
+                        callback: function(r) {
+                            if (r.message) {
+                                copy_tds_specifications(frm, r.message);
+                                copy_tds_preservatives(frm, r.message);
+                            }
+                        }
+                    });
+                };
+                if (has_results) {
+                    frappe.confirm(
+                        __('Reload parameters from {0}? This clears entered results.', [frm.doc.linked_tds]),
+                        do_load
+                    );
+                } else {
+                    do_load();
+                }
+            }, __('Actions'));
+        }
+
         // Validate All Tests button
         if (frm.doc.coa_quality_test_parameter && frm.doc.coa_quality_test_parameter.length > 0) {
             frm.add_custom_button(__('Validate All Tests'), function() {
