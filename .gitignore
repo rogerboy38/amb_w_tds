@@ -20,3 +20,4 @@ amb_w_tds/amb_w_tds/doctype/container_barrels/container_barrels.py.backup2
 *.json-bak1
 *.json.bak
 
+graphify-out/
