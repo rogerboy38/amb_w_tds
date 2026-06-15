@@ -31,3 +31,5 @@ amb_w_tds.patches.v14_3_7.backfill_tds_item_substrate
 amb_w_tds.patches.v14_3_8.rename_cav_block_on_mismatch
 amb_w_tds.patches.v14_3_9.set_tds_default_print_format_foxpro
 amb_w_tds.patches.v14_3_10.add_coa_qr_token_field
+
+amb_w_tds.patches.v14_3_11.decommission_legacy_coa_client_scripts

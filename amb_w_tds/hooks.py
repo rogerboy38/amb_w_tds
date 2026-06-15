@@ -50,7 +50,8 @@ doctype_js = {
         "public/js/phase_1c_tab_v2.js",
         "public/js/tds_product_specification.js",
     ],
-    "COA AMB": "public/js/coa_amb.js",
+    "COA AMB":  ["public/js/coa_common.js", "public/js/coa_amb.js"],
+    "COA AMB2": ["public/js/coa_common.js"],
 }
 
 # ========================================
