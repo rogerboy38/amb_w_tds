@@ -156,14 +156,14 @@ frappe.ui.form.on('COA Quality Test Parameter', {
     result: function(frm, cdt, cdn) {
         // Validate result against specification
         let row = locals[cdt][cdn];
-        validate_test_result(frm, row);
+        if (window.amb_coa) amb_coa.validate_and_paint(frm, cdt, cdn);
     },
     
     custom_is_title_row: function(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
         if (row.custom_is_title_row) {
             // Clear validation fields for title rows
-            frappe.model.set_value(cdt, cdn, 'status', 'N/A');
+            frappe.model.set_value(cdt, cdn, 'status', 'Title');
             frappe.model.set_value(cdt, cdn, 'result', '');
         }
     }
@@ -256,16 +256,17 @@ function setup_coa_buttons(frm) {
         // Validate All Tests button
         if (frm.doc.coa_quality_test_parameter && frm.doc.coa_quality_test_parameter.length > 0) {
             frm.add_custom_button(__('Validate All Tests'), function() {
-                frappe.call({
+                var __doval = function() { frappe.call({
                     method: 'amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.validate_all_tests',
                     args: { coa_name: frm.doc.name },
                     callback: function(r) {
                         if (r.message) {
                             frappe.msgprint(r.message.message);
-                            frm.refresh();
+                            frm.reload_doc();
                         }
                     }
-                });
+                }); };
+                if (frm.is_dirty()) { frm.save().then(__doval); } else { __doval(); }
             }, __('Actions'));
         }
     }

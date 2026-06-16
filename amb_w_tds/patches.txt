@@ -33,3 +33,5 @@ amb_w_tds.patches.v14_3_9.set_tds_default_print_format_foxpro
 amb_w_tds.patches.v14_3_10.add_coa_qr_token_field
 
 amb_w_tds.patches.v14_3_11.decommission_legacy_coa_client_scripts
+amb_w_tds.patches.v14_3_12.normalize_coa_title_status
+amb_w_tds.patches.v14_3_13.tag_section_divider_rows

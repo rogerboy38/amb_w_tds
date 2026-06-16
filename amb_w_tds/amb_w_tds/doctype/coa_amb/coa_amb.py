@@ -130,7 +130,7 @@ class COAAMB(Document):
     
         for idx, row in enumerate(self.coa_quality_test_parameter, 1):
             # SKIP TITLE ROWS (BUG 117B)
-            if row.custom_is_title_row:
+            if self._is_header_row(row):
                 continue
             
             # SKIP EMPTY ROWS (BUG 117A) - allow partial saves
@@ -209,6 +209,14 @@ class COAAMB(Document):
 
     # ==================== RESULT EVALUATION METHODS ====================
 
+    def _is_header_row(self, param):
+        """Header = explicit flag OR the 'Specification' placeholder acceptance
+        (untagged TDS section dividers). Never scored as a test."""
+        if self._is_header_row(param):
+            return True
+        acc = (param.value or param.specification or "")
+        return str(acc).strip().lower() == "specification"
+
     def evaluate_overall_result(self):
         """Enhanced overall test result evaluation with detailed tracking"""
         if not self.coa_quality_test_parameter:
@@ -223,9 +231,10 @@ class COAAMB(Document):
         tested_tests = 0
 
         for param in self.coa_quality_test_parameter:
-            if param.custom_is_title_row:
+            if self._is_header_row(param):
+                param.status = 'Title'
                 continue
-                
+
             total_tests += 1
             
             if not param.result:
@@ -648,7 +657,7 @@ class COAAMB(Document):
     def calculate_child_table_status(self):
         """Calculate and update status for each test parameter"""
         for param in self.coa_quality_test_parameter:
-            if param.custom_is_title_row:
+            if self._is_header_row(param):
                 param.status = 'Title'
                 continue
                 
@@ -667,10 +676,11 @@ class COAAMB(Document):
         if not self.coa_quality_test_parameter:
             return {}
             
-        total = len([p for p in self.coa_quality_test_parameter if not p.custom_is_title_row])
-        passed = len([p for p in self.coa_quality_test_parameter if p.status == 'Pass'])
-        failed = len([p for p in self.coa_quality_test_parameter if p.status == 'Fail'])
-        pending = len([p for p in self.coa_quality_test_parameter if p.status == 'Pending'])
+        non_title = [p for p in self.coa_quality_test_parameter if not self._is_header_row(p)]
+        total = len(non_title)
+        passed = len([p for p in non_title if p.status == 'Pass'])
+        failed = len([p for p in non_title if p.status == 'Fail'])
+        pending = len([p for p in non_title if p.status == 'Pending'])
         
         return {
             'total': total,
