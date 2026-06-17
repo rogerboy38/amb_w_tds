@@ -212,7 +212,7 @@ class COAAMB(Document):
     def _is_header_row(self, param):
         """Header = explicit flag OR the 'Specification' placeholder acceptance
         (untagged TDS section dividers). Never scored as a test."""
-        if self._is_header_row(param):
+        if param.custom_is_title_row:
             return True
         acc = (param.value or param.specification or "")
         return str(acc).strip().lower() == "specification"
