@@ -157,18 +157,21 @@ class COAAMB2(Document):
 
 
     def validate_numeric_result(self, row, idx):
-        """Validate numeric results against min/max values"""
-        try:
-            result = flt(row.result)
-            
-            if row.get('min_value') is not None and result < flt(row.min_value):
-                frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-            
-            if row.get('max_value') is not None and result > flt(row.max_value):
-                frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
-                
-        except ValueError:
-            frappe.throw(_(f"Row {idx}: Invalid numeric result format for parameter '{row.parameter_name}'"))
+        """Validate numeric results against the spec (T142: spec text = source of truth)."""
+        from amb_w_tds.amb_w_tds.coa_spec_utils import derive_bounds_from_spec, parse_result_value
+        result = parse_result_value(row.result)
+        if result is None:
+            return
+        bounds = derive_bounds_from_spec(row.specification)
+        if bounds is None:
+            lo = flt(row.min_value) if row.get('min_value') else None
+            hi = flt(row.max_value) if row.get('max_value') else None
+        else:
+            lo, hi = bounds
+        if lo is not None and result < lo:
+            frappe.throw(_(f"Row {idx}: Result {result} is below minimum {lo} for parameter '{row.parameter_name}'"))
+        if hi is not None and result > hi:
+            frappe.throw(_(f"Row {idx}: Result {result} is above maximum {hi} for parameter '{row.parameter_name}'"))
 
     def validate_formula_criteria(self, row, idx):
         """Validate formula-based criteria with security measures"""
@@ -274,72 +277,25 @@ class COAAMB2(Document):
             self.compliance_status = 'Pending'
 
     def check_parameter_compliance(self, param):
-        """Enhanced parameter compliance checking with multiple formats"""
+        """Compliance via coa_spec_utils -- spec text is source of truth (T142)."""
         if not param.result:
             return False
-
         try:
-            result = flt(param.result)
-            
-            # Priority 1: Use min/max values if available
-            if param.get('min_value') is not None and param.get('max_value') is not None:
-                min_val = flt(param.min_value)
-                max_val = flt(param.max_value)
-                return min_val <= result <= max_val
-            
-            # Priority 2: Parse specification field
-            if param.specification:
-                return self.parse_specification_compliance(param.specification, result)
-            
-            # Priority 3: Formula-based criteria
-            if param.formula_based_criteria and param.acceptance_formula:
-                allowed_namespaces = {'result': result}
-                return frappe.safe_eval(param.acceptance_formula, allowed_namespaces)
-            
-            return True  # No validation criteria specified
-            
+            if param.get('formula_based_criteria') and param.get('acceptance_formula'):
+                return frappe.safe_eval(param.acceptance_formula, {'result': flt(param.result)})
+            from amb_w_tds.amb_w_tds.coa_spec_utils import is_compliant
+            _mn = param.get('min_value'); _mx = param.get('max_value')
+            _mn = flt(_mn) if _mn else None
+            _mx = flt(_mx) if _mx else None
+            return is_compliant(param.specification, param.result, _mn, _mx)
         except Exception as e:
             frappe.log_error(f"Error checking compliance for parameter {param.parameter_name}: {str(e)}", "COA Compliance Check")
             return False
 
     def parse_specification_compliance(self, spec, result):
-        """Parse specification string for compliance checking"""
-        if not spec:
-            return True
-            
-        spec = cstr(spec).strip()
-        
-        try:
-            # Range format: "10-20", "10 - 20", "10 to 20"
-            range_match = re.search(r'([\d\.]+)\s*[-to]+\s*([\d\.]+)', spec, re.IGNORECASE)
-            if range_match:
-                min_val = flt(range_match.group(1))
-                max_val = flt(range_match.group(2))
-                return min_val <= result <= max_val
-            
-            # Greater than or equal: "≥10", ">=10", ">10", "min 10"
-            if '≥' in spec or '>=' in spec or ('>' in spec and not '>>' in spec):
-                min_val = flt(re.search(r'[\d\.]+', spec.replace('≥', '').replace('>=', '').replace('>', '')).group())
-                return result >= min_val
-            
-            # Less than or equal: "≤20", "<=20", "<20", "max 20"
-            if '≤' in spec or '<=' in spec or ('<' in spec and not '<<' in spec):
-                max_val = flt(re.search(r'[\d\.]+', spec.replace('≤', '').replace('<=', '').replace('<', '')).group())
-                return result <= max_val
-            
-            # Target value with tolerance: "10 ± 0.5", "10 +/- 0.5"
-            tolerance_match = re.search(r'([\d\.]+)\s*[±\+\/-]+\s*([\d\.]+)', spec)
-            if tolerance_match:
-                target = flt(tolerance_match.group(1))
-                tolerance = flt(tolerance_match.group(2))
-                return abs(result - target) <= tolerance
-            
-            # Exact match
-            target = flt(spec)
-            return abs(result - target) < 0.001
-            
-        except:
-            return True  # Can't parse specification
+        """Delegate to coa_spec_utils (T142)."""
+        from amb_w_tds.amb_w_tds.coa_spec_utils import is_compliant
+        return is_compliant(spec, result)
 
     def evaluate_formula_parameters(self):
         """Evaluate all formula-based parameters"""
