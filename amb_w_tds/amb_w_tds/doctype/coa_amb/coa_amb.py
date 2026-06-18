@@ -393,7 +393,9 @@ class COAAMB(Document):
             if self.naming_series:
                 # Let Frappe handle the naming based on series
                 from frappe.model.naming import make_autoname
-                self.coa_number = make_autoname(self.naming_series)
+                # COA number mirrors the document name (series already applied to name).
+                # Off-by-one fix: avoid a second make_autoname() that burned the counter.
+                self.coa_number = self.name
             else:
                 # Fallback to custom format
                 from datetime import datetime
