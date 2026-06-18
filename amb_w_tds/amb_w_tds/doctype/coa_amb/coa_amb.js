@@ -298,7 +298,7 @@ function apply_coa_filters(frm) {
     
     // Filter batches
     frm.set_query('batch_reference', function() {
-        let filters = { 'docstatus': 1 };
+        let filters = { 'docstatus': ['<', 2] };  // T142: allow Draft batches (was docstatus:1 -> empty)
         if (frm.doc.product_item && frm.doc.product_item !== "") {
             filters['item_to_manufacture'] = frm.doc.product_item;
         }
