@@ -25,6 +25,8 @@
   "batch_reference",
   "item",
   "sales_order_related",
+  "related_to_type",
+  "related_to_doc",
   "wo_item_name",
   "item_name",
   "planned_qty",
@@ -211,6 +213,18 @@
    "fieldtype": "Link",
    "label": "Sales Order Related",
    "options": "Sales Order"
+  },
+  {
+   "fieldname": "related_to_type",
+   "fieldtype": "Select",
+   "label": "Related To",
+   "options": "\nLead\nOpportunity\nQuotation\nSales Order"
+  },
+  {
+   "fieldname": "related_to_doc",
+   "fieldtype": "Dynamic Link",
+   "label": "Related Document",
+   "options": "related_to_type"
   },
   {
    "fieldname": "wo_item_name",
