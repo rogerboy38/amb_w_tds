@@ -117,7 +117,8 @@
   "section_special_instructions",
   "special_instructions",
   "status",
-  "amended_from"
+  "amended_from",
+  "item_to_manufacture"
  ],
  "fields": [
   {
@@ -737,11 +738,17 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "item_to_manufacture",
+   "fieldtype": "Data",
+   "label": "Item to Manufacture",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-19 11:57:58.724915",
+ "modified": "2026-06-19 17:23:53.919616",
  "modified_by": "Administrator",
  "module": "Amb W Tds",
  "name": "Sample Request AMB",
