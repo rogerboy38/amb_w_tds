@@ -1,6 +1,5 @@
 [
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": null,
@@ -18,7 +17,6 @@
   "parameter_group": "Organoleptic"
  },
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": null,
@@ -36,7 +34,6 @@
   "parameter_group": "Physicochemical"
  },
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": "Method",
@@ -54,30 +51,6 @@
   "parameter_group": "Microbiological"
  },
  {
-  "acceptance_choices": [
-   {
-    "is_default": 1,
-    "legacy_text_match": "NEGATIVE",
-    "max_value": 0.0,
-    "min_value": 0.0,
-    "reconstituted_to_05_solids": 0,
-    "sub_spec": null,
-    "target_value": 0.0,
-    "text_label": "NEGATIVE",
-    "unit": null
-   },
-   {
-    "is_default": 0,
-    "legacy_text_match": "NOT DETECTABLE",
-    "max_value": 0.0,
-    "min_value": 0.0,
-    "reconstituted_to_05_solids": 0,
-    "sub_spec": null,
-    "target_value": 0.0,
-    "text_label": "NOT DETECTABLE",
-    "unit": null
-   }
-  ],
   "custom_choices": "NEGATIVE\nNOT DETECTABLE",
   "custom_is_numeric": 0,
   "custom_method": null,
@@ -95,7 +68,6 @@
   "parameter_group": "Pesticides"
  },
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": null,
@@ -113,7 +85,6 @@
   "parameter_group": "Contaminant"
  },
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": null,
@@ -131,7 +102,6 @@
   "parameter_group": "Other Analysis"
  },
  {
-  "acceptance_choices": [],
   "custom_choices": null,
   "custom_is_numeric": 0,
   "custom_method": null,
