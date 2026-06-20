@@ -4798,5 +4798,21 @@
   "property_type": "Data",
   "row_name": null,
   "value": "Set by user"
+ },
+ {
+  "default_value": null,
+  "doc_type": "AMB Cost Factors",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "factor_data_year",
+  "is_system_generated": 1,
+  "modified": "2026-06-20 17:26:01.406780",
+  "module": null,
+  "name": "AMB Cost Factors-factor_data_year-label",
+  "property": "label",
+  "property_type": "Data",
+  "row_name": null,
+  "value": "Effective Year"
  }
 ]

@@ -166,13 +166,13 @@ jinja = {
 
 _AMB_W_TDS_DOCTYPES = [
     # Owned by amb_w_tds (defined in this app)
-    "AMB KPI Factors", "Animal Trial", "Barrel", "BOM Enhancement",
+    "Amb KPI Factors", "Animal Trial", "Barrel", "BOM Enhancement",
     "BOM Formula", "BOM Formula Amino Acid", "BOM Template", "BOM Template Item",
     "BOM Version", "Certification Document", "COA AMB", "COA AMB2",
     "COA Quality Test Parameter", "Container Selection", "Container Sync Log",
     "Container Type Rule", "Country Regulation", "Distribution Contact",
     "Distribution Organization", "Formulation", "Intended Purpose",
-    "Juice Conversion Config", "KPI Cost Breakdown", "Lote AMB",
+    "Juice Conversion Config", "KPI Cost Breakdown", "AMB Cost Factors", "Lote AMB",
     "Market Entry Plan", "Market Research", "Plant Configuration",
     "Product Compliance", "Product Development Project", "Production Plant AMB",
     "Quotation AMB", "Quotation AMB Sales Partner", "RND Parent Doctype",
