@@ -30,6 +30,7 @@
   "item_name",
   "planned_qty",
   "total_net_weight",
+  "amb_fda_number",
   "work_order_ref",
   "production_plant_amb",
   "custom_golden_number",
@@ -65,6 +66,9 @@
   "number_of_packages",
   "col_break_values",
   "gross_weight_kg",
+  "shipment_net_weight",
+  "shipment_tara_weight",
+  "computed_gross_kg",
   "section_shipment_nature",
   "shipment_nature",
   "section_export_type",
@@ -244,7 +248,7 @@
   {
    "fieldname": "total_net_weight",
    "fieldtype": "Float",
-   "label": "Total Net Weight"
+   "label": "Batch Net Weight / Peso Neto Lote"
   },
   {
    "fieldname": "work_order_ref",
@@ -441,7 +445,7 @@
    "default": "0.5",
    "fieldname": "gross_weight_kg",
    "fieldtype": "Float",
-   "label": "Peso / Weight (KG)"
+   "label": "Shipment Gross Weight / Peso Bruto Embarque"
   },
   {
    "fieldname": "section_shipment_nature",
@@ -744,11 +748,38 @@
    "fieldtype": "Data",
    "label": "Item to Manufacture",
    "read_only": 1
+  },
+  {
+   "default": "14254543894",
+   "fieldname": "amb_fda_number",
+   "fieldtype": "Data",
+   "label": "AMB FDA Number"
+  },
+  {
+   "fieldname": "computed_gross_kg",
+   "fieldtype": "Float",
+   "label": "Computed Gross (Kg)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shipment_net_weight",
+   "fieldtype": "Float",
+   "label": "Shipment Net Weight / Peso Neto Embarque",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shipment_tara_weight",
+   "fieldtype": "Float",
+   "label": "Shipment Tara / Tara Embarque",
+   "precision": "3",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-19 17:23:53.919616",
+ "modified": "2026-06-21 15:09:42.508941",
  "modified_by": "Administrator",
  "module": "Amb W Tds",
  "name": "Sample Request AMB",
