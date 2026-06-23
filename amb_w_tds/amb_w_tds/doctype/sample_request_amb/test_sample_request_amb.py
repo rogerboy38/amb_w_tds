@@ -1,22 +1,25 @@
-# Copyright (c) 2026, AMB WELLNESS and Contributors
-# See license.txt
-
-# import frappe
-from frappe.tests import IntegrationTestCase
+import frappe
+import unittest
 
 
-# On IntegrationTestCase, the doctype test records and all
-# link-field test record dependencies are recursively loaded
-# Use these module variables to add/remove to/from that list
-EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
-IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
+class TestSampleRequestAMB(unittest.TestCase):
+    def _doc(self, net, gross):
+        d = frappe.new_doc("Sample Request AMB")
+        d.shipment_net_weight = net
+        d.gross_weight_kg = gross
+        return d
 
+    def test_net_exceeding_gross_is_blocked(self):
+        # net 0.283 > gross 0.280 -> negative tara -> must raise
+        self.assertRaises(
+            frappe.ValidationError,
+            self._doc(0.283, 0.280).validate_shipment_weights,
+        )
 
+    def test_net_below_gross_passes(self):
+        # net 0.283 < gross 0.500 -> ok
+        self._doc(0.283, 0.500).validate_shipment_weights()
 
-class IntegrationTestSampleRequestAMB(IntegrationTestCase):
-	"""
-	Integration tests for SampleRequestAMB.
-	Use this class for testing interactions between multiple components.
-	"""
-
-	pass
+    def test_zero_gross_is_skipped(self):
+        # guard only enforces when both > 0 (won't fire on incomplete drafts)
+        self._doc(0.283, 0).validate_shipment_weights()

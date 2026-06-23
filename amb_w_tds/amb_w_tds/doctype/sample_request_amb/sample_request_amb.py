@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 
 class SampleRequestAMB(Document):
@@ -23,6 +24,7 @@ class SampleRequestAMB(Document):
     def validate(self):
         self.validate_batch_consistency()
         self.validate_shipment_values()
+        self.validate_shipment_weights()
     
     def validate_batch_consistency(self):
         """Validate that batch data is consistent with fetched values"""
@@ -81,6 +83,17 @@ class SampleRequestAMB(Document):
         # Ensure weight has a default
         if not self.gross_weight_kg:
             self.gross_weight_kg = 0.5
+
+    def validate_shipment_weights(self):
+        """Reject customs weights that print a negative tara (net must not exceed gross)."""
+        net = flt(self.shipment_net_weight)
+        gross = flt(self.gross_weight_kg)
+        if net > 0 and gross > 0 and (net - gross) > 1e-6:
+            frappe.throw(_(
+                "Shipment Net Weight ({0} Kg) cannot exceed Gross Weight ({1} Kg) - "
+                "this prints a negative Tara on the Proforma. Raise Gross Weight to at "
+                "least the rolled-up net, or correct the box/bag weights on the rows."
+            ).format(net, gross))
     
     def validate_coa_from_batch(self):
         """Ensure COA AMB matches the batch reference (blocking validation)"""
