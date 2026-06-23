@@ -8,6 +8,20 @@ from frappe.utils import nowdate, flt, get_url, cstr
 import json
 import re
 
+_LEAD_NUM = re.compile(r'[-+]?\d*\.?\d+')
+
+
+def _num(v):
+    """Extract the leading number from a result/spec value.
+    '23.5%'->23.5, '<10 CFU/G'->10, 'NMT 100 CFU/G'->100, 'Pass'/'NEGATIVE'->None."""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    m = _LEAD_NUM.search(str(v).replace(',', ''))
+    return float(m.group()) if m else None
+
+
 class COAAMB(Document):
     """
     COA AMB - Certificate of Analysis with enhanced validation and workflow
@@ -159,7 +173,9 @@ class COAAMB(Document):
     def validate_numeric_result(self, row, idx):
         """Validate numeric results against min/max values"""
         try:
-            result = flt(row.result)
+            result = _num(row.result)
+            if result is None:
+                return
             
             if row.get('min_value') is not None and result < flt(row.min_value):
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
@@ -274,72 +290,75 @@ class COAAMB(Document):
             self.compliance_status = 'Pending'
 
     def check_parameter_compliance(self, param):
-        """Enhanced parameter compliance checking with multiple formats"""
+        """Pass/Fail for one parameter. Robust to unit-suffixed results
+        ('23.5%', '<10 CFU/G') and qualitative specs ('NEGATIVE', descriptive)."""
         if not param.result:
             return False
-
         try:
-            result = flt(param.result)
-            
-            # Priority 1: Use min/max values if available
-            if param.get('min_value') is not None and param.get('max_value') is not None:
-                min_val = flt(param.min_value)
-                max_val = flt(param.max_value)
-                return min_val <= result <= max_val
-            
-            # Priority 2: Parse specification field
+            rnum = _num(param.result)
+
+            # Priority 1: explicit numeric bounds (treat 0/0 as 'unset')
+            lo = _num(param.min_value) if param.get('min_value') not in (None, '') else None
+            hi = _num(param.max_value) if param.get('max_value') not in (None, '') else None
+            if lo is not None and hi is not None and not (lo == 0 and hi == 0):
+                return rnum is not None and lo <= rnum <= hi
+
+            # Priority 2: parse specification text
             if param.specification:
-                return self.parse_specification_compliance(param.specification, result)
-            
-            # Priority 3: Formula-based criteria
+                return self.parse_specification_compliance(param.specification, param.result, rnum)
+
+            # Priority 3: formula-based criteria
             if param.formula_based_criteria and param.acceptance_formula:
-                allowed_namespaces = {'result': result}
-                return frappe.safe_eval(param.acceptance_formula, allowed_namespaces)
-            
-            return True  # No validation criteria specified
-            
+                return bool(frappe.safe_eval(param.acceptance_formula,
+                                             {'result': rnum if rnum is not None else 0}))
+
+            return True
         except Exception as e:
             frappe.log_error(f"Error checking compliance for parameter {param.parameter_name}: {str(e)}", "COA Compliance Check")
             return False
 
-    def parse_specification_compliance(self, spec, result):
-        """Parse specification string for compliance checking"""
+    def parse_specification_compliance(self, spec, result, rnum=None):
+        """Compliance against a spec STRING: range, NMT/NLT limits, >=/<=,
+        tolerance, qualitative/descriptive and negative-expected."""
         if not spec:
             return True
-            
-        spec = cstr(spec).strip()
-        
+        s = cstr(spec).strip()
+        su = s.upper()
+        rtext = cstr(result).strip().upper()
+        if rnum is None:
+            rnum = _num(result)
         try:
-            # Range format: "10-20", "10 - 20", "10 to 20"
-            range_match = re.search(r'([\d\.]+)\s*[-to]+\s*([\d\.]+)', spec, re.IGNORECASE)
-            if range_match:
-                min_val = flt(range_match.group(1))
-                max_val = flt(range_match.group(2))
-                return min_val <= result <= max_val
-            
-            # Greater than or equal: "≥10", ">=10", ">10", "min 10"
-            if '≥' in spec or '>=' in spec or ('>' in spec and not '>>' in spec):
-                min_val = flt(re.search(r'[\d\.]+', spec.replace('≥', '').replace('>=', '').replace('>', '')).group())
-                return result >= min_val
-            
-            # Less than or equal: "≤20", "<=20", "<20", "max 20"
-            if '≤' in spec or '<=' in spec or ('<' in spec and not '<<' in spec):
-                max_val = flt(re.search(r'[\d\.]+', spec.replace('≤', '').replace('<=', '').replace('<', '')).group())
-                return result <= max_val
-            
-            # Target value with tolerance: "10 ± 0.5", "10 +/- 0.5"
-            tolerance_match = re.search(r'([\d\.]+)\s*[±\+\/-]+\s*([\d\.]+)', spec)
-            if tolerance_match:
-                target = flt(tolerance_match.group(1))
-                tolerance = flt(tolerance_match.group(2))
-                return abs(result - target) <= tolerance
-            
-            # Exact match
-            target = flt(spec)
-            return abs(result - target) < 0.001
-            
-        except:
-            return True  # Can't parse specification
+            if 'NEGATIVE' in su or 'ABSENT' in su or su in ('NONE', 'NIL'):
+                return ('NEGATIVE' in rtext or 'ABSENT' in rtext or rtext in ('NONE', 'NIL', '0')
+                        or (rnum is not None and rnum == 0))
+
+            m = re.search(r'([-+]?\d*\.?\d+)\s*(?:-|to)\s*([-+]?\d*\.?\d+)', s, re.IGNORECASE)
+            if m:
+                lo, hi = float(m.group(1)), float(m.group(2))
+                return rnum is not None and lo <= rnum <= hi
+
+            if 'NMT' in su or su.startswith('MAX') or '<=' in s or ('<' in s and '>' not in s):
+                cap = _num(s)
+                return rnum is not None and cap is not None and rnum <= cap
+
+            if 'NLT' in su or su.startswith('MIN') or '>=' in s or ('>' in s and '<' not in s):
+                floor = _num(s)
+                return rnum is not None and floor is not None and rnum >= floor
+
+            mt = re.search(r'([-+]?\d*\.?\d+)\s*\+/?-\s*([-+]?\d*\.?\d+)', s)
+            if mt:
+                tgt, tol = float(mt.group(1)), float(mt.group(2))
+                return rnum is not None and abs(rnum - tgt) <= tol
+
+            snum = _num(s)
+            if snum is not None and rnum is not None:
+                return abs(rnum - snum) < 0.001
+
+            if rtext in ('PASS', 'CONFORMS', 'COMPLIES', 'COMPLY', 'OK', 'YES', 'POSITIVE', 'TYPICAL', 'PRESENT'):
+                return True
+            return rtext == su or su in rtext or rtext in su
+        except Exception:
+            return True
 
     def evaluate_formula_parameters(self):
         """Evaluate all formula-based parameters"""
