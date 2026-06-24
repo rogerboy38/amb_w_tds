@@ -25,7 +25,20 @@ class SampleRequestAMB(Document):
         self.validate_batch_consistency()
         self.validate_shipment_values()
         self.validate_shipment_weights()
+        self._fill_sample_item_names()
     
+    def _fill_sample_item_names(self):
+        """Backfill each sample row's description from the linked Item.
+        Prefers item_name (always populated) over description (empty on some
+        prod items). Only fills blanks -- never overwrites. Covers interactive
+        and programmatic rows."""
+        for row in (self.samples or []):
+            if row.item and not (row.description or "").strip():
+                name = (frappe.db.get_value("Item", row.item, "item_name")
+                        or frappe.db.get_value("Item", row.item, "description"))
+                if name:
+                    row.description = name
+
     def validate_batch_consistency(self):
         """Validate that batch data is consistent with fetched values"""
         if self.batch_reference:

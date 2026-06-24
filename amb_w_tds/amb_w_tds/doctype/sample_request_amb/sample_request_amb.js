@@ -125,8 +125,8 @@ frappe.ui.form.on("Sample Request AMB Item", {
 		if (row.item) {
 			frappe.db.get_value("Item", row.item, ["description", "item_name"]).then(r => {
 				if (r.message) {
-					if (r.message.description) frappe.model.set_value(cdt, cdn, "description", r.message.description);
-					if (r.message.item_name) frappe.model.set_value(cdt, cdn, "item_name", r.message.item_name);
+					const nm = r.message.item_name || r.message.description;
+					if (nm) frappe.model.set_value(cdt, cdn, "description", nm);
 				}
 			});
 		}
