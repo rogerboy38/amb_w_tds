@@ -485,34 +485,12 @@ class COAAMB(Document):
             frappe.throw(_("Error syncing from TDS: {0}").format(str(e)))
 
     def set_coa_number(self):
-        """Set COA number based on naming series"""
+        """COA number mirrors the document name (the naming series is already
+        applied to `name`, which is DB-unique), so duplicates are structurally
+        impossible. The previous date+sequence fallback was race-prone
+        (non-atomic SELECT MAX+1) and is removed."""
         if not self.coa_number and not self.amended_from:
-            if self.naming_series:
-                # Let Frappe handle the naming based on series
-                from frappe.model.naming import make_autoname
-                # COA number mirrors the document name (series already applied to name).
-                # Off-by-one fix: avoid a second make_autoname() that burned the counter.
-                self.coa_number = self.name
-            else:
-                # Fallback to custom format
-                from datetime import datetime
-                date_str = datetime.now().strftime('%Y-%m')
-                
-                last_coa = frappe.db.sql("""
-                    SELECT coa_number 
-                    FROM `tabCOA AMB` 
-                    WHERE coa_number LIKE %s 
-                    ORDER BY creation DESC 
-                    LIMIT 1
-                """, (f"COA-{date_str}-%",))
-                
-                if last_coa and last_coa[0][0]:
-                    last_num = int(last_coa[0][0].split('-')[-1])
-                    seq = last_num + 1
-                else:
-                    seq = 1
-                
-                self.coa_number = f"COA-{date_str}-{seq:04d}"
+            self.coa_number = self.name
 
     def set_default_naming_series(self):
         """Set default naming series if not set"""
