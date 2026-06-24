@@ -772,14 +772,20 @@ def get_batch_quality_data(batch_name):
 
 @frappe.whitelist()
 def generate_coa_pdf(coa_name):
-    """Generate PDF for COA"""
+    """Generate the COA AMB FoxPro PDF via the amb_print pipeline and attach it.
+    Returns the file_url so the Generate PDF button can open/download it. Replaces
+    the old frappe.get_print('Standard', as_pdf=True) path (wrong format, WeasyPrint
+    crash on custom formats, returned raw bytes not a URL, never attached)."""
+    from amb_print.amb_print.api import print_document_pdf
     try:
-        return frappe.get_print(
-            'COA AMB',
-            coa_name,
-            print_format='Standard',
-            as_pdf=True
+        res = print_document_pdf(
+            doctype="COA AMB",
+            docname=coa_name,
+            print_format="COA AMB FoxPro",
+            save_attachment=1,
+            is_private=0,
         )
+        return (res or {}).get("file_url")
     except Exception as e:
         frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA PDF Generation")
         frappe.throw(_("Error generating PDF: {0}").format(str(e)))
