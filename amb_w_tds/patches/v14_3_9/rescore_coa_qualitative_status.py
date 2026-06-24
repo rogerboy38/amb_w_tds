@@ -20,7 +20,7 @@ import frappe
 
 
 def execute():
-    names = frappe.get_all("COA AMB", filters={"docstatus": 1}, pluck="name")
+    names = frappe.get_all("COA AMB", filters={"docstatus": 1, "overall_result": "Fail", "name": ["not like", "FOX-%"]}, pluck="name")
     fixed = 0
     for name in names:
         try:
