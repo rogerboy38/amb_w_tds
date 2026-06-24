@@ -354,9 +354,14 @@ class COAAMB(Document):
             if snum is not None and rnum is not None:
                 return abs(rnum - snum) < 0.001
 
-            if rtext in ('PASS', 'CONFORMS', 'COMPLIES', 'COMPLY', 'OK', 'YES', 'POSITIVE', 'TYPICAL', 'PRESENT'):
-                return True
-            return rtext == su or su in rtext or rtext in su
+            # Qualitative / descriptive spec: no machine-checkable numeric criterion,
+            # so trust the human-entered result unless it is an explicit reject token.
+            # (Preserves long-standing Pass behavior for Appearance/Odor/Color/Taste rows.)
+            if rtext in ('FAIL', 'REJECT', 'REJECTED', 'OUT OF SPEC', 'OUT OF SPECIFICATION',
+                         'NON-CONFORMING', 'NONCONFORMING', 'DOES NOT CONFORM', 'NOT CONFORM',
+                         'NON CONFORME', 'RECHAZADO'):
+                return False
+            return True
         except Exception:
             return True
 

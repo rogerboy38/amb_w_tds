@@ -50,3 +50,11 @@ class TestCOACompliance(unittest.TestCase):
         self.assertFalse(self.chk("20 - 25%", "30", min_value=20, max_value=25))
     def test_zero_bounds_fall_through_to_spec(self):
         self.assertTrue(self.chk("20 - 25%", "23.5%", min_value=0, max_value=0))
+
+    def test_descriptive_placeholder_passes(self):
+        # human-inspected descriptive param with a placeholder result -> Pass (not Fail)
+        self.assertTrue(self.chk("HAZE FREE", "0"))
+        self.assertTrue(self.chk("TYPICAL OF ALOE", "0"))
+
+    def test_explicit_reject_fails(self):
+        self.assertFalse(self.chk("CLEAR", "FAIL"))
