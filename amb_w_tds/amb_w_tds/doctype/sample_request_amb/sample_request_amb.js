@@ -46,6 +46,18 @@ frappe.ui.form.on("Sample Request AMB", {
 			});
 		}, __("Print"));
 	},
+	contact_person(frm) {
+		if (frm.doc.contact_person) {
+			frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone"]).then(r => {
+				if (r && r.message) {
+					if (r.message.email_id) frm.set_value("email", r.message.email_id);
+					if (!frm.doc.phone && (r.message.mobile_no || r.message.phone)) frm.set_value("phone", r.message.mobile_no || r.message.phone);
+				}
+			});
+		} else {
+			frm.set_value("email", "");
+		}
+	},
 	customer(frm) {
 		if (frm.doc.customer) {
 			frappe.db.get_value("Customer", frm.doc.customer, ["customer_name", "customer_primary_address", "customer_primary_contact"])
