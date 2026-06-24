@@ -58,3 +58,20 @@ class TestCOACompliance(unittest.TestCase):
 
     def test_explicit_reject_fails(self):
         self.assertFalse(self.chk("CLEAR", "FAIL"))
+
+    # --- NLT/NMT zero-as-no-bound (task #21 regression) ---
+    def test_nlt_min_only_passes(self):
+        # NLT 10%: min=10, max=0 (no upper bound). 12 must PASS (was the bug).
+        self.assertTrue(self.chk("NLT 10%", "12", min_value=10, max_value=0))
+    def test_nlt_min_only_below_fails(self):
+        self.assertFalse(self.chk("NLT 10%", "8", min_value=10, max_value=0))
+    def test_nmt_max_only_passes(self):
+        self.assertTrue(self.chk("NMT 35%", "19.76", min_value=0, max_value=35))
+    def test_nmt_max_only_over_fails(self):
+        self.assertFalse(self.chk("NMT 35%", "40", min_value=0, max_value=35))
+    def test_range_both_bounds_passes(self):
+        self.assertTrue(self.chk("1.002-1.020", "1.0048", min_value=1.002, max_value=1.020))
+    def test_qualitative_with_stray_bound_passes(self):
+        # qualitative result + stray numeric bound must not hard-fail (COA-26-0002 E.coli)
+        self.assertTrue(self.chk("E.coli", "NEGATIVE", min_value=0, max_value=1))
+

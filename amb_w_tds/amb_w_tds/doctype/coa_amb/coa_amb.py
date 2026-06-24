@@ -297,11 +297,20 @@ class COAAMB(Document):
         try:
             rnum = _num(param.result)
 
-            # Priority 1: explicit numeric bounds (treat 0/0 as 'unset')
+            # Priority 1: explicit numeric bounds. A 0 on either side means
+            # 'no bound' (NLT specs store max=0, NMT specs store min=0), so only
+            # the non-zero side(s) are enforced. Fixes NLT (e.g. 'NLT 10%', min=10,
+            # max=0) wrongly failing a passing result like 12.
             lo = _num(param.min_value) if param.get('min_value') not in (None, '') else None
             hi = _num(param.max_value) if param.get('max_value') not in (None, '') else None
-            if lo is not None and hi is not None and not (lo == 0 and hi == 0):
-                return rnum is not None and lo <= rnum <= hi
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+            if (lo_b is not None or hi_b is not None) and rnum is not None:
+                if lo_b is not None and rnum < lo_b:
+                    return False
+                if hi_b is not None and rnum > hi_b:
+                    return False
+                return True
 
             # Priority 2: parse specification text
             if param.specification:
