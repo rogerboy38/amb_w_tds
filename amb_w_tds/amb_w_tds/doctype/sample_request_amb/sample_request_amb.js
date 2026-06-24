@@ -13,6 +13,38 @@ frappe.ui.form.on("Sample Request AMB", {
 			if (needsFetch) frm.trigger("batch_reference");
 		}
 		if (frm.doc.shipment_type) update_shipment_checkboxes(frm);
+
+		// SR -> linked COA AMB (Foxpro server-side PDF) -- Generate COA via SR
+		frm.add_custom_button(__("COA AMB"), function() {
+			if (!frm.doc.coa_amb) { frappe.msgprint(__("No COA linked on this Sample Request.")); return; }
+			frappe.dom.freeze(__("Generating COA PDF..."));
+			frappe.call({
+				method: "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.generate_coa_pdf",
+				args: { coa_name: frm.doc.coa_amb },
+				callback: function(r) {
+					frappe.dom.unfreeze();
+					if (r.message) { window.open(r.message, "_blank"); }
+					else { frappe.msgprint(__("COA PDF could not be generated.")); }
+				},
+				error: function() { frappe.dom.unfreeze(); }
+			});
+		}, __("Print"));
+
+		// SR -> linked TDS Product Specification (Foxpro server-side PDF)
+		frm.add_custom_button(__("TDS"), function() {
+			if (!frm.doc.custom_product_key_tds) { frappe.msgprint(__("No TDS linked on this Sample Request.")); return; }
+			frappe.dom.freeze(__("Generating TDS PDF..."));
+			frappe.call({
+				method: "amb_w_tds.amb_w_tds.doctype.tds_product_specification.tds_product_specification.generate_tds_pdf",
+				args: { tds_name: frm.doc.custom_product_key_tds },
+				callback: function(r) {
+					frappe.dom.unfreeze();
+					if (r.message) { window.open(r.message, "_blank"); }
+					else { frappe.msgprint(__("TDS PDF could not be generated.")); }
+				},
+				error: function() { frappe.dom.unfreeze(); }
+			});
+		}, __("Print"));
 	},
 	customer(frm) {
 		if (frm.doc.customer) {
@@ -42,7 +74,7 @@ frappe.ui.form.on("Sample Request AMB", {
 				frm.dashboard.hide_progress();
 				if (r.message) {
 					const b = r.message;
-					frm.set_value("coa_amb", b.coa_amb || "");
+					if (b.coa_amb) { frm.set_value("coa_amb", b.coa_amb); }  // preserve manual COA link when batch has none
 					frm.set_value("item", b.item_to_manufacture || "");
 					frm.set_value("item_name", b.item_name || "");
 					frm.set_value("batch_quantity", b.planned_qty || b.batch_quantity || b.total_net_weight || 0);
