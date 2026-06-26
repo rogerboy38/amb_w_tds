@@ -17,13 +17,14 @@ frappe.ui.form.on("Sample Request AMB", {
 		// SR -> linked COA AMB (Foxpro server-side PDF) -- Generate COA via SR
 		frm.add_custom_button(__("COA AMB"), function() {
 			if (!frm.doc.coa_amb) { frappe.msgprint(__("No COA linked on this Sample Request.")); return; }
+			if (frm.is_new()) { frappe.msgprint(__("Please save the Sample Request first.")); return; }  // #37 need a name to attach to
 			frappe.dom.freeze(__("Generating COA PDF..."));
 			frappe.call({
 				method: "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.generate_coa_pdf",
-				args: { coa_name: frm.doc.coa_amb },
+				args: { coa_name: frm.doc.coa_amb, attach_to_doctype: frm.doctype, attach_to_name: frm.doc.name },  // #37 attach to SR
 				callback: function(r) {
 					frappe.dom.unfreeze();
-					if (r.message) { window.open(r.message, "_blank"); }
+					if (r.message) { frm.reload_doc(); window.open(r.message, "_blank"); }  // #37 refresh to show the attachment
 					else { frappe.msgprint(__("COA PDF could not be generated.")); }
 				},
 				error: function() { frappe.dom.unfreeze(); }
@@ -33,13 +34,14 @@ frappe.ui.form.on("Sample Request AMB", {
 		// SR -> linked TDS Product Specification (Foxpro server-side PDF)
 		frm.add_custom_button(__("TDS"), function() {
 			if (!frm.doc.custom_product_key_tds) { frappe.msgprint(__("No TDS linked on this Sample Request.")); return; }
+			if (frm.is_new()) { frappe.msgprint(__("Please save the Sample Request first.")); return; }  // #37 need a name to attach to
 			frappe.dom.freeze(__("Generating TDS PDF..."));
 			frappe.call({
 				method: "amb_w_tds.amb_w_tds.doctype.tds_product_specification.tds_product_specification.generate_tds_pdf",
-				args: { tds_name: frm.doc.custom_product_key_tds },
+				args: { tds_name: frm.doc.custom_product_key_tds, attach_to_doctype: frm.doctype, attach_to_name: frm.doc.name },  // #37 attach to SR
 				callback: function(r) {
 					frappe.dom.unfreeze();
-					if (r.message) { window.open(r.message, "_blank"); }
+					if (r.message) { frm.reload_doc(); window.open(r.message, "_blank"); }  // #37 refresh to show the attachment
 					else { frappe.msgprint(__("TDS PDF could not be generated.")); }
 				},
 				error: function() { frappe.dom.unfreeze(); }
@@ -47,16 +49,15 @@ frappe.ui.form.on("Sample Request AMB", {
 		}, __("Print"));
 	},
 	contact_person(frm) {
-		if (frm.doc.contact_person) {
-			frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone"]).then(r => {
-				if (r && r.message) {
-					if (r.message.email_id) frm.set_value("email", r.message.email_id);
-					if (!frm.doc.phone && (r.message.mobile_no || r.message.phone)) frm.set_value("phone", r.message.mobile_no || r.message.phone);
-				}
-			});
+		if (frm.doc.contact_person || frm.doc.address) {
+			amb_fill_contact_address(frm);   // #38 pull email/phone/fax from Contact OR Address
 		} else {
 			frm.set_value("email", "");
 		}
+	},
+	address(frm) {
+		// #38 re-fill email/phone/fax when the Address changes (fax lives on Address)
+		amb_fill_contact_address(frm);
 	},
 	customer(frm) {
 		if (frm.doc.customer) {
@@ -175,4 +176,25 @@ function amb_wt_rollup(frm) {
 }
 function update_shipment_checkboxes(frm) {
 	console.log("Shipment purpose:", { shipment_nature: frm.doc.shipment_nature, internal_export_type: frm.doc.internal_export_type, special_export_type: frm.doc.special_export_type });
+}
+
+
+// #38 Fill Email / Phone / Fax from the Contact OR the Address (whichever has the value).
+// Contact wins for email/phone; Fax comes from the Address (standard Contact has no fax field).
+async function amb_fill_contact_address(frm) {
+	let c = {}, a = {};
+	if (frm.doc.contact_person) {
+		const r = await frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone"]);
+		c = (r && r.message) || {};
+	}
+	if (frm.doc.address) {
+		const r = await frappe.db.get_value("Address", frm.doc.address, ["phone", "fax", "email_id"]);
+		a = (r && r.message) || {};
+	}
+	const email = c.email_id || a.email_id || "";
+	const phone = c.mobile_no || c.phone || a.phone || "";
+	const fax   = a.fax || "";
+	if (email) frm.set_value("email", email);
+	if (phone) frm.set_value("phone", phone);
+	if (fax)   frm.set_value("fax", fax);
 }

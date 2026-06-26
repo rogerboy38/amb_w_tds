@@ -757,12 +757,31 @@ def get_batch_quality_data(batch_name):
         frappe.log_error(f"Error getting batch quality data: {str(e)}", "Batch Quality Data")
         return {"error": str(e)}
 
+def _attach_file_url_to(file_url, doctype, name):
+    """#37 Attach an already-generated PDF to another document (e.g. the Sample Request
+    the user printed from). save_attachment=1 only attaches to the printed doc (COA/TDS),
+    so this mirrors the file onto the SR. No-op if already attached (no duplicate rows)."""
+    if not (file_url and doctype and name):
+        return
+    if frappe.db.exists("File", {"file_url": file_url, "attached_to_doctype": doctype, "attached_to_name": name}):
+        return
+    frappe.get_doc({
+        "doctype": "File",
+        "file_name": file_url.split("/")[-1],
+        "file_url": file_url,
+        "attached_to_doctype": doctype,
+        "attached_to_name": name,
+        "is_private": 0,
+    }).insert(ignore_permissions=True)
+
+
 @frappe.whitelist()
-def generate_coa_pdf(coa_name):
+def generate_coa_pdf(coa_name, attach_to_doctype=None, attach_to_name=None):
     """Generate the COA AMB FoxPro PDF via the amb_print pipeline and attach it.
     Returns the file_url so the Generate PDF button can open/download it. Replaces
     the old frappe.get_print('Standard', as_pdf=True) path (wrong format, WeasyPrint
-    crash on custom formats, returned raw bytes not a URL, never attached)."""
+    crash on custom formats, returned raw bytes not a URL, never attached).
+    #37: when called from a Sample Request, also attach the PDF to that SR."""
     from amb_print.amb_print.api import print_document_pdf
     try:
         res = print_document_pdf(
@@ -772,7 +791,9 @@ def generate_coa_pdf(coa_name):
             save_attachment=1,
             is_private=0,
         )
-        return (res or {}).get("file_url")
+        file_url = (res or {}).get("file_url")
+        _attach_file_url_to(file_url, attach_to_doctype, attach_to_name)
+        return file_url
     except Exception as e:
         frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA PDF Generation")
         frappe.throw(_("Error generating PDF: {0}").format(str(e)))
