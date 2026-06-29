@@ -1,6 +1,10 @@
 // Sample Request AMB - v11.2.0 Logistics, Paqueteria & Weight Model (shipment vs batch)
 console.log("🔧 Sample Request AMB JS loaded - v11.2.0 weight model");
 frappe.ui.form.on("Sample Request AMB", {
+	onload(frm) {
+		// #38b backfill empty email/phone/fax on open without clobbering typed values
+		if (frm.doc.contact_person || frm.doc.address) amb_fill_contact_address(frm, { onlyEmpty: true });
+	},
 	refresh(frm) {
 		frm.fields_dict.samples.grid.get_field("package_type").get_query = function () {
 			return { filters: { item_group: "Sample Packaging Materials" } };
@@ -181,7 +185,8 @@ function update_shipment_checkboxes(frm) {
 
 // #38 Fill Email / Phone / Fax from the Contact OR the Address (whichever has the value).
 // Contact wins for email/phone; Fax comes from the Address (standard Contact has no fax field).
-async function amb_fill_contact_address(frm) {
+async function amb_fill_contact_address(frm, opts) {
+	opts = opts || {};
 	let c = {}, a = {};
 	if (frm.doc.contact_person) {
 		const r = await frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone"]);
@@ -194,7 +199,7 @@ async function amb_fill_contact_address(frm) {
 	const email = c.email_id || a.email_id || "";
 	const phone = c.mobile_no || c.phone || a.phone || "";
 	const fax   = a.fax || "";
-	if (email) frm.set_value("email", email);
-	if (phone) frm.set_value("phone", phone);
-	if (fax)   frm.set_value("fax", fax);
+	if (email && !(opts.onlyEmpty && frm.doc.email)) frm.set_value("email", email);
+	if (phone && !(opts.onlyEmpty && frm.doc.phone)) frm.set_value("phone", phone);
+	if (fax   && !(opts.onlyEmpty && frm.doc.fax))   frm.set_value("fax", fax);
 }
