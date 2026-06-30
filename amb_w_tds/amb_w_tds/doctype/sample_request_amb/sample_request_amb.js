@@ -189,11 +189,15 @@ async function amb_fill_contact_address(frm, opts) {
 	opts = opts || {};
 	let c = {}, a = {};
 	if (frm.doc.contact_person) {
-		const r = await frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone"]);
+		const r = await frappe.db.get_value("Contact", frm.doc.contact_person, ["email_id", "mobile_no", "phone", "address"]);
 		c = (r && r.message) || {};
 	}
-	if (frm.doc.address) {
-		const r = await frappe.db.get_value("Address", frm.doc.address, ["phone", "fax", "email_id"]);
+	// #38b Fax (and the phone fallback) live on the Address. Use the SR's address, else
+	// fall back to the Contact's linked address — otherwise fax never fetches when the
+	// SR has only a contact_person and no address of its own.
+	const addr_name = frm.doc.address || c.address;
+	if (addr_name) {
+		const r = await frappe.db.get_value("Address", addr_name, ["phone", "fax", "email_id"]);
 		a = (r && r.message) || {};
 	}
 	const email = c.email_id || a.email_id || "";
