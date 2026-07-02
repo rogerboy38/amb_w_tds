@@ -252,9 +252,13 @@ _AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
 # "Custom Fields stay in amb_w_tds fixtures").
 _AMB_W_TDS_CF_EXCEPTIONS = [
     "Quality Inspection Parameter Group-applicable_substrates",
+    "Item Quality Inspection Parameter-custom_blend_method",   # SP-MIX B1 blend rule on the TDS param row
 ]
 
 fixtures = [
+    # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
+    # custom fields on BOM Formula have their option doctypes present on import.
+    {"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},
     {"doctype": "Custom Field",
      "or_filters": [
          ["dt", "in", _AMB_W_TDS_DOCTYPES],
