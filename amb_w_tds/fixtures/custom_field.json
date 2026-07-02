@@ -16088,7 +16088,7 @@
   "name": "Sales Order-custom_empaque_secundario",
   "no_copy": 0,
   "non_negative": 0,
-  "options": "\n \tCaja de Cartón con 1kg\n \tCaja de Cartón con 2kg\n \tCaja de Cartón con 5kg\nE004\tCuñete de Cartón con 5 kg\nCuñete de Cartón con 10 kg\nE033\tCuñete Cuadrado de Cartón con 12 kg\nE003\tCuñete de Cartón con 15 kg\nCuñete de Cartón con 20 kg\nCuñete de Cartón con 25 kg",
+  "options": "\nCaja de Cartón con 1kg\nCaja de Cartón con 2kg\nCaja de Cartón con 5kg\nE004 Cuñete de Cartón con 5 kg\nCuñete de Cartón con 10 kg\nE033 Cuñete Cuadrado de Cartón con 12 kg\nE003 Cuñete de Cartón con 15 kg\nCuñete de Cartón con 20 kg\nCuñete de Cartón con 25 kg",
   "permlevel": 0,
   "placeholder": null,
   "precision": "",
