@@ -95,22 +95,20 @@ doc_events = {
 # ========================================
 
 fixtures = [
-
-    # sales_partner + agent tracking required fields
-    {
-        "doctype": "Custom Field",
-        "filters": [
-            ["dt", "in", ["Quotation AMB", "Quotation", "Batch AMB"]],
-        ]
-    },
-
-    # AMB workflows + automatic migration workflow states
-    {
-        "doctype": "Workflow",
-        "filters": [
-            ["name", "like", "AMB%"]
-        ]
-    },
+    {"doctype": "Custom Field",           "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Property Setter",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Workflow",               "filters": [["document_type", "in", ["Custom Clearance","COA AMB","COA AMB2","TDS Product Specification","Direct Shipping"]]]},
+    {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
+    {"doctype": "Print Format",           "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Client Script",       "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Server Script",       "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Workspace",          "filters": [["name", "like", "AMB%"]]},
+    {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Number Card",        "filters": [["module", "=", "AMBWTDS"]]},
+    {"doctype": "Report",        "filters": [["module", "=", "AMBWTDS"]]},
 ]
 
 # ========================================
@@ -141,5 +139,4 @@ override_doctype_dashboards = {
     "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
     "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
     "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
-    "Batch AMB": "amb_w_tds.amb_w_tds.utils.batch_amb_dashboard.get_data",
 }

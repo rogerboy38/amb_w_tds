@@ -9,33 +9,13 @@
   "document_type": "Document",
   "editable_grid": 1,
   "engine": "InnoDB",
-  "links": [
-    {
-      "links": [
-        {
-          "link_doctype": "Lead",
-          "link_fieldname": "party"
-        },
-        {
-          "link_doctype": "Prospect",
-          "link_fieldname": "party"
-        },
-        {
-          "link_doctype": "Opportunity",
-          "link_fieldname": "party"
-        },
-        {
-          "link_doctype": "Quotation",
-          "link_fieldname": "quotation"
-        },
-        {
-          "link_doctype": "Sales Order",
-          "link_fieldname": "party"
-        }
-      ]
-    }
-  ],
+  "links": [],
   "fields": [
+    {
+      "fieldname": "tab_solicitud",
+      "fieldtype": "Tab Break",
+      "label": "1. Solicitud / Request"
+    },
     {
       "fieldname": "naming_series",
       "fieldtype": "Select",
@@ -111,99 +91,71 @@
       "options": "Batch AMB"
     },
     {
-        "fieldname": "item",
-        "fieldtype": "Link",
-        "label": "Item / Producto",
-        "options": "Item",
-        "fetch_from": "batch_reference.item_to_manufacture",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "item",
+      "fieldtype": "Link",
+      "label": "Item / Producto",
+      "options": "Item"
     },
     {
-        "fieldname": "sales_order_related",
-        "fieldtype": "Link",
-        "label": "Sales Order Related",
-        "options": "Sales Order",
-        "fetch_from": "batch_reference.sales_order_related",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "sales_order_related",
+      "fieldtype": "Link",
+      "label": "Sales Order Related",
+      "options": "Sales Order"
     },
     {
-        "fieldname": "wo_item_name",
-        "fieldtype": "Data",
-        "label": "Work Order Item Name",
-        "fetch_from": "batch_reference.wo_item_name",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "wo_item_name",
+      "fieldtype": "Data",
+      "label": "Work Order Item Name"
     },
     {
-        "fieldname": "item_name",
-        "fieldtype": "Data",
-        "label": "Item Name",
-        "fetch_from": "batch_reference.item_name",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "label": "Item Name"
     },
     {
-        "fieldname": "planned_qty",
-        "fieldtype": "Float",
-        "label": "Planned Quantity",
-        "fetch_from": "batch_reference.planned_qty",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "planned_qty",
+      "fieldtype": "Float",
+      "label": "Planned Quantity"
     },
     {
-        "fieldname": "total_net_weight",
-        "fieldtype": "Float",
-        "label": "Total Net Weight",
-        "fetch_from": "batch_reference.total_net_weight",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "total_net_weight",
+      "fieldtype": "Float",
+      "label": "Total Net Weight"
     },
     {
-        "fieldname": "work_order_ref",
-        "fieldtype": "Link",
-        "label": "Work Order Reference",
-        "options": "Work Order",
-        "fetch_from": "batch_reference.work_order_ref",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "work_order_ref",
+      "fieldtype": "Link",
+      "label": "Work Order Reference",
+      "options": "Work Order"
     },
     {
-        "fieldname": "custom_golden_number",
-        "fieldtype": "Data",
-        "label": "Golden Number",
-        "fetch_from": "batch_reference.custom_golden_number",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "production_plant_amb",
+      "fieldtype": "Link",
+      "label": "Production Plant AMB",
+      "options": "Production Plant AMB"
+    },
+    {
+      "fieldname": "custom_golden_number",
+      "fieldtype": "Data",
+      "label": "Golden Number"
     },
     {
       "fieldname": "custom_product_key_tds",
       "fieldtype": "Link",
       "label": "TDS / Especificacion TDS",
-      "options": "TDS Product Specification",
-      "fetch_from": "item.custom_product_key_tds",
-      "fetch_if_empty": 1,
-      "read_only": 1
+      "options": "TDS Product Specification"
     },
     {
       "fieldname": "coa_amb",
       "fieldtype": "Link",
       "label": "COA / Cert. Analisis para TDS",
-      "options": "COA AMB",
-      "fetch_from": "batch_reference.coa_amb",
-      "fetch_if_empty": 1,
-      "read_only": 1
+      "options": "COA AMB"
     },
     {
-        "fieldname": "batch_quantity",
-        "fieldtype": "Float",
-        "label": "Batch Quantity",
-        "fetch_from": "batch_reference.planned_qty",
-        "fetch_if_empty": 1,
-        "read_only": 1
+      "fieldname": "batch_quantity",
+      "fieldtype": "Float",
+      "label": "Batch Quantity"
     },
-
     {
       "fieldname": "section_contact",
       "fieldtype": "Section Break",
@@ -261,63 +213,6 @@
       "fieldtype": "Data",
       "label": "Postal Code / CP"
     },
-
-    {
-      "fieldname": "section_logistics",
-      "fieldtype": "Section Break",
-      "label": "Logistics / Logística"
-    },
-    {
-      "fieldname": "received_by",
-      "fieldtype": "Data",
-      "label": "Received By / Recibido Por"
-    },
-    {
-      "fieldname": "received_date",
-      "fieldtype": "Date",
-      "label": "Received Date / Fecha de Recepción"
-    },
-    {
-      "fieldname": "sent_by",
-      "fieldtype": "Data",
-      "label": "Sent By / Enviado Por"
-    },
-    {
-      "fieldname": "sent_date",
-      "fieldtype": "Date",
-      "label": "Sent Date / Fecha de Envío"
-    },
-    {
-      "fieldname": "awb_number",
-      "fieldtype": "Data",
-      "label": "AWB / Guía Aérea"
-    },
-    {
-      "fieldname": "col_break_logistics",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "project",
-      "fieldtype": "Link",
-      "label": "Project / Proyecto",
-      "options": "Project"
-    },
-    {
-      "fieldname": "label_type",
-      "fieldtype": "Data",
-      "label": "Label Type / Tipo de Etiqueta"
-    },
-    {
-      "fieldname": "application",
-      "fieldtype": "Data",
-      "label": "Application / Aplicación Deseada"
-    },
-    {
-      "fieldname": "promotion_or_event",
-      "fieldtype": "Data",
-      "label": "Promotion or Event / Promoción o Evento"
-    },
-
     {
       "fieldname": "section_samples",
       "fieldtype": "Section Break",
@@ -330,7 +225,6 @@
       "options": "Sample Request AMB Item",
       "reqd": 0
     },
-
     {
       "fieldname": "section_notes",
       "fieldtype": "Section Break",
@@ -340,6 +234,342 @@
       "fieldname": "remarks",
       "fieldtype": "Small Text",
       "label": "Remarks / Observaciones"
+    },
+    {
+      "fieldname": "tab_logistica",
+      "fieldtype": "Tab Break",
+      "label": "2. Logística / Logistics"
+    },
+    {
+      "fieldname": "customs_carrier",
+      "fieldtype": "Select",
+      "label": "Carrier / Paquetería",
+      "options": "DHL\nFEDEX\nUPS\nFEDEX GROUND\nOTHER"
+    },
+    {
+      "fieldname": "waybill_number",
+      "fieldtype": "Data",
+      "label": "Waybill / Guía"
+    },
+    {
+      "fieldname": "col_break_logistics_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "shipment_type",
+      "fieldtype": "Select",
+      "label": "Shipment Type / Tipo de Embarque",
+      "options": "Muestra\nVenta; Paqueteria\nForwarder"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Moneda / Currency",
+      "options": "Currency",
+      "default": "USD"
+    },
+    {
+      "fieldname": "cb_muestra",
+      "fieldtype": "Check",
+      "label": "Muestra / Sample"
+    },
+    {
+      "fieldname": "cb_venta_paqueteria",
+      "fieldtype": "Check",
+      "label": "Venta; Paqueteria"
+    },
+    {
+      "fieldname": "cb_forwarder",
+      "fieldtype": "Check",
+      "label": "Forwarder"
+    },
+    {
+      "fieldname": "section_shipment_values",
+      "fieldtype": "Section Break",
+      "label": "Shipment Values / Valores del Embarque"
+    },
+    {
+      "fieldname": "commercial_value_usd",
+      "fieldtype": "Currency",
+      "label": "Valor Comer. en USD / Commercial Value",
+      "options": "USD",
+      "default": "1.00"
+    },
+    {
+      "fieldname": "number_of_packages",
+      "fieldtype": "Int",
+      "label": "Num. Paquetes / Packages",
+      "default": "1"
+    },
+    {
+      "fieldname": "col_break_values",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "gross_weight_kg",
+      "fieldtype": "Float",
+      "label": "Peso / Weight (KG)",
+      "default": "0.5"
+    },
+    {
+      "fieldname": "section_shipment_nature",
+      "fieldtype": "Section Break",
+      "label": "Shipment Nature / Naturaleza del Embarque"
+    },
+    {
+      "fieldname": "shipment_nature",
+      "fieldtype": "Select",
+      "label": "Nature",
+      "options": "Venta\nRegalo\nMuestra sin valor\nMuestra mutilada"
+    },
+    {
+      "fieldname": "section_export_type",
+      "fieldtype": "Section Break",
+      "label": "Export Type / Tipo de Exportación"
+    },
+    {
+      "fieldname": "internal_export_type",
+      "fieldtype": "Select",
+      "label": "Internal/Export Type",
+      "options": "Informacion interna\nExportacion exhibicion\nExportacion definitiva\nRetorno a origen"
+    },
+    {
+      "fieldname": "special_export_type",
+      "fieldtype": "Select",
+      "label": "Special Export / Temporal",
+      "options": "Export. temp. analisis\nExport. temp. reparacion\nExport. por sustitucion\nMaterial promocional"
+    },
+    {
+      "fieldname": "section_customs",
+      "fieldtype": "Section Break",
+      "label": "Customs / Aduana"
+    },
+    {
+      "fieldname": "pedimento_required",
+      "fieldtype": "Select",
+      "label": "Ped. Requerido",
+      "options": "SI\nNO",
+      "default": "NO"
+    },
+    {
+      "fieldname": "pedimento_type",
+      "fieldtype": "Select",
+      "label": "Tipo de Pedimento",
+      "options": "Temporal\nDefinitivo"
+    },
+    {
+      "fieldname": "col_break_customs",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "certificate_of_origin_attached",
+      "fieldtype": "Select",
+      "label": "Certif. de Origen",
+      "options": "SI\nNO",
+      "default": "NO"
+    },
+    {
+      "fieldname": "section_paqueteria",
+      "fieldtype": "Section Break",
+      "label": "Pickup & Delivery"
+    },
+    {
+      "fieldname": "pickup_date",
+      "fieldtype": "Date",
+      "label": "Fecha Recoleccion / Pickup Date"
+    },
+    {
+      "fieldname": "pickup_time",
+      "fieldtype": "Time",
+      "label": "Hora Recoleccion / Pickup Time"
+    },
+    {
+      "fieldname": "col_break_paqueteria_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "delivery_date",
+      "fieldtype": "Date",
+      "label": "Fecha Entrega / Delivery Date"
+    },
+    {
+      "fieldname": "delivery_status",
+      "fieldtype": "Select",
+      "label": "Delivery Status",
+      "options": "Pending\nPicked Up\nIn Transit\nDelivered\nReturned",
+      "default": "Pending"
+    },
+    {
+      "fieldname": "courier_notes",
+      "fieldtype": "Small Text",
+      "label": "Notas / Notes"
+    },
+    {
+      "fieldname": "tab_documentacion",
+      "fieldtype": "Tab Break",
+      "label": "3. Documentación / Documentation"
+    },
+    {
+      "fieldname": "section_docs_col1",
+      "fieldtype": "Section Break",
+      "label": "Documentation Checklist"
+    },
+    {
+      "fieldname": "cb_awb",
+      "fieldtype": "Check",
+      "label": "AWB / BL"
+    },
+    {
+      "fieldname": "cb_doc_paqueteria",
+      "fieldtype": "Check",
+      "label": "Doc. Paqueteria"
+    },
+    {
+      "fieldname": "col_break_docs_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cb_commercial_invoice",
+      "fieldtype": "Check",
+      "label": "Factura Comercial"
+    },
+    {
+      "fieldname": "cb_packing_list",
+      "fieldtype": "Check",
+      "label": "Packing List"
+    },
+    {
+      "fieldname": "cb_certificate_of_origin",
+      "fieldtype": "Check",
+      "label": "Cert. de Origen"
+    },
+    {
+      "fieldname": "cb_phytosanitary",
+      "fieldtype": "Check",
+      "label": "Cert. Fitosanitario"
+    },
+    {
+      "fieldname": "cb_coa",
+      "fieldtype": "Check",
+      "label": "COA / Cert. de Análisis"
+    },
+    {
+      "fieldname": "cb_sanitary_permit",
+      "fieldtype": "Check",
+      "label": "Permiso Sanitario"
+    },
+    {
+      "fieldname": "col_break_docs_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cb_exporter_declaration",
+      "fieldtype": "Check",
+      "label": "Exportador / Prod. Org."
+    },
+    {
+      "fieldname": "cb_exporter_declaration_en",
+      "fieldtype": "Check",
+      "label": "Exporter Declaration"
+    },
+    {
+      "fieldname": "cb_inspection_certificate",
+      "fieldtype": "Check",
+      "label": "Cert. of Inspection"
+    },
+    {
+      "fieldname": "cb_importador",
+      "fieldtype": "Check",
+      "label": "Importador"
+    },
+    {
+      "fieldname": "section_document_type",
+      "fieldtype": "Section Break",
+      "label": "Document Type / Tipo de Documento"
+    },
+    {
+      "fieldname": "docto_nopal",
+      "fieldtype": "Check",
+      "label": "Docto. Nopal"
+    },
+    {
+      "fieldname": "docto_sabila",
+      "fieldtype": "Check",
+      "label": "Docto. Sabila"
+    },
+    {
+      "fieldname": "col_break_doc_type",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "letter_language",
+      "fieldtype": "Select",
+      "label": "Language / Carta",
+      "options": "Carta Español\nCarta Ingles"
+    },
+    {
+      "fieldname": "tab_seguimiento",
+      "fieldtype": "Tab Break",
+      "label": "4. Seguimiento / Tracking"
+    },
+    {
+      "fieldname": "po_number",
+      "fieldtype": "Data",
+      "label": "PO# / Número de Orden"
+    },
+    {
+      "fieldname": "cb_confirmar_po",
+      "fieldtype": "Check",
+      "label": "Confirmar PO"
+    },
+    {
+      "fieldname": "cb_confirmar_envio",
+      "fieldtype": "Check",
+      "label": "Confirmar Envio de Mcia."
+    },
+    {
+      "fieldname": "cb_enviar_doc_exportacion",
+      "fieldtype": "Check",
+      "label": "Enviar Doc. Exportacion"
+    },
+    {
+      "fieldname": "col_break_confirm",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cb_solicitud_cotizacion",
+      "fieldtype": "Check",
+      "label": "Solicitud de Cotización"
+    },
+    {
+      "fieldname": "cb_confirmar_entrega",
+      "fieldtype": "Check",
+      "label": "Confirmar entrega mercancia"
+    },
+    {
+      "fieldname": "section_sample_dates",
+      "fieldtype": "Section Break",
+      "label": "Sample Dates / Fechas de Muestra"
+    },
+    {
+      "fieldname": "sample_sent_date",
+      "fieldtype": "Date",
+      "label": "Envio Muestra / Sample Sent"
+    },
+    {
+      "fieldname": "sample_delivered_date",
+      "fieldtype": "Datetime",
+      "label": "Entrega Muestra / Sample Delivered"
+    },
+    {
+      "fieldname": "section_special_instructions",
+      "fieldtype": "Section Break",
+      "label": "Special Instructions / Instrucciones Especiales"
+    },
+    {
+      "fieldname": "special_instructions",
+      "fieldtype": "Text Editor",
+      "label": "Special Instructions"
     },
     {
       "fieldname": "status",
@@ -357,7 +587,7 @@
   "issingle": 0,
   "istable": 0,
   "max_attachments": 0,
-  "modified": "2026-03-14 00:00:00.000000",
+  "modified": "2026-04-29 00:00:00.000000",
   "modified_by": "Administrator",
   "module": "Amb W Tds",
   "name": "Sample Request AMB",

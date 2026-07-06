@@ -12,10 +12,23 @@ class COAAMB(Document):
     """
     COA AMB - Certificate of Analysis with enhanced validation and workflow
     """
+    def _is_submit_flow(self):
+        """Check if we're in submit flow vs normal edit"""
+        return getattr(self, '_action', None) == 'submit'
 
     def validate(self):
-        """Comprehensive validation logic"""
+        """Comprehensive validation logic - SKIPS heavy checks for draft"""
         
+        # CRITICAL: For draft documents being edited, skip heavy validation to prevent timeout
+        # Only run full validation on submit
+        if self.docstatus == 0 and not self._is_submit_flow():
+            # Lightweight validation for draft editing (saves in <1 second)
+            self.validate_linked_tds()
+            self.validate_batch_reference()
+            self.check_mandatory_tds_link()
+            return
+        
+        # FULL VALIDATION (only on submit)
         # Core validation sequence
         self.validate_linked_tds()
         self.validate_batch_reference()
@@ -97,27 +110,37 @@ class COAAMB(Document):
                 frappe.throw(_("Batch {0} is already closed and cannot be used for COA").format(self.batch_reference))
 
     def validate_test_parameters(self):
-        """Comprehensive validation for quality test parameters"""
+        """Comprehensive validation - SKIPS EMPTY ROWS AND TITLE ROWS"""
         if not self.coa_quality_test_parameter and self.docstatus == 1:
             frappe.throw(_("At least one quality test parameter is required for submission"))
-        
+    
         for idx, row in enumerate(self.coa_quality_test_parameter, 1):
+            # SKIP TITLE ROWS (BUG 117B)
+            if row.custom_is_title_row:
+                continue
+            
+            # SKIP EMPTY ROWS (BUG 117A) - allow partial saves
+            if not row.parameter_name and not row.specification and not row.result:
+                continue
+                
             # Validate numeric fields
             if row.numeric and row.result:
                 self.validate_numeric_result(row, idx)
-            
+    
             # Validate formula-based criteria
             if row.formula_based_criteria and row.acceptance_formula:
                 self.validate_formula_criteria(row, idx)
-            
+    
             # Validate min/max consistency
             if row.get('min_value') is not None and row.get('max_value') is not None:
                 if flt(row.min_value) > flt(row.max_value):
                     frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
-            
+    
             # Validate mandatory fields for submitted documents
-            if self.docstatus == 1 and not row.result and not row.custom_is_title_row:
-                frappe.throw(_(f"Row {idx}: Result is required for parameter '{row.parameter_name}'"))
+            if self.docstatus == 1 and not row.result:
+                param_name = row.parameter_name or row.specification or f"Row {idx}"
+                frappe.throw(_(f"Row {idx}: Result is required for parameter '{param_name}'"))
+
 
     def validate_numeric_result(self, row, idx):
         """Validate numeric results against min/max values"""
@@ -370,7 +393,9 @@ class COAAMB(Document):
             if self.naming_series:
                 # Let Frappe handle the naming based on series
                 from frappe.model.naming import make_autoname
-                self.coa_number = make_autoname(self.naming_series)
+                # COA number mirrors the document name (series already applied to name).
+                # Off-by-one fix: avoid a second make_autoname() that burned the counter.
+                self.coa_number = self.name
             else:
                 # Fallback to custom format
                 from datetime import datetime
