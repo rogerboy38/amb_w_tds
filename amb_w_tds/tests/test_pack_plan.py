@@ -43,9 +43,28 @@ class TestPackPlan(unittest.TestCase):
         # erase a class-level customer for the tests after the first
         frappe.set_user("Administrator")
         self.customer = _ensure_customer()
+        self._created = []
 
     def tearDown(self):
+        """Rollback + leak-proof sweep: hook-level frappe.db.commit() (house
+        controllers self-commit) can punch documents through the rollback.
+        Any tracked doc that survived is deleted, then the test FAILS loudly —
+        a leak is a real defect to surface, not residue to shrug at."""
         frappe.db.rollback()
+        leaked = [(dt, name) for dt, name in self._created
+                  if frappe.db.exists(dt, name)]
+        for dt, name in leaked:
+            doc = frappe.get_doc(dt, name)
+            if doc.docstatus == 1:
+                doc.cancel()
+            frappe.delete_doc(dt, name, force=1, ignore_permissions=True)
+        if leaked:
+            frappe.db.commit()
+            self.fail(f"commit punched through rollback; leaked+cleaned: {leaked}")
+
+    def _track(self, doc):
+        self._created.append((doc.doctype, doc.name))
+        return doc
 
     # ---- helpers -------------------------------------------------------- #
     def _so(self, rows, plan=None, insert=True):
@@ -63,6 +82,7 @@ class TestPackPlan(unittest.TestCase):
             doc.append("custom_pack_plan", p)
         if insert:
             doc.insert(ignore_permissions=True)
+            self._track(doc)
         return doc
 
     def _vabon_plan(self, so):
@@ -192,7 +212,7 @@ class TestPackPlan(unittest.TestCase):
         for p in self._vabon_plan(so1):     # plan rows still carry OLD names
             so2.append("custom_pack_plan", dict(p, so_item_row=(
                 old_r1 if p["so_item_row"] == so1.items[0].name else old_r2)))
-        so2.insert(ignore_permissions=True)
+        self._track(so2.insert(ignore_permissions=True) or so2)
         self.assertEqual(so2.custom_pack_plan[0].so_item_row, so2.items[0].name)
         self.assertEqual(so2.custom_pack_plan[1].so_item_row, so2.items[1].name)
         so2.run_method("before_submit")     # remapped plan reconciles per row
@@ -206,7 +226,7 @@ class TestPackPlan(unittest.TestCase):
         p = self._vabon_plan(so2)[0]
         p["so_item_row"] = "row-name-that-never-existed"
         so2.append("custom_pack_plan", p)
-        so2.insert(ignore_permissions=True)  # saves with a WARNING, no guess
+        self._track(so2.insert(ignore_permissions=True) or so2)  # saves with a WARNING, no guess
         self.assertEqual(so2.custom_pack_plan[0].so_item_row,
                          "row-name-that-never-existed")
         with self.assertRaises(frappe.ValidationError):
@@ -226,7 +246,7 @@ class TestPackPlan(unittest.TestCase):
         q.append("custom_pack_plan", {
             "so_item_row": "", "package_item": BAG_5KG, "units_per_container": 4,
             "unit_net_kg": 5.0, "container_item": PAIL_25, "containers_qty": 1})
-        q.insert(ignore_permissions=True)
+        self._track(q.insert(ignore_permissions=True) or q)
         q.custom_pack_plan[0].so_item_row = q.items[0].name
         q.append("custom_pack_plan", {
             "so_item_row": q.items[1].name, "package_item": BAG_1KG,
@@ -240,7 +260,7 @@ class TestPackPlan(unittest.TestCase):
         so.items[0].quotation_item = q.items[0].name
         so.items[1].prevdoc_docname = q.name
         so.items[1].quotation_item = q.items[1].name
-        so.insert(ignore_permissions=True)
+        self._track(so.insert(ignore_permissions=True) or so)
 
         # F-AUD-3: NO silent auto-pull on insert…
         self.assertEqual(len(so.custom_pack_plan), 0)
@@ -266,7 +286,7 @@ class TestPackPlan(unittest.TestCase):
         q.append("custom_pack_plan", {
             "package_item": BAG_1KG, "units_per_container": 25,
             "unit_net_kg": 1.0, "container_item": PAIL_10, "containers_qty": 1})
-        q.insert(ignore_permissions=True)
+        self._track(q.insert(ignore_permissions=True) or q)
 
         so = self._so([25.0], insert=False)
         so.append("custom_pack_plan", {
@@ -274,7 +294,7 @@ class TestPackPlan(unittest.TestCase):
             "unit_net_kg": 5.0, "container_item": PAIL_25, "containers_qty": 1})
         so.items[0].prevdoc_docname = q.name
         so.items[0].quotation_item = q.items[0].name
-        so.insert(ignore_permissions=True)
+        self._track(so.insert(ignore_permissions=True) or so)
         # the SO's own plan stands — nothing was pulled in on insert…
         self.assertEqual(len(so.custom_pack_plan), 1)
         self.assertEqual(so.custom_pack_plan[0].package_item, BAG_5KG)
