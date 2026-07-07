@@ -28,16 +28,21 @@ def _ensure_customer():
             "customer_name": SYNTH_CUSTOMER,
             "customer_group": frappe.db.get_value("Customer Group", {"is_group": 0}),
             "territory": frappe.db.get_value("Territory", {"is_group": 0}),
+            # Mexico-compliance mandatory fields (house bench trait): generic
+            # export RFC + tax system, same values the migrated customers carry
+            "tax_id": "XAXX010101000",
+            "tax_system": "612",
         }).insert(ignore_permissions=True)
     return frappe.db.get_value("Customer", {"customer_name": SYNTH_CUSTOMER})
 
 
 class TestPackPlan(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
+        # per-test (not setUpClass): each test ends in rollback, which would
+        # erase a class-level customer for the tests after the first
         frappe.set_user("Administrator")
-        cls.customer = _ensure_customer()
+        self.customer = _ensure_customer()
 
     def tearDown(self):
         frappe.db.rollback()
@@ -189,13 +194,29 @@ class TestPackPlan(unittest.TestCase):
         so.run_method("before_submit")  # copied plan reconciles per row
 
     def test_copy_never_overwrites_existing_plan(self):
-        so = self._so([25.0])
+        q = frappe.get_doc({
+            "doctype": "Quotation",
+            "quotation_to": "Customer",
+            "party_name": self.customer,
+            "transaction_date": frappe.utils.today(),
+            "company": frappe.db.get_single_value("Global Defaults", "default_company"),
+            "items": [{"item_code": ITEM, "qty": 25.0, "rate": 172.24}],
+        })
+        q.append("custom_pack_plan", {
+            "package_item": BAG_1KG, "units_per_container": 25,
+            "unit_net_kg": 1.0, "container_item": PAIL_10, "containers_qty": 1})
+        q.insert(ignore_permissions=True)
+
+        so = self._so([25.0], insert=False)
         so.append("custom_pack_plan", {
             "package_item": BAG_5KG, "units_per_container": 5,
             "unit_net_kg": 5.0, "container_item": PAIL_25, "containers_qty": 1})
-        so.items[0].prevdoc_docname = "QTN-DOES-NOT-MATTER"
-        so.save(ignore_permissions=True)
+        so.items[0].prevdoc_docname = q.name
+        so.items[0].quotation_item = q.items[0].name
+        so.insert(ignore_permissions=True)
+        # the SO's own plan stands — the quotation's row was NOT pulled in
         self.assertEqual(len(so.custom_pack_plan), 1)
+        self.assertEqual(so.custom_pack_plan[0].package_item, BAG_5KG)
 
     # ---- single-slot data migration --------------------------------------- #
     def test_single_slot_migration_folds_legacy_fields_into_rows(self):
