@@ -8,7 +8,7 @@
   "modified": "2026-05-16 19:52:38.941703",
   "name": "TDS Approval Workflow",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "RND Manager",
@@ -190,7 +190,7 @@
   "modified": "2025-08-30 16:59:00.489404",
   "name": "submit_and_start_workflow",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "All",
@@ -383,7 +383,7 @@
   "modified": "2025-08-30 20:32:44.830687",
   "name": "submit_and_start_workflow_1",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "All",
