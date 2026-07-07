@@ -45,18 +45,31 @@ def packaging_groups():
 # doc_events
 # --------------------------------------------------------------------------- #
 
+def enforcement_mode():
+    """F-AUD-1 ruling (Hugh 2026-07-06): coverage enforcement is `warn` during
+    adoption, `block` once the #82 pack catalog is complete. Site config key
+    `pack_plan_enforcement`. Sum MISMATCHES on rows that have a plan always
+    hard-block regardless of mode — that gate is the human-error killer."""
+    mode = (frappe.conf.get("pack_plan_enforcement") or "warn").lower()
+    return mode if mode in ("warn", "block") else "warn"
+
+
 def validate_quotation(doc, method=None):
     _validate_plan_rows(doc)
 
 
 def validate_sales_order(doc, method=None):
-    copy_plan_from_quotation(doc)
+    # F-AUD-3 ruling: NO silent auto-pull from the quotation — use the explicit
+    # fetch action (fetch_pack_plan_from_quotation) instead.
+    _remap_after_amend(doc)
     _validate_plan_rows(doc)
 
 
 def before_submit_sales_order(doc, method=None):
-    """1b-FINAL hard block: per SO row, Σ group_net_kg == row qty."""
+    """1b-FINAL: per SO row, Σ group_net_kg == row qty (hard block).
+    Coverage (rows with no plan at all): warn|block per F-AUD-1 flag."""
     plan = doc.get("custom_pack_plan") or []
+    _check_row_coverage(doc, plan)
     if not plan:
         return
     sums = {}
@@ -86,6 +99,67 @@ def before_submit_sales_order(doc, method=None):
                 "they must reconcile exactly. / El plan de empaque de la fila "
                 "{0} suma {2} kg pero la fila pide {3} kg."
             ).format(item_row.idx, item_row.item_code, total, flt(item_row.qty)))
+
+
+def _check_row_coverage(doc, plan):
+    """F-AUD-1: items rows with no plan rows — warn during adoption, block once
+    the #82 catalog is complete (site_config pack_plan_enforcement=block)."""
+    if not plan:
+        # an order with NO plan at all is legitimate (pack plan is opt-in);
+        # coverage only bites once a plan exists on the document
+        return
+    covered = {row.so_item_row for row in plan if row.so_item_row}
+    uncovered = [i for i in doc.items if i.name not in covered]
+    if not uncovered:
+        return
+    msg = _(
+        "Pack Plan does not cover item row(s) {0} — every row of a planned "
+        "order should carry its package groups. / El plan de empaque no cubre "
+        "la(s) fila(s) {0}."
+    ).format(", ".join(f"#{i.idx} ({i.item_code})" for i in uncovered))
+    if enforcement_mode() == "block":
+        frappe.throw(msg)
+    frappe.msgprint(msg, indicator="orange",
+                    title=_("Pack Plan coverage (warn mode)"))
+
+
+# --------------------------------------------------------------------------- #
+# F-AUD-2: auto-remap so_item_row after cancel -> amend
+# --------------------------------------------------------------------------- #
+
+def _remap_after_amend(doc):
+    """Amended documents get NEW items-row names; plan rows copied from the
+    cancelled doc still point at the old ones. Remap by (idx, item_code) of
+    the OLD row when that is unambiguous; ambiguous/unresolvable rows are
+    flagged for manual review — never guessed (Hugh ruling 2026-07-06)."""
+    plan = doc.get("custom_pack_plan") or []
+    if not plan or not doc.get("amended_from"):
+        return
+    current_names = {i.name for i in doc.items}
+    orphans = [row for row in plan if row.so_item_row
+               and row.so_item_row not in current_names]
+    if not orphans:
+        return
+    old_rows = {r.name: r for r in frappe.get_all(
+        "Sales Order Item", filters={"parent": doc.amended_from},
+        fields=["name", "idx", "item_code"])}
+    flagged = []
+    for row in orphans:
+        old = old_rows.get(row.so_item_row)
+        matches = [i for i in doc.items
+                   if old and i.idx == old.idx and i.item_code == old.item_code]
+        if old and len(matches) == 1:
+            row.so_item_row = matches[0].name
+        else:
+            flagged.append(row.idx)
+    if flagged:
+        frappe.msgprint(_(
+            "Pack Plan row(s) {0} reference rows from the cancelled document "
+            "and could not be re-pointed unambiguously — review them manually "
+            "before submit. / Filas del plan {0}: revise la asignación "
+            "manualmente."
+        ).format(", ".join(f"#{n}" for n in flagged)), indicator="orange",
+            title=_("Pack Plan needs manual re-mapping"))
 
 
 # --------------------------------------------------------------------------- #
@@ -118,15 +192,17 @@ def _validate_plan_rows(doc):
         row.group_net_kg = (
             flt(row.units_per_container) * flt(row.unit_net_kg) * flt(row.containers_qty or 1))
 
-        # so_item_row: accept a row name; auto-fill on single-row orders
+        # so_item_row: accept a row name; auto-fill on single-row orders.
+        # Unmatched names only WARN here (amend-flagged rows must stay saveable
+        # as drafts, F-AUD-2) — before_submit hard-blocks on them.
         if not row.so_item_row and len(items) == 1:
             row.so_item_row = items[0].name
         if row.so_item_row and items and row.so_item_row not in {i.name for i in items}:
-            frappe.throw(_(
+            frappe.msgprint(_(
                 "Pack Plan row #{0}: '{1}' does not match any Items row on "
-                "this document. / La fila #{0} no corresponde a ninguna fila "
-                "del documento."
-            ).format(row.idx, row.so_item_row))
+                "this document — fix before submit. / La fila #{0} no "
+                "corresponde a ninguna fila del documento."
+            ).format(row.idx, row.so_item_row), indicator="orange")
 
 
 def _restrict_to_catalog(row, fieldname, allowed):
@@ -152,10 +228,34 @@ def _restrict_to_catalog(row, fieldname, allowed):
 # Quotation -> Sales Order copy mapping (carries so_item_row across)
 # --------------------------------------------------------------------------- #
 
+@frappe.whitelist()
+def fetch_pack_plan_from_quotation(sales_order):
+    """F-AUD-3 ruling: EXPLICIT fetch action, never a silent auto-pull.
+    Desk button ("Fetch Pack Plan", AMB group) / Raven / bench execute all call
+    this. Draft SOs only; refuses to overwrite an existing plan."""
+    doc = frappe.get_doc("Sales Order", sales_order)
+    doc.check_permission("write")
+    if doc.docstatus != 0:
+        frappe.throw(_("Fetch Pack Plan only works on DRAFT Sales Orders."))
+    if doc.get("custom_pack_plan"):
+        frappe.throw(_(
+            "This Sales Order already has a Pack Plan — delete its rows first "
+            "if you really want to re-fetch from the Quotation. / Ya existe un "
+            "plan de empaque; elimínelo antes de re-importar."))
+    copy_plan_from_quotation(doc)
+    n = len(doc.get("custom_pack_plan") or [])
+    if not n:
+        frappe.msgprint(_("No Pack Plan rows found on the source Quotation(s)."))
+        return {"fetched": 0}
+    doc.save()
+    return {"fetched": n}
+
+
 def copy_plan_from_quotation(doc):
-    """On a new SO mapped from a Quotation: pull the pack plan rows once and
-    translate so_item_row (quotation row name -> new SO row name) via the SO
-    item's quotation_item back-link. Never overwrites an existing plan."""
+    """Pull the pack plan rows from the source Quotation(s), translating
+    so_item_row (quotation row name -> new SO row name) via the SO item's
+    quotation_item back-link. Never overwrites an existing plan. Called ONLY
+    from the explicit fetch action (F-AUD-3: no silent auto-pull)."""
     if doc.get("custom_pack_plan"):
         return
     quotations = []
@@ -208,11 +308,24 @@ def migrate_single_slot_data(dry_run=1, doctype="Sales Order", names=None):
             --kwargs "{'dry_run': 0}"
     """
     dry_run = int(dry_run)
+    meta = frappe.get_meta(doctype)
+    if not meta.get_field("custom_tipo_empaque_copy"):
+        # e.g. Quotation: its single slot is free text only (custom_standard_/
+        # individual_packaging) — nothing mappable without inventing data
+        return {"doctype": doctype, "dry_run": bool(dry_run), "candidates": 0,
+                "migrated": 0, "skipped": [],
+                "note": "no link-field single-slot structure on this doctype — "
+                        "free-text slots are reported, never invented"}
     filters = {"docstatus": 0, "custom_tipo_empaque_copy": ["!=", ""]}
     if names:
         filters["name"] = ["in", names]
     names = frappe.get_all(doctype, filters=filters, pluck="name")
+    # honesty: count drafts whose single slot is FREE TEXT only (unmappable)
+    unmappable_freetext = frappe.db.count(doctype, {
+        "docstatus": 0, "custom_tipo_empaque_copy": ["in", ["", None]],
+        "custom_tipo_empaque": ["not in", ["", None]]})
     report = {"doctype": doctype, "dry_run": bool(dry_run), "candidates": len(names),
+              "unmappable_freetext_slots": unmappable_freetext,
               "migrated": 0, "skipped": []}
     for name in names:
         doc = frappe.get_doc(doctype, name)

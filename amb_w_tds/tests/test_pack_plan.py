@@ -158,6 +158,60 @@ class TestPackPlan(unittest.TestCase):
         self.assertEqual(so.custom_pack_plan[0].so_item_row, so.items[0].name)
         so.run_method("before_submit")  # 25 == 25
 
+    # ---- F-AUD-1: coverage enforcement (warn now, block later) ------------- #
+    def test_uncovered_row_warns_but_submits_in_warn_mode(self):
+        so = self._so([20.0, 5.0])
+        p = self._vabon_plan(so)[0]        # plan only for row 1
+        so.append("custom_pack_plan", p)
+        so.save(ignore_permissions=True)
+        so.run_method("before_submit")     # warn mode (default): must not raise
+
+    def test_uncovered_row_blocks_in_block_mode(self):
+        from unittest.mock import patch as mpatch
+        so = self._so([20.0, 5.0])
+        p = self._vabon_plan(so)[0]
+        so.append("custom_pack_plan", p)
+        so.save(ignore_permissions=True)
+        with mpatch("amb_w_tds.selling_edge.pack_plan.enforcement_mode",
+                    return_value="block"):
+            with self.assertRaises(frappe.ValidationError):
+                so.run_method("before_submit")
+
+    # ---- F-AUD-2: auto-remap after cancel -> amend -------------------------- #
+    def test_amend_remaps_so_item_row_by_idx_and_item_code(self):
+        so1 = self._so([20.0, 5.0])
+        for p in self._vabon_plan(so1):
+            so1.append("custom_pack_plan", p)
+        so1.save(ignore_permissions=True)
+        old_r1, old_r2 = so1.items[0].name, so1.items[1].name
+        so1.submit()
+        so1.cancel()   # amended_from must reference a cancelled doc
+
+        so2 = self._so([20.0, 5.0], insert=False)
+        so2.amended_from = so1.name
+        for p in self._vabon_plan(so1):     # plan rows still carry OLD names
+            so2.append("custom_pack_plan", dict(p, so_item_row=(
+                old_r1 if p["so_item_row"] == so1.items[0].name else old_r2)))
+        so2.insert(ignore_permissions=True)
+        self.assertEqual(so2.custom_pack_plan[0].so_item_row, so2.items[0].name)
+        self.assertEqual(so2.custom_pack_plan[1].so_item_row, so2.items[1].name)
+        so2.run_method("before_submit")     # remapped plan reconciles per row
+
+    def test_amend_never_guesses_unresolvable_rows(self):
+        so1 = self._so([20.0, 5.0])
+        so1.submit()
+        so1.cancel()   # amended_from must reference a cancelled doc
+        so2 = self._so([20.0, 5.0], insert=False)
+        so2.amended_from = so1.name
+        p = self._vabon_plan(so2)[0]
+        p["so_item_row"] = "row-name-that-never-existed"
+        so2.append("custom_pack_plan", p)
+        so2.insert(ignore_permissions=True)  # saves with a WARNING, no guess
+        self.assertEqual(so2.custom_pack_plan[0].so_item_row,
+                         "row-name-that-never-existed")
+        with self.assertRaises(frappe.ValidationError):
+            so2.run_method("before_submit")  # hard gate stays at submit
+
     # ---- Quotation -> SO copy mapping ------------------------------------- #
     def test_quotation_to_so_copy_carries_so_item_row_association(self):
         q = frappe.get_doc({
@@ -188,6 +242,13 @@ class TestPackPlan(unittest.TestCase):
         so.items[1].quotation_item = q.items[1].name
         so.insert(ignore_permissions=True)
 
+        # F-AUD-3: NO silent auto-pull on insert…
+        self.assertEqual(len(so.custom_pack_plan), 0)
+        # …the EXPLICIT fetch action does the copy
+        from amb_w_tds.selling_edge.pack_plan import fetch_pack_plan_from_quotation
+        result = fetch_pack_plan_from_quotation(so.name)
+        self.assertEqual(result["fetched"], 2)
+        so.reload()
         self.assertEqual(len(so.custom_pack_plan), 2)
         self.assertEqual(so.custom_pack_plan[0].so_item_row, so.items[0].name)
         self.assertEqual(so.custom_pack_plan[1].so_item_row, so.items[1].name)
@@ -214,9 +275,13 @@ class TestPackPlan(unittest.TestCase):
         so.items[0].prevdoc_docname = q.name
         so.items[0].quotation_item = q.items[0].name
         so.insert(ignore_permissions=True)
-        # the SO's own plan stands — the quotation's row was NOT pulled in
+        # the SO's own plan stands — nothing was pulled in on insert…
         self.assertEqual(len(so.custom_pack_plan), 1)
         self.assertEqual(so.custom_pack_plan[0].package_item, BAG_5KG)
+        # …and the explicit fetch REFUSES to overwrite an existing plan
+        from amb_w_tds.selling_edge.pack_plan import fetch_pack_plan_from_quotation
+        with self.assertRaises(frappe.ValidationError):
+            fetch_pack_plan_from_quotation(so.name)
 
     # ---- single-slot data migration --------------------------------------- #
     def test_single_slot_migration_folds_legacy_fields_into_rows(self):
