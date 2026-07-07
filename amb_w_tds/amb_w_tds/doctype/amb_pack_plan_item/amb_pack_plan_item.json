@@ -1,0 +1,123 @@
+{
+ "actions": [],
+ "creation": "2026-07-06 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "so_item_row",
+  "package_item",
+  "units_per_container",
+  "unit_net_kg",
+  "unit_tara_kg",
+  "column_break_pack",
+  "container_item",
+  "containers_qty",
+  "container_tara_kg",
+  "group_net_kg",
+  "section_label",
+  "label_source",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "so_item_row",
+   "fieldtype": "Data",
+   "label": "SO Item Row",
+   "description": "Row name of the parent's Items row this package group belongs to (auto-filled when the order has a single row). Sum-validation runs per SO row.",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "package_item",
+   "fieldtype": "Link",
+   "label": "Package Item (bag/pouch)",
+   "options": "Item",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "units_per_container",
+   "fieldtype": "Int",
+   "label": "Units per Container",
+   "default": "1",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "unit_net_kg",
+   "fieldtype": "Float",
+   "label": "Unit Net (kg)",
+   "description": "Net content per package unit. Entered, not fetched: weight_per_unit on packaging Items is the TARA (F-8), never the net.",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "unit_tara_kg",
+   "fieldtype": "Float",
+   "label": "Unit Tara (kg)",
+   "read_only": 1,
+   "description": "Fetched from the package Item master (F-8 rule: taras are never typed)."
+  },
+  {
+   "fieldname": "column_break_pack",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "container_item",
+   "fieldtype": "Link",
+   "label": "Container Item (pail/drum)",
+   "options": "Item",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "containers_qty",
+   "fieldtype": "Int",
+   "label": "Containers Qty",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "container_tara_kg",
+   "fieldtype": "Float",
+   "label": "Container Tara (kg)",
+   "read_only": 1,
+   "description": "Fetched from the container Item master (F-8 rule)."
+  },
+  {
+   "fieldname": "group_net_kg",
+   "fieldtype": "Float",
+   "label": "Group Net (kg)",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Computed: units_per_container x unit_net_kg x containers_qty."
+  },
+  {
+   "fieldname": "section_label",
+   "fieldtype": "Section Break",
+   "label": "Labeling"
+  },
+  {
+   "fieldname": "label_source",
+   "fieldtype": "Select",
+   "label": "Label Source",
+   "options": "\nHouse\nCustomer-supplied",
+   "default": "House"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-06 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "AMB Pack Plan Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
