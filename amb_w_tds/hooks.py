@@ -60,6 +60,17 @@ doctype_js = {
 
 doc_events = {
 
+    # ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
+    # per-row Σ group_net_kg == SO row qty (block on submit), packaging-catalog
+    # link restriction, taras fetched from Item master (F-8), Quotation→SO copy
+    "Quotation": {
+        "validate": ["amb_w_tds.selling_edge.pack_plan.validate_quotation"],
+    },
+    "Sales Order": {
+        "validate": ["amb_w_tds.selling_edge.pack_plan.validate_sales_order"],
+        "before_submit": ["amb_w_tds.selling_edge.pack_plan.before_submit_sales_order"],
+    },
+
     # ---- stock trace / costing / batch migrations
     "Stock Entry": {
         "on_submit": [
@@ -166,6 +177,7 @@ jinja = {
 
 _AMB_W_TDS_DOCTYPES = [
     # Owned by amb_w_tds (defined in this app)
+    "AMB Pack Plan Item",
     "Amb KPI Factors", "Animal Trial", "Barrel", "BOM Enhancement",
     "BOM Formula", "BOM Formula Amino Acid", "BOM Template", "BOM Template Item",
     "BOM Version", "Certification Document", "COA AMB", "COA AMB2",

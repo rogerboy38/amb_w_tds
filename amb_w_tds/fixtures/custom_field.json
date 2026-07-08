@@ -15466,7 +15466,7 @@
   "collapsible": 0,
   "collapsible_depends_on": null,
   "columns": 0,
-  "default": "Barentz",
+  "default": null,
   "depends_on": null,
   "description": "Subcliente \nCustomer sub-entity",
   "docstatus": 0,
