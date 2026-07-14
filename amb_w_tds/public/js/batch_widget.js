@@ -311,7 +311,7 @@ function update_batch_announcements() {
     amb.batch_widget.state.lastFetchTime = Date.now();
     
     frappe.call({
-        method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_running_batch_announcements',
+        method: 'amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb.get_running_batch_announcements',
         args: {
             include_companies: true,
             include_plants: true,
@@ -1023,7 +1023,7 @@ function createStarterPill() {
         if (autoStatusEl.length && autoStatusEl.text() === 'Click to run') {
             autoStatusEl.text('Loading...');
             frappe.call({
-                method: 'amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.get_running_batch_announcements',
+                method: 'amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb.get_running_batch_announcements',
                 args: { include_companies: true, include_plants: true, include_quality: true },
                 callback: function(r) {
                     if (r.message && r.message.success) {

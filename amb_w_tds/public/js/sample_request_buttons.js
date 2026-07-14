@@ -27,7 +27,7 @@ window.SampleRequestUtils = {
         console.log("Creating Sample Request from:", doctype, docname);
         
         frappe.call({
-            method: "amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb.make_sample_request_from_source",
+            method: "amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb.make_sample_request_from_source",
             args: {
                 source_doctype: doctype,
                 source_name: docname
