@@ -265,7 +265,11 @@
   {
    "fieldname": "custom_golden_number",
    "fieldtype": "Data",
-   "label": "Golden Number"
+   "label": "Golden Number",
+   "fetch_from": "coa_amb.custom_golden_number",
+   "fetch_if_empty": 0,
+   "read_only_depends_on": "eval:doc.coa_amb",
+   "description": "Auto-fetched from linked COA AMB (sales req 2026-07-15): when coa_amb is set, this mirrors the COA's golden number and is read-only \u2014 no double entry. Manual entry stays allowed while no COA is linked."
   },
   {
    "fieldname": "custom_product_key_tds",
