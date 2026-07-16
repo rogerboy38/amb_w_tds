@@ -1,11 +1,38 @@
 {
- "custom": 0,
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "prompt",
+ "creation": "2026-05-16 19:52:27.966737",
  "doctype": "DocType",
  "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "goal",
+  "frequency",
+  "threshold_warning",
+  "threshold_critical",
+  "visualization",
+  "cb_00",
+  "kpi_factor_procedure",
+  "year",
+  "method",
+  "kpi_factors_section",
+  "kpi_name",
+  "kpi_type",
+  "current_calculated_value",
+  "column_break_jxxo",
+  "base_value",
+  "target_value",
+  "values_currency",
+  "sb_01",
+  "kpi_factors",
+  "kpi_cost_breakdown"
+ ],
  "fields": [
   {
    "fieldname": "goal",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "AMB KPI GOAL FACTOR",
    "reqd": 1
   },
@@ -13,127 +40,115 @@
    "fieldname": "frequency",
    "fieldtype": "Select",
    "label": "Monitoring Frequency",
-   "options": "None\nDaily\nWeekly\nMonthly\nQuarterly\nYearly",
-   "reqd": 0
+   "options": "None\nDaily\nWeekly\nMonthly\nQuarterly\nYearly"
   },
   {
    "fieldname": "threshold_warning",
    "fieldtype": "Percent",
-   "label": "Threshold Warning",
-   "reqd": 0
+   "label": "Threshold Warning"
   },
   {
    "fieldname": "threshold_critical",
    "fieldtype": "Percent",
-   "label": "Threshold Critical",
-   "reqd": 0
+   "label": "Threshold Critical"
   },
   {
    "fieldname": "visualization",
    "fieldtype": "Select",
    "label": "Visualization",
-   "options": "Gauge\nBar\nLine",
-   "reqd": 0
+   "options": "Gauge\nBar\nLine"
   },
   {
    "fieldname": "cb_00",
-   "fieldtype": "Column Break",
-   "reqd": 0
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "kpi_factor_procedure",
    "fieldtype": "Link",
    "label": "KPI FACTOR PROCEDURE",
-   "options": "Quality Procedure",
-   "reqd": 0
+   "options": "Quality Procedure"
   },
   {
    "fieldname": "year",
    "fieldtype": "Select",
    "label": "Year",
-   "options": "2020\n2021\n2022\n2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030",
-   "reqd": 0
+   "options": "2020\n2021\n2022\n2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030"
   },
   {
    "fieldname": "method",
    "fieldtype": "Select",
    "label": "Method",
-   "options": "Manual\nAutomatc",
-   "reqd": 0
+   "options": "Manual\nAutomatc"
   },
   {
    "fieldname": "kpi_factors_section",
    "fieldtype": "Section Break",
-   "label": "KPI Factors",
-   "reqd": 0
+   "label": "KPI Factors"
   },
   {
    "fieldname": "kpi_name",
    "fieldtype": "Data",
-   "label": "KPI Name",
-   "reqd": 0
+   "label": "KPI Name"
   },
   {
    "fieldname": "kpi_type",
    "fieldtype": "Select",
    "label": "KPI Type",
-   "options": "Production\nQuality\nSales\nLogistics\nPacking\nMaintenance\nMO Liquid\nMO Mix\nMO Formulated\nCertifications\nLaboratory",
-   "reqd": 0
+   "options": "Production\nQuality\nSales\nLogistics\nPacking\nMaintenance\nMO Liquid\nMO Mix\nMO Formulated\nCertifications\nLaboratory"
   },
   {
    "fieldname": "current_calculated_value",
    "fieldtype": "Currency",
-   "label": "Current Calculated Value",
-   "reqd": 0
+   "label": "Current Calculated Value"
   },
   {
    "fieldname": "column_break_jxxo",
-   "fieldtype": "Column Break",
-   "label": "",
-   "reqd": 0
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "base_value",
    "fieldtype": "Currency",
-   "label": "Base Value",
-   "reqd": 0
+   "label": "Base Value"
   },
   {
    "fieldname": "target_value",
    "fieldtype": "Currency",
-   "label": "Target Value",
-   "reqd": 0
+   "label": "Target Value"
   },
   {
    "fieldname": "values_currency",
    "fieldtype": "Link",
    "label": "Values Currency",
-   "options": "Currency",
-   "reqd": 0
+   "options": "Currency"
   },
   {
    "fieldname": "sb_01",
    "fieldtype": "Section Break",
-   "label": "KPI Objectives",
-   "reqd": 0
+   "label": "KPI Objectives"
   },
   {
    "fieldname": "kpi_factors",
    "fieldtype": "Table",
    "label": "KPI Factors",
-   "options": "AMB Cost Factors",
-   "reqd": 0
+   "options": "AMB Cost Factors"
   },
   {
    "fieldname": "kpi_cost_breakdown",
    "fieldtype": "Table",
    "label": "KPI Cost Breakdown",
-   "options": "KPI Cost Breakdown",
-   "reqd": 0
+   "options": "KPI Cost Breakdown"
   }
  ],
- "is_submittable": 0,
- "istable": 0,
+ "links": [],
+ "modified": "2026-06-20 18:43:11.161150",
+ "modified_by": "fcrm@amb-wellness.com",
  "module": "Amb W Tds",
- "name": "Amb KPI Factors"
+ "name": "Amb KPI Factors",
+ "naming_rule": "Set by user",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
 }
