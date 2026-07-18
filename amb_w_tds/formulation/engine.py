@@ -28,9 +28,9 @@ from typing import Optional, Dict, List, Union
 # A) MASS BALANCE — the FoxPro Memoria de Cálculo model (verified vs real FOLIOs)
 # =====================================================================================
 
-def juice_to_concentrate(penca_kg: float, rjbp: float = 0.80, rendjf: float = 0.98,
+def juice_to_concentrate(penca_kg: float, rjbp: float = 0.80, rendjf: float = 0.95,
                          st_decolorized: float = 1.5, st_target: float = 13.0,
-                         rc: float = 0.96) -> dict:
+                         rc: float = 0.98) -> dict:
     """Penca -> jugo bruto -> jugo filtrado/decolorado -> concentrado (0227).
     JB = P*RJBP ; Filtered = JB*RENDJF ; Concentrate = Filtered*(STdecol/STtarget)*RC.
     Yields default to the FoxPro observed values."""
@@ -43,25 +43,30 @@ def juice_to_concentrate(penca_kg: float, rjbp: float = 0.80, rendjf: float = 0.
 
 
 def concentrate_to_powder(concentrate_kg: float, st_conc_pct: float,
-                          dry_yield: float = 0.857, st_powder_pct: float = 100.0) -> dict:
+                          dry_yield: float = 0.86, st_powder_pct: float = 100.0) -> dict:
     """Concentrate -> spray-dried powder (030X).
-    Powder = ConcMass * (STconc/STpowder) * RP.  RP (dry yield) default = FoxPro median 0.857."""
+    Powder = ConcMass * (STconc/STpowder) * RP.  RP (dry yield) default = Alicia-ratified 0.86."""
     powder = concentrate_kg * (st_conc_pct / st_powder_pct) * dry_yield
     return {"concentrate_kg": concentrate_kg, "st_conc_pct": st_conc_pct,
             "dry_yield": dry_yield, "powder_kg": powder}
 
 
 def powder_to_mix(powder_kg: float, pct_powder: float, pct_excipient: float,
-                  cunete_kg: float = 25.0) -> dict:
+                  cunete_kg: float = 25.0, scrap_pct: float = 3.0,
+                  scrap_warehouse: str = "Scrap") -> dict:
     """Powder + excipient -> mix (0307/QX), packed in cuñetes.
-    Excipient = Powder*(pct_exc/pct_powder) ; Mix = Powder+Excipient ; Cuñetes = Mix/cunete."""
+    Excipient = Powder*(pct_exc/pct_powder) ; Mix = Powder+Excipient ; Cuñetes = Mix/cunete.
+    Scrap (Hugh policy) = Mix*scrap_pct/100 -> routed to `scrap_warehouse`; SEPARATE from the 10:90 ratio,
+    does NOT alter mix_kg/excipient_kg/cunetes."""
     if pct_powder <= 0:
         raise ValueError("pct_powder must be > 0")
     excipient = powder_kg * (pct_excipient / pct_powder)
     mix = powder_kg + excipient
+    scrap = mix * (scrap_pct / 100.0)
     return {"powder_kg": powder_kg, "excipient_kg": excipient, "mix_kg": mix,
             "pct_powder": pct_powder, "pct_excipient": pct_excipient,
-            "cunetes": mix / cunete_kg, "cunete_kg": cunete_kg}
+            "cunetes": mix / cunete_kg, "cunete_kg": cunete_kg,
+            "scrap_kg": scrap, "scrap_warehouse": scrap_warehouse}
 
 
 def standardize_with_carrier(native_mass_kg: float, native_marker_pct: float,
