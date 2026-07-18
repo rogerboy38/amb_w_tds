@@ -24,7 +24,7 @@
     {
       "fieldname": "formula_type",
       "fieldtype": "Select",
-      "options": "Fermented Aloe Juice\nAloe Concentrate\nAloe Powder",
+      "options": "Fermented Aloe Juice\nAloe Concentrate\nAloe Powder\nMix",
       "label": "Formula Type"
     },
     {
