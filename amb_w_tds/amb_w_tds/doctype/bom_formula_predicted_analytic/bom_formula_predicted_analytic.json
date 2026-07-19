@@ -1,0 +1,41 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Predicted Analytic",
+  "module": "amb_w_tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    {
+      "fieldname": "parameter",
+      "fieldtype": "Link",
+      "label": "Parameter",
+      "options": "Quality Inspection Parameter",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "predicted_value",
+      "fieldtype": "Float",
+      "label": "Predicted Value",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "tds_min",
+      "fieldtype": "Float",
+      "label": "TDS Min",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "tds_max",
+      "fieldtype": "Float",
+      "label": "TDS Max",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "\nPass\nFail",
+      "in_list_view": 1
+    }
+  ]
+}

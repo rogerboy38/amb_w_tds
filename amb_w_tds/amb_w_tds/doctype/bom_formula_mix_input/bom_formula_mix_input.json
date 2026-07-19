@@ -1,0 +1,39 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Mix Input",
+  "module": "amb_w_tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    {
+      "fieldname": "batch_amb_sublot",
+      "fieldtype": "Link",
+      "label": "Batch AMB Sublot",
+      "options": "Batch AMB",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "cunete_ref",
+      "fieldtype": "Data",
+      "label": "Cuñete Ref",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "kg",
+      "fieldtype": "Float",
+      "label": "Kg",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "source_coa_amb2",
+      "fieldtype": "Link",
+      "label": "Source COA AMB2",
+      "options": "COA AMB2"
+    },
+    {
+      "fieldname": "unit_cost",
+      "fieldtype": "Currency",
+      "label": "Unit Cost"
+    }
+  ]
+}

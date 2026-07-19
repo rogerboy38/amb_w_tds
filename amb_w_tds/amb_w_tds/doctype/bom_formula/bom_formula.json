@@ -70,6 +70,84 @@
       "fieldtype": "Float",
       "label": "Total Composition (PPM)",
       "read_only": 1
+    },
+    {
+      "fieldname": "mix_tab",
+      "fieldtype": "Tab Break",
+      "label": "Mix",
+      "depends_on": "eval:doc.formula_type=='Mix'"
+    },
+    {
+      "fieldname": "target_tds",
+      "fieldtype": "Link",
+      "label": "Target TDS",
+      "options": "TDS Product Specification"
+    },
+    {
+      "fieldname": "batch_size_kg",
+      "fieldtype": "Float",
+      "label": "Batch Size (Kg)",
+      "default": 700
+    },
+    {
+      "fieldname": "mix_input_lines",
+      "fieldtype": "Table",
+      "label": "Mix Input Lines",
+      "options": "BOM Formula Mix Input"
+    },
+    {
+      "fieldname": "predicted_analytics",
+      "fieldtype": "Table",
+      "label": "Predicted Analytics",
+      "options": "BOM Formula Predicted Analytic",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "blended_cost_per_kg",
+      "fieldtype": "Currency",
+      "label": "Blended Cost per Kg",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "blend_status",
+      "fieldtype": "Select",
+      "label": "Blend Status",
+      "options": "\nFeasible\nCost-approval-needed\nInfeasible\nNon-conforming-accepted",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "solver_memory",
+      "fieldtype": "Long Text",
+      "label": "Solver Memory",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "juice_tab",
+      "fieldtype": "Tab Break",
+      "label": "Juice",
+      "depends_on": "eval:['Fermented Aloe Juice','Aloe Concentrate'].includes(doc.formula_type)"
+    },
+    {
+      "fieldname": "juice_method",
+      "fieldtype": "Select",
+      "label": "Juice Method",
+      "options": "\nPowder-added\nReconstituted"
+    },
+    {
+      "fieldname": "juice_input_lines",
+      "fieldtype": "Table",
+      "label": "Juice Input Lines",
+      "options": "BOM Formula Juice Input"
+    },
+    {
+      "fieldname": "juice_future_note",
+      "fieldtype": "Small Text",
+      "label": "Note",
+      "default": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4."
     }
   ]
 }
