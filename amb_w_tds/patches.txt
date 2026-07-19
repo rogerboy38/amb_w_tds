@@ -46,3 +46,6 @@ amb_w_tds.patches.v14_3_9.rescore_coa_qualitative_status
 # Selling-edge §1c (2026-07-06): pack plan child table on Quotation + Sales Order
 amb_w_tds.patches.v14_4_pack_plan.add_pack_plan_custom_fields
 amb_w_tds.patches.v14_4_pack_plan.add_fetch_pack_plan_button
+
+# F-S12-2 item 3 (2026-07-19): collapse Module Def casing split (canonical Amb W Tds)
+amb_w_tds.patches.v16_janitorial.normalize_module_casing
