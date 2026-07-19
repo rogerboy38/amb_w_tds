@@ -317,6 +317,10 @@ fixtures = [
     {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
+    # Sprint 1.2 note: the "BOM Formula" workspace ships as a standard module
+    # workspace file (amb_w_tds/workspace/bom_formula/), NOT a fixture —
+    # remove_orphan_entities() deletes public module-owned Workspaces that lack
+    # a module file on every migrate, so the fixture path cannot survive.
     {"doctype": "Workspace",              "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Number Card",            "filters": [["module", "=", "AMBWTDS"]]},

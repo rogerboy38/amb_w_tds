@@ -1,0 +1,47 @@
+{
+ "app": "amb_w_tds",
+ "creation": "2026-07-19 13:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "beaker",
+ "idx": 0,
+ "items": [
+  {
+   "doctype": "Workspace Sidebar Item",
+   "idx": 1,
+   "label": "Home",
+   "link_to": "Formulation",
+   "link_type": "Workspace",
+   "type": "Link"
+  },
+  {
+   "doctype": "Workspace Sidebar Item",
+   "idx": 2,
+   "label": "Formulation",
+   "type": "Section Break"
+  },
+  {
+   "doctype": "Workspace Sidebar Item",
+   "idx": 3,
+   "label": "BOM Formula",
+   "link_to": "BOM Formula",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "doctype": "Workspace Sidebar Item",
+   "idx": 4,
+   "label": "TDS Product Specification",
+   "link_to": "TDS Product Specification",
+   "link_type": "DocType",
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-07-19 14:45:00.000000",
+ "modified_by": "Administrator",
+ "module": "Amb W Tds",
+ "name": "Formulation",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Formulation"
+}
