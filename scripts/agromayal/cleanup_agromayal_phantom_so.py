@@ -25,8 +25,8 @@ import frappe
 
 SO_CUSTOMER_LIKE = "%AGROMAYAL%"
 TARGET_ITEM = "0307"
-ORPHAN_BOM = "BOM-0307-FG-FINAL"
-ORPHAN_QTY_LO, ORPHAN_QTY_HI = 5999.0, 6001.0
+ORPHAN_BOM_EXPECTED = "BOM-0307-FG-FINAL"   # reported, NEVER filtered on (A-2)
+ORPHAN_QTY_TOL = 1.0                        # vs the SO's own 0307 quantity
 CLEAN_ITEMS = ("0303", "A0303")
 
 
@@ -55,14 +55,43 @@ def resolve():
     draft_wos = frappe.get_all(
         "Work Order", filters={"sales_order": so, "docstatus": 0}, pluck="name"
     )
+    # A-2 (vm3): resolve the orphan by ROBUST traits and assert loudly.
+    # The old predicate filtered on qty 5999-6001 AND bom_no=BOM-0307-FG-FINAL
+    # and returned green when it matched nothing — so a prod orphan with a
+    # different qty or BOM would be silently left behind. Now the qty is taken
+    # from the SO itself (env-independent), the BOM is REPORTED not filtered,
+    # and a miss halts.
+    so_qty = frappe.db.sql(
+        """SELECT COALESCE(SUM(qty), 0) FROM `tabSales Order Item`
+           WHERE parent = %s AND item_code = %s""", (so, TARGET_ITEM))[0][0]
     orphan_wos = frappe.db.sql(
-        """SELECT name, docstatus FROM `tabWork Order`
-           WHERE production_item = %s AND qty BETWEEN %s AND %s
+        """SELECT name, docstatus, qty, bom_no, produced_qty, creation, owner
+           FROM `tabWork Order`
+           WHERE production_item = %s
              AND (sales_order IS NULL OR sales_order = '')
-             AND bom_no = %s AND produced_qty = 0""",
-        (TARGET_ITEM, ORPHAN_QTY_LO, ORPHAN_QTY_HI, ORPHAN_BOM),
-        as_dict=True,
+             AND produced_qty = 0
+             AND docstatus IN (0, 1)
+             AND ABS(qty - %s) <= %s""",
+        (TARGET_ITEM, so_qty, ORPHAN_QTY_TOL), as_dict=True,
     )
+    # Loud assertion. Pre-clean (SO still submitted) exactly one orphan must
+    # exist; post-clean (SO already cancelled) zero is the correct resting
+    # state. More than one is always ambiguous and never auto-processed.
+    if len(orphan_wos) > 1:
+        raise Halt(
+            f"expected at most 1 orphan Work Order, found {len(orphan_wos)}: "
+            f"{[(o['name'], o['qty'], o['bom_no'], o['docstatus']) for o in orphan_wos]} "
+            "— ambiguous, refusing to guess")
+    if so_ds == 1 and not orphan_wos:
+        near = frappe.db.sql(
+            """SELECT name, docstatus, qty, bom_no, produced_qty FROM `tabWork Order`
+               WHERE production_item = %s AND (sales_order IS NULL OR sales_order = '')
+                 AND docstatus IN (0, 1)""", TARGET_ITEM, as_dict=True)
+        raise Halt(
+            f"SO is still open but NO orphan Work Order matched qty {so_qty} "
+            f"(tolerance {ORPHAN_QTY_TOL}, produced_qty=0). Unlinked {TARGET_ITEM} WOs seen: "
+            f"{[(n['name'], n['qty'], n['bom_no'], n['produced_qty']) for n in near]} "
+            "— refusing to report success while an orphan may remain")
     projects = frappe.db.sql(
         """SELECT name, status FROM `tabProject`
            WHERE sales_order = %s OR name LIKE %s""",
@@ -81,34 +110,75 @@ def resolve():
             "orphan_wos": orphan_wos, "projects": projects, "sres": sres}
 
 
+# Frappe removes this chatter itself when a document is deleted, so a hit here
+# is reported but must not block the run (blocking on Comment would refuse
+# everywhere — 43 Comment rows already point at Work Orders on dev).
+SYSTEM_CHATTER = {
+    "Comment", "Version", "Activity Log", "Access Log", "View Log", "Route History",
+    "Document Follow", "Email Queue", "Email Queue Recipient", "Notification Log",
+    "Workflow Action", "Workflow Action Permitted Role", "ToDo", "Assignment Rule",
+    "Energy Point Log", "Document Share Key", "Notification Settings",
+}
+
+
+def _link_field_map():
+    """Every field that can point at a Work Order: static Link AND Dynamic Link.
+
+    A-1 (vm3): the first version only scanned fieldtype='Link'. The bench has
+    133 Dynamic Link fields, so a doc referencing a Work Order via
+    reference_doctype='Work Order' + reference_name was invisible to the guard
+    and would reproduce the same LinkExistsError the guard exists to prevent.
+    """
+    static, dynamic = [], []
+    for tbl, dt_col in (("DocField", "parent"), ("Custom Field", "dt")):
+        for r in frappe.db.sql(
+            f"""SELECT `{dt_col}` AS dt, fieldname, options, fieldtype FROM `tab{tbl}`
+                WHERE (fieldtype='Link' AND options='Work Order') OR fieldtype='Dynamic Link'""",
+            as_dict=True,
+        ):
+            if not r.dt or not frappe.db.exists("DocType", r.dt):
+                continue
+            if r.fieldtype == "Link":
+                static.append((r.dt, r.fieldname))
+            elif r.options:  # options names the sibling field holding the doctype
+                dynamic.append((r.dt, r.fieldname, r.options))
+    return sorted(set(static)), sorted(set(dynamic))
+
+
 def downstream_links(wo_names):
     """Docs outside the target set that point at these Work Orders.
 
     Found the hard way on dev: the orphan WO carried two draft Batch AMB records
     on `work_order_ref`, so the delete threw LinkExistsError mid-run. Prod will
-    have the same shape with different names, so the artifact has to see them.
+    have the same shape with different names, so the artifact has to see them —
+    through static Link fields AND Dynamic Link pairs.
     """
     if not wo_names:
         return []
+    ph = ",".join(["%s"] * len(wo_names))
+    static, dynamic = _link_field_map()
     out = []
-    fields = [("DocField", "parent", "fieldname"), ("Custom Field", "dt", "fieldname")]
-    seen = set()
-    for dt_tbl, dt_col, fn_col in fields:
-        for row in frappe.db.sql(
-            f"""SELECT `{dt_col}` AS dt, `{fn_col}` AS fn FROM `tab{dt_tbl}`
-                WHERE fieldtype='Link' AND options='Work Order'""", as_dict=True):
-            if (row.dt, row.fn) in seen or not frappe.db.exists("DocType", row.dt):
-                continue
-            seen.add((row.dt, row.fn))
-            try:
-                hits = frappe.db.sql(
-                    f"""SELECT name, docstatus, `{row.fn}` AS wo FROM `tab{row.dt}`
-                        WHERE `{row.fn}` IN ({','.join(['%s'] * len(wo_names))})""",
-                    tuple(wo_names), as_dict=True)
-            except Exception:
-                continue
-            for h in hits:
-                out.append({"doctype": row.dt, "field": row.fn, **h})
+    for dt, fn in static:
+        try:
+            hits = frappe.db.sql(
+                f"""SELECT name, docstatus, `{fn}` AS wo FROM `tab{dt}` WHERE `{fn}` IN ({ph})""",
+                tuple(wo_names), as_dict=True)
+        except Exception:
+            continue
+        for h in hits:
+            out.append({"doctype": dt, "field": fn, "kind": "Link",
+                        "chatter": dt in SYSTEM_CHATTER, **h})
+    for dt, fn, optf in dynamic:
+        try:
+            hits = frappe.db.sql(
+                f"""SELECT name, docstatus, `{fn}` AS wo FROM `tab{dt}`
+                    WHERE `{optf}`='Work Order' AND `{fn}` IN ({ph})""",
+                tuple(wo_names), as_dict=True)
+        except Exception:
+            continue
+        for h in hits:
+            out.append({"doctype": dt, "field": fn, "kind": f"Dynamic Link via {optf}",
+                        "chatter": dt in SYSTEM_CHATTER, **h})
     return out
 
 
@@ -184,10 +254,16 @@ def execute(t, apply_it, unlink_ok):
     # (0) downstream links must be dispositioned BEFORE any delete, never forced.
     wo_targets = list(t["draft_wos"]) + [w["name"] for w in t["orphan_wos"]]
     links = downstream_links(wo_targets)
+    chatter = [l for l in links if l["chatter"]]
+    links = [l for l in links if not l["chatter"]]
+    if chatter:
+        print(f"   {len(chatter)} system-chatter reference(s) (auto-removed by frappe, not blocking): "
+              f"{sorted({c['doctype'] for c in chatter})}")
     if links:
         print("   downstream links found (outside the target set):")
         for l in links:
-            print(f"     {l['doctype']}.{l['field']}: {l['name']} (docstatus {l['docstatus']}) -> {l['wo']}")
+            print(f"     [{l['kind']}] {l['doctype']}.{l['field']}: {l['name']} "
+                  f"(docstatus {l['docstatus']}) -> {l['wo']}")
         submitted = [l for l in links if l["docstatus"] == 1]
         if submitted:
             raise Halt(f"downstream SUBMITTED docs link the target WOs: {submitted}")
@@ -267,9 +343,9 @@ def postverify(t, before):
     left = frappe.db.sql(
         """SELECT name, docstatus FROM `tabWork Order`
            WHERE (sales_order=%s AND docstatus=0)
-              OR (production_item=%s AND qty BETWEEN %s AND %s
-                  AND (sales_order IS NULL OR sales_order='') AND bom_no=%s)""",
-        (so, TARGET_ITEM, ORPHAN_QTY_LO, ORPHAN_QTY_HI, ORPHAN_BOM), as_dict=True)
+              OR (production_item=%s AND (sales_order IS NULL OR sales_order='')
+                  AND produced_qty=0 AND docstatus IN (0,1))""",
+        (so, TARGET_ITEM), as_dict=True)
     print(f"    phantom WOs remaining: {left}")
     ok &= not left
     for p in t["projects"]:
