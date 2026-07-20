@@ -177,6 +177,46 @@ def main():
           "stray present but RESULT stayed PASS")
     frappe.db.sql("DELETE FROM `tabWork Order` WHERE name='WO-TEST-STRAY'")
 
+    # ============================================ STAGED RESERVATION MODE
+    print("\nSTAGE=reservation — WFA-blocked WOs defer, they do not block the fix")
+    mk_wo("WO-TEST-STAGE", 6000, "BOM-0307-FG-FINAL")
+    for i in range(4):
+        frappe.db.sql("""INSERT INTO `tabWorkflow Action` (name, creation, modified, owner,
+                         modified_by, docstatus, reference_doctype, reference_name, status,
+                         workflow_state) VALUES (%s, NOW(), NOW(),'Administrator',
+                         'Administrator',0,'Work Order','WO-TEST-STAGE','Open','Not Started')""",
+                      (f"WFA-TEST-STAGE-{i}",))
+    t5 = {"draft_wos": [], "orphan_wos": [{"name": "WO-TEST-STAGE", "docstatus": 0}],
+          "projects": [], "sres": [], "so": so, "so_docstatus": 2}
+    before_wo = frappe.db.sql("SELECT docstatus, modified FROM `tabWork Order` WHERE name='WO-TEST-STAGE'", as_dict=True)
+    before_wfa = frappe.db.sql("SELECT COUNT(*) c FROM `tabWorkflow Action` WHERE reference_name='WO-TEST-STAGE'", as_dict=True)[0]["c"]
+
+    # full mode still refuses (regression — the blocker fix must stand)
+    try:
+        cleanup.execute(dict(t5), apply_it=True, unlink_ok=True, stage="full")
+        check("full mode still HALTS on the WFA-blocked WO", False, "no Halt raised")
+    except cleanup.Halt:
+        check("full mode still HALTS on the WFA-blocked WO", True)
+
+    # staged mode defers instead of aborting
+    try:
+        cleanup.execute(t5, apply_it=True, unlink_ok=False, stage="reservation")
+        check("stage=reservation DEFERS instead of halting", True)
+    except cleanup.Halt as e:
+        check("stage=reservation DEFERS instead of halting", False, str(e)[:100])
+
+    after_wo = frappe.db.sql("SELECT docstatus, modified FROM `tabWork Order` WHERE name='WO-TEST-STAGE'", as_dict=True)
+    after_wfa = frappe.db.sql("SELECT COUNT(*) c FROM `tabWorkflow Action` WHERE reference_name='WO-TEST-STAGE'", as_dict=True)[0]["c"]
+    check("deferred WO untouched (still exists, docstatus+modified unchanged)",
+          bool(after_wo) and after_wo == before_wo)
+    check("its 4 Not-Started WFAs untouched", after_wfa == before_wfa == 4, f"{before_wfa} -> {after_wfa}")
+
+    res = cleanup.postverify(t5, cleanup.bin_state(), stage="reservation")
+    check("staged RESULT is PASS despite the deferred WO", res is True)
+
+    frappe.db.sql("DELETE FROM `tabWorkflow Action` WHERE reference_name='WO-TEST-STAGE'")
+    frappe.db.sql("DELETE FROM `tabWork Order` WHERE name='WO-TEST-STAGE'")
+
     print("\n" + "=" * 62)
     ok = all(p for _, p, _ in RESULTS)
     print(f"{sum(1 for _, p, _ in RESULTS if p)}/{len(RESULTS)} checks passed — "
