@@ -214,6 +214,33 @@ def main():
     res = cleanup.postverify(t5, cleanup.bin_state(), stage="reservation")
     check("staged RESULT is PASS despite the deferred WO", res is True)
 
+    # E — the INVERT: a staged PASS must not be able to mask a failed fix.
+    # Force each of the three staged obligations to fail, independently.
+    class FakeBin(list):
+        pass
+
+    # E1 reservation NOT released -> FAIL
+    held = [{"warehouse": "FG to Sell Warehouse - AMB-W", "actual_qty": 39.0,
+             "reserved_qty": 6000.0, "projected_qty": -5961.0}]
+    real_bin_state = cleanup.bin_state
+    cleanup.bin_state = lambda: held          # after-state still reserved
+    res_e1 = cleanup.postverify(t5, held, stage="reservation")
+    cleanup.bin_state = real_bin_state
+    check("E1 invert: unreleased reservation FAILS the staged RESULT", res_e1 is False)
+
+    # E2 project left Open -> FAIL
+    frappe.db.sql("UPDATE `tabProject` SET status='Open' WHERE name='PROJ-0023'")
+    t6 = dict(t5); t6["projects"] = [{"name": "PROJ-0023", "status": "Open"}]
+    res_e2 = cleanup.postverify(t6, cleanup.bin_state(), stage="reservation")
+    check("E2 invert: project left Open FAILS the staged RESULT", res_e2 is False)
+    frappe.db.sql("UPDATE `tabProject` SET status='Cancelled' WHERE name='PROJ-0023'")
+
+    # E3 SO not cancelled -> FAIL
+    frappe.db.sql("UPDATE `tabSales Order` SET docstatus=1 WHERE name=%s", so)
+    res_e3 = cleanup.postverify(t5, cleanup.bin_state(), stage="reservation")
+    check("E3 invert: uncancelled SO FAILS the staged RESULT", res_e3 is False)
+    frappe.db.sql("UPDATE `tabSales Order` SET docstatus=2 WHERE name=%s", so)
+
     frappe.db.sql("DELETE FROM `tabWorkflow Action` WHERE reference_name='WO-TEST-STAGE'")
     frappe.db.sql("DELETE FROM `tabWork Order` WHERE name='WO-TEST-STAGE'")
 
