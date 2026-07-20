@@ -19,6 +19,7 @@ Usage (from the bench root):
     ... --site <site> apply=1               # execute (TAKE A BACKUP FIRST)
 """
 
+import re
 import sys
 
 import frappe
@@ -110,24 +111,11 @@ def resolve():
             "orphan_wos": orphan_wos, "projects": projects, "sres": sres}
 
 
-# Frappe removes this chatter itself when a document is deleted, so a hit here
-# is reported but must not block the run (blocking on Comment would refuse
-# everywhere — 43 Comment rows already point at Work Orders on dev).
-SYSTEM_CHATTER = {
-    "Comment", "Version", "Activity Log", "Access Log", "View Log", "Route History",
-    "Document Follow", "Email Queue", "Email Queue Recipient", "Notification Log",
-    "Workflow Action", "Workflow Action Permitted Role", "ToDo", "Assignment Rule",
-    "Energy Point Log", "Document Share Key", "Notification Settings",
-}
-
-
 def _link_field_map():
     """Every field that can point at a Work Order: static Link AND Dynamic Link.
 
-    A-1 (vm3): the first version only scanned fieldtype='Link'. The bench has
-    133 Dynamic Link fields, so a doc referencing a Work Order via
-    reference_doctype='Work Order' + reference_name was invisible to the guard
-    and would reproduce the same LinkExistsError the guard exists to prevent.
+    Reporting only — no disposition decision is taken from this map (B-2).
+    Kept because naming the referencing documents makes a HALT actionable.
     """
     static, dynamic = [], []
     for tbl, dt_col in (("DocField", "parent"), ("Custom Field", "dt")):
@@ -140,18 +128,16 @@ def _link_field_map():
                 continue
             if r.fieldtype == "Link":
                 static.append((r.dt, r.fieldname))
-            elif r.options:  # options names the sibling field holding the doctype
+            elif r.options:
                 dynamic.append((r.dt, r.fieldname, r.options))
     return sorted(set(static)), sorted(set(dynamic))
 
 
 def downstream_links(wo_names):
-    """Docs outside the target set that point at these Work Orders.
+    """Informational enumeration of every reference to the target Work Orders.
 
-    Found the hard way on dev: the orphan WO carried two draft Batch AMB records
-    on `work_order_ref`, so the delete threw LinkExistsError mid-run. Prod will
-    have the same shape with different names, so the artifact has to see them —
-    through static Link fields AND Dynamic Link pairs.
+    Covers static Link AND Dynamic Link pairs (A-1). Purely descriptive: frappe's
+    own checks decide what blocks (B-2).
     """
     if not wo_names:
         return []
@@ -165,9 +151,7 @@ def downstream_links(wo_names):
                 tuple(wo_names), as_dict=True)
         except Exception:
             continue
-        for h in hits:
-            out.append({"doctype": dt, "field": fn, "kind": "Link",
-                        "chatter": dt in SYSTEM_CHATTER, **h})
+        out += [{"doctype": dt, "field": fn, "kind": "Link", **h} for h in hits]
     for dt, fn, optf in dynamic:
         try:
             hits = frappe.db.sql(
@@ -176,10 +160,54 @@ def downstream_links(wo_names):
                 tuple(wo_names), as_dict=True)
         except Exception:
             continue
-        for h in hits:
-            out.append({"doctype": dt, "field": fn, "kind": f"Dynamic Link via {optf}",
-                        "chatter": dt in SYSTEM_CHATTER, **h})
+        out += [{"doctype": dt, "field": fn, "kind": f"Dynamic Link via {optf}", **h} for h in hits]
     return out
+
+
+# The ONLY pre-unlink permitted: artifacts explicitly confirmed disposable by
+# Hugh (2026-07-20) — draft Batch AMB / Sample Request AMB carrying a stale
+# work_order_ref. Everything else is left to frappe's own link safety.
+UNLINK_WHITELIST = (("Batch AMB", "work_order_ref"), ("Sample Request AMB", "work_order_ref"))
+
+
+def whitelisted_test_refs(wo_names):
+    """Draft rows on the confirmed-disposable fields only."""
+    if not wo_names:
+        return []
+    ph = ",".join(["%s"] * len(wo_names))
+    out = []
+    for dt, fn in UNLINK_WHITELIST:
+        if not frappe.db.exists("DocType", dt) or not frappe.db.has_column(dt, fn):
+            continue
+        for h in frappe.db.sql(
+            f"""SELECT name, docstatus, `{fn}` AS wo FROM `tab{dt}`
+                WHERE `{fn}` IN ({ph})""", tuple(wo_names), as_dict=True):
+            out.append({"doctype": dt, "field": fn, **h})
+    return out
+
+
+def native_link_check(wo_name):
+    """Ask FRAPPE whether the doc is still linked — static AND dynamic.
+
+    B-2 (vm3): the previous version carried a hand-written "these doctypes are
+    non-blocking" allowlist. That is exactly the judgement a cleanup script
+    should not be making. frappe already implements both checks; defer to them
+    and HALT on whatever they report, Workflow Action included. A phantom WO
+    that an active workflow references is not a clean phantom.
+    """
+    from frappe.model.delete_doc import (
+        check_if_doc_is_dynamically_linked,
+        check_if_doc_is_linked,
+    )
+
+    doc = frappe.get_doc("Work Order", wo_name)
+    for fn in (check_if_doc_is_linked, check_if_doc_is_dynamically_linked):
+        try:
+            fn(doc, method="Delete")
+        except frappe.LinkExistsError as e:
+            msg = re.sub(r"<[^>]+>", "", str(e)).strip()
+            return f"{fn.__name__}: {msg}"
+    return None
 
 
 def bin_state():
@@ -251,34 +279,47 @@ def execute(t, apply_it, unlink_ok):
     so = t["so"]
     print("\n--- OPERATIONS ---")
 
-    # (0) downstream links must be dispositioned BEFORE any delete, never forced.
+    # (0) Disposition links BEFORE any delete, and never force.
     wo_targets = list(t["draft_wos"]) + [w["name"] for w in t["orphan_wos"]]
-    links = downstream_links(wo_targets)
-    chatter = [l for l in links if l["chatter"]]
-    links = [l for l in links if not l["chatter"]]
-    if chatter:
-        print(f"   {len(chatter)} system-chatter reference(s) (auto-removed by frappe, not blocking): "
-              f"{sorted({c['doctype'] for c in chatter})}")
-    if links:
-        print("   downstream links found (outside the target set):")
-        for l in links:
+
+    # 0a. informational only — no decision is taken from this enumeration.
+    info = downstream_links(wo_targets)
+    if info:
+        print("   INFO — references seen (frappe decides what blocks):")
+        for l in info:
             print(f"     [{l['kind']}] {l['doctype']}.{l['field']}: {l['name']} "
                   f"(docstatus {l['docstatus']}) -> {l['wo']}")
-        submitted = [l for l in links if l["docstatus"] == 1]
-        if submitted:
-            raise Halt(f"downstream SUBMITTED docs link the target WOs: {submitted}")
+
+    # 0b. pre-unlink ONLY the explicitly-confirmed test artifacts, drafts only.
+    tests = whitelisted_test_refs(wo_targets)
+    submitted = [x for x in tests if x["docstatus"] != 0]
+    if submitted:
+        raise Halt(f"whitelisted refs exist but are NOT draft: {submitted} — refusing")
+    if tests:
+        print("   confirmed-disposable test artifacts (whitelist):")
+        for x in tests:
+            print(f"     {x['doctype']}.{x['field']}: {x['name']} (docstatus {x['docstatus']}) -> {x['wo']}")
         if not unlink_ok:
             raise Halt(
-                "draft downstream docs link the target WOs. Confirm they are disposable "
-                "(on dev these were test Batch AMB records, per Hugh 2026-07-20) and re-run "
-                "with unlink_test_batches=1. Refusing to force-delete.")
-        for l in links:
-            print(f"0. unlink {l['doctype']} {l['name']}.{l['field']} (was {l['wo']})")
+                "draft test artifacts reference the target WOs. Re-run with "
+                "unlink_test_batches=1 to unlink them. Refusing to force-delete.")
+        for x in tests:
+            print(f"0. unlink {x['doctype']} {x['name']}.{x['field']} (was {x['wo']})")
             if apply_it:
-                frappe.db.set_value(l["doctype"], l["name"], l["field"], None)
+                frappe.db.set_value(x["doctype"], x["name"], x["field"], None)
         if apply_it:
             frappe.db.commit()
-    t["_unlinked"] = links
+    t["_unlinked"] = tests
+
+    # 0c. FRAPPE's own verdict is the gate. Anything it still reports as linked
+    #     — Workflow Action included — halts the run with the exact document.
+    if apply_it:
+        blocked = [(wo, native_link_check(wo)) for wo in wo_targets]
+        blocked = [(wo, m) for wo, m in blocked if m]
+        if blocked:
+            raise Halt(
+                "frappe still reports these Work Orders as linked; NOT force-deleting: "
+                + " | ".join(f"{wo} -> {m}" for wo, m in blocked))
 
     # (a) cancel the SO — this is the actual fix (releases the reservation)
     if t["so_docstatus"] == 2:
@@ -340,14 +381,23 @@ def postverify(t, before):
         ok &= a["actual_qty"] == b["actual_qty"]          # stock must NOT move
         if b["reserved_qty"]:
             ok &= a["reserved_qty"] == 0                  # reservation released
-    left = frappe.db.sql(
-        """SELECT name, docstatus FROM `tabWork Order`
-           WHERE (sales_order=%s AND docstatus=0)
-              OR (production_item=%s AND (sales_order IS NULL OR sales_order='')
-                  AND produced_qty=0 AND docstatus IN (0,1))""",
-        (so, TARGET_ITEM), as_dict=True)
-    print(f"    phantom WOs remaining: {left}")
+    # B-1 (vm3): RESULT reflects ONLY the resolved target set. A stray that was
+    # never in scope is reported as a janitorial candidate, never as a FAIL.
+    targets = list(t["draft_wos"]) + [w["name"] for w in t["orphan_wos"]]
+    left = [n for n in targets if frappe.db.exists("Work Order", n)
+            and frappe.db.get_value("Work Order", n, "docstatus") in (0, 1)]
+    print(f"    target-set WOs remaining: {left} (must be [])")
     ok &= not left
+    strays = frappe.db.sql(
+        """SELECT name, docstatus, qty, bom_no FROM `tabWork Order`
+           WHERE production_item=%s AND (sales_order IS NULL OR sales_order='')
+             AND produced_qty=0 AND docstatus IN (0,1)""", TARGET_ITEM, as_dict=True)
+    strays = [x for x in strays if x["name"] not in targets]
+    if strays:
+        print(f"    INFO — {len(strays)} out-of-scope unlinked {TARGET_ITEM} WO(s), "
+              f"janitorial candidates, NOT part of this RESULT:")
+        for x in strays:
+            print(f"      {x['name']} qty={x['qty']} bom={x['bom_no']} docstatus={x['docstatus']}")
     for p in t["projects"]:
         st = frappe.db.get_value("Project", p["name"], "status")
         print(f"    project {p['name']} status = {st}")

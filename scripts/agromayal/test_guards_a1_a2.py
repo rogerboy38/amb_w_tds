@@ -42,6 +42,12 @@ def mk_wo(name, qty, bom, sales_order=None, docstatus=0, produced=0):
 
 def main():
     spec.loader.exec_module(cleanup)
+    # HARD SAFETY: the harness exercises apply paths, and those call
+    # frappe.db.commit() internally. A real commit ends the transaction and the
+    # closing rollback then reverts nothing — which leaked four synthetic rows
+    # into dev the first time this ran. Neutralise commit for the whole harness
+    # so "rolled back" is structurally guaranteed, not merely intended.
+    frappe.db.commit = lambda *a, **k: None
     so_row = sql("""SELECT name, docstatus FROM `tabSales Order`
                     WHERE customer LIKE %s AND docstatus IN (1,2)
                       AND name IN (SELECT parent FROM `tabSales Order Item` WHERE item_code='0307')""",
@@ -71,38 +77,50 @@ def main():
     check("DYNAMIC Link (link_doctype='Work Order') detected", bool(dl),
           dl[0]["kind"] if dl else "NOT SEEN — advisory would still be open")
 
-    # (3) a submitted downstream doc must HALT outright
-    frappe.db.sql("UPDATE `tabDynamic Link` SET docstatus=1 WHERE name='DL-TEST-A1'")
+    # (3) whitelisted test artifact (draft Batch AMB) halts WITHOUT the flag
     t = {"draft_wos": [], "orphan_wos": [{"name": "WO-TEST-A1", "docstatus": 0}],
          "projects": [], "sres": [], "so": so, "so_docstatus": 2}
     try:
-        cleanup.execute(t, apply_it=False, unlink_ok=True)
-        check("submitted dynamic-link ref halts even with unlink flag", False, "no Halt raised")
-    except cleanup.Halt as e:
-        check("submitted dynamic-link ref halts even with unlink flag", "SUBMITTED" in str(e).upper())
-
-    # (4) draft refs halt WITHOUT the flag, proceed WITH it
-    frappe.db.sql("UPDATE `tabDynamic Link` SET docstatus=0 WHERE name='DL-TEST-A1'")
-    try:
         cleanup.execute(t, apply_it=False, unlink_ok=False)
-        check("draft dynamic-link ref halts without unlink flag", False, "no Halt raised")
+        check("whitelisted draft artifact halts without unlink flag", False, "no Halt raised")
     except cleanup.Halt:
-        check("draft dynamic-link ref halts without unlink flag", True)
+        check("whitelisted draft artifact halts without unlink flag", True)
+
+    # (4) ... and is unlinked with the flag
     try:
         cleanup.execute(t, apply_it=False, unlink_ok=True)
-        check("draft dynamic-link ref proceeds with unlink flag", True)
+        check("whitelisted draft artifact proceeds with unlink flag", True)
     except cleanup.Halt as e:
-        check("draft dynamic-link ref proceeds with unlink flag", False, str(e))
+        check("whitelisted draft artifact proceeds with unlink flag", False, str(e))
 
-    # (5) system chatter must be reported, never blocking
-    frappe.db.sql("""INSERT INTO `tabComment` (name, creation, modified, owner, modified_by,
-                     docstatus, comment_type, reference_doctype, reference_name)
-                     VALUES ('CMT-TEST-A1', NOW(), NOW(),'Administrator','Administrator',0,
-                     'Comment','Work Order','WO-TEST-A1')""")
-    links = cleanup.downstream_links(["WO-TEST-A1"])
-    cm = [l for l in links if l["doctype"] == "Comment"]
-    check("Comment seen but classified as non-blocking chatter",
-          bool(cm) and all(c["chatter"] for c in cm))
+    # (5) a SUBMITTED whitelisted artifact must never be unlinked
+    frappe.db.sql("UPDATE `tabBatch AMB` SET docstatus=1 WHERE name='BATCH-TEST-A1'")
+    try:
+        cleanup.execute(t, apply_it=False, unlink_ok=True)
+        check("submitted whitelisted artifact refused even with flag", False, "no Halt raised")
+    except cleanup.Halt as e:
+        check("submitted whitelisted artifact refused even with flag", "NOT draft" in str(e))
+    frappe.db.sql("UPDATE `tabBatch AMB` SET docstatus=0 WHERE name='BATCH-TEST-A1'")
+
+    # (6) B-2 THE BLOCKER: a Workflow Action row makes the WO un-deletable.
+    #     No hand-rolled allowlist may wave this through — frappe's own dynamic
+    #     link check must be what stops us.
+    frappe.db.sql("""INSERT INTO `tabWorkflow Action` (name, creation, modified, owner,
+                     modified_by, docstatus, reference_doctype, reference_name, status)
+                     VALUES ('WFA-TEST-A1', NOW(), NOW(),'Administrator','Administrator',0,
+                     'Work Order','WO-TEST-A1','Open')""")
+    verdict = cleanup.native_link_check("WO-TEST-A1")
+    check("frappe itself reports the Workflow Action link", bool(verdict), (verdict or "")[:88])
+    try:
+        cleanup.execute(t, apply_it=True, unlink_ok=True)
+        check("WO with a Workflow Action row HALTS (never force-deleted)", False,
+              "no Halt raised — script would have deleted it")
+    except cleanup.Halt as e:
+        halted_named = "WO-TEST-A1" in str(e) and "Workflow Action" in str(e)
+        check("WO with a Workflow Action row HALTS (never force-deleted)", halted_named, str(e)[:96])
+    still = frappe.db.sql("SELECT name FROM `tabWork Order` WHERE name='WO-TEST-A1'")
+    check("the blocked WO still exists (nothing was force-deleted)", bool(still))
+    frappe.db.sql("DELETE FROM `tabWorkflow Action` WHERE name='WFA-TEST-A1'")
 
     # =================================================================== A-2
     print("\nA-2 — orphan resolver must fail LOUD, never green while an orphan remains")
@@ -148,6 +166,17 @@ def main():
     except cleanup.Halt as e:
         check("cleaned env (SO cancelled, 0 orphans) stays green", False, str(e)[:110])
 
+    # =================================================================== B-1
+    print("\nB-1 — RESULT must cover only the resolved target set; strays are INFO")
+    mk_wo("WO-TEST-STRAY", 4321, "BOM-0307-UNRELATED")   # never in scope
+    t4 = {"draft_wos": [], "orphan_wos": [], "projects": [], "sres": [],
+          "so": so, "so_docstatus": 2}
+    before = cleanup.bin_state()
+    res = cleanup.postverify(t4, before)
+    check("out-of-scope stray does NOT fail the RESULT", res is True,
+          "stray present but RESULT stayed PASS")
+    frappe.db.sql("DELETE FROM `tabWork Order` WHERE name='WO-TEST-STRAY'")
+
     print("\n" + "=" * 62)
     ok = all(p for _, p, _ in RESULTS)
     print(f"{sum(1 for _, p, _ in RESULTS if p)}/{len(RESULTS)} checks passed — "
@@ -163,6 +192,15 @@ if __name__ == "__main__":
         ok = main()
     finally:
         frappe.db.rollback()          # nothing synthetic is ever committed
+        leftovers = frappe.db.sql(
+            """SELECT 'Work Order' dt, name FROM `tabWork Order` WHERE name LIKE 'WO-TEST%'
+               UNION ALL SELECT 'Batch AMB', name FROM `tabBatch AMB` WHERE name LIKE '%TEST-A1%'
+               UNION ALL SELECT 'Dynamic Link', name FROM `tabDynamic Link` WHERE name LIKE 'DL-TEST%'
+               UNION ALL SELECT 'Workflow Action', name FROM `tabWorkflow Action` WHERE name LIKE 'WFA-TEST%'
+               UNION ALL SELECT 'Comment', name FROM `tabComment` WHERE name LIKE 'CMT-TEST%'""")
+        print(f"residue check after rollback: {leftovers or 'CLEAN — no synthetic row persisted'}")
+        if leftovers:
+            print("!! HARNESS LEAKED — clean these rows manually")
         print("rolled back — no synthetic row persisted")
         frappe.destroy()
     sys.exit(0 if ok else 1)
