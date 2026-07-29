@@ -5,6 +5,11 @@
 # V13.5-P1: Compliant workspace preservation (replaces fix_workspace_orphan.py)
 amb_w_tds.patches.v13_5.restore_amb_workspaces
 
+# SR-1 (2026-07-29): create the Verifier Read Only role BEFORE model sync, so the
+# Sample Request AMB permissions block in the doctype JSON has a role to bind to.
+# No-op where the role already exists (wsl); its real work is vpt and prod.
+amb_w_tds.patches.v17_sr1.create_verifier_read_only_role
+
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 
@@ -52,3 +57,9 @@ amb_w_tds.patches.v16_janitorial.normalize_module_casing
 
 # SR-1 (2026-07-28): AMB CONTROL NUMBER on the Sample Request samples child table.
 amb_w_tds.patches.v17_sr1.add_sr_control_number_field
+
+# SR-1 (2026-07-29): remove the Sample Request AMB Custom DocPerm overlay once the
+# doctype JSON carries the 4-role model. FAIL-CLOSED — aborts and leaves the overlay
+# in place if the standard set does not carry all four roles. Custom DocPerm only;
+# the naming_series Property Setter is deliberately untouched.
+amb_w_tds.patches.v17_sr1.remove_sample_request_amb_docperm_overlay
