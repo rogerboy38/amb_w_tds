@@ -9,6 +9,16 @@ class SampleRequestAMB(Document):
     def before_save(self):
         self.set_customer_name()
         self.update_totals()
+        self._assign_control_numbers()
+
+    def _assign_control_numbers(self):
+        """SR-1 (b): one labelled sample unit = one AMB CONTROL NUMBER, a global
+        consecutive serial (FoxPro proto_mues.CONTROL precedent). Assign per samples
+        row, fill-forward only -- never reassign an existing number."""
+        from frappe.model.naming import make_autoname
+        for row in (self.samples or []):
+            if not row.get("control_number"):
+                row.control_number = make_autoname("AMB-.#####")
     
     def set_customer_name(self):
         if self.customer and not self.customer_name:

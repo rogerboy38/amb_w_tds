@@ -49,3 +49,6 @@ amb_w_tds.patches.v14_4_pack_plan.add_fetch_pack_plan_button
 
 # F-S12-2 item 3 (2026-07-19): collapse Module Def casing split (canonical Amb W Tds)
 amb_w_tds.patches.v16_janitorial.normalize_module_casing
+
+# SR-1 (2026-07-28): AMB CONTROL NUMBER on the Sample Request samples child table.
+amb_w_tds.patches.v17_sr1.add_sr_control_number_field
