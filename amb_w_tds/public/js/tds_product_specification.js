@@ -254,6 +254,12 @@ const HTML_3_BOTH    = _toShelfHtml(TEXT_3_BOTH);
 const KNOWN_NORMS    = [TEXT_1_NO_PRES, TEXT_2_PRES, TEXT_3_BOTH].map(_shelfNorm);
 
 async function resolveShelfLife(frm) {
+  // T62 stage 1: substrate gate. Powder specs never take liquid text.
+  // Hands off until the powder norm is ratified (Alicia — two candidate texts
+  // pending, prod 5ceb09b6… vs sandbox 24f7f695…).
+  const sub = (frm.doc.item_substrate || '').toUpperCase();
+  if (sub === 'PWD' || sub === 'PWDF') return null;
+
   // L357 auto-detect Option C: preserve user manual edits. A cleared Quill field
   // normalizes to '' (e.g. '<p><br></p>' -> ''), so it is NOT treated as custom.
   const curNorm = _shelfNorm(frm.doc.shelf_life);
