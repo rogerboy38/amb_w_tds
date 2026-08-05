@@ -1,0 +1,4209 @@
+{
+ "meta": {
+  "source": "Nuevos Codigos 2023.xlsx (Alicia / Calidad)",
+  "extracted_by": "claude-cowork-next",
+  "extracted": "2026-08-05",
+  "codes": 524,
+  "families": "03-13",
+  "rule": "familia 07 = LIQUIDO; toda otra familia 03-13 = POLVO; familia 02 deprecada; familias 14+ por Item Group del item, NUNCA por prefijo",
+  "counterexample": "1607 es Products Liquid dentro de una familia 16 de polvo — producto especial legitimo",
+  "counts": {
+   "POLVO": 508,
+   "LIQUIDO": 16
+  }
+ },
+ "codes": {
+  "0301": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Permeado",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0302": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Retenido",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0303": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Normal",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0304": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Raspadura",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0305": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Permeado NMT 3%PS",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0306": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0307": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0308": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0309": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0310": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0311": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0312": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0313": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0314": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0315": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0316": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0317": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0318": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0319": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0320": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0321": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0322": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0323": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0324": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0325": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0326": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0327": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0328": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0329": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0330": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0331": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0332": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0333": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0334": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0335": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0336": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0337": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0338": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0339": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0340": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0341": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0342": {
+   "familia": "03",
+   "familia_nombre": "Innovaloe Polvos As<1ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 03XX Innovaloe As 1ppm"
+  },
+  "0401": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0402": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0403": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0404": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0405": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0406": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0407": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0408": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0409": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0410": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0411": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0412": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0413": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0414": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0415": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0416": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0417": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0418": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0419": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0420": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0421": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0422": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0423": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0424": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0425": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0426": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0427": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0428": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0429": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0430": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0431": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0432": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0433": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0434": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0435": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0436": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0437": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0438": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0439": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0440": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0441": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0442": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0443": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0444": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0445": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0446": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0447": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0448": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0449": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0450": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0451": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0452": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0453": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0454": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0455": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0456": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0457": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0458": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0459": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0460": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0461": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0462": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0463": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0464": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0465": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0466": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0467": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0468": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0469": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0470": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0471": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0472": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0473": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0474": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0475": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0476": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0477": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0478": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0479": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0480": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0481": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0482": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0483": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0484": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0485": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0486": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0487": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0488": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0489": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0490": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0491": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0492": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0493": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0494": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0495": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0496": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0497": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0498": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0499": {
+   "familia": "04",
+   "familia_nombre": "Acetypol",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 04XX Acetypol"
+  },
+  "0501": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0502": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0503": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0504": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0505": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0506": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0507": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0508": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0509": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0510": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0511": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0512": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0513": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0514": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0515": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0516": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0517": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0518": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0519": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0520": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0521": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0522": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0523": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0524": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0525": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0526": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0527": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0528": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0529": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0530": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0531": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0532": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0533": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0534": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0535": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0536": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0537": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0538": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0539": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0540": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0541": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0542": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0543": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0544": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0545": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0546": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0547": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0548": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0549": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0550": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0551": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0552": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0553": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0554": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0555": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0556": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0557": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0558": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0559": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0560": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0561": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0562": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0563": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0564": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0565": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0566": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0567": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0568": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0569": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0570": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0571": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0572": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0573": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0574": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0575": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0576": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0577": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0578": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0579": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0580": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0581": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0582": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0583": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0584": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0585": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0586": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0587": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0588": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0589": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0590": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0591": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0592": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0593": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0594": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0595": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0596": {
+   "familia": "05",
+   "familia_nombre": "Highpol",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "8-10% PS=X · WLM=X",
+   "hoja": "Codigos 05XX Highpol"
+  },
+  "0601": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 5/95",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0602": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 10/90",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0603": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 15/85",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0604": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 20/80",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0605": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 30/70",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0606": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 40/60",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0607": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 50/50",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0608": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 60/40",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0609": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 70/30",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0610": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 80/20",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0611": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 90/10",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0612": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe 70% + Goma BB 30%",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0613": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe 80% + Goma BB 20%",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0614": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe 85% + Goma BB 15%",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0615": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe 90% + Goma BB 10%",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0616": {
+   "familia": "06",
+   "familia_nombre": "MDX / Goma BB (formulas)",
+   "fase": "POLVO",
+   "nombre": "Aloe QX 25/75",
+   "flags": "",
+   "hoja": "Codigos 06XX MDX o Goma BB"
+  },
+  "0701": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Juice 1:1",
+   "flags": "",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0702": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 10:1",
+   "flags": "",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0703": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 20:1",
+   "flags": "",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0704": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 30:1",
+   "flags": "",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0705": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Juice 1:1",
+   "flags": "Organico=X · Cosmos=X",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0706": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 10:1",
+   "flags": "Organico=X · Cosmos=X",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0707": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 20:1",
+   "flags": "Organico=X · Cosmos=X",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0708": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 30:1",
+   "flags": "Organico=X · Cosmos=X",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0709": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Juice 1:1",
+   "flags": "CONSERVADORES=COSMETICOS",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0710": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 10:1",
+   "flags": "CONSERVADORES=COSMETICOS",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0711": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 20:1",
+   "flags": "CONSERVADORES=COSMETICOS",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0712": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 30:1",
+   "flags": "CONSERVADORES=COSMETICOS",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0713": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Juice 1:1",
+   "flags": "CONSERVADORES=FOOD",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0714": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 10:1",
+   "flags": "CONSERVADORES=FOOD",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0715": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 20:1",
+   "flags": "CONSERVADORES=FOOD",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0716": {
+   "familia": "07",
+   "familia_nombre": "INNOVALOE LIQUIDOS",
+   "fase": "LIQUIDO",
+   "nombre": "Innovaloe Aloe Vera Gel Concentrate 30:1",
+   "flags": "CONSERVADORES=FOOD",
+   "hoja": "Codigos 07XX Liquidos."
+  },
+  "0801": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Freeze Dried Powder 200:1",
+   "flags": "ORGANICO=X · HAD=X",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0802": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Freeze Dried Powder 200:1",
+   "flags": "AS=AS <2PPM",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0803": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "Organic Inner Leaf Aloe Vera Powder",
+   "flags": "ORGANICO=X · HAD=X · AS=AS <3PPM · PS=16.5% Ace",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0804": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Freeze Dried Powder 200:1",
+   "flags": "AS=AS <3PPM · PS=8-10% PS",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0805": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0806": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0807": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0808": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0809": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0810": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0811": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0812": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0813": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0814": {
+   "familia": "08",
+   "familia_nombre": "Especiales (Freeze Dried)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 08XX Especiales"
+  },
+  "0901": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0902": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0903": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0904": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0905": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0906": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0907": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0908": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0909": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0910": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0911": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0912": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0913": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0914": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0915": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0916": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0917": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0918": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0919": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0920": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0921": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0922": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0923": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0924": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0925": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0926": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0927": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0928": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0929": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0930": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0931": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0932": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/18",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0933": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0934": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0935": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0936": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0937": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0938": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0939": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0940": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0941": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0942": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0943": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0944": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0945": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0946": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0947": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0948": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0949": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0950": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0951": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0952": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0953": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0954": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0955": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0956": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0957": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0958": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0959": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0960": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0961": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0962": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0963": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0964": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 18/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0965": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0966": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0967": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0968": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0969": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0970": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0971": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0972": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0973": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0974": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0975": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0976": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0977": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0978": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0979": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0980": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Acetypol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0981": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0982": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0983": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0984": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0985": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0986": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0987": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0988": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0989": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0990": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0991": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0992": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0993": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0994": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0995": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0996": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0997": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0998": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "0999": {
+   "familia": "09",
+   "familia_nombre": "Acetypol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 09XX Acetypol Certifica"
+  },
+  "1001": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1002": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1003": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1004": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1005": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1006": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1007": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1008": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1009": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1010": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1011": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1012": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1013": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1014": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1015": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1016": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 10/15",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1017": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1018": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1019": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1020": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1021": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1022": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1023": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1024": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1025": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1026": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1027": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1028": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1029": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1030": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1031": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1032": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 15/20",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1033": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1034": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1035": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1036": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1037": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1038": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1039": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1040": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1041": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1042": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1043": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1044": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1045": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1046": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1047": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1048": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 20/25",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1049": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1050": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1051": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1052": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1053": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1054": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1055": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1056": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1057": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1058": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1059": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1060": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1061": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1062": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1063": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1064": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 25/30",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1065": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1066": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1067": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1068": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1069": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1070": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1071": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1072": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1073": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1074": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1075": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1076": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1077": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1078": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1079": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1080": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 30/35",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1081": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1082": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1083": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1084": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1085": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1086": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1087": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1088": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1089": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1090": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1091": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1092": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1093": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1094": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1095": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · AS <1PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1096": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "Aloe Highpol 35/40",
+   "flags": "COSMOS=X · ORGANICO=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1097": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1098": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1099": {
+   "familia": "10",
+   "familia_nombre": "Highpol Certificado",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 10XX Highpol Certificad"
+  },
+  "1101": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <2PPM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1102": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <2PPM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1103": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <2PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1104": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <2PPM=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1105": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1106": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <2PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1107": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <2PPM=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1108": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1109": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <2PPM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1110": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <2PPM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1111": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <2PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1112": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <2PPM=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1113": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1114": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <2PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1115": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <2PPM=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1116": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1117": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1118": {
+   "familia": "11",
+   "familia_nombre": "Innovaloe Polvos As<2ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · HAD=X · AS <2PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 11XX Innovaloe As 2ppm"
+  },
+  "1201": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "Aloe Vera Extract 35~40%",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1202": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "Aloe Vera Extract 6%",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1203": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "Aloe Vera Extract 16%",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1204": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1205": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1206": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1207": {
+   "familia": "12",
+   "familia_nombre": "Aloina (Extract)",
+   "fase": "POLVO",
+   "nombre": "Aloe Vera Extract (3.6 a 4.8% Metodo KFDA)",
+   "flags": "",
+   "hoja": "Codigos 12XX Aloina"
+  },
+  "1301": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <3PPM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1302": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <3PPM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1303": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <3PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1304": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <3PPM=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1305": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "HAD=X · AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1306": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <3PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1307": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <3PPM=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1308": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1309": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <3PPM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1310": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <3PPM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1311": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <3PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1312": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <3PPM=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1313": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · HAD=X · AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1314": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <3PPM=X · 8-10% PS=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1315": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <3PPM=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1316": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1317": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  },
+  "1318": {
+   "familia": "13",
+   "familia_nombre": "Innovaloe Polvos As<3ppm",
+   "fase": "POLVO",
+   "nombre": "Innovaloe Aloe Vera Gel Spray Dried Powder 200:1",
+   "flags": "COSMOS=X · ORGANICO=X · IASC=X · HAD=X · AS <3PPM=X · 8-10% PS=X · WLM=X",
+   "hoja": "Codigos 13XX Innovaloe As 3ppm"
+  }
+ }
+}
