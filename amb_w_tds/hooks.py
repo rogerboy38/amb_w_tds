@@ -318,8 +318,20 @@ fixtures = [
     {"doctype": "Preservative System",    "filters": [["is_active", "=", 1]]},
     # V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
     {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification"]]]},
-    {"doctype": "Workflow State",         "filters": [["name", "like", "AMB%"]]},
-    {"doctype": "Workflow Action Master", "filters": [["name", "like", "AMB%"]]},
+    # 2026-08-06: the "AMB%" filter matched NOTHING — 0 of 11 Workflow Action Masters and
+    # 0 of 49 Workflow States. Both fixtures had therefore always exported as `[]`, while the
+    # Workflow fixture above shipped transitions that REFERENCE those rows. The workflow only
+    # imported successfully on tiers where someone had hand-created the actions; on a fresh
+    # tier the transitions fail link validation. Scope the filters to the names our workflows
+    # actually use, so `bench export-fixtures` captures them instead of erasing them.
+    {"doctype": "Workflow State",         "filters": [["name", "in", [
+        "Draft", "Validated", "Pending Supervisor", "Approved",
+        "Certificate Shared", "Auto Approved", "Saved",
+    ]]]},
+    {"doctype": "Workflow Action Master", "filters": [["name", "in", [
+        "Review", "Submit for Supervisor Approval", "Approve",
+        "Submit for Sales Approval", "Approve (Quality)", "Reopen",
+    ]]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
     # Sprint 1.2 note: the "Formulation" workspace ships as a standard module
