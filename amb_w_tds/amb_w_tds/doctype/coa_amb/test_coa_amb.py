@@ -120,3 +120,32 @@ class TestCOANumericRaiser(unittest.TestCase):
         self.coa.validate_numeric_result(self.row("NEGATIVE", min_value=10, max_value=0), 1)
         self.coa.validate_numeric_result(self.row("<10 CFU/G", min_value=0, max_value=100), 1)
 
+
+
+class TestMinMaxConsistencyGate(unittest.TestCase):
+    """validate_test_parameters' min/max consistency gate — the THIRD site of the
+    same zero-bound defect, and the one with the widest blast radius: unlike
+    validate_numeric_result it is NOT behind the `row.numeric` guard, so it fires
+    on every row that has both bounds set.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.coa = frappe.new_doc("COA AMB")
+
+    def rows(self, min_value, max_value):
+        self.coa.set("coa_quality_test_parameter", [])
+        self.coa.append("coa_quality_test_parameter", dict(
+            parameter_name="TEST", specification="NLT 10%", result="12",
+            numeric=0, min_value=min_value, max_value=max_value))
+        self.coa.docstatus = 0
+        return self.coa
+
+    def test_nlt_row_max_zero_is_not_inconsistent(self):
+        # min=10, max=0 (no upper bound) is a well-formed NLT row, not an inversion.
+        # Previously threw "Minimum value (10) cannot be greater than maximum value (0)".
+        self.rows(10, 0).validate_test_parameters()
+
+    def test_genuine_inversion_still_raises(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.rows(25, 20).validate_test_parameters()

@@ -159,10 +159,16 @@ class COAAMB(Document):
             if row.formula_based_criteria and row.acceptance_formula:
                 self.validate_formula_criteria(row, idx)
     
-            # Validate min/max consistency
-            if row.get('min_value') is not None and row.get('max_value') is not None:
-                if flt(row.min_value) > flt(row.max_value):
-                    frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
+            # Validate min/max consistency. A 0 on either side means 'no bound'
+            # (NLT stores max=0, NMT stores min=0), so there is no inconsistency to
+            # check unless BOTH are real bounds. Without this, every NLT row —
+            # min=10, max=0 — throws "Minimum value (10) cannot be greater than
+            # maximum value (0)". Note this gate is NOT behind the `row.numeric`
+            # guard that protects validate_numeric_result, so it fires on every row.
+            _mn = flt(row.min_value) if row.get('min_value') not in (None, '') else 0
+            _mx = flt(row.max_value) if row.get('max_value') not in (None, '') else 0
+            if _mn and _mx and _mn > _mx:
+                frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
     
             # Validate mandatory fields for submitted documents
             if self.docstatus == 1 and not row.result:
