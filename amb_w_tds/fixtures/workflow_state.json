@@ -1,1 +1,37 @@
-[]
+[
+ {
+  "doctype": "Workflow State",
+  "name": "Draft",
+  "workflow_state_name": "Draft"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Validated",
+  "workflow_state_name": "Validated"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Pending Supervisor",
+  "workflow_state_name": "Pending Supervisor"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Approved",
+  "workflow_state_name": "Approved"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Certificate Shared",
+  "workflow_state_name": "Certificate Shared"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Auto Approved",
+  "workflow_state_name": "Auto Approved"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Saved",
+  "workflow_state_name": "Saved"
+ }
+]

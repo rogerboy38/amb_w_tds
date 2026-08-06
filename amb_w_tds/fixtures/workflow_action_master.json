@@ -1,1 +1,32 @@
-[]
+[
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Review",
+  "workflow_action_name": "Review"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Submit for Supervisor Approval",
+  "workflow_action_name": "Submit for Supervisor Approval"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Approve",
+  "workflow_action_name": "Approve"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Submit for Sales Approval",
+  "workflow_action_name": "Submit for Sales Approval"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Approve (Quality)",
+  "workflow_action_name": "Approve (Quality)"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Reopen",
+  "workflow_action_name": "Reopen"
+ }
+]
