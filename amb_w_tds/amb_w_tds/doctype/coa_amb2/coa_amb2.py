@@ -160,11 +160,23 @@ class COAAMB2(Document):
         """Validate numeric results against min/max values"""
         try:
             result = flt(row.result)
-            
-            if row.get('min_value') is not None and result < flt(row.min_value):
+
+            # A 0 on either side means 'no bound': NLT specs store max=0 and NMT
+            # specs store min=0. Only the non-zero side(s) are enforced. Same rule as
+            # COA AMB's check_parameter_compliance (task #21, 300ef9a).
+            # NOTE: this doctype still coerces row.result with flt(), so a qualitative
+            # result ('NEGATIVE', '<10 CFU/G', even '23.5%') arrives here as 0.0 and is
+            # then compared numerically. That is a SEPARATE defect from the zero-bound
+            # rule and is not addressed by this commit — see the follow-up commit.
+            lo = flt(row.min_value) if row.get('min_value') not in (None, '') else None
+            hi = flt(row.max_value) if row.get('max_value') not in (None, '') else None
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+
+            if lo_b is not None and result < lo_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-            
-            if row.get('max_value') is not None and result > flt(row.max_value):
+
+            if hi_b is not None and result > hi_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
                 
         except ValueError:

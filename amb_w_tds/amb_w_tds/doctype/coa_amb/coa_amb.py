@@ -176,11 +176,22 @@ class COAAMB(Document):
             result = _num(row.result)
             if result is None:
                 return
-            
-            if row.get('min_value') is not None and result < flt(row.min_value):
+
+            # A 0 on either side means 'no bound': NLT specs store max=0 and NMT
+            # specs store min=0. Only the non-zero side(s) are enforced. This is the
+            # same rule check_parameter_compliance applies (task #21, 300ef9a) — the
+            # scorer was fixed there and this raiser was not, so a stored max_value
+            # of 0.0 rejects every positive result on save:
+            #   "Result 10.0 is above maximum value 0.0"
+            lo = _num(row.min_value) if row.get('min_value') not in (None, '') else None
+            hi = _num(row.max_value) if row.get('max_value') not in (None, '') else None
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+
+            if lo_b is not None and result < lo_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-            
-            if row.get('max_value') is not None and result > flt(row.max_value):
+
+            if hi_b is not None and result > hi_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
                 
         except ValueError:
