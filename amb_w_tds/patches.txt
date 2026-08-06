@@ -63,3 +63,4 @@ amb_w_tds.patches.v17_sr1.add_sr_control_number_field
 # in place if the standard set does not carry all four roles. Custom DocPerm only;
 # the naming_series Property Setter is deliberately untouched.
 amb_w_tds.patches.v17_sr1.remove_sample_request_amb_docperm_overlay
+amb_w_tds.patches.v16_delete_fetch_if_empty_property_setters

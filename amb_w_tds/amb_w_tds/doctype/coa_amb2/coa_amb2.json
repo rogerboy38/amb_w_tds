@@ -262,6 +262,7 @@
   },
   {
    "fetch_from": "linked_tds.cas_number",
+   "fetch_if_empty": 1,
    "fieldname": "cas_number",
    "fieldtype": "Data",
    "label": "CAS Number",
@@ -269,6 +270,7 @@
   },
   {
    "fetch_from": "linked_tds.inci_name",
+   "fetch_if_empty": 1,
    "fieldname": "inci_name",
    "fieldtype": "Data",
    "label": "INCI Name",
@@ -280,6 +282,7 @@
   },
   {
    "fetch_from": "linked_tds.shelf_life",
+   "fetch_if_empty": 1,
    "fieldname": "shelf_life",
    "fieldtype": "Text Editor",
    "label": "SHELF LIFE:",
@@ -287,14 +290,16 @@
   },
   {
    "fetch_from": "linked_tds.packaging",
+   "fetch_if_empty": 1,
    "fieldname": "packaging",
    "fieldtype": "Text Editor",
    "label": "PACKAGING",
    "reqd": 0
   },
   {
-   "default": "In case the whole product is not used, it is recommended to store it in a refrigerated warehouse at a temperature of 0° to 2° C or frozen at -18°C until the next use. We strongly suggest not to take back to the original container unused portions of the product that have been exposed to the environment.\nOnce the packaging of the product is opened, shelf life is not guaranteed and it is the costumer's responsibility to avoid spoilage.\nAseptic techniques are mandatory for sampling and industrial use",
+   "default": "In case the whole product is not used, it is recommended to store it in a refrigerated warehouse at a temperature of 0\u00b0 to 2\u00b0 C or frozen at -18\u00b0C until the next use. We strongly suggest not to take back to the original container unused portions of the product that have been exposed to the environment.\nOnce the packaging of the product is opened, shelf life is not guaranteed and it is the costumer's responsibility to avoid spoilage.\nAseptic techniques are mandatory for sampling and industrial use",
    "fetch_from": "linked_tds.storage_and_handling_conditions",
+   "fetch_if_empty": 1,
    "fieldname": "storage_and_handling_conditions",
    "fieldtype": "Text Editor",
    "label": "STORAGE AND HANDLING CONDITIONS",
@@ -304,6 +309,7 @@
    "default": "",
    "description": "Rewrite if needed",
    "fetch_from": "linked_tds.formula_based_criteria",
+   "fetch_if_empty": 1,
    "fieldname": "formula_based_criteria",
    "fieldtype": "Text",
    "label": "Formula Based Criteria",
@@ -398,7 +404,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2025-12-17 11:34:33.056039",
+ "modified": "2026-08-06 19:45:12.000000",
  "module": "Amb W Tds",
  "name": "COA AMB2",
  "naming_rule": "By \"Naming Series\" field",

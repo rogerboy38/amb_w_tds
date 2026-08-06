@@ -33,5 +33,25 @@
   "doctype": "Workflow State",
   "name": "Saved",
   "workflow_state_name": "Saved"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Pending Sales",
+  "workflow_state_name": "Pending Sales"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Pending Quality",
+  "workflow_state_name": "Pending Quality"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Pending Director",
+  "workflow_state_name": "Pending Director"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Frozen",
+  "workflow_state_name": "Frozen"
  }
 ]

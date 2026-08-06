@@ -327,10 +327,21 @@ fixtures = [
     {"doctype": "Workflow State",         "filters": [["name", "in", [
         "Draft", "Validated", "Pending Supervisor", "Approved",
         "Certificate Shared", "Auto Approved", "Saved",
+        # 2026-08-06 pre-flight: the TDS Approval Workflow ships in the SAME
+        # workflow.json and references four states this filter never covered, so
+        # they were still being exported as nothing. Same [] defect, second workflow.
+        "Pending Sales", "Pending Quality", "Pending Director", "Frozen",
     ]]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "in", [
         "Review", "Submit for Supervisor Approval", "Approve",
         "Submit for Sales Approval", "Approve (Quality)", "Reopen",
+        # D2 (2026-08-06): the Reject action. The workflow transitions reference it,
+        # so if it is missing from this filter `bench export-fixtures` writes it out of
+        # existence and the transitions fail link validation on a fresh tier — the
+        # exact failure this filter block was rewritten to stop.
+        "Reject",
+        # same pre-flight: the TDS workflow's two actions, previously uncovered.
+        "Approve (Sales)", "Freeze",
     ]]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
