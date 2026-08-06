@@ -159,10 +159,16 @@ class COAAMB(Document):
             if row.formula_based_criteria and row.acceptance_formula:
                 self.validate_formula_criteria(row, idx)
     
-            # Validate min/max consistency
-            if row.get('min_value') is not None and row.get('max_value') is not None:
-                if flt(row.min_value) > flt(row.max_value):
-                    frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
+            # Validate min/max consistency. A 0 on either side means 'no bound'
+            # (NLT stores max=0, NMT stores min=0), so there is no inconsistency to
+            # check unless BOTH are real bounds. Without this, every NLT row —
+            # min=10, max=0 — throws "Minimum value (10) cannot be greater than
+            # maximum value (0)". Note this gate is NOT behind the `row.numeric`
+            # guard that protects validate_numeric_result, so it fires on every row.
+            _mn = flt(row.min_value) if row.get('min_value') not in (None, '') else 0
+            _mx = flt(row.max_value) if row.get('max_value') not in (None, '') else 0
+            if _mn and _mx and _mn > _mx:
+                frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
     
             # Validate mandatory fields for submitted documents
             if self.docstatus == 1 and not row.result:
@@ -176,11 +182,22 @@ class COAAMB(Document):
             result = _num(row.result)
             if result is None:
                 return
-            
-            if row.get('min_value') is not None and result < flt(row.min_value):
+
+            # A 0 on either side means 'no bound': NLT specs store max=0 and NMT
+            # specs store min=0. Only the non-zero side(s) are enforced. This is the
+            # same rule check_parameter_compliance applies (task #21, 300ef9a) — the
+            # scorer was fixed there and this raiser was not, so a stored max_value
+            # of 0.0 rejects every positive result on save:
+            #   "Result 10.0 is above maximum value 0.0"
+            lo = _num(row.min_value) if row.get('min_value') not in (None, '') else None
+            hi = _num(row.max_value) if row.get('max_value') not in (None, '') else None
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+
+            if lo_b is not None and result < lo_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-            
-            if row.get('max_value') is not None and result > flt(row.max_value):
+
+            if hi_b is not None and result > hi_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
                 
         except ValueError:

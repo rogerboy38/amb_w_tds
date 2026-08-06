@@ -8,6 +8,26 @@ from frappe.utils import nowdate, flt, get_url, cstr
 import json
 import re
 
+_LEAD_NUM = re.compile(r'[-+]?\d*\.?\d+')
+
+
+def _num(v):
+    """Extract the leading number from a result/spec value.
+    '23.5%'->23.5, '<10 CFU/G'->10, 'NMT 100 CFU/G'->100, 'Pass'/'NEGATIVE'->None.
+
+    Mirrors COA AMB's _num. COA AMB2 previously used flt() here, which never
+    returns None and never raises: flt('NEGATIVE'), flt('<10 CFU/G') and even
+    flt('23.5%') all collapse to 0.0, and that 0.0 was then compared against the
+    numeric bounds — so a qualitative result silently scored as zero.
+    """
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    m = _LEAD_NUM.search(str(v).replace(',', ''))
+    return float(m.group()) if m else None
+
+
 class COAAMB2(Document):
     """
     COA AMB2 - Certificate of Analysis with enhanced validation and workflow
@@ -145,10 +165,16 @@ class COAAMB2(Document):
             if row.formula_based_criteria and row.acceptance_formula:
                 self.validate_formula_criteria(row, idx)
     
-            # Validate min/max consistency
-            if row.get('min_value') is not None and row.get('max_value') is not None:
-                if flt(row.min_value) > flt(row.max_value):
-                    frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
+            # Validate min/max consistency. A 0 on either side means 'no bound'
+            # (NLT stores max=0, NMT stores min=0), so there is no inconsistency to
+            # check unless BOTH are real bounds. Without this, every NLT row —
+            # min=10, max=0 — throws "Minimum value (10) cannot be greater than
+            # maximum value (0)". Note this gate is NOT behind the `row.numeric`
+            # guard that protects validate_numeric_result, so it fires on every row.
+            _mn = flt(row.min_value) if row.get('min_value') not in (None, '') else 0
+            _mx = flt(row.max_value) if row.get('max_value') not in (None, '') else 0
+            if _mn and _mx and _mn > _mx:
+                frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
     
             # Validate mandatory fields for submitted documents
             if self.docstatus == 1 and not row.result:
@@ -159,12 +185,22 @@ class COAAMB2(Document):
     def validate_numeric_result(self, row, idx):
         """Validate numeric results against min/max values"""
         try:
-            result = flt(row.result)
-            
-            if row.get('min_value') is not None and result < flt(row.min_value):
+            result = _num(row.result)
+            if result is None:
+                return
+
+            # A 0 on either side means 'no bound': NLT specs store max=0 and NMT
+            # specs store min=0. Only the non-zero side(s) are enforced. Same rule as
+            # COA AMB's check_parameter_compliance (task #21, 300ef9a).
+            lo = _num(row.min_value) if row.get('min_value') not in (None, '') else None
+            hi = _num(row.max_value) if row.get('max_value') not in (None, '') else None
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+
+            if lo_b is not None and result < lo_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
-            
-            if row.get('max_value') is not None and result > flt(row.max_value):
+
+            if hi_b is not None and result > hi_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is above maximum value {row.max_value} for parameter '{row.parameter_name}'"))
                 
         except ValueError:

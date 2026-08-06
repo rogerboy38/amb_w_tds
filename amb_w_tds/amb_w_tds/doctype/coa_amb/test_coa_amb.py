@@ -75,3 +75,77 @@ class TestCOACompliance(unittest.TestCase):
         # qualitative result + stray numeric bound must not hard-fail (COA-26-0002 E.coli)
         self.assertTrue(self.chk("E.coli", "NEGATIVE", min_value=0, max_value=1))
 
+
+class TestCOANumericRaiser(unittest.TestCase):
+    """validate_numeric_result — the RAISER, which blocks the save with frappe.throw.
+
+    Distinct from check_parameter_compliance (the SCORER), which only returns a
+    boolean and which task #21 / 300ef9a already fixed. Before this class, no test
+    in the suite called the raiser at all, which is why the scorer could be fixed
+    and the raiser left carrying the same defect for six weeks.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.coa = frappe.new_doc("COA AMB")
+
+    def row(self, result, min_value=None, max_value=None):
+        return frappe._dict(result=result, min_value=min_value,
+                            max_value=max_value, parameter_name="TEST")
+
+    # --- the reported failure: NLT stores max=0 and the raiser read it as a real bound ---
+    def test_nlt_zero_max_does_not_raise(self):
+        # 'NLT 10%' -> min=10, max=0 (no upper bound). Result 12 is compliant.
+        # On the current pin this raises "Result 12.0 is above maximum value 0.0".
+        self.coa.validate_numeric_result(self.row("12", min_value=10, max_value=0), 1)
+
+    def test_reported_case_result_10_max_0(self):
+        # the message seen in prod, verbatim: "Result 10.0 is above maximum value 0.0"
+        self.coa.validate_numeric_result(self.row("10", min_value=0, max_value=0), 1)
+
+    # --- and the bounds that ARE set must still be enforced; the fix must not disarm it ---
+    def test_real_min_still_raises(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.coa.validate_numeric_result(self.row("8", min_value=10, max_value=0), 1)
+
+    def test_real_max_still_raises(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.coa.validate_numeric_result(self.row("40", min_value=0, max_value=35), 1)
+
+    def test_range_within_does_not_raise(self):
+        self.coa.validate_numeric_result(self.row("19.76", min_value=0, max_value=35), 1)
+
+    # --- qualitative results must never reach the numeric comparison ---
+    def test_qualitative_does_not_raise(self):
+        self.coa.validate_numeric_result(self.row("NEGATIVE", min_value=10, max_value=0), 1)
+        self.coa.validate_numeric_result(self.row("<10 CFU/G", min_value=0, max_value=100), 1)
+
+
+
+class TestMinMaxConsistencyGate(unittest.TestCase):
+    """validate_test_parameters' min/max consistency gate — the THIRD site of the
+    same zero-bound defect, and the one with the widest blast radius: unlike
+    validate_numeric_result it is NOT behind the `row.numeric` guard, so it fires
+    on every row that has both bounds set.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.coa = frappe.new_doc("COA AMB")
+
+    def rows(self, min_value, max_value):
+        self.coa.set("coa_quality_test_parameter", [])
+        self.coa.append("coa_quality_test_parameter", dict(
+            parameter_name="TEST", specification="NLT 10%", result="12",
+            numeric=0, min_value=min_value, max_value=max_value))
+        self.coa.docstatus = 0
+        return self.coa
+
+    def test_nlt_row_max_zero_is_not_inconsistent(self):
+        # min=10, max=0 (no upper bound) is a well-formed NLT row, not an inversion.
+        # Previously threw "Minimum value (10) cannot be greater than maximum value (0)".
+        self.rows(10, 0).validate_test_parameters()
+
+    def test_genuine_inversion_still_raises(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.rows(25, 20).validate_test_parameters()
