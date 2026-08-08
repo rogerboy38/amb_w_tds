@@ -74,17 +74,32 @@ class TestSuiteIntegrity(unittest.TestCase):
                     f"{module_path}: {len(result.failures)} failure(s), "
                     f"{len(result.errors)} error(s)",
                 )
+                # `testsRun` is incremented in startTest, which fires for SKIPPED
+                # tests too, and wasSuccessful() is True when every outcome is a
+                # skip. So testsRun alone still certifies a suite that executed
+                # nothing — collected=50, testsRun=50, skipped=50 passes both
+                # assertions above. Reproduced before this line was written.
+                # Subtracting skips is what makes "executed" mean executed.
+                # This matters concretely: @skipUnless is the standard repair for
+                # the app-level discovery blocker, so the skip path is the one
+                # this suite is most likely to meet.
+                executed = result.testsRun - len(result.skipped)
+                self.assertEqual(
+                    len(result.skipped), 0,
+                    f"{module_path}: {len(result.skipped)} of {result.testsRun} "
+                    f"tests were SKIPPED. A protected suite must actually run; "
+                    f"skips are the collected-but-not-executed failure mode.",
+                )
                 self.assertGreaterEqual(
-                    result.testsRun, floor,
-                    f"{module_path}: only {result.testsRun} tests EXECUTED, "
+                    executed, floor,
+                    f"{module_path}: only {executed} tests EXECUTED "
+                    f"(testsRun {result.testsRun}, skipped {len(result.skipped)}), "
                     f"floor is {floor} (collected {collected})",
                 )
-                # Collected-but-not-run is the exact failure mode that let the
-                # old guard pass while executing one test.
                 self.assertEqual(
                     result.testsRun, collected,
                     f"{module_path}: collected {collected} but executed "
-                    f"{result.testsRun} — some cases were skipped or not run",
+                    f"{result.testsRun} — some cases were not run at all",
                 )
 
 
