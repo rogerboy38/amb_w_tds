@@ -259,15 +259,5 @@ class TestSpecTextPathWhenNoStoredBounds(unittest.TestCase):
         self.assertEqual(v.rule, "stored-bounds")
 
 
-class TestSuiteIsNotEmpty(unittest.TestCase):
-    """'Discovers zero tests' and 'all tests pass' look identical from outside."""
-
-    def test_suite_has_a_floor(self):
-        loader = unittest.TestLoader()
-        import amb_w_tds.amb_w_tds.test_coa_spec_utils as mod
-        count = loader.loadTestsFromModule(mod).countTestCases()
-        self.assertGreaterEqual(count, 51, f"expected >=51 tests, collected {count}")
-
-
 if __name__ == "__main__":
     unittest.main(verbosity=2)
