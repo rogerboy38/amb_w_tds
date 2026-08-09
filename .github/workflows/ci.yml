@@ -77,7 +77,16 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install MariaDB Client
-        run: sudo apt-get install mariadb-client-10.6
+        # `mariadb-client-10.6` is a 22.04-era package name and does not exist on
+        # ubuntu-24.04, which `ubuntu-latest` now resolves to. Every one of the
+        # last 50 CI runs died on this line, before bench init / install-app /
+        # run-tests — so this pipeline has never reached the test runner.
+        # Use the distro's own client (10.11 on 24.04); it talks to the
+        # mariadb:10.6 service container without trouble. `apt-get update` first
+        # because the runner's package index is not guaranteed to be current.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mariadb-client
 
       - name: Setup
         run: |
