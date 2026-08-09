@@ -47,7 +47,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          # 3.10 cannot PARSE current frappe. Measured on PR #8, step 11:
+          #   uv pip install -e apps/frappe
+          #     type ConfType = _dict[str, Any]
+          #     SyntaxError: invalid syntax     (under Python 3.10.20)
+          # `type X = ...` is PEP 695, which is Python 3.12+. The failure is at
+          # AST-parse during the flit build, so it is total — nothing
+          # frappe-specific gets a chance to run.
+          # 3.12 is the MEASURED floor, chosen deliberately rather than maximally:
+          # a higher pin would introduce an untested variable and confound this
+          # signal. If something later needs 3.13, that is its own rung.
+          python-version: '3.12'
 
       - name: Setup Node
         uses: actions/setup-node@v3
