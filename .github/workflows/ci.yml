@@ -55,7 +55,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          # frappe v16.17.5's package.json declares engines: { "node": ">=24" }.
+          # Read from the pinned version's own manifest, not inferred from the
+          # yarn failure — and it agrees with the fleet independently: this bench
+          # runs node v24.15.0.
+          node-version: 24
           check-latest: true
 
       - name: Cache pip
