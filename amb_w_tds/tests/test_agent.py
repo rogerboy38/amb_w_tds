@@ -6,9 +6,33 @@ Tests for Agent API
 import frappe
 import unittest
 import json
-from amb_w_tds.api.agent import test, process, debug, generate_serial_numbers
+
+# `api/agent.py` was rewritten (5be228c) and no longer exports test / process /
+# debug / generate_serial_numbers. The bare import below used to raise at
+# collection time, and because frappe's discover_all_tests wraps ANY discovery
+# exception in TestRunnerError (frappe/testing/discovery.py:66-68), that single
+# raise aborted collection for the ENTIRE app — 94 cases collected, then exit 1,
+# nothing run. Every other test in amb_w_tds was unreachable because of this line.
+#
+# The tests below are kept rather than deleted: they are the surviving description
+# of the old agent API, and deleting them would erase that record. They are also
+# not resurrected — the four functions are genuinely gone, so the class is skipped
+# with a reason that says why.
+try:
+    from amb_w_tds.api.agent import test, process, debug, generate_serial_numbers
+
+    _AGENT_API_AVAILABLE = True
+    _AGENT_API_REASON = ""
+except ImportError as exc:
+    test = process = debug = generate_serial_numbers = None
+    _AGENT_API_AVAILABLE = False
+    _AGENT_API_REASON = (
+        f"amb_w_tds.api.agent no longer exports test/process/debug/"
+        f"generate_serial_numbers (module rewritten in 5be228c): {exc}"
+    )
 
 
+@unittest.skipUnless(_AGENT_API_AVAILABLE, _AGENT_API_REASON or "agent API unavailable")
 class TestAgentAPI(unittest.TestCase):
     """Test cases for Agent API"""
     
