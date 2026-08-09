@@ -4,8 +4,13 @@ name: CI
 on:
   push:
     branches:
-      - develop
+      # main now points at the prod line (fast-forwarded to 25a5de9b, the commit
+      # production builds from). CI watched `develop`, which prod never builds —
+      # a config pointing at a line nobody ships.
+      - main
   pull_request:
+    branches:
+      - main
 
 concurrency:
   group: develop-amb_w_tds-${{ github.event.number }}
