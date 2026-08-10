@@ -5,7 +5,14 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import nowdate, flt, get_url, cstr
-from amb_w_tds.amb_w_tds.coa_spec_utils import effective_bounds
+from amb_w_tds.amb_w_tds.coa_spec_utils import (
+    FAIL as SPEC_FAIL,
+    PASS as SPEC_PASS,
+    UNEVALUATED as SPEC_UNEVALUATED,
+    Verdict,
+    effective_bounds,
+    evaluate as evaluate_spec,
+)
 import json
 import re
 
@@ -259,6 +266,7 @@ class COAAMB(Document):
         
         total_tests = 0
         tested_tests = 0
+        undecided_tests = []
 
         for param in self.coa_quality_test_parameter:
             if self._is_header_row(param):
@@ -273,15 +281,21 @@ class COAAMB(Document):
                 
             tested_tests += 1
             
-            # Check parameter compliance
-            is_compliant = self.check_parameter_compliance(param)
-            
-            if is_compliant:
+            # Check parameter compliance via the one shared evaluator.
+            verdict = self.evaluate_parameter(param)
+            if verdict.rule.startswith('legacy:'):
+                undecided_tests.append(param.parameter_name)
+
+            if verdict.is_pass:
                 passed_tests.append(param.parameter_name)
                 param.status = 'Pass'
             else:
                 failed_tests.append(param.parameter_name)
                 param.status = 'Fail'
+
+        # Rows the shared evaluator declined to decide, kept for reporting only.
+        # Transient (leading underscore, not in the meta) so nothing persists.
+        self._undecided_parameters = undecided_tests
 
         # Calculate percentages
         if total_tests > 0:
@@ -304,8 +318,53 @@ class COAAMB(Document):
             self.compliance_status = 'Pending'
 
     def check_parameter_compliance(self, param):
-        """Pass/Fail for one parameter. Robust to unit-suffixed results
-        ('23.5%', '<10 CFU/G') and qualitative specs ('NEGATIVE', descriptive)."""
+        """Pass/Fail for one parameter, as a bool.
+
+        Kept as the public entry point — the v14_3_9 rescore patch and
+        test_coa_amb both call it by name — but the decision now comes from
+        `evaluate_parameter`, i.e. from the one shared evaluator.
+        """
+        return self.evaluate_parameter(param).is_pass
+
+    def evaluate_parameter(self, param):
+        """One parameter's `Verdict`, from `coa_spec_utils.evaluate()`.
+
+        The shared evaluator decides every row that carries a machine-checkable
+        criterion, which is what closes the fail-open holes: an explicit reject
+        token, and a 'NOT NEGATIVE' result against a 'NEGATIVE' spec, both used
+        to score Pass here.
+
+        Where it answers `Unevaluated` — no bounds, no numeric spec, and no
+        exact textual match — the row keeps the verdict the shipped scorer has
+        always given it. That is deliberate, not an oversight: descriptive rows
+        (Appearance, Odor, Colour) land on that branch on nearly every COA, and
+        turning them into failures is an operational decision for the lab, not
+        a side effect of wiring a button. The verdict still names the branch it
+        fell through, so the count is reportable without moving anyone's result.
+        """
+        if not param.result:
+            return Verdict(SPEC_FAIL, "no-result", "No result recorded")
+
+        verdict = evaluate_spec(
+            param.get('specification'),
+            param.get('result'),
+            param.get('min_value'),
+            param.get('max_value'),
+        )
+        if verdict.status != SPEC_UNEVALUATED:
+            return verdict
+
+        legacy_pass = self._legacy_parameter_compliance(param)
+        return Verdict(
+            SPEC_PASS if legacy_pass else SPEC_FAIL,
+            f"legacy:{verdict.rule}",
+            verdict.detail,
+        )
+
+    def _legacy_parameter_compliance(self, param):
+        """The shipped scorer, retained verbatim as the fallback for rows the
+        shared evaluator declines to decide. Do not extend it — a new rule
+        belongs in `coa_spec_utils`, where it is tested and shared."""
         if not param.result:
             return False
         try:
@@ -838,9 +897,24 @@ def validate_all_tests(coa_name):
         coa.save()
         
         summary = coa.get_test_summary()
-        
+
+        message = (f"Validated {summary['total']} tests: {summary['passed']} passed, "
+                   f"{summary['failed']} failed, {summary['pending']} pending")
+
+        # Surface the rows no machine-checkable rule could decide. These keep the
+        # scorer's historical verdict; naming them is what makes a silent branch
+        # countable, so the lab can rule on it with a number rather than a guess.
+        undecided = getattr(coa, '_undecided_parameters', []) or []
+        if undecided:
+            summary['undecided'] = len(undecided)
+            summary['undecided_parameters'] = undecided
+            message += (f"<br>{len(undecided)} row(s) carry no machine-checkable "
+                        f"criterion and kept their existing verdict: "
+                        f"{frappe.utils.escape_html(', '.join(undecided[:10]))}"
+                        f"{'…' if len(undecided) > 10 else ''}")
+
         return {
-            'message': f"Validated {summary['total']} tests: {summary['passed']} passed, {summary['failed']} failed, {summary['pending']} pending",
+            'message': message,
             'summary': summary
         }
         
