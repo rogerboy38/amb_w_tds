@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import nowdate, flt, get_url, cstr
+from amb_w_tds.amb_w_tds.coa_spec_utils import effective_bounds
 import json
 import re
 
@@ -165,9 +166,8 @@ class COAAMB(Document):
             # min=10, max=0 — throws "Minimum value (10) cannot be greater than
             # maximum value (0)". Note this gate is NOT behind the `row.numeric`
             # guard that protects validate_numeric_result, so it fires on every row.
-            _mn = flt(row.min_value) if row.get('min_value') not in (None, '') else 0
-            _mx = flt(row.max_value) if row.get('max_value') not in (None, '') else 0
-            if _mn and _mx and _mn > _mx:
+            _mn, _mx = effective_bounds(row.get('min_value'), row.get('max_value'))
+            if _mn is not None and _mx is not None and _mn > _mx:
                 frappe.throw(_(f"Row {idx}: Minimum value ({row.min_value}) cannot be greater than maximum value ({row.max_value})"))
     
             # Validate mandatory fields for submitted documents
@@ -189,10 +189,7 @@ class COAAMB(Document):
             # scorer was fixed there and this raiser was not, so a stored max_value
             # of 0.0 rejects every positive result on save:
             #   "Result 10.0 is above maximum value 0.0"
-            lo = _num(row.min_value) if row.get('min_value') not in (None, '') else None
-            hi = _num(row.max_value) if row.get('max_value') not in (None, '') else None
-            lo_b = lo if (lo is not None and lo != 0) else None
-            hi_b = hi if (hi is not None and hi != 0) else None
+            lo_b, hi_b = effective_bounds(row.get('min_value'), row.get('max_value'))
 
             if lo_b is not None and result < lo_b:
                 frappe.throw(_(f"Row {idx}: Result {result} is below minimum value {row.min_value} for parameter '{row.parameter_name}'"))
@@ -318,10 +315,7 @@ class COAAMB(Document):
             # 'no bound' (NLT specs store max=0, NMT specs store min=0), so only
             # the non-zero side(s) are enforced. Fixes NLT (e.g. 'NLT 10%', min=10,
             # max=0) wrongly failing a passing result like 12.
-            lo = _num(param.min_value) if param.get('min_value') not in (None, '') else None
-            hi = _num(param.max_value) if param.get('max_value') not in (None, '') else None
-            lo_b = lo if (lo is not None and lo != 0) else None
-            hi_b = hi if (hi is not None and hi != 0) else None
+            lo_b, hi_b = effective_bounds(param.get('min_value'), param.get('max_value'))
             if (lo_b is not None or hi_b is not None) and rnum is not None:
                 if lo_b is not None and rnum < lo_b:
                     return False
