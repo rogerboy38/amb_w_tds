@@ -393,7 +393,7 @@ class COAAMB(Document):
 
             return True
         except Exception as e:
-            frappe.log_error(f"Error checking compliance for parameter {param.parameter_name}: {str(e)}", "COA Compliance Check")
+            frappe.log_error(title="COA Compliance Check", message=f"Error checking compliance for parameter {param.parameter_name}: {str(e)}")
             return False
 
     def parse_specification_compliance(self, spec, result, rnum=None):
@@ -465,7 +465,7 @@ class COAAMB(Document):
             else:
                 param.status = 'Fail'
         except Exception as e:
-            frappe.log_error(f"Formula evaluation error for {param.parameter_name}: {str(e)}", "COA Formula Eval")
+            frappe.log_error(title="COA Formula Eval", message=f"Formula evaluation error for {param.parameter_name}: {str(e)}")
 
     # ==================== SYNC & SETUP METHODS ====================
 
@@ -551,7 +551,7 @@ class COAAMB(Document):
             frappe.msgprint(_("Successfully synced specifications from TDS: {0}").format(self.linked_tds), alert=True)
             
         except Exception as e:
-            frappe.log_error(f"Error syncing from TDS {self.linked_tds}: {str(e)}", "COA TDS Sync")
+            frappe.log_error(title="COA TDS Sync", message=f"Error syncing from TDS {self.linked_tds}: {str(e)}")
             frappe.throw(_("Error syncing from TDS: {0}").format(str(e)))
 
     def set_coa_number(self):
@@ -588,7 +588,7 @@ class COAAMB(Document):
             #               coa_name=self.name)
             
         except Exception as e:
-            frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA AMB - PDF Generation")
+            frappe.log_error(title="COA AMB - PDF Generation", message=f"Error generating COA PDF: {str(e)}")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
 
     def update_batch_status(self, status=None):
@@ -620,7 +620,7 @@ class COAAMB(Document):
             batch.save(ignore_permissions=True)
             
         except Exception as e:
-            frappe.log_error(f"Error updating batch {self.batch_reference}: {str(e)}", "COA AMB - Batch Update")
+            frappe.log_error(title="COA AMB - Batch Update", message=f"Error updating batch {self.batch_reference}: {str(e)}")
 
     def notify_quality_team(self):
         """Send notifications to relevant teams"""
@@ -681,7 +681,7 @@ class COAAMB(Document):
                 self.add_comment('Email', f'Notification sent to {len(recipients)} recipient(s)')
                 
             except Exception as e:
-                frappe.log_error(f"Error sending COA notification: {str(e)}", "COA AMB - Notification")
+                frappe.log_error(title="COA AMB - Notification", message=f"Error sending COA notification: {str(e)}")
 
     def create_quality_audit(self):
         """Create audit record for submitted COA"""
@@ -703,7 +703,7 @@ class COAAMB(Document):
             self.add_comment('Info', f'Quality audit record created: {audit_doc.name}')
             
         except Exception as e:
-            frappe.log_error(f"Error creating quality audit: {str(e)}", "COA AMB - Audit Creation")
+            frappe.log_error(title="COA AMB - Audit Creation", message=f"Error creating quality audit: {str(e)}")
 
     def update_product_quality_status(self):
         """Update product master with latest quality status"""
@@ -719,7 +719,7 @@ class COAAMB(Document):
             })
             
         except Exception as e:
-            frappe.log_error(f"Error updating product quality status: {str(e)}", "COA AMB - Product Update")
+            frappe.log_error(title="COA AMB - Product Update", message=f"Error updating product quality status: {str(e)}")
 
     def revert_product_quality_status(self):
         """Revert product quality status on COA cancellation"""
@@ -735,7 +735,7 @@ class COAAMB(Document):
             })
             
         except Exception as e:
-            frappe.log_error(f"Error reverting product quality status: {str(e)}", "COA AMB - Product Revert")
+            frappe.log_error(title="COA AMB - Product Revert", message=f"Error reverting product quality status: {str(e)}")
 
     def calculate_child_table_status(self):
         """Calculate and update status for each test parameter"""
@@ -791,7 +791,7 @@ def create_coa_from_tds(tds_name, batch_name=None):
         return coa.name
         
     except Exception as e:
-        frappe.log_error(f"Error creating COA from TDS: {str(e)}", "COA Creation")
+        frappe.log_error(title="COA Creation", message=f"Error creating COA from TDS: {str(e)}")
         frappe.throw(_("Error creating COA: {0}").format(str(e)))
 
 @frappe.whitelist()
@@ -824,7 +824,7 @@ def get_batch_quality_data(batch_name):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error getting batch quality data: {str(e)}", "Batch Quality Data")
+        frappe.log_error(title="Batch Quality Data", message=f"Error getting batch quality data: {str(e)}")
         return {"error": str(e)}
 
 def _attach_file_url_to(file_url, doctype, name):
@@ -865,7 +865,7 @@ def generate_coa_pdf(coa_name, attach_to_doctype=None, attach_to_name=None):
         _attach_file_url_to(file_url, attach_to_doctype, attach_to_name)
         return file_url
     except Exception as e:
-        frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA PDF Generation")
+        frappe.log_error(title="COA PDF Generation", message=f"Error generating COA PDF: {str(e)}")
         frappe.throw(_("Error generating PDF: {0}").format(str(e)))
 
 @frappe.whitelist()
@@ -885,7 +885,7 @@ def fetch_parameter_details(parameter_name):
         return {}
         
     except Exception as e:
-        frappe.log_error(f"Error fetching parameter details: {str(e)}", "Parameter Details")
+        frappe.log_error(title="Parameter Details", message=f"Error fetching parameter details: {str(e)}")
         return {}
 
 @frappe.whitelist()
@@ -919,7 +919,7 @@ def validate_all_tests(coa_name):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error validating tests: {str(e)}", "Test Validation")
+        frappe.log_error(title="Test Validation", message=f"Error validating tests: {str(e)}")
         return {"error": str(e)}
 
 @frappe.whitelist()
@@ -967,7 +967,7 @@ def duplicate_coa(source_coa, new_batch=None):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error duplicating COA: {str(e)}", "COA Duplication")
+        frappe.log_error(title="COA Duplication", message=f"Error duplicating COA: {str(e)}")
         frappe.throw(_("Error duplicating COA: {0}").format(str(e)))
 
 
