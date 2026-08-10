@@ -33,6 +33,7 @@ import unittest
 #: Raise a floor when you add tests; never lower one to make a run green.
 PROTECTED_SUITES = {
     "amb_w_tds.amb_w_tds.test_coa_spec_utils": 50,
+    "amb_w_tds.amb_w_tds.test_log_error_title": 18,
 }
 
 #: TIER 2 — module path -> minimum number of test METHODS that must EXIST.
