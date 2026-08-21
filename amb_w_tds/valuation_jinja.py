@@ -23,7 +23,15 @@ from __future__ import annotations
 
 import frappe
 
-from amb_w_tds.valuation import lines_for, money, total_for, unit_for
+from amb_w_tds.valuation import (
+    currency_name_es,
+    lines_for,
+    money,
+    total_for,
+    unit_for,
+)
+
+__all__ = ["amb_valuation", "amb_customs_value", "amb_row_uom", "currency_name_es"]
 
 # V-2: the derived per-bag unit prints at 4 decimals; money prints at 2.
 UNIT_PRECISION = 4
@@ -91,6 +99,8 @@ def amb_valuation(doc) -> dict:
     total = total_for(value)
     return {
         "currency": currency,
+        # the Spanish half of the bilingual caption names the currency in words
+        "currency_es": currency_name_es(currency),
         "lines": lines,
         "unit": unit,
         "unit_text": _fmt(unit, currency, precision=UNIT_PRECISION),

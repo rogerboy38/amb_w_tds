@@ -121,3 +121,23 @@ def residual(value, rows) -> Decimal:
     lines = lines_for(value, rows)
     summed = sum((money(ln["subtotal"]) for ln in lines if ln["subtotal"] is not None), Decimal("0"))
     return money(total_for(value)) - summed
+
+
+# ⭐ Spanish currency names for the bilingual customs caption. Hugh's stated end
+# state is "Total en Dolares (USD TOTAL)", i.e. the Spanish half names the
+# currency in words while the English half uses the ISO code. Frappe's Currency
+# doctype stores currency_name = "USD" (the code again), so there is nothing to
+# read; this is the smallest honest map, and anything unlisted falls back to the
+# code rather than inventing a Spanish word for it.
+_CURRENCY_ES = {
+    "USD": "Dolares",
+    "MXN": "Pesos",
+    "EUR": "Euros",
+    "CAD": "Dolares Canadienses",
+    "GBP": "Libras",
+}
+
+
+def currency_name_es(code) -> str:
+    """The Spanish name for a currency code, or the code itself if unknown."""
+    return _CURRENCY_ES.get((code or "").strip().upper(), (code or "").strip().upper())

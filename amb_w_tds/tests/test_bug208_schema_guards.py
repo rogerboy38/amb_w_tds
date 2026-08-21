@@ -110,6 +110,21 @@ class TestNoHardcodedCurrencyInFormats(unittest.TestCase):
             for literal in ("USD TOTAL", "Total en Dolares", "Total en Dólares"):
                 self.assertNotIn(literal, html, f"{label} hardcodes {literal!r}")
 
+    def test_the_spanish_caption_names_the_currency_in_words(self):
+        """Hugh's stated end state is "Total en Dolares (USD TOTAL)" — the
+        Spanish half names the currency, the English half uses the code."""
+        import sys
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+        # ⚠ imported from the FRAPPE-FREE module on purpose: pulling it from
+        # valuation_jinja would drag `import frappe` in and break the second
+        # interpreter, which is exactly what it did on the first attempt.
+        from amb_w_tds.valuation import currency_name_es
+        self.assertEqual(currency_name_es("USD"), "Dolares")
+        self.assertEqual(currency_name_es("MXN"), "Pesos")
+        # ⚠ an unmapped code falls back to the code — never an invented word
+        self.assertEqual(currency_name_es("JPY"), "JPY")
+        self.assertEqual(currency_name_es(None), "")
+
     def test_the_total_caption_derives_from_the_document_currency(self):
         for label, rel in self.FORMATS.items():
             html = self._html(rel)
