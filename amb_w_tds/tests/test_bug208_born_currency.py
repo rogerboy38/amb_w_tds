@@ -155,3 +155,63 @@ class TestE6FormPathOverride(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+@unittest.skipUnless(_HAVE_FRAPPE, "needs a bench")
+class TestE6DetectorDependencyIsPinned(unittest.TestCase):
+    """OPEN #11 — the E6 detector keys on an INTERNAL frappe RPC string.
+
+    `_came_from_the_desk_form()` compares `form_dict.cmd` against
+    "frappe.desk.form.save.savedocs". That is frappe's own desk-save endpoint,
+    not a public contract: if an upgrade renames or re-routes it, the detector
+    starts returning False for real desk saves and **E6 silently reverts to the
+    old value-equality guess** — an operator's explicit MXN would quietly begin
+    being overwritten again, with every test still green, because the fallback
+    is the behaviour those tests were written against.
+
+    ⭐ THE FAILURE IS SILENT BY DESIGN (the detector fails closed on purpose),
+    which is exactly why the DEPENDENCY needs its own alarm. A fail-closed
+    default protects correctness at the cost of hiding its own trigger.
+
+    These tests fail LOUDLY on a frappe upgrade that moves the marker, naming
+    what to re-check rather than leaving a behaviour change to be discovered on
+    a customs document.
+    """
+
+    MARKER = "frappe.desk.form.save.savedocs"
+
+    def setUp(self):
+        if not _CONNECTED:
+            self.skipTest("frappe present but not connected")
+
+    def test_the_endpoint_the_marker_names_still_exists(self):
+        import importlib
+        module_path, _, attr = self.MARKER.rpartition(".")
+        module = importlib.import_module(module_path)
+        self.assertTrue(
+            hasattr(module, attr),
+            f"{self.MARKER} is gone (frappe {frappe.__version__}) — the E6 desk "
+            f"detector will now fail closed on EVERY save and an explicit MXN "
+            f"will be silently overwritten again. Re-derive the desk-save marker.",
+        )
+
+    def test_the_endpoint_is_still_whitelisted_as_an_rpc(self):
+        """Existing is not enough: it has to be the thing the desk actually
+        CALLS, or `form_dict.cmd` will never carry this string."""
+        import importlib
+        module_path, _, attr = self.MARKER.rpartition(".")
+        fn = getattr(importlib.import_module(module_path), attr)
+        self.assertTrue(
+            getattr(fn, "__func__", fn) in frappe.whitelisted,
+            f"{self.MARKER} exists but is no longer a whitelisted RPC — the desk "
+            f"is reaching Save by some other route, so cmd will not match.",
+        )
+
+    def test_the_controller_and_this_test_name_the_same_marker(self):
+        """⚠ Pins the string in ONE place. If the controller's marker is edited
+        without this test, the alarm would guard a string nobody uses — a guard
+        watching the wrong door is worse than no guard."""
+        import inspect
+        from amb_w_tds.amb_w_tds.doctype.sample_request_amb.sample_request_amb import SampleRequestAMB
+        src = inspect.getsource(SampleRequestAMB._came_from_the_desk_form)
+        self.assertIn(self.MARKER, src)
