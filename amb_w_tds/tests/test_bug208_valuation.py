@@ -1,12 +1,11 @@
-"""BUG208 acceptance — T-BUG208-1..10, against the ruled model.
+"""BUG208 acceptance — the ONE valuation contract (Hugh's V-1/V-2/V-3).
 
-Deliberately frappe-free: `amb_w_tds.valuation` holds the whole money path, so
-these run on a second interpreter with no bench. The Jinja/controller layers are
-covered separately by the live checks in the seal letter.
+Frappe-free: the whole money path lives in `amb_w_tds.valuation`, so these run
+on a second interpreter with no bench. The RENDER layer is guarded separately in
+`test_bug208_render_precision.py`, and that separation is deliberate — the
+defect that survived two verifier passes lived exactly in the gap between them.
 
-⭐ Every assertion here is about a DECLARED CUSTOMS FIGURE. Where a test only
-pins a display string, it says so, because "renders $X" and "declares $X" are
-different claims and this ticket exists because they had drifted apart.
+⭐ Every assertion here concerns a DECLARED CUSTOMS FIGURE.
 """
 
 import os
@@ -17,15 +16,14 @@ from decimal import Decimal
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from amb_w_tds.valuation import (  # noqa: E402
-    MODE_FLAT,
-    MODE_PER_ROW,
-    MODE_PER_SAMPLE,
-    default_mode_for,
-    line_for,
+    bag_count,
+    lines_for,
     money,
-    normalize_mode,
+    residual,
     to_decimal,
+    total_bags,
     total_for,
+    unit_for,
 )
 
 
@@ -33,146 +31,131 @@ def rows(*counts):
     return [{"samples_count": c} for c in counts]
 
 
-class TestModeArithmetic(unittest.TestCase):
-    """T-BUG208-3 / -10 — each mode's total, and the contrast between them."""
+class TestTotalIsThePinnedScalar(unittest.TestCase):
+    """V-1 — the total IS the stored scalar and does NOT scale with anything."""
 
-    def test_mode_c_is_per_sample_hughs_own_document(self):
-        # SR-2026-00015 carries commercial_value_usd = 0.20 with 5 samples.
-        self.assertEqual(total_for(MODE_PER_SAMPLE, "0.20", rows(5)), Decimal("1.00"))
+    def test_total_equals_the_scalar(self):
+        self.assertEqual(total_for("1.00", rows(3)), Decimal("1.00"))
 
-    def test_mode_c_multi_row_sums_bags_not_rows(self):
-        # The per-ROW rule (the superseded one) would give 2 x 1.00 = 2.00 here.
-        self.assertEqual(total_for(MODE_PER_SAMPLE, "1.00", rows(5, 3)), Decimal("8.00"))
+    def test_total_is_independent_of_bag_count(self):
+        """The defect V-1 removes: adding a sample used to change what the
+        shipment declared to customs."""
+        for r in (rows(1), rows(8), rows(5, 3), rows(14), []):
+            self.assertEqual(total_for("1.00", r), Decimal("1.00"), r)
 
-    def test_mode_b_is_per_row_regardless_of_sample_count(self):
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", rows(3)), Decimal("1.00"))
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", rows(3, 7)), Decimal("2.00"))
+    def test_total_is_independent_of_row_count(self):
+        self.assertEqual(total_for("2.50", rows(1, 1, 1, 1)), Decimal("2.50"))
 
-    def test_mode_a_is_flat_whatever_the_rows(self):
-        self.assertEqual(total_for(MODE_FLAT, "1.00", rows(5, 3, 99)), Decimal("1.00"))
-        self.assertEqual(total_for(MODE_FLAT, "1.00", []), Decimal("1.00"))
+    def test_the_old_multiplier_is_gone(self):
+        """8 bags at a $1.00 total is $1.00, NOT the $8.00 the mode model gave."""
+        self.assertEqual(total_for("1.00", rows(8)), Decimal("1.00"))
+        self.assertNotEqual(total_for("1.00", rows(8)), Decimal("8.00"))
 
-    def test_t_bug208_10_modes_differ_on_the_same_row(self):
-        """The mode selector is load-bearing: same field, 3x apart."""
-        r = rows(3)
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", r), Decimal("1.00"))
-        self.assertEqual(total_for(MODE_PER_SAMPLE, "1.00", r), Decimal("3.00"))
+    def test_a_zero_total_stays_zero(self):
+        """T-BUG208-6's arithmetic half: a deliberate zero declares nothing,
+        and cannot be multiplied up into a declaration."""
+        self.assertEqual(total_for(0, rows(8)), Decimal("0.00"))
 
 
-class TestRoundingDoctrine(unittest.TestCase):
-    """T-BUG208-9 — the fraction case, and the drift the doctrine forbids."""
+class TestDerivedUnit(unittest.TestCase):
+    """V-1/V-2 — the per-bag unit is DERIVED as total / Σbags, at 4dp."""
 
-    def test_mode_b_three_samples_totals_exactly_one_dollar(self):
-        """1/3 x 3 must be exactly $1.00 — never 3 x $0.33 = $0.99."""
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", rows(3)), Decimal("1.00"))
+    def test_unit_divides_the_total_across_bags(self):
+        self.assertEqual(unit_for("1.00", rows(4)), Decimal("0.2500"))
 
-    def test_two_fraction_rows_total_exactly_two_dollars(self):
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", rows(3, 3)), Decimal("2.00"))
+    def test_unit_of_a_repeating_fraction_is_four_decimals(self):
+        self.assertEqual(unit_for("1.00", rows(3)), Decimal("0.3333"))
 
-    def test_the_derived_unit_displays_at_four_decimals(self):
-        ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": 3})
-        self.assertEqual(ln["unit"], Decimal("0.3333"))
-        self.assertEqual(ln["quantity"], 3)
+    def test_unit_spans_rows_not_just_one(self):
+        """Σbags is the whole shipment: 5 + 3 bags of $8.00 -> $1.00 each."""
+        self.assertEqual(unit_for("8.00", rows(5, 3)), Decimal("1.0000"))
 
-    def test_mode_b_line_foots_at_the_printed_precision(self):
-        """T-BUG208-9, as ruled 2026-08-21: round to 2dp, so the reader's
-        multiplication reproduces the declared subtotal.
+    def test_no_bags_means_no_unit_rather_than_a_fabricated_one(self):
+        self.assertIsNone(unit_for("1.00", []))
+        self.assertIsNone(unit_for("1.00", rows(0)))
 
-        Both halves are asserted on purpose. The RAW product is 0.9999 and is
-        NOT the subtotal -- that is a fact about 1/3, not a defect, and pinning
-        it stops the claim "the line foots" from being read as exact equality.
-        What foots is the 2dp figure the money is actually declared in.
+    def test_zero_bags_does_not_raise(self):
+        """A print must not die on a shipment with no rows."""
+        self.assertEqual(total_for("1.00", rows(0)), Decimal("1.00"))
+
+
+class TestTotalAnchoredFooting(unittest.TestCase):
+    """V-2 — the TOTAL wins the residual; footing is total-anchored."""
+
+    def test_the_classic_third_case_totals_exactly_one_dollar(self):
+        self.assertEqual(total_for("1.00", rows(3)), Decimal("1.00"))
+        self.assertEqual(unit_for("1.00", rows(3)), Decimal("0.3333"))
+
+    def test_residual_is_a_crumb_not_a_cent_for_awkward_divisors(self):
+        """The residual is exposed so this is measured, not asserted in prose."""
+        for n in (3, 6, 7, 9, 11, 13):
+            r = residual("1.00", rows(n))
+            self.assertLessEqual(abs(r), Decimal("0.01"), f"{n} bags left {r}")
+
+    def test_multi_row_subtotals_sum_back_to_the_total_when_they_divide(self):
+        lines = lines_for("8.00", rows(5, 3))
+        summed = sum(money(ln["subtotal"]) for ln in lines)
+        self.assertEqual(summed, Decimal("8.00"))
+        self.assertEqual(residual("8.00", rows(5, 3)), Decimal("0.00"))
+
+    def test_the_visible_one_cent_case_is_pinned_because_the_total_wins(self):
+        """⛔ THE CASE A READER CAN SEE. $1.00 over 5+3 bags gives a unit of
+        $0.125, so the rounded subtotals print $0.63 and $0.38 and SUM TO $1.01
+        against a declared $1.00.
+
+        This is V-2 working as ruled — footing is total-anchored, the total is
+        the pinned scalar, and the cent is absorbed there rather than being
+        distributed into a line. It is pinned here so that (a) nobody 'fixes'
+        it by letting the total drift to the sum, which would re-break V-1, and
+        (b) it is on the record that a reader adding the subtotal column can
+        land one cent above the declared total.
         """
-        ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": 3})
-        self.assertEqual(ln["subtotal"], Decimal("1.00"))
-        self.assertEqual(ln["unit"] * 3, Decimal("0.9999"))          # raw: not equal
-        self.assertNotEqual(ln["unit"] * 3, ln["subtotal"])
-        self.assertEqual(money(ln["unit"] * 3), money(ln["subtotal"]))  # ⭐ ruled: foots at 2dp
-        self.assertEqual(money(ln["unit"] * 3), Decimal("1.00"))
-
-    def test_footing_at_2dp_holds_for_other_awkward_divisors(self):
-        """A control against pinning one lucky case: 7 and 6 also foot at 2dp."""
-        for n in (3, 6, 7, 9, 11):
-            ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": n})
-            self.assertEqual(money(ln["unit"] * n), money(ln["subtotal"]), n)
-
-    def test_sum_of_rounded_lines_is_not_how_the_total_is_built(self):
-        """A third of a cent, thirty times: rounding each line first loses money."""
-        r = rows(*([3] * 30))
-        self.assertEqual(total_for(MODE_PER_ROW, "1.00", r), Decimal("30.00"))
+        lines = lines_for("1.00", rows(5, 3))
+        self.assertEqual([ln["unit"] for ln in lines], [Decimal("0.1250")] * 2)
+        self.assertEqual([money(ln["subtotal"]) for ln in lines],
+                         [Decimal("0.63"), Decimal("0.38")])
+        self.assertEqual(sum(money(ln["subtotal"]) for ln in lines), Decimal("1.01"))
+        self.assertEqual(total_for("1.00", rows(5, 3)), Decimal("1.00"))  # ⭐ total wins
+        self.assertEqual(residual("1.00", rows(5, 3)), Decimal("-0.01"))
 
     def test_money_never_travels_through_binary_float(self):
         self.assertEqual(to_decimal(0.1) + to_decimal(0.2), Decimal("0.3"))
-        self.assertNotEqual(Decimal(0.1) + Decimal(0.2), Decimal("0.3"))  # the trap
+        self.assertNotEqual(Decimal(0.1) + Decimal(0.2), Decimal("0.3"))
 
 
-class TestZeroHandling(unittest.TestCase):
-    """T-BUG208-6 — a deliberate zero is a declaration, not a missing value."""
+class TestNoModeModelSurvives(unittest.TestCase):
+    """V-3 — ONE contract. Guards against the A/B/C model creeping back."""
 
-    def test_zero_value_totals_zero_under_every_mode(self):
-        for mode in (MODE_FLAT, MODE_PER_ROW, MODE_PER_SAMPLE):
-            self.assertEqual(total_for(mode, 0, rows(8)), Decimal("0.00"), mode)
+    def test_valuation_module_exposes_no_mode_api(self):
+        import amb_w_tds.valuation as v
+        for gone in ("MODE_FLAT", "MODE_PER_ROW", "MODE_PER_SAMPLE",
+                     "VALID_MODES", "default_mode_for", "normalize_mode", "line_for"):
+            self.assertFalse(hasattr(v, gone), f"{gone} survived the V-3 drop")
 
-    def test_zero_is_not_multiplied_up_into_a_declaration(self):
-        """The defect this replaces: 0 -> 1.00 at save, then x 8 bags = $8.00."""
-        self.assertNotEqual(total_for(MODE_PER_SAMPLE, 0, rows(8)), Decimal("8.00"))
+    def test_total_for_ignores_rows_entirely(self):
+        """`rows` is accepted and ignored so no caller can smuggle a multiplier
+        back in by passing them."""
+        self.assertEqual(total_for("1.00"), total_for("1.00", rows(99)))
 
-    def test_a_zero_sample_row_contributes_nothing_under_mode_c(self):
-        self.assertEqual(total_for(MODE_PER_SAMPLE, "1.00", rows(0)), Decimal("0.00"))
-
-
-class TestDerivedDefaultMode(unittest.TestCase):
-    """A2 — the default derives from shipment_nature."""
-
-    def test_venta_defaults_to_per_sample(self):
-        self.assertEqual(default_mode_for("Venta"), MODE_PER_SAMPLE)
-
-    def test_sin_valor_defaults_to_flat(self):
-        self.assertEqual(default_mode_for("Muestra sin valor"), MODE_FLAT)
-
-    def test_the_two_unruled_natures_take_flat_and_are_pinned_here(self):
-        """"Regalo" / "Muestra mutilada" are NOT named by the ruling. They are
-        inferred to A. Pinned so the inference is visible if it is ever wrong."""
-        self.assertEqual(default_mode_for("Regalo"), MODE_FLAT)
-        self.assertEqual(default_mode_for("Muestra mutilada"), MODE_FLAT)
-
-    def test_a_stored_mode_always_wins_over_the_derived_default(self):
-        self.assertEqual(normalize_mode("B", "Venta"), MODE_PER_ROW)
-
-    def test_a_blank_or_bad_mode_falls_back_and_never_raises(self):
-        self.assertEqual(normalize_mode("", "Venta"), MODE_PER_SAMPLE)
-        self.assertEqual(normalize_mode(None, "Muestra sin valor"), MODE_FLAT)
-        self.assertEqual(normalize_mode("Z", "Venta"), MODE_PER_SAMPLE)
-
-    def test_mode_is_case_insensitive(self):
-        self.assertEqual(normalize_mode("c", None), MODE_PER_SAMPLE)
+    def test_the_controller_no_longer_derives_a_mode(self):
+        path = os.path.join(os.path.dirname(__file__), "..", "amb_w_tds",
+                            "doctype", "sample_request_amb", "sample_request_amb.py")
+        src = open(os.path.abspath(path), encoding="utf-8").read()
+        self.assertNotIn("set_valuation_mode", src)
+        self.assertNotIn("custom_valuation_mode", src)
 
 
-class TestLineRendering(unittest.TestCase):
-    """T-BUG208-3 — Mode C lines self-check; Mode A prints no per-line money."""
+class TestBagCounting(unittest.TestCase):
 
-    def test_mode_c_line_self_checks_exactly(self):
-        ln = line_for(MODE_PER_SAMPLE, "0.20", {"samples_count": 5})
-        self.assertEqual(ln["quantity"], 5)
-        self.assertEqual(ln["unit"], Decimal("0.2000"))
-        self.assertEqual(ln["subtotal"], Decimal("1.00"))
-        self.assertEqual(money(ln["unit"] * ln["quantity"]), money(ln["subtotal"]))
+    def test_bag_count_floors_at_zero_and_survives_junk(self):
+        for bad, expected in ((None, 0), ("", 0), ("abc", 0), (-4, 0), ("3", 3), (3, 3)):
+            self.assertEqual(bag_count({"samples_count": bad}), expected, bad)
 
-    def test_mode_a_carries_no_per_line_value(self):
-        ln = line_for(MODE_FLAT, "1.00", {"samples_count": 5})
-        self.assertIsNone(ln["unit"])
-        self.assertIsNone(ln["subtotal"])
+    def test_total_bags_sums_the_shipment(self):
+        self.assertEqual(total_bags(rows(5, 3, 0)), 8)
 
-    def test_a_single_sample_mode_b_row_prints_the_row_value(self):
-        ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": 1})
-        self.assertEqual(ln["quantity"], 1)
-        self.assertEqual(ln["unit"], Decimal("1.0000"))
-        self.assertEqual(ln["subtotal"], Decimal("1.00"))
-
-    def test_missing_or_junk_sample_counts_do_not_crash_a_print(self):
-        for bad in (None, "", "abc", -4):
-            ln = line_for(MODE_PER_SAMPLE, "1.00", {"samples_count": bad})
-            self.assertEqual(ln["subtotal"], Decimal("0"), bad)
+    def test_lines_carry_one_entry_per_row_even_when_empty(self):
+        self.assertEqual(len(lines_for("1.00", rows(1, 0, 2))), 3)
 
 
 if __name__ == "__main__":

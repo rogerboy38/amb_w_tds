@@ -62,7 +62,6 @@
   "cb_venta_paqueteria",
   "cb_forwarder",
   "section_shipment_values",
-  "custom_valuation_mode",
   "commercial_value_usd",
   "number_of_packages",
   "col_break_values",
@@ -428,13 +427,6 @@
    "fieldname": "section_shipment_values",
    "fieldtype": "Section Break",
    "label": "Shipment Values / Valores del Embarque"
-  },
-  {
-   "fieldname": "custom_valuation_mode",
-   "fieldtype": "Select",
-   "label": "Valuation Mode / Modo de Valuación",
-   "options": "A\nB\nC",
-   "description": "A = flat shipment value · B = per row (samples share it) · C = per sample (samples add). Default derives from Shipment Nature: Venta → C, otherwise A."
   },
   {
    "default": "1.00",

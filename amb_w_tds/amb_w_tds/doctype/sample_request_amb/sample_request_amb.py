@@ -67,20 +67,11 @@ class SampleRequestAMB(Document):
 
     def validate(self):
         self.validate_batch_consistency()
-        self.set_valuation_mode()
         self.validate_shipment_values()
         self.validate_shipment_weights()
         self._fill_sample_item_names()
         self._fill_sample_uom()
 
-    def set_valuation_mode(self):
-        """BUG208 A2 (ruled): the default valuation mode is DERIVED from
-        `shipment_nature` -- "Venta" -> C (per sample), otherwise A (flat
-        nominal). A mode the user has chosen is never overwritten."""
-        from amb_w_tds.valuation import default_mode_for
-
-        if not (self.get("custom_valuation_mode") or "").strip():
-            self.custom_valuation_mode = default_mode_for(self.get("shipment_nature"))
 
     def _fill_sample_uom(self):
         """BUG208 D-UOM: a blank row unit is filled from the Item's stock UOM.
@@ -163,11 +154,12 @@ class SampleRequestAMB(Document):
         first is DEAD CODE for this field -- it never sees a falsy value,
         because this ran earlier.
 
-        ⛔ And the ruled multiplier makes the rewrite worse than it was: under
-        Mode C the total is value x SUM(samples_count), so a silent 0 -> 1.00 on
-        an 8-bag shipment declares $8.00 for a shipment meant to declare
-        nothing. `is None` preserves a deliberate zero; a genuinely MISSING
-        value still takes the nominal default.
+        ⭐ Under the ruled model (V-1) this field IS the declared total -- the
+        total is pinned to this scalar and does not scale with bags or rows. So
+        a silent 0 -> 1.00 is not a rounding nicety: it is the difference
+        between declaring nothing and declaring a dollar, on the document that
+        goes to customs. `is None` preserves a deliberate zero; a genuinely
+        MISSING value still takes the nominal default.
         """
         if self.commercial_value_usd is None:
             self.commercial_value_usd = 1.00

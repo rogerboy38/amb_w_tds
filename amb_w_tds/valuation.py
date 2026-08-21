@@ -1,63 +1,46 @@
-"""BUG208 D-VALUE — the ONE money arithmetic every Sample Request document shares.
+"""BUG208 D-VALUE — the ONE money contract every Sample Request document shares.
 
-Six enabled print formats declare a customs value for the same shipment. Before
-this module each one carried its own literals, so "the total" was whatever a
-given template happened to print. Every format now calls in here, which is what
-makes "one consistent total across every enabled format" a property of the code
-rather than of six hand-edits staying in step.
+⭐ THE MODEL (Hugh, rulings V-1/V-2/V-3, 2026-08-21). One contract, no modes.
 
-⭐ THE ROUNDING DOCTRINE (amendment v5 §3, ruled 2026-08-20)
-    Compute at full precision; round only for display.
-    Money displays at 2dp; a DERIVED per-sample unit price displays at 4dp.
-    The shipment TOTAL is the sum of FULL-PRECISION subtotals, rounded ONCE at
-    the end -- never the sum of the rounded line displays, which is where penny
-    drift comes from.
+  TOTAL      = the stored `commercial_value_usd` scalar, exactly as a human
+               entered it. It does NOT scale with bags, rows, or anything else.
+  PER-BAG    = DERIVED: total / Σ(samples_count), displayed at 4 decimals.
+  SUBTOTAL   = the derived unit x that row's bag count.
+  ⭐ THE TOTAL WINS THE RESIDUAL. Footing is TOTAL-ANCHORED, never unit-summed:
+     3 bags of a $1.00 total print $0.3333 each and the total stays $1.00.
 
-⚠ "Full precision" is a claim about the INSTRUMENT, not an intention: in binary
-floats 0.1 + 0.2 == 0.30000000000000004, so every figure here is `Decimal`,
-constructed via `str()` so a float's binary tail never enters the money path.
+⛔ THIS REPLACES THE A/B/C MODE MODEL (V-3). There is no `custom_valuation_mode`,
+no nature-derived default and no per-mode multiplier. The earlier design made
+the declared total a FUNCTION of the bag count, so adding a sample row silently
+changed what a shipment declared to customs. Pinning the total to the scalar
+removes that entirely -- and with it the "zero-row sale declares $0.00" gap,
+which is now impossible rather than guarded.
 
-⭐ THE AUTHORITATIVE LINE FIGURE IS THE SUBTOTAL, never `round(unit) x qty`.
-That is what keeps the total exact under Mode B, where a row's value is SHARED
-across its samples and the per-sample unit can be a repeating fraction
-(1.00 / 3 = 0.3333...).
+⚠ PRECISION IS A RENDER PROPERTY, NOT AN ARITHMETIC ONE -- the trap that caught
+two seats in sequence here. Quantizing a Decimal to 0.3333 is NOT the same as
+printing it: `fmt_money(0.3333, currency="USD")` returns **"$ 0.33"**, so a
+reader multiplies 3 x 0.33 = 0.99 against a declared $1.00 and sees a FULL CENT
+missing. The residue that matters is the one on the page. The 4-decimal unit is
+enforced at the format layer (`valuation_jinja._fmt`), and the test that guards
+it asserts the RENDERED STRING, not the Decimal.
 
-⭐ MODE B FOOTS AT THE PRINTED PRECISION (Hugh, 2026-08-21 -- round to 2dp).
-A Mode-B row shares its value across its samples, so the per-sample unit can be
-a repeating fraction: 1.00 / 3 = 0.3333... The printed line reads
-    quantity 3  x  unit $0.3333  =  $0.9999  -> ROUNDED TO 2dp -> $1.00
-which is exactly the declared subtotal. So the reader's arithmetic reproduces
-the declaration at the precision money is stated in, and the total stays exact
-because it sums the SUBTOTALS, never the rounded units.
-
-⚠ Read that claim precisely, because it is easy to over-state: the raw product
-0.9999 is NOT equal to 1.00, and no display precision makes it so -- 1/3 does
-not terminate, so adding digits moves the residue rather than removing it. What
-is true, and what was ruled, is that the two agree ONCE ROUNDED TO THE 2dp the
-money is declared in. The subtotal remains the authoritative figure.
+⚠ Money is `Decimal` throughout, built via `str()`: in binary floats
+0.1 + 0.2 == 0.30000000000000004, so "full precision" has to be a property of
+the instrument, not an intention.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 
-# ---- the modes (amendment v4 1) -------------------------------------------
-MODE_FLAT = "A"        # one declared amount for the whole shipment
-MODE_PER_ROW = "B"     # value is per ROW; the row's samples SHARE it
-MODE_PER_SAMPLE = "C"  # value is per SAMPLE; the row's samples ADD
-
-VALID_MODES = (MODE_FLAT, MODE_PER_ROW, MODE_PER_SAMPLE)
-
 _MONEY = Decimal("0.01")
 _UNIT = Decimal("0.0001")
 
 
 def to_decimal(value) -> Decimal:
-    """Every entry point into the money path. `str()` first, always.
+    """The single entry point into the money path. `str()` first, always.
 
-    Decimal(0.1) is 0.1000000000000000055511151231257827, while
-    Decimal(str(0.1)) is exactly 0.1 -- the difference between carrying a
-    float's binary tail into a customs declaration and not.
+    Decimal(0.1) carries a float's binary tail; Decimal(str(0.1)) does not.
     """
     if value is None:
         return Decimal("0")
@@ -67,91 +50,74 @@ def to_decimal(value) -> Decimal:
 
 
 def money(value) -> Decimal:
-    """Display rounding for a money figure: 2dp, half-up (not banker's)."""
+    """2dp, half-up (not banker's rounding -- customs figures round up at .005)."""
     return to_decimal(value).quantize(_MONEY, rounding=ROUND_HALF_UP)
 
 
 def unit_display(value) -> Decimal:
-    """Display rounding for a DERIVED per-sample unit price: 4dp."""
+    """4dp for the DERIVED per-bag unit (V-2)."""
     return to_decimal(value).quantize(_UNIT, rounding=ROUND_HALF_UP)
 
 
-def default_mode_for(shipment_nature) -> str:
-    """A2 (ruled): derive the default mode from the shipment's nature.
+def bag_count(row) -> int:
+    """A row's declared bag count, floored at zero.
 
-    Ruled explicitly:  "Venta" -> C (per sample) ·  "Muestra sin valor" -> A.
-    ⚠ INFERRED, and flagged as such to the verifiers: the Select also offers
-    "Regalo" and "Muestra mutilada", which the ruling does not name. Both are
-    non-sale shipments, so they take A (flat nominal) alongside "Muestra sin
-    valor". If that is wrong it is wrong for a stated reason, not silently.
-    """
-    return MODE_PER_SAMPLE if (shipment_nature or "").strip() == "Venta" else MODE_FLAT
-
-
-def normalize_mode(mode, shipment_nature=None) -> str:
-    """A stored mode wins; an absent or unrecognised one falls back to the
-    derived default. Never raises -- a print must not die on a bad Select."""
-    candidate = (mode or "").strip().upper()
-    if candidate in VALID_MODES:
-        return candidate
-    return default_mode_for(shipment_nature)
-
-
-def _count(row) -> int:
-    """A row's sample count, floored at zero.
-
-    ⚠ Zero is preserved rather than coerced to 1: under Mode C a zero-sample
-    row genuinely contributes nothing, and inventing a sample would inflate a
-    customs declaration. The zero-document case is handled by the caller.
+    ⚠ Zero is preserved rather than coerced to 1: inventing a bag would move
+    every other row's derived unit, and the total is pinned regardless.
     """
     raw = row.get("samples_count") if hasattr(row, "get") else getattr(row, "samples_count", None)
     try:
-        n = int(raw or 0)
+        return max(int(raw or 0), 0)
     except (TypeError, ValueError):
-        n = 0
-    return max(n, 0)
+        return 0
 
 
-def line_for(mode, value, row) -> dict:
-    """The three printed cells for ONE row, plus the exact subtotal.
+def total_bags(rows) -> int:
+    return sum(bag_count(r) for r in (rows or []))
 
-    Returns `quantity`, `unit` (already display-rounded, or None when the mode
-    prints no per-line value) and `subtotal` (FULL PRECISION -- the caller sums
-    these before rounding, per the doctrine).
+
+def total_for(value, rows=None) -> Decimal:
+    """V-1: the declared total IS the stored scalar. `rows` is accepted and
+    ignored, so no caller can accidentally reintroduce a bag multiplier."""
+    return money(value)
+
+
+def unit_for(value, rows) -> Decimal | None:
+    """The derived per-bag unit: total / Σbags, at 4dp.
+
+    Returns None when there are no bags -- a shipment can declare a total with
+    no per-bag breakdown, and dividing by zero to print something would be
+    inventing a figure on a customs document.
     """
-    mode = mode if mode in VALID_MODES else MODE_FLAT
-    val = to_decimal(value)
-    n = _count(row)
-
-    if mode == MODE_FLAT:
-        # A declares one amount for the shipment; the lines carry no money.
-        return {"quantity": n or 1, "unit": None, "subtotal": None, "mode": mode}
-
-    if mode == MODE_PER_ROW:
-        # The row's samples SHARE the row's value; the subtotal IS the value.
-        if n > 1:
-            return {"quantity": n, "unit": unit_display(val / n), "subtotal": val, "mode": mode}
-        return {"quantity": 1, "unit": unit_display(val), "subtotal": val, "mode": mode}
-
-    # MODE_PER_SAMPLE: the samples ADD.
-    return {"quantity": n, "unit": unit_display(val), "subtotal": val * n, "mode": mode}
+    bags = total_bags(rows)
+    if bags <= 0:
+        return None
+    return unit_display(to_decimal(value) / bags)
 
 
-def lines_for(mode, value, rows) -> list:
-    return [line_for(mode, value, r) for r in (rows or [])]
+def lines_for(value, rows):
+    """One entry per row: bag count, the shared derived unit, and the row's
+    subtotal (unit x bags). The TOTAL is authoritative over the sum of these."""
+    unit = unit_for(value, rows)
+    out = []
+    for row in (rows or []):
+        bags = bag_count(row)
+        out.append({
+            "row": row,
+            "quantity": bags,
+            "unit": unit,
+            "subtotal": None if unit is None else unit * bags,
+        })
+    return out
 
 
-def total_for(mode, value, rows) -> Decimal:
-    """The shipment total, computed once at full precision and rounded once.
+def residual(value, rows) -> Decimal:
+    """total − Σ(rounded subtotals): what the total absorbs (V-2).
 
-    ⛔ Deliberately NOT `sum(money(l["subtotal"]) for l in lines)` -- summing
-    rounded displays is the drift the doctrine forbids.
+    Exposed so the property can be TESTED rather than asserted in prose. It is
+    normally 0 and is at most a rounding crumb; if it is ever large, the derived
+    unit is wrong and this is the number that says so.
     """
-    mode = mode if mode in VALID_MODES else MODE_FLAT
-    val = to_decimal(value)
-
-    if mode == MODE_FLAT:
-        return money(val)
-
-    subtotals = [ln["subtotal"] for ln in lines_for(mode, val, rows) if ln["subtotal"] is not None]
-    return money(sum(subtotals, Decimal("0")))
+    lines = lines_for(value, rows)
+    summed = sum((money(ln["subtotal"]) for ln in lines if ln["subtotal"] is not None), Decimal("0"))
+    return money(total_for(value)) - summed

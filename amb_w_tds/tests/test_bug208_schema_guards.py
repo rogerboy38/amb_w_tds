@@ -68,10 +68,16 @@ class TestShippedSchemaGuards(unittest.TestCase):
         self.assertIsNotNone(fld)
         self.assertTrue(fld.get("reqd"), "shipment_nature is no longer required")
 
-    def test_the_valuation_mode_selector_survives(self):
-        fld = _field("custom_valuation_mode")
-        self.assertIsNotNone(fld, "the A/B/C selector is gone")
-        self.assertEqual(sorted((fld.get("options") or "").split()), ["A", "B", "C"])
+    def test_the_dropped_mode_selector_has_not_crept_back(self):
+        """V-3 dropped the A/B/C model. This guard is INVERTED from its first
+        version, which asserted the selector's presence — the ruling changed
+        under it, and a stale guard is how a retired design gets re-added and
+        called a regression fix."""
+        self.assertIsNone(
+            _field("custom_valuation_mode"),
+            "custom_valuation_mode is back — the one-contract ruling (V-3) says "
+            "the total is the stored scalar, with no mode multiplier",
+        )
 
 
 def check_live_schema_guards():
