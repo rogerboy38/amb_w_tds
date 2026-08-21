@@ -4,6 +4,7 @@ frappe.ui.form.on("Sample Request AMB", {
 	onload(frm) {
 		// #38b backfill empty email/phone/fax on open without clobbering typed values
 		if (frm.doc.contact_person || frm.doc.address) amb_fill_contact_address(frm, { onlyEmpty: true });
+		amb_default_currency_usd(frm);
 	},
 	refresh(frm) {
 		frm.fields_dict.samples.grid.get_field("package_type").get_query = function () {
@@ -206,4 +207,30 @@ async function amb_fill_contact_address(frm, opts) {
 	if (email && !(opts.onlyEmpty && frm.doc.email)) frm.set_value("email", email);
 	if (phone && !(opts.onlyEmpty && frm.doc.phone)) frm.set_value("phone", phone);
 	if (fax   && !(opts.onlyEmpty && frm.doc.fax))   frm.set_value("fax", fax);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUG208 E6 — show the operator USD, so an MXN in that field means a PERSON.
+//
+// The server could not tell "the site handed us MXN" from "a human chose MXN":
+// it compared the value against the site default, and MXN *is* the site default
+// (Global Defaults + all six Companies). So a Mexican company deliberately
+// declaring pesos on a domestic shipment was silently overwritten to USD.
+//
+// The guess only existed because the FORM handed the user MXN. Fixing it at the
+// layer the user actually sees removes the guess instead of documenting it:
+// with the field pre-filled USD, any MXN in it was typed by someone.
+//
+// ⚠ Only for brand-new, untouched documents: `is_new()` and no value the user
+// could have set. Never touches a saved document, and never overwrites.
+// ─────────────────────────────────────────────────────────────────────────────
+function amb_default_currency_usd(frm) {
+	if (!frm.is_new()) return;
+	// `currency` arrives pre-filled from the site default (MXN here) rather than
+	// blank, so "not set" is not a usable test — compare against the site value.
+	const site_default = frappe.defaults.get_default("currency");
+	const current = frm.doc.currency;
+	if (!current || (site_default && current === site_default && current !== "USD")) {
+		frm.set_value("currency", "USD");
+	}
 }

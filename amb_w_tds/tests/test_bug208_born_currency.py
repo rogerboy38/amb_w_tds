@@ -69,7 +69,12 @@ class TestBornCurrency(unittest.TestCase):
         if not _CONNECTED:
             self.skipTest("frappe present but not connected")
 
-    def _make(self, preset=None):
+    def _make(self, preset=None, desk=False):
+        # ⚠ E2 and E6 must be asserted TOGETHER: a fix satisfying born-USD alone
+        # can silently destroy the override, and vice versa.
+        frappe.local.form_dict = frappe._dict(
+            {"cmd": "frappe.desk.form.save.savedocs"} if desk else {}
+        )
         item = frappe.db.get_value("Item", {"stock_uom": "Kg"}, "name")
         doc = frappe.new_doc("Sample Request AMB")
         doc.shipment_nature = "Venta"
@@ -104,6 +109,48 @@ class TestBornCurrency(unittest.TestCase):
 
     def test_an_explicit_usd_choice_is_untouched(self):
         self.assertEqual(self._make("USD").currency, "USD")
+
+
+class TestE6FormPathOverride(unittest.TestCase):
+    """E6 — on the DESK path the form has already defaulted to USD, so any other
+    value was typed by a person and must survive.
+
+    ⭐ MXN is the case that matters: it is the site default, so value-equality
+    alone cannot distinguish it from "nobody chose anything" — and it is exactly
+    what a Mexican company might declare on a domestic shipment. The form
+    default removes the need to guess instead of documenting the guess.
+    """
+
+    def setUp(self):
+        if not _CONNECTED:
+            self.skipTest("frappe present but not connected")
+
+    _make = TestBornCurrency._make
+
+    def test_an_explicit_mxn_survives_a_desk_save(self):
+        self.assertEqual(self._make("MXN", desk=True).currency, "MXN")
+
+    def test_other_explicit_choices_survive_a_desk_save(self):
+        self.assertEqual(self._make("EUR", desk=True).currency, "EUR")
+        self.assertEqual(self._make("USD", desk=True).currency, "USD")
+
+    def test_the_api_path_still_corrects_the_site_default(self):
+        """E8 must not be traded away to close E6 — the paths are asserted
+        together so neither fix can quietly undo the other."""
+        self.assertEqual(self._make("MXN", desk=False).currency, "USD")
+        self.assertEqual(self._make(None, desk=False).currency, "USD")
+
+    def test_the_api_path_still_preserves_a_deliberate_non_default(self):
+        self.assertEqual(self._make("EUR", desk=False).currency, "EUR")
+
+    def test_the_desk_detector_fails_closed(self):
+        """⚠ Any doubt returns False, keeping the override. A wrong False costs
+        an explicit MXN on a non-form path; a wrong True re-opens E8 silently."""
+        from amb_w_tds.amb_w_tds.doctype.sample_request_amb.sample_request_amb import SampleRequestAMB
+        frappe.local.form_dict = frappe._dict({})
+        self.assertFalse(SampleRequestAMB._came_from_the_desk_form())
+        frappe.local.form_dict = frappe._dict({"cmd": "something.else"})
+        self.assertFalse(SampleRequestAMB._came_from_the_desk_form())
 
 
 if __name__ == "__main__":

@@ -39,15 +39,48 @@ class SampleRequestAMB(Document):
 
         ⛔ NOT a fix for the four existing MXN documents. Those are a ruled,
         enumerated, gated prod write at Node C; this only stops new ones.
+
+        ⭐ E6 CLOSED FOR THE FORM PATH (2026-08-21, Hugh's pick). The value-
+        equality test below cannot tell "the site handed us MXN" from "a person
+        chose MXN" -- and MXN is precisely what a Mexican company might
+        deliberately declare on a domestic shipment. The fix is not a better
+        guess; it is removing the need to guess. `sample_request_amb.js` now
+        pre-fills the FORM with USD, so on the desk path any other value was
+        typed by someone and is left alone.
+
+        The site-default override survives only for the paths with no human in
+        them -- API, script, import -- where `create_new` supplies MXN and
+        nobody chose anything. That is what keeps E8 (born USD) true for
+        programmatic inserts while the operator's explicit MXN survives.
         """
         site_default = frappe.defaults.get_defaults().get("currency")
         current = (self.currency or "").strip()
 
         if not current:
             self.currency = self.DEFAULT_CURRENCY
-        elif site_default and current == site_default and current != self.DEFAULT_CURRENCY:
-            # the value came from the site, not from a person
+            return
+
+        if self._came_from_the_desk_form():
+            # the form already defaulted to USD; whatever is here is deliberate
+            return
+
+        if site_default and current == site_default and current != self.DEFAULT_CURRENCY:
+            # no human involved on this path: the site supplied it, not a person
             self.currency = self.DEFAULT_CURRENCY
+
+    @staticmethod
+    def _came_from_the_desk_form():
+        """True when this insert is a desk Save, where the JS default applies.
+
+        ⚠ Deliberately fails CLOSED: any doubt returns False, which keeps the
+        old override behaviour. A wrong False costs an explicit MXN on a
+        non-form path (rare, and the pre-E6 behaviour); a wrong True would let a
+        programmatic insert be born MXN and quietly re-open E8.
+        """
+        try:
+            return (frappe.local.form_dict or {}).get("cmd") == "frappe.desk.form.save.savedocs"
+        except Exception:
+            return False
 
     def before_save(self):
         self.set_customer_name()
