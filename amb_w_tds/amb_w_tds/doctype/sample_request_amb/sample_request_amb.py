@@ -10,6 +10,48 @@ class SampleRequestAMB(Document):
         self.set_customer_name()
         self.update_totals()
         self._assign_control_numbers()
+        self._warn_if_no_bags()
+
+    def _warn_if_no_bags(self):
+        """BUG208 — warn when the shipment declares a value but counts NO bags.
+
+        Under the ruled contract (V-1) the declared total is the stored
+        `commercial_value_usd` scalar, and the per-bag unit is DERIVED as
+        total / sum(samples_count). With zero bags there is no divisor, so the
+        document prints its total with NO per-bag breakdown at all.
+
+        That is handled safely -- `unit_for()` returns None rather than dividing,
+        and the money cells render blank rather than a fabricated $0.00 -- but it
+        is handled SILENTLY, and a customs document that declares a value while
+        showing no quantity is worth a human glance before it is filed. Two live
+        documents are in exactly this state.
+
+        ⚠ A WARNING, NOT A BLOCK. A nominal shipment may legitimately carry no
+        counted bags, and throwing here would refuse saves that are correct
+        today -- including the existing zero-row documents, which would become
+        un-editable. `msgprint` says it out loud and lets the operator decide.
+        """
+        from amb_w_tds.valuation import total_bags
+
+        if not self.get("samples"):
+            bags = 0
+        else:
+            bags = total_bags(self.get("samples"))
+
+        if bags:
+            return
+
+        frappe.msgprint(
+            _(
+                "No samples counted on this request: the declared value "
+                "({0}) will print with no per-unit breakdown. Set "
+                "'Number of Samples' on the sample rows if this shipment "
+                "carries bags."
+            ).format(self.get("commercial_value_usd")),
+            title=_("No sample count"),
+            indicator="orange",
+            alert=True,
+        )
 
     def _assign_control_numbers(self):
         """SR-1 (b): one labelled sample unit = one AMB CONTROL NUMBER, a global

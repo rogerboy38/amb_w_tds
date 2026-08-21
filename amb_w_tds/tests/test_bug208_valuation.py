@@ -145,6 +145,40 @@ class TestNoModeModelSurvives(unittest.TestCase):
         self.assertNotIn("custom_valuation_mode", src)
 
 
+class TestZeroBagWarning(unittest.TestCase):
+    """The zero-bag case Hugh asked to be warned about, at the arithmetic layer.
+
+    ⭐ THE DEFECT DID NOT LEAVE, IT RELOCATED. Under the old multiply model a
+    zero-bag Venta declared $0.00 (a value defect). Under V-1 the total is the
+    pinned scalar, so the value is right — but the unit became a DIVISION, and
+    the same two documents are still the special ones. Same witnesses, new
+    layer: the guard now belongs on the unit RENDER, not on the value.
+
+    The warning itself fires in the controller (`_warn_if_no_bags`, before_save)
+    and is exercised live; what is pinned here is the property it warns about.
+    """
+
+    def test_zero_bags_produces_no_unit_rather_than_dividing(self):
+        for r in ([], rows(0), rows(0, 0), [{"samples_count": None}]):
+            self.assertIsNone(unit_for("1.00", r), r)
+
+    def test_zero_bags_still_declares_the_scalar_total(self):
+        """The warning exists because this is SILENT, not because it is wrong:
+        the document correctly declares its value with no breakdown."""
+        self.assertEqual(total_for("1.00", rows(0)), Decimal("1.00"))
+        self.assertEqual(total_for("1.00", []), Decimal("1.00"))
+
+    def test_a_zero_bag_row_beside_a_counted_row_is_not_the_zero_case(self):
+        """The discriminating case: the SHIPMENT has bags, so no warning is due
+        and the unit must still derive."""
+        self.assertEqual(total_bags(rows(0, 5)), 5)
+        self.assertEqual(unit_for("1.00", rows(0, 5)), Decimal("0.2000"))
+
+    def test_subtotal_of_a_zero_bag_row_is_zero_not_none_when_a_unit_exists(self):
+        lines = lines_for("1.00", rows(0, 5))
+        self.assertEqual(lines[0]["subtotal"], Decimal("0.0000"))
+
+
 class TestBagCounting(unittest.TestCase):
 
     def test_bag_count_floors_at_zero_and_survives_junk(self):
