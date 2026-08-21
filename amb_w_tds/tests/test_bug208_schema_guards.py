@@ -80,6 +80,43 @@ class TestShippedSchemaGuards(unittest.TestCase):
         )
 
 
+class TestNoHardcodedCurrencyInFormats(unittest.TestCase):
+    """D-CCY — a format must not ASSERT a currency, in the value OR the label.
+
+    ⭐ The label is the half that was missed. The value was switched to the
+    document's currency in the first seal, but `PROFORMA AMB2` still carried the
+    literal heading **"Total en Dolares (USD TOTAL)"** — so an MXN shipment
+    printed a USD-LABELLED customs total showing pesos: `$ 0.20 MXN` under a row
+    that says USD. Fixing the number and leaving the caption is not fixing the
+    declaration; a reader believes the words.
+    """
+
+    FORMATS = {
+        "proforma_amb2": "../../../amb_print/amb_print/amb_print/print_format/proforma_amb2/proforma_amb2.json",
+        "proforma_amb_26": "../amb_w_tds/print_format/proforma_amb_26/proforma_amb_26.json",
+    }
+
+    def _html(self, rel):
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), rel))
+        if not os.path.exists(path):
+            self.skipTest(f"format file not present at this seat: {rel}")
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh).get("html") or ""
+
+    def test_the_enabled_proformas_assert_no_currency_word(self):
+        for label, rel in self.FORMATS.items():
+            html = self._html(rel)
+            self.assertGreater(len(html), 200, label)          # POSITIVE CONTROL: we read something
+            for literal in ("USD TOTAL", "Total en Dolares", "Total en Dólares"):
+                self.assertNotIn(literal, html, f"{label} hardcodes {literal!r}")
+
+    def test_the_total_caption_derives_from_the_document_currency(self):
+        for label, rel in self.FORMATS.items():
+            html = self._html(rel)
+            self.assertRegex(html, r"currency\s*\}\}[^<]{0,40}TOTAL",
+                             f"{label}'s total caption is not currency-derived")
+
+
 def check_live_schema_guards():
     """DB-side twin of the above, for a deployed tier (Node A / Node C).
 
