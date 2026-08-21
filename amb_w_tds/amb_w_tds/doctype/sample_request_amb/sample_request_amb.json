@@ -62,6 +62,7 @@
   "cb_venta_paqueteria",
   "cb_forwarder",
   "section_shipment_values",
+  "custom_valuation_mode",
   "commercial_value_usd",
   "number_of_packages",
   "col_break_values",
@@ -269,7 +270,7 @@
    "fetch_from": "coa_amb.custom_golden_number",
    "fetch_if_empty": 0,
    "read_only_depends_on": "eval:doc.coa_amb",
-   "description": "Auto-fetched from linked COA AMB (sales req 2026-07-15): when coa_amb is set, this mirrors the COA's golden number and is read-only \u2014 no double entry. Manual entry stays allowed while no COA is linked."
+   "description": "Auto-fetched from linked COA AMB (sales req 2026-07-15): when coa_amb is set, this mirrors the COA's golden number and is read-only — no double entry. Manual entry stays allowed while no COA is linked."
   },
   {
    "fieldname": "custom_product_key_tds",
@@ -291,7 +292,7 @@
   {
    "fieldname": "section_contact",
    "fieldtype": "Section Break",
-   "label": "Contact & Address / Contacto y Direcci\u00f3n"
+   "label": "Contact & Address / Contacto y Dirección"
   },
   {
    "fieldname": "contact_person",
@@ -303,7 +304,7 @@
    "fetch_from": "address.phone",
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone / Tel\u00e9fono"
+   "label": "Phone / Teléfono"
   },
   {
    "fieldname": "fax",
@@ -323,7 +324,7 @@
   {
    "fieldname": "address",
    "fieldtype": "Link",
-   "label": "Address / Direcci\u00f3n",
+   "label": "Address / Dirección",
    "options": "Address"
   },
   {
@@ -342,7 +343,7 @@
    "fetch_from": "address.country",
    "fieldname": "country",
    "fieldtype": "Link",
-   "label": "Country / Pa\u00eds",
+   "label": "Country / País",
    "options": "Country"
   },
   {
@@ -375,18 +376,18 @@
   {
    "fieldname": "tab_logistica",
    "fieldtype": "Tab Break",
-   "label": "2. Log\u00edstica / Logistics"
+   "label": "2. Logística / Logistics"
   },
   {
    "fieldname": "customs_carrier",
    "fieldtype": "Select",
-   "label": "Carrier / Paqueter\u00eda",
+   "label": "Carrier / Paquetería",
    "options": "DHL\nFEDEX\nUPS\nFEDEX GROUND\nOTHER"
   },
   {
    "fieldname": "waybill_number",
    "fieldtype": "Data",
-   "label": "Waybill / Gu\u00eda"
+   "label": "Waybill / Guía"
   },
   {
    "fieldname": "col_break_logistics_1",
@@ -429,6 +430,13 @@
    "label": "Shipment Values / Valores del Embarque"
   },
   {
+   "fieldname": "custom_valuation_mode",
+   "fieldtype": "Select",
+   "label": "Valuation Mode / Modo de Valuación",
+   "options": "A\nB\nC",
+   "description": "A = flat shipment value · B = per row (samples share it) · C = per sample (samples add). Default derives from Shipment Nature: Venta → C, otherwise A."
+  },
+  {
    "default": "1.00",
    "fieldname": "commercial_value_usd",
    "fieldtype": "Currency",
@@ -465,7 +473,7 @@
   {
    "fieldname": "section_export_type",
    "fieldtype": "Section Break",
-   "label": "Export Type / Tipo de Exportaci\u00f3n"
+   "label": "Export Type / Tipo de Exportación"
   },
   {
    "fieldname": "internal_export_type",
@@ -547,7 +555,7 @@
   {
    "fieldname": "tab_documentacion",
    "fieldtype": "Tab Break",
-   "label": "3. Documentaci\u00f3n / Documentation"
+   "label": "3. Documentación / Documentation"
   },
   {
    "fieldname": "section_docs_col1",
@@ -598,7 +606,7 @@
    "default": "0",
    "fieldname": "cb_coa",
    "fieldtype": "Check",
-   "label": "COA / Cert. de An\u00e1lisis"
+   "label": "COA / Cert. de Análisis"
   },
   {
    "default": "0",
@@ -659,7 +667,7 @@
    "fieldname": "letter_language",
    "fieldtype": "Select",
    "label": "Language / Carta",
-   "options": "Carta Espa\u00f1ol\nCarta Ingles"
+   "options": "Carta Español\nCarta Ingles"
   },
   {
    "fieldname": "tab_seguimiento",
@@ -669,7 +677,7 @@
   {
    "fieldname": "po_number",
    "fieldtype": "Data",
-   "label": "PO# / N\u00famero de Orden"
+   "label": "PO# / Número de Orden"
   },
   {
    "default": "0",
@@ -697,7 +705,7 @@
    "default": "0",
    "fieldname": "cb_solicitud_cotizacion",
    "fieldtype": "Check",
-   "label": "Solicitud de Cotizaci\u00f3n"
+   "label": "Solicitud de Cotización"
   },
   {
    "default": "0",

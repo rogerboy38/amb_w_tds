@@ -30,12 +30,71 @@ class SampleRequestAMB(Document):
                 row.total_qty = row.samples_count * row.qty_per_sample
             else:
                 row.total_qty = 0
-    
+        self._roll_up_shipment_weights()
+
+    def _roll_up_shipment_weights(self):
+        """BUG208 D-WEIGHT -- the declared gross is a SERVER rollup of the rows.
+
+        Runs from `before_save`, so it fires on every save: form, API, script or
+        import. The previous rollup lived only in `sample_request_amb.js`
+        (`amb_wt_rollup`), which fires on form interaction, so
+        `computed_gross_kg` was 0/NULL on 14 of 16 live documents while the
+        memos printed the MANUAL `gross_weight_kg` instead -- 500 GR declared
+        for a 160 GR shipment on one, and on SR-2026-00026 the net typed into
+        the gross field (160 GR declared against a true 492 GR).
+
+        ⛔ NEVER DECLARES ZERO FROM AN EMPTY ROLLUP. If the rows carry no
+        weights the operator's own figures are left exactly as entered. Writing
+        a 0 here would trade an over-declaration for a zero-weight customs
+        document, which is worse than the bug -- the failure mode that retired
+        the first draft of this criterion.
+        """
+        rows = self.get("samples") or []
+        net = sum(flt(r.get("row_net_weight")) for r in rows)
+        tara = sum(flt(r.get("row_tara_weight")) for r in rows)
+        gross = sum(flt(r.get("row_gross_weight")) for r in rows)
+
+        if gross > 0:
+            self.computed_gross_kg = gross
+            # The DECLARED field is what the memos print, so the rollup has to
+            # reach it -- computing a correct number into a field nobody prints
+            # is the defect this replaces, one layer over.
+            self.gross_weight_kg = gross
+        if net > 0:
+            self.shipment_net_weight = net
+        if tara > 0:
+            self.shipment_tara_weight = tara
+
     def validate(self):
         self.validate_batch_consistency()
+        self.set_valuation_mode()
         self.validate_shipment_values()
         self.validate_shipment_weights()
         self._fill_sample_item_names()
+        self._fill_sample_uom()
+
+    def set_valuation_mode(self):
+        """BUG208 A2 (ruled): the default valuation mode is DERIVED from
+        `shipment_nature` -- "Venta" -> C (per sample), otherwise A (flat
+        nominal). A mode the user has chosen is never overwritten."""
+        from amb_w_tds.valuation import default_mode_for
+
+        if not (self.get("custom_valuation_mode") or "").strip():
+            self.custom_valuation_mode = default_mode_for(self.get("shipment_nature"))
+
+    def _fill_sample_uom(self):
+        """BUG208 D-UOM: a blank row unit is filled from the Item's stock UOM.
+
+        The print formats fell back to a literal "g" when `uom` was empty --
+        NULL on 6 of 11 live child rows whose Item is stocked in Kg, so a 1 Kg
+        line declared "1.000 g" to customs: a 1000x MASS UNDER-DECLARATION.
+        Fixing it here corrects every format at once and, unlike a template
+        fallback, leaves the real unit in the data. Only blanks are filled."""
+        for row in (self.samples or []):
+            if row.item and not (row.get("uom") or "").strip():
+                stock_uom = frappe.db.get_value("Item", row.item, "stock_uom")
+                if stock_uom:
+                    row.uom = stock_uom
     
     def _fill_sample_item_names(self):
         """Backfill each sample row's description from the linked Item.
@@ -94,18 +153,34 @@ class SampleRequestAMB(Document):
                 )
     
     def validate_shipment_values(self):
-        """Validate shipment values for Proforma"""
-        # Ensure commercial value has a default if needed
-        if not self.commercial_value_usd:
+        """Validate shipment values for Proforma.
+
+        ⭐ BUG208 T-BUG208-6 -- THE ZERO FIX IS HERE, NOT IN JINJA. The test was
+        `if not self.commercial_value_usd`, which is TRUE for a deliberate 0, so
+        a Logistics user declaring nothing had it silently rewritten to 1.00 AT
+        SAVE, before any template ran. Measured in memory: 0 -> 1.0, None -> 1.0,
+        0.50 -> 0.50 (the control). The Jinja `or "1.00"` everyone reached for
+        first is DEAD CODE for this field -- it never sees a falsy value,
+        because this ran earlier.
+
+        ⛔ And the ruled multiplier makes the rewrite worse than it was: under
+        Mode C the total is value x SUM(samples_count), so a silent 0 -> 1.00 on
+        an 8-bag shipment declares $8.00 for a shipment meant to declare
+        nothing. `is None` preserves a deliberate zero; a genuinely MISSING
+        value still takes the nominal default.
+        """
+        if self.commercial_value_usd is None:
             self.commercial_value_usd = 1.00
-        
+
         # Ensure number of packages has a default
         if not self.number_of_packages:
             self.number_of_packages = 1
-        
-        # Ensure weight has a default
-        if not self.gross_weight_kg:
-            self.gross_weight_kg = 0.5
+
+        # ⛔ The `gross_weight_kg = 0.5` literal that used to live here is GONE.
+        # It fabricated a weight on a customs declaration: on SR-2026-00015 it
+        # printed 500 GR for a 160 GR shipment. The declared gross now comes
+        # from `_roll_up_shipment_weights()`, and when the rows cannot supply
+        # one, nothing is invented -- the operator's figure stands.
 
     def validate_shipment_weights(self):
         """Reject customs weights that print a negative tara (net must not exceed gross)."""

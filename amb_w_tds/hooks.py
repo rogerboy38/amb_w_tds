@@ -135,6 +135,12 @@ doc_events = {
 jinja = {
     "methods": [
         "amb_w_tds.coa_qr.coa_qr_img",
+        # BUG208 D-VALUE/D-UOM -- one arithmetic shared by all six armed print
+        # formats, so "the same shipment renders ONE total everywhere" is a
+        # property of the code and not of six hand-edits staying in step.
+        "amb_w_tds.valuation_jinja.amb_valuation",
+        "amb_w_tds.valuation_jinja.amb_customs_value",
+        "amb_w_tds.valuation_jinja.amb_row_uom",
     ],
 }
 
