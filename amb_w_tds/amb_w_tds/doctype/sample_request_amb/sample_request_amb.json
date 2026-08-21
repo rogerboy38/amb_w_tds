@@ -468,7 +468,8 @@
    "fieldname": "shipment_nature",
    "fieldtype": "Select",
    "label": "Nature",
-   "options": "Venta\nRegalo\nMuestra sin valor\nMuestra mutilada"
+   "options": "Venta\nRegalo\nMuestra sin valor\nMuestra mutilada",
+   "reqd": 1
   },
   {
    "fieldname": "section_export_type",

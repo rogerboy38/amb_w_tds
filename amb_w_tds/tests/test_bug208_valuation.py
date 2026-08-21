@@ -74,14 +74,27 @@ class TestRoundingDoctrine(unittest.TestCase):
         self.assertEqual(ln["unit"], Decimal("0.3333"))
         self.assertEqual(ln["quantity"], 3)
 
-    def test_the_subtotal_is_exact_not_rounded_unit_times_quantity(self):
-        """The authoritative figure is the SUBTOTAL. This is the ruled 0.9999:
-        pinned as a KNOWN consequence so a future edit cannot introduce it by
-        accident and call it rounding."""
+    def test_mode_b_line_foots_at_the_printed_precision(self):
+        """T-BUG208-9, as ruled 2026-08-21: round to 2dp, so the reader's
+        multiplication reproduces the declared subtotal.
+
+        Both halves are asserted on purpose. The RAW product is 0.9999 and is
+        NOT the subtotal -- that is a fact about 1/3, not a defect, and pinning
+        it stops the claim "the line foots" from being read as exact equality.
+        What foots is the 2dp figure the money is actually declared in.
+        """
         ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": 3})
         self.assertEqual(ln["subtotal"], Decimal("1.00"))
-        self.assertEqual(ln["unit"] * 3, Decimal("0.9999"))  # does NOT foot — ruled
+        self.assertEqual(ln["unit"] * 3, Decimal("0.9999"))          # raw: not equal
         self.assertNotEqual(ln["unit"] * 3, ln["subtotal"])
+        self.assertEqual(money(ln["unit"] * 3), money(ln["subtotal"]))  # ⭐ ruled: foots at 2dp
+        self.assertEqual(money(ln["unit"] * 3), Decimal("1.00"))
+
+    def test_footing_at_2dp_holds_for_other_awkward_divisors(self):
+        """A control against pinning one lucky case: 7 and 6 also foot at 2dp."""
+        for n in (3, 6, 7, 9, 11):
+            ln = line_for(MODE_PER_ROW, "1.00", {"samples_count": n})
+            self.assertEqual(money(ln["unit"] * n), money(ln["subtotal"]), n)
 
     def test_sum_of_rounded_lines_is_not_how_the_total_is_built(self):
         """A third of a cent, thirty times: rounding each line first loses money."""

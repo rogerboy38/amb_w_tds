@@ -22,14 +22,19 @@ That is what keeps the total exact under Mode B, where a row's value is SHARED
 across its samples and the per-sample unit can be a repeating fraction
 (1.00 / 3 = 0.3333...).
 
-⛔ KNOWN AND RULED, NOT AN OVERSIGHT: under Mode B with samples_count > 1 the
-printed line does NOT foot exactly -- 3 x 0.3333 = 0.9999 against a declared
-1.00. No display precision fixes it, because 1/3 does not terminate; adding
-digits moves the error rather than removing it. The ruled rendering (v5 2,
-T-BUG208-9) shows the per-sample breakdown and treats the subtotal as
-authoritative. Node B's filed recommendation was v4's exact-footing form
-(quantity 1, unit = the row value); it was not adopted, and this comment exists
-so the next reader knows the 0.9999 is a decision rather than a bug.
+⭐ MODE B FOOTS AT THE PRINTED PRECISION (Hugh, 2026-08-21 -- round to 2dp).
+A Mode-B row shares its value across its samples, so the per-sample unit can be
+a repeating fraction: 1.00 / 3 = 0.3333... The printed line reads
+    quantity 3  x  unit $0.3333  =  $0.9999  -> ROUNDED TO 2dp -> $1.00
+which is exactly the declared subtotal. So the reader's arithmetic reproduces
+the declaration at the precision money is stated in, and the total stays exact
+because it sums the SUBTOTALS, never the rounded units.
+
+⚠ Read that claim precisely, because it is easy to over-state: the raw product
+0.9999 is NOT equal to 1.00, and no display precision makes it so -- 1/3 does
+not terminate, so adding digits moves the residue rather than removing it. What
+is true, and what was ruled, is that the two agree ONCE ROUNDED TO THE 2dp the
+money is declared in. The subtotal remains the authoritative figure.
 """
 
 from __future__ import annotations
