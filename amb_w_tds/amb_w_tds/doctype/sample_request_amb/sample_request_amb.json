@@ -432,8 +432,8 @@
    "default": "1.00",
    "fieldname": "commercial_value_usd",
    "fieldtype": "Currency",
-   "label": "Valor Comer. en USD / Commercial Value",
-   "options": "USD"
+   "label": "Valor Comercial / Commercial Value",
+   "options": "currency"
   },
   {
    "default": "1",

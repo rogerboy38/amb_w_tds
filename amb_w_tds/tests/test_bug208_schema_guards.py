@@ -52,14 +52,36 @@ class TestShippedSchemaGuards(unittest.TestCase):
         self.assertIsNotNone(_field("commercial_value_usd"))
 
     def test_currency_default_is_usd(self):
-        """A4 — if this fails, new documents are born MXN and print MXN."""
+        """A4 — the JSON key.
+
+        ⛔ NECESSARY BUT NOT SUFFICIENT, AND THAT IS THE WHOLE LESSON. This
+        assertion passed for months while new documents were born **MXN**: the
+        key is present and UNREACHABLE. `frappe/model/create_new.py:88` reads
+        `defaults.get(df.fieldname)` — a site default that happens to share this
+        field's name ("currency") — and returns it at :95, before `df.default`
+        is consulted at :115. Global Defaults here is MXN.
+
+        I reported this key as "already correct, a no-op" on the strength of
+        reading it. The behavioural twin below is what actually guards the
+        property; this one only guards the declaration.
+        """
         fld = _field("currency")
         self.assertIsNotNone(fld, "the currency field itself is gone")
-        self.assertEqual(
-            fld.get("default"), "USD",
-            "currency default lost — new Sample Requests will inherit the "
-            "site's MXN default and declare MXN on customs documents",
-        )
+        self.assertEqual(fld.get("default"), "USD")
+
+    def test_the_value_field_is_bound_to_the_currency_field_not_a_literal(self):
+        """⭐ A Currency field's `options` names the FIELD that supplies its
+        currency. It read `"USD"` — a hardcoded literal — so the form, list view
+        and every report rendered the value as USD no matter what the document
+        said, while the print format rendered the document's real currency. Two
+        renderings of one figure, disagreeing, in the schema."""
+        fld = _field("commercial_value_usd")
+        self.assertIsNotNone(fld)
+        self.assertEqual(fld.get("options"), "currency",
+                         "commercial_value_usd asserts a currency instead of "
+                         "reading the document's")
+        self.assertNotIn("USD", fld.get("label") or "",
+                         "the field LABEL still asserts USD")
 
     def test_shipment_nature_is_required(self):
         """A3 — the field being required is what prevents new NULL-nature docs;

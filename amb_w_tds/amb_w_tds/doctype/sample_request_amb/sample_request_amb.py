@@ -6,6 +6,49 @@ from frappe.utils import flt
 
 class SampleRequestAMB(Document):
     
+    #: D-CCY: the ruled born-currency for a Sample Request.
+    DEFAULT_CURRENCY = "USD"
+
+    def before_insert(self):
+        self._apply_default_currency()
+
+    def _apply_default_currency(self):
+        """D-CCY — make "born USD" TRUE, because the JSON default cannot be.
+
+        ⛔ THE JSON DEFAULT IS PRESENT AND UNREACHABLE ON THIS SITE. The field
+        carries `"default": "USD"` and has since 2026-04-30, yet a new document
+        is born **MXN**. Mechanism, read at frappe/model/create_new.py:
+
+            :88   user_default = defaults.get(df.fieldname)   # keyed on "currency"
+            :95   if user_default ...: return user_default    # ⛔ returns here
+            :115  return df.default                          # never reached
+
+        Global Defaults sets `default_currency = MXN`, which surfaces in
+        `frappe.defaults` under the key **"currency"** -- the same string as this
+        field's name -- so a site-wide default wins over the field's own default
+        purely because the names collide. I previously reported the JSON key as
+        "already correct, a no-op"; it is present but INERT, and reporting the
+        key instead of the behaviour is what let that stand.
+
+        ⚠ WHY THIS COMPARES AGAINST THE SITE DEFAULT rather than just forcing
+        USD: the ruling keeps the field editable for a genuine non-USD export.
+        Overwriting unconditionally would discard a deliberate EUR/CAD choice
+        made before the first save. Overwriting ONLY the value that the site
+        handed us -- the one nobody chose -- honours both halves: the unchosen
+        MXN becomes USD, an explicit non-USD choice survives.
+
+        ⛔ NOT a fix for the four existing MXN documents. Those are a ruled,
+        enumerated, gated prod write at Node C; this only stops new ones.
+        """
+        site_default = frappe.defaults.get_defaults().get("currency")
+        current = (self.currency or "").strip()
+
+        if not current:
+            self.currency = self.DEFAULT_CURRENCY
+        elif site_default and current == site_default and current != self.DEFAULT_CURRENCY:
+            # the value came from the site, not from a person
+            self.currency = self.DEFAULT_CURRENCY
+
     def before_save(self):
         self.set_customer_name()
         self.update_totals()
