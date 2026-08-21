@@ -30,28 +30,34 @@ class SampleRequestAMB(Document):
         "already correct, a no-op"; it is present but INERT, and reporting the
         key instead of the behaviour is what let that stand.
 
-        ⚠ WHY THIS COMPARES AGAINST THE SITE DEFAULT rather than just forcing
-        USD: the ruling keeps the field editable for a genuine non-USD export.
-        Overwriting unconditionally would discard a deliberate EUR/CAD choice
-        made before the first save. Overwriting ONLY the value that the site
-        handed us -- the one nobody chose -- honours both halves: the unchosen
-        MXN becomes USD, an explicit non-USD choice survives.
-
-        ⛔ NOT a fix for the four existing MXN documents. Those are a ruled,
+        ⛔ NOT a fix for the existing MXN documents. Those are a ruled,
         enumerated, gated prod write at Node C; this only stops new ones.
 
-        ⭐ E6 CLOSED FOR THE FORM PATH (2026-08-21, Hugh's pick). The value-
-        equality test below cannot tell "the site handed us MXN" from "a person
-        chose MXN" -- and MXN is precisely what a Mexican company might
-        deliberately declare on a domestic shipment. The fix is not a better
-        guess; it is removing the need to guess. `sample_request_amb.js` now
-        pre-fills the FORM with USD, so on the desk path any other value was
-        typed by someone and is left alone.
+        ⭐ WHAT THIS DOES, EXACTLY, PER PATH -- and the two are NOT the same:
 
-        The site-default override survives only for the paths with no human in
-        them -- API, script, import -- where `create_new` supplies MXN and
-        nobody chose anything. That is what keeps E8 (born USD) true for
-        programmatic inserts while the operator's explicit MXN survives.
+            DESK SAVE (a person is present)
+              currency is left ALONE, whatever it holds. `sample_request_amb.js`
+              pre-fills a new form with USD, so any other value was TYPED. An
+              explicit MXN survives -- and MXN is precisely what a Mexican
+              company might declare on a domestic shipment.
+
+            API / SCRIPT / IMPORT (nobody is present)
+              a value equal to the site default is replaced with USD, because
+              `create_new` supplied it and no one chose it. This is what keeps
+              "born USD" true for programmatic inserts.
+              ⚠ SO ON THIS PATH AN EXPLICIT MXN IS **NOT** PRESERVED: it is
+              indistinguishable from the site's own default. EUR/CAD/GBP are
+              preserved on both paths; MXN is preserved only on the desk path.
+
+        ⭐ Why a form default rather than a cleverer test: the server was
+        guessing only because the layer above it had already handed the user
+        MXN. Moving the default to where a person can SEE it removes the need to
+        guess. A better guess would still have been a guess.
+
+        ⚠ An earlier version of this docstring claimed "an explicit non-USD
+        choice survives" without qualification. That was false on the API path,
+        and a docstring asserting a property the code does not have is how an
+        acceptance item gets ticked without being met.
         """
         site_default = frappe.defaults.get_defaults().get("currency")
         current = (self.currency or "").strip()
