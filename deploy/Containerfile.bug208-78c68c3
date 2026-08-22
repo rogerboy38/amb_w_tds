@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# BUG208 prod bake — amb_w_tds@78c68c3 + amb_print@a670b36
+#
+# ⛔ WRITTEN BY NODE B, NOT BUILT BY NODE B. This seat has NO container tooling
+#    (no docker/podman/buildah/nerdctl, no daemon, no socket, not in a container),
+#    so §B-A's "bake at Node B's seat" cannot execute here. This is the recipe,
+#    pinned and assertion-carrying, for whichever seat holds a builder.
+#
+# ⭐ TWO DELIBERATE DEPARTURES FROM THE T116 RECIPE THIS IS MODELLED ON:
+#
+#   1. T116 cloned by BRANCH (`git clone -b feature/...`). That is exactly the
+#      moving target the card's trap #1 names — and this ticket already saw the
+#      tip of fix/bug208-e6-form-default drift once. Here the branch is only a
+#      fetch hint; HEAD is checked out BY SHA and then ASSERTED.
+#
+#   2. T116's build-time integrity was `grep -q "someString"`. A grep proves a
+#      string is present, not that the FILE is the sealed one. These assertions
+#      compare sha256 of the actual bytes — the "weigh the cake, not the recipe"
+#      rule applied inside the build, so a wrong clone fails the BAKE rather
+#      than surviving to be caught at E-W11.
+#
+# ⚠ E-W11 IS STILL NODE C'S, AND STILL NECESSARY. These in-build assertions are
+#   the baker checking itself, which is precisely the executor-and-judge shape
+#   the card refuses to rely on. They make a bad bake fail EARLY; they do not
+#   substitute for Node C re-deriving from the PULLED image.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ⛔ Node C supplies this: the tag prod is pinned to TODAY, across its 9 compose
+#    lines. Do not guess it — this seat has never seen prod's compose layout.
+ARG BASE_IMAGE=ghcr.io/rogerboy38/custom-erpnext:REPLACE_WITH_CURRENT_PROD_TAG
+FROM ${BASE_IMAGE}
+
+ARG AMB_W_TDS_SHA=78c68c3
+ARG AMB_PRINT_SHA=a670b36
+
+USER root
+
+# ── amb_w_tds @ 78c68c3 ──────────────────────────────────────────────────────
+RUN cd /home/frappe/frappe-bench/apps && \
+    rm -rf amb_w_tds && \
+    git clone https://github.com/rogerboy38/amb_w_tds amb_w_tds && \
+    cd amb_w_tds && \
+    git checkout ${AMB_W_TDS_SHA} && \
+    test "$(git rev-parse HEAD | cut -c1-7)" = "$(echo ${AMB_W_TDS_SHA} | cut -c1-7)" \
+      || (echo "BAKE ABORT: amb_w_tds HEAD is $(git rev-parse HEAD), expected ${AMB_W_TDS_SHA}" && exit 1) && \
+    chown -R frappe:frappe /home/frappe/frappe-bench/apps/amb_w_tds
+
+# ── amb_print @ a670b36 ──────────────────────────────────────────────────────
+RUN cd /home/frappe/frappe-bench/apps && \
+    rm -rf amb_print && \
+    git clone https://github.com/rogerboy38/amb_print_app amb_print && \
+    cd amb_print && \
+    git checkout ${AMB_PRINT_SHA} && \
+    test "$(git rev-parse HEAD | cut -c1-7)" = "$(echo ${AMB_PRINT_SHA} | cut -c1-7)" \
+      || (echo "BAKE ABORT: amb_print HEAD is $(git rev-parse HEAD), expected ${AMB_PRINT_SHA}" && exit 1) && \
+    chown -R frappe:frappe /home/frappe/frappe-bench/apps/amb_print
+
+# ── ⭐ WEIGH THE CAKE: assert the FILES, by sha256, not by grep ───────────────
+# Reference hashes derived by Node B from git objects at 78c68c3 / a670b36.
+# VM3 and Node A independently re-derived the two money files and agree
+# (valuation.py blob 3730e0ba…, valuation_jinja.py blob 1600857408…).
+USER frappe
+RUN set -eu; \
+    cd /home/frappe/frappe-bench/apps; \
+    check() { \
+      actual=$(sha256sum "$1" | cut -c1-12); \
+      if [ "$actual" != "$2" ]; then \
+        echo "BAKE ABORT: $1 sha256 $actual, expected $2"; exit 1; \
+      fi; \
+      echo "[E-W11 pre-check] $1 = $2 ✓"; \
+    }; \
+    check amb_w_tds/amb_w_tds/valuation.py                                             ff47c4740ef0; \
+    check amb_w_tds/amb_w_tds/valuation_jinja.py                                       e760851fe58a; \
+    check amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.py   59da88dff34c; \
+    check amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.js   bb4d02db9829; \
+    check amb_w_tds/amb_w_tds/amb_w_tds/doctype/sample_request_amb/sample_request_amb.json d7a15a871970; \
+    check amb_print/amb_print/amb_print/print_format/proforma_amb2/proforma_amb2.json   1696cf44259e; \
+    check amb_print/amb_print/fixtures/print_format.json                                6dfab3ffdb6a
+
+# ── install + build assets ───────────────────────────────────────────────────
+RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir \
+      -e /home/frappe/frappe-bench/apps/amb_w_tds \
+      -e /home/frappe/frappe-bench/apps/amb_print
+RUN cd /home/frappe/frappe-bench && bench build --apps amb_w_tds,amb_print
+
+# ── ⭐ THE THREE FRAMEWORK PROBES, RUN INSIDE THIS IMAGE ─────────────────────
+# The card's sharpest gap: these are FRAPPE facts, measured on a bench, and a
+# fresh bake can silently carry a different frappe than prod runs today. Running
+# them here fails the BAKE rather than shipping an image that renders a wrong
+# unit and looks successful.
+RUN set -eu; \
+    cd /home/frappe/frappe-bench; \
+    ./env/bin/python -c "\
+import frappe, sys; \
+from frappe.utils import fmt_money; \
+v = frappe.__version__; \
+a = fmt_money(0.3333, currency='USD', precision=4); \
+b = fmt_money(1.00,   currency='USD', precision=4); \
+import frappe.desk.form.save as s; \
+ok_trim = ('0.3333' in a) and ('1.00' in b) and ('1.0000' not in b); \
+ok_save = hasattr(s, 'savedocs'); \
+print('[probe] frappe', v); \
+print('[probe] fmt_money precision=4 self-trims:', ok_trim, '|', repr(a), repr(b)); \
+print('[probe] savedocs present:', ok_save); \
+sys.exit(0 if (ok_trim and ok_save) else 1)"
+
+# ── strip git metadata (T116 convention) ─────────────────────────────────────
+USER root
+RUN find /home/frappe/frappe-bench/apps -mindepth 1 -path "*/.git" | xargs rm -fr
+USER frappe
+
+LABEL org.opencontainers.image.description="BUG208 customs value/weight/uom — amb_w_tds@78c68c3 + amb_print@a670b36"
+LABEL bug208.amb_w_tds.sha="78c68c3"
+LABEL bug208.amb_print.sha="a670b36"
+LABEL bug208.rides_alone="F-1/F-2 and OPEN #11 (74f36dd) deliberately NOT included"
