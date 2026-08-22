@@ -83,26 +83,37 @@ RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir \
       -e /home/frappe/frappe-bench/apps/amb_print
 RUN cd /home/frappe/frappe-bench && bench build --apps amb_w_tds,amb_print
 
-# ── ⭐ THE THREE FRAMEWORK PROBES, RUN INSIDE THIS IMAGE ─────────────────────
-# The card's sharpest gap: these are FRAPPE facts, measured on a bench, and a
-# fresh bake can silently carry a different frappe than prod runs today. Running
-# them here fails the BAKE rather than shipping an image that renders a wrong
-# unit and looks successful.
+# ── ⭐ FRAMEWORK PROBES — ONLY THE SITE-FREE ONES ────────────────────────────
+# ⛔ BAKE #1 ABORTED HERE, and the abort was correct: [7/8] AttributeError: lang.
+# Root cause (Node A, reproduced at Node B): fmt_money(currency, precision)
+# resolves the currency's locale via the Language doctype through client_cache,
+# which needs a fully-connected site. A BAKE HAS NO SITE. VM3 measured it on a
+# bench and Node A's C5 exercised it in a site context; the build has neither.
+# Same frappe 16.17.5 -- wrong CONTEXT, not wrong version.
+#
+# ⭐ THE RULE THAT COMES OUT OF IT: A BUILD-TIME PROBE MAY ASSERT ONLY
+#    SITE-FREE FACTS. A probe that needs a site does not "fail on a bad image" --
+#    it fails on EVERY image, so it tests the builder, not the artifact.
+#
+# Measured bare-safe at this seat, with no site:
+#     frappe.__version__            -> 16.17.5   ✅
+#     savedocs present              -> True      ✅
+#     fmt_money(…, precision=4)     -> AttributeError: lang   ⛔ moved out
+#
+# ⇒ fmt_money self-trim moves to CHECK-5 (post-deploy, on the live site), which
+#   already renders SR-2026-00026 and would expose a wrong unit directly. It is
+#   not dropped -- it is asserted where it can actually be asserted.
 RUN set -eu; \
     cd /home/frappe/frappe-bench; \
     ./env/bin/python -c "\
 import frappe, sys; \
-from frappe.utils import fmt_money; \
-v = frappe.__version__; \
-a = fmt_money(0.3333, currency='USD', precision=4); \
-b = fmt_money(1.00,   currency='USD', precision=4); \
 import frappe.desk.form.save as s; \
-ok_trim = ('0.3333' in a) and ('1.00' in b) and ('1.0000' not in b); \
+v = frappe.__version__; \
 ok_save = hasattr(s, 'savedocs'); \
 print('[probe] frappe', v); \
-print('[probe] fmt_money precision=4 self-trims:', ok_trim, '|', repr(a), repr(b)); \
 print('[probe] savedocs present:', ok_save); \
-sys.exit(0 if (ok_trim and ok_save) else 1)"
+print('[probe] fmt_money self-trim: DEFERRED to Check-5 (needs a connected site)'); \
+sys.exit(0 if ok_save else 1)"
 
 # ── strip git metadata (T116 convention) ─────────────────────────────────────
 USER root
