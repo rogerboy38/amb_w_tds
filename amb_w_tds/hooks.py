@@ -141,6 +141,10 @@ jinja = {
         "amb_w_tds.valuation_jinja.amb_valuation",
         "amb_w_tds.valuation_jinja.amb_customs_value",
         "amb_w_tds.valuation_jinja.amb_row_uom",
+        # LOOP-1 — the lot-identity resolver. Registering it makes it REACHABLE
+        # from a render (VMG-I I-4); no format calls it yet, migration is
+        # per-format and lands by ruling.
+        "amb_w_tds.lot_identity.amb_lot_identity",
     ],
 }
 
