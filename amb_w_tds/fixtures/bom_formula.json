@@ -110,26 +110,35 @@
     "doctype": "BOM Formula Mix Input",
     "idx": 1,
     "cunete_ref": "A0301",
-    "kg": 476.0
+    "kg": 476.0,
+    "item_code": "A0301",
+    "pct": 68.0
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 2,
     "cunete_ref": "A0302",
-    "kg": 105.0
+    "kg": 105.0,
+    "item_code": "A0302",
+    "pct": 15.0
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 3,
     "cunete_ref": "A0303",
-    "kg": 105.0
+    "kg": 105.0,
+    "item_code": "A0303",
+    "pct": 15.0
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 4,
     "cunete_ref": "A0304",
-    "kg": 14.0
+    "kg": 14.0,
+    "item_code": "A0304",
+    "pct": 2.0
    }
-  ]
+  ],
+  "blend_status": "Proposal"
  }
 ]

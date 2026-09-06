@@ -114,7 +114,7 @@
       "fieldname": "blend_status",
       "fieldtype": "Select",
       "label": "Blend Status",
-      "options": "\nFeasible\nCost-approval-needed\nInfeasible\nNon-conforming-accepted",
+      "options": "\nProposal\nFeasible\nCost-approval-needed\nInfeasible\nNon-conforming-accepted",
       "read_only": 1,
       "description": "Solver-populated (Sprint 2). Read-only placeholder."
     },
