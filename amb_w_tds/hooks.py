@@ -292,6 +292,10 @@ fixtures = [
          ["name", "in", _AMB_W_TDS_CF_EXCEPTIONS],
      ]},
     {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
+    # F-L1 (2026-09-06, Hugh's word): BOM Formula runs on Custom DocPerms (standard 0).
+    # Declaring the FULL destination (all four rows) makes the fixture idempotent and
+    # wipe-proof on every migrate — sync_fixtures upserts by name and never deletes.
+    {"doctype": "Custom DocPerm",         "filters": [["parent", "=", "BOM Formula"]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
     # Parameter records. These are the Link targets the picker's title-row
