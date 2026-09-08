@@ -32,6 +32,14 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "line_class",
+      "fieldtype": "Select",
+      "label": "Line Class",
+      "options": "component\nrecovered_solids\ninsumo",
+      "default": "component",
+      "in_list_view": 1
+    },
+    {
       "fieldname": "kg",
       "fieldtype": "Float",
       "label": "Kg",

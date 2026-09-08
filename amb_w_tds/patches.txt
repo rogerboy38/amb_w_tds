@@ -64,3 +64,7 @@ amb_w_tds.patches.v17_sr1.add_sr_control_number_field
 # the naming_series Property Setter is deliberately untouched.
 amb_w_tds.patches.v17_sr1.remove_sample_request_amb_docperm_overlay
 amb_w_tds.patches.v16_delete_fetch_if_empty_property_setters
+# E-4 (ED2 flip, Producción/Alicia 2026-09-07): pH is combined as a LINEAR kg-weighted
+# average, so the 794 hplus_avg rows on the three pH spellings move to mass_avg. The
+# hplus_avg Select option itself stays until a later card (Hugh, 2026-09-07).
+amb_w_tds.patches.e4_ph_blend_method_mass_avg

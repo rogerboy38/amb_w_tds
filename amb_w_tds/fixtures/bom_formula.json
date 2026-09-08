@@ -11,7 +11,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}",
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}",
   "target_solids": 10.0
  },
  {
@@ -26,7 +28,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}",
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}",
   "target_solids": 13.0
  },
  {
@@ -41,7 +45,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}",
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}",
   "target_solids": 100.0
  },
  {
@@ -56,7 +62,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}"
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}"
  },
  {
   "doctype": "BOM Formula",
@@ -70,7 +78,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}",
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}",
   "target_solids": 10.0
  },
  {
@@ -85,7 +95,9 @@
   "custom_cunete_kg": 25.0,
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\"\n}"
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\"\n}"
  },
  {
   "doctype": "BOM Formula",
@@ -104,39 +116,45 @@
   "target_tds": "0307 AGROMAYAL BOTANICA  500/100",
   "batch_size_kg": 700.0,
   "juice_future_note": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4.",
-  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.98,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC under review (ED15)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC 0.98 held pending Alicia/Raul; nobody edits the coefficient)\",\n \"proposal\": \"L1 draft proportions - PROPOSAL pending ED13 (Alicia/Raul rule at E-2/E-12): A0301 68% [50-85] = 476 kg - A0302 15% [0-30] = 105 kg - A0303 15% [0-30] = 105 kg - A0304 2% [0-10] = 14 kg - kg = pct x 700. Item codes carried in mix_input_lines.cunete_ref (the child table has no item/pct fields at this rung; real fields arrive at E-3 per plan).\",\n \"blend_status_note\": \"blend_status left EMPTY deliberately: 'draft/proposal' is not among the field's Select options and fixture import runs full validation; docstatus 0 IS the draft state. Deviation from card A4 letter, reported in E1-APPLIED.\"\n}",
+  "rc_estimate": 85.0,
+  "shelf_life_days": 730,
+  "solver_memory": "{\n \"coefficients\": {\n  \"RENDJF\": 0.95,\n  \"RC\": 0.85,\n  \"RP\": 0.86,\n  \"scrap_pct\": 3.0,\n  \"scrap_target\": \"Scrap\"\n },\n \"flags\": [\n  \"RC estimado 0.85 (Producci\u00f3n 2026-09-07) \u2014 real al recibir factura 0303 (ED15 closed)\"\n ],\n \"witnesses\": {\n  \"mem_cal_memos_RC\": \"0.95 (50/50 recovered instances)\",\n  \"det_memc_medians_RC\": \"0.98\"\n },\n \"sources\": {\n  \"mem_cal.fpt\": \"sha256 45eeb33230bcd04066757c9c70816b36d73ec99e617d3423581c2f3428286802 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.fpt)\",\n  \"mem_cal.dbf\": \"sha256 4d8d4b6175a7683905f03565019bac4702f151fbd97c0bb7b9a399a5ed880f28 (FOXPRO-MANIFEST-2026-09-06: canonical-ed12/mem_cal.dbf)\",\n  \"det_memc.dbf\": \"sha256 31f4f7f56f08ddec02dbd344cc1e14aa5938dd3aa190e563aee0357ee1d6e93a (FOXPRO-MANIFEST-2026-09-06: det_memc.dbf)\"\n },\n \"ruling\": \"ED1 (RENDJF 0.95 - RP 0.86 - scrap 3%) - ED15 (RC estimado 0.85, editable por memoria (Producci\u00f3n 2026-09-07, ED15 closed); RC real al capturar la factura 0303)\",\n \"proposal\": \"per-order percentages (ED13: no master recipe) - A0304 recovered_solids (ED5, Producci\u00f3n 09-07) - RC estimate 0.85 (ED15). Current lines: A0301 68% = 476 kg - A0302 15% = 105 kg - A0303 15% = 105 kg (components, 686 kg) - A0304 2% = 14 kg (recovered_solids, cost absorbed, outside the cost divisor) - kg = pct x 700. Item identity is carried by mix_input_lines.item_code since E-3; cunete_ref cleared at E-4.\",\n \"blend_status_note\": \"blend_status left EMPTY deliberately: 'draft/proposal' is not among the field's Select options and fixture import runs full validation; docstatus 0 IS the draft state. Deviation from card A4 letter, reported in E1-APPLIED.\"\n}",
   "mix_input_lines": [
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 1,
-    "cunete_ref": "A0301",
+    "cunete_ref": "",
     "kg": 476.0,
     "item_code": "A0301",
-    "pct": 68.0
+    "pct": 68.0,
+    "line_class": "component"
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 2,
-    "cunete_ref": "A0302",
+    "cunete_ref": "",
     "kg": 105.0,
     "item_code": "A0302",
-    "pct": 15.0
+    "pct": 15.0,
+    "line_class": "component"
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 3,
-    "cunete_ref": "A0303",
+    "cunete_ref": "",
     "kg": 105.0,
     "item_code": "A0303",
-    "pct": 15.0
+    "pct": 15.0,
+    "line_class": "component"
    },
    {
     "doctype": "BOM Formula Mix Input",
     "idx": 4,
-    "cunete_ref": "A0304",
+    "cunete_ref": "",
     "kg": 14.0,
     "item_code": "A0304",
-    "pct": 2.0
+    "pct": 2.0,
+    "line_class": "recovered_solids"
    }
   ],
   "blend_status": "Proposal"

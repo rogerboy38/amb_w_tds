@@ -111,6 +111,38 @@
       "description": "Solver-populated (Sprint 2). Read-only placeholder."
     },
     {
+      "fieldname": "rc_estimate",
+      "fieldtype": "Percent",
+      "label": "RC Estimado",
+      "default": "85",
+      "reqd": 0,
+      "description": "RC estimado — editable por lote; pre-cargar con el RC real del último lote del mismo producto"
+    },
+    {
+      "fieldname": "theoretical_powder_kg",
+      "fieldtype": "Float",
+      "label": "Polvo Teórico (Kg)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "received_powder_kg",
+      "fieldtype": "Float",
+      "label": "Polvo Recibido (Kg)"
+    },
+    {
+      "fieldname": "rc_actual",
+      "fieldtype": "Percent",
+      "label": "RC Real",
+      "read_only": 1
+    },
+    {
+      "fieldname": "shelf_life_days",
+      "fieldtype": "Int",
+      "label": "Vida de Anaquel (días)",
+      "default": "730",
+      "description": "vida de anaquel del lote = fecha de mezcla + 730 d"
+    },
+    {
       "fieldname": "blend_status",
       "fieldtype": "Select",
       "label": "Blend Status",
