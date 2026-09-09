@@ -769,7 +769,6 @@ def get_batch_quality_data(batch_name):
         return {"error": str(e)}
 
 @frappe.whitelist()
-@frappe.whitelist()
 def generate_coa_pdf(coa_name):
     """Generate the COA AMB2 PDF via the amb_print pipeline.
 
