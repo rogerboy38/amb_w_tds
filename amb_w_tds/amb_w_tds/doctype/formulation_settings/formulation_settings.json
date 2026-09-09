@@ -1,0 +1,20 @@
+{
+  "doctype": "DocType",
+  "name": "Formulation Settings",
+  "module": "Amb W Tds",
+  "issingle": 1,
+  "istable": 0,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "cost_target_per_kg", "fieldtype": "Currency", "label": "Cost Target per Kg" },
+    { "fieldname": "cost_hard_max_per_kg", "fieldtype": "Currency", "label": "Cost Hard Max per Kg" },
+    { "fieldname": "currency", "fieldtype": "Link", "label": "Currency", "options": "Currency" },
+    { "fieldname": "approver_roles", "fieldtype": "Small Text", "label": "Approver Roles" },
+    { "fieldname": "default_source_warehouse", "fieldtype": "Link", "label": "Default Source Warehouse", "options": "Warehouse" },
+    { "fieldname": "default_coa_source", "fieldtype": "Select", "label": "Default COA Source", "options": "\nCOA AMB2\nCOA AMB" }
+  ],
+  "permissions": [
+    { "role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1 },
+    { "role": "Manufacturing Manager", "read": 1, "write": 1 }
+  ]
+}

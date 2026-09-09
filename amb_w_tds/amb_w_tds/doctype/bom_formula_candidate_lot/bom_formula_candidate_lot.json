@@ -1,0 +1,21 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Candidate Lot",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "batch_amb", "fieldtype": "Link", "label": "Batch AMB", "options": "Batch AMB", "in_list_view": 1 },
+    { "fieldname": "sublot", "fieldtype": "Data", "label": "Sublot", "in_list_view": 1 },
+    { "fieldname": "golden_number", "fieldtype": "Data", "label": "Golden Number" },
+    { "fieldname": "coa_amb2", "fieldtype": "Link", "label": "COA AMB2", "options": "COA AMB2" },
+    { "fieldname": "kg_available", "fieldtype": "Float", "label": "Kg Available", "in_list_view": 1 },
+    { "fieldname": "age_days", "fieldtype": "Int", "label": "Age (days)" },
+    { "fieldname": "shelf_life_remaining_days", "fieldtype": "Int", "label": "Shelf Life Remaining (days)" },
+    { "fieldname": "cost_per_kg", "fieldtype": "Currency", "label": "Cost per Kg" },
+    { "fieldname": "certifications", "fieldtype": "Data", "label": "Certifications" },
+    { "fieldname": "release_state", "fieldtype": "Select", "label": "Release State", "options": "\nconforme\nobservación\nno conforme" },
+    { "fieldname": "selected", "fieldtype": "Check", "label": "Selected", "in_list_view": 1 },
+    { "fieldname": "kg_selected", "fieldtype": "Float", "label": "Kg Selected", "in_list_view": 1 }
+  ]
+}

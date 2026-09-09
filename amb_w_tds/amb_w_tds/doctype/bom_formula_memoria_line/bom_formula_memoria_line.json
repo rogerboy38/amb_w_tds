@@ -1,0 +1,19 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Memoria Line",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "nom_corto", "fieldtype": "Data", "label": "Nombre Corto", "in_list_view": 1 },
+    { "fieldname": "nom_largo", "fieldtype": "Data", "label": "Nombre Largo" },
+    { "fieldname": "formula", "fieldtype": "Data", "label": "Fórmula", "length": 150, "in_list_view": 1 },
+    { "fieldname": "valor", "fieldtype": "Float", "label": "Valor", "in_list_view": 1 },
+    { "fieldname": "post", "fieldtype": "Check", "label": "Post" },
+    { "fieldname": "tipo", "fieldtype": "Data", "label": "Tipo" },
+    { "fieldname": "costo", "fieldtype": "Currency", "label": "Costo" },
+    { "fieldname": "clase", "fieldtype": "Select", "label": "Clase", "options": "\nINSUMO\nVARIABLE\nderived" },
+    { "fieldname": "retro", "fieldtype": "Data", "label": "Retro" },
+    { "fieldname": "prov_serv", "fieldtype": "Data", "label": "Proveedor/Servicio" }
+  ]
+}

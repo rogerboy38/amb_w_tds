@@ -68,3 +68,7 @@ amb_w_tds.patches.v16_delete_fetch_if_empty_property_setters
 # average, so the 794 hplus_avg rows on the three pH spellings move to mass_avg. The
 # hplus_avg Select option itself stays until a later card (Hugh, 2026-09-07).
 amb_w_tds.patches.e4_ph_blend_method_mass_avg
+
+# G-1a (2026-09-09): seed Formulation Settings once — cost target 600 / hard max 800 MXN/kg,
+# written explicitly rather than inherited from a DocType default (rule z).
+amb_w_tds.patches.g1a_formulation_settings_defaults

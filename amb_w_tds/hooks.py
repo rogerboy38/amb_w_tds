@@ -281,6 +281,9 @@ fixtures = [
     # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
     # custom fields on BOM Formula have their option doctypes present on import.
     {"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},
+    # G-1a (2026-09-09) — mixing equipment catalogue. Values are carried in the
+    # fixture explicitly, never inherited from a DocType default (rule z).
+    {"doctype": "Mixing Equipment"},
     # SR-1 (2026-07-29) — the Sample Request AMB permissions block binds to this role,
     # so it must exist on a tier before the doctype syncs. Paired with the
     # [pre_model_sync] patch v17_sr1.create_verifier_read_only_role (belt and braces:

@@ -36,6 +36,88 @@
       "label": "Status",
       "options": "\nPass\nFail",
       "in_list_view": 1
+    },
+    {
+      "fieldname": "computed_value",
+      "fieldtype": "Data",
+      "label": "Computed Value",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "Formatted estimate. Numeric parameters also fill predicted_value; qualitative (all_pass) parameters carry PASS/FAIL here and leave predicted_value null."
+    },
+    {
+      "fieldname": "blend_method",
+      "fieldtype": "Select",
+      "label": "Blend Method",
+      "options": "\nmass_avg\nhplus_avg\nworst_case\nall_pass",
+      "read_only": 1
+    },
+    {
+      "fieldname": "uom",
+      "fieldtype": "Data",
+      "label": "UOM",
+      "read_only": 1
+    },
+    {
+      "fieldname": "is_estimate",
+      "fieldtype": "Check",
+      "label": "Is Estimate",
+      "read_only": 1
+    },
+    {
+      "fieldname": "requires_lab_measurement",
+      "fieldtype": "Check",
+      "label": "Requires Lab Measurement",
+      "read_only": 1
+    },
+    {
+      "fieldname": "in_spec_estimate",
+      "fieldtype": "Check",
+      "label": "In Spec (Estimate)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "critical",
+      "fieldtype": "Check",
+      "label": "Critical",
+      "read_only": 1
+    },
+    {
+      "fieldname": "per_lot_pass",
+      "fieldtype": "Check",
+      "label": "Per Lot Pass",
+      "read_only": 1,
+      "description": "Contaminants/pathogens: every input lot passed individually. Never a blended pass."
+    },
+    {
+      "fieldname": "deviation_from_midpoint",
+      "fieldtype": "Float",
+      "label": "Deviation from Midpoint",
+      "read_only": 1
+    },
+    {
+      "fieldname": "measured_value",
+      "fieldtype": "Data",
+      "label": "Measured Value"
+    },
+    {
+      "fieldname": "confirmed",
+      "fieldtype": "Check",
+      "label": "Confirmed"
+    },
+    {
+      "fieldname": "release_ok",
+      "fieldtype": "Select",
+      "label": "Release OK",
+      "options": "Pending\nPass\nFail",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "note",
+      "fieldtype": "Small Text",
+      "label": "Note",
+      "read_only": 1
     }
   ]
 }

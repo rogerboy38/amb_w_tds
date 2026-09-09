@@ -9,6 +9,11 @@
   "autoname": "field:formula_name",
   "fields": [
     {
+      "fieldname": "pedido_tab",
+      "fieldtype": "Tab Break",
+      "label": "Pedido"
+    },
+    {
       "fieldname": "formula_name",
       "fieldtype": "Data",
       "label": "Formula Name",
@@ -24,8 +29,505 @@
     {
       "fieldname": "formula_type",
       "fieldtype": "Select",
-      "options": "Fermented Aloe Juice\nAloe Concentrate\nAloe Powder\nMix",
+      "options": "Fermented Aloe Juice\nAloe Concentrate\nAloe Powder\nMix\nBase",
       "label": "Formula Type"
+    },
+    {
+      "fieldname": "formulation_kind",
+      "fieldtype": "Select",
+      "label": "Tipo de Formulación",
+      "options": "\nmezcla lotes puros\npolvo + ingredientes\nacetypol-highpol\nlíquido"
+    },
+    {
+      "fieldname": "sales_order",
+      "fieldtype": "Link",
+      "label": "No. Pedido",
+      "options": "Sales Order"
+    },
+    {
+      "fieldname": "sales_order_item",
+      "fieldtype": "Data",
+      "label": "Renglón del Pedido"
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Cliente",
+      "options": "Customer",
+      "fetch_from": "sales_order.customer",
+      "read_only": 1
+    },
+    {
+      "fieldname": "target_tds",
+      "fieldtype": "Link",
+      "label": "Target TDS",
+      "options": "TDS Product Specification"
+    },
+    {
+      "fieldname": "kg_to_obtain",
+      "fieldtype": "Float",
+      "label": "Total Producto a Obtener (Kg)"
+    },
+    {
+      "fieldname": "presentation",
+      "fieldtype": "Link",
+      "label": "Presentación",
+      "options": "Item"
+    },
+    {
+      "fieldname": "mixing_equipment",
+      "fieldtype": "Link",
+      "label": "Equipo de Mezclado",
+      "options": "Mixing Equipment"
+    },
+    {
+      "fieldname": "batch_size_kg",
+      "fieldtype": "Float",
+      "label": "Batch Size (Kg)",
+      "default": 700
+    },
+    {
+      "fieldname": "sublots_required",
+      "fieldtype": "Int",
+      "label": "Sublotes Requeridos",
+      "read_only": 1
+    },
+    {
+      "fieldname": "mix_location",
+      "fieldtype": "Select",
+      "label": "Lugar de Mezclado",
+      "options": "\ninterno\nlaboratorio\nmaquila"
+    },
+    {
+      "fieldname": "labels_required",
+      "fieldtype": "Small Text",
+      "label": "Etiquetas Requeridas"
+    },
+    {
+      "fieldname": "formulation_date",
+      "fieldtype": "Date",
+      "label": "Fecha de Formulación"
+    },
+    {
+      "fieldname": "folio_foxpro",
+      "fieldtype": "Data",
+      "label": "Folio FoxPro (legado)"
+    },
+    {
+      "fieldname": "blend_status",
+      "fieldtype": "Select",
+      "label": "Blend Status",
+      "options": "\nProposal\nFeasible\nCost-approval-needed\nInfeasible\nNon-conforming-accepted",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "base_tab",
+      "fieldtype": "Tab Break",
+      "label": "Base"
+    },
+    {
+      "fieldname": "base_formula",
+      "fieldtype": "Link",
+      "label": "Fórmula Base",
+      "options": "BOM Formula"
+    },
+    {
+      "fieldname": "base_note",
+      "fieldtype": "Small Text",
+      "label": "Nota de Base"
+    },
+    {
+      "fieldname": "seleccion_tab",
+      "fieldtype": "Tab Break",
+      "label": "Selección de lotes"
+    },
+    {
+      "fieldname": "spec_filters",
+      "fieldtype": "Table",
+      "label": "Filtros de Especificación",
+      "options": "BOM Formula Spec Filter"
+    },
+    {
+      "fieldname": "cert_cosmos",
+      "fieldtype": "Check",
+      "label": "COSMOS"
+    },
+    {
+      "fieldname": "cert_ffl",
+      "fieldtype": "Check",
+      "label": "FFL"
+    },
+    {
+      "fieldname": "cert_halal",
+      "fieldtype": "Check",
+      "label": "Halal"
+    },
+    {
+      "fieldname": "cert_iasc_facility",
+      "fieldtype": "Check",
+      "label": "IASC Facility"
+    },
+    {
+      "fieldname": "cert_iasc_product",
+      "fieldtype": "Check",
+      "label": "IASC Product"
+    },
+    {
+      "fieldname": "cert_kosher",
+      "fieldtype": "Check",
+      "label": "Kosher"
+    },
+    {
+      "fieldname": "cert_organic_koc",
+      "fieldtype": "Check",
+      "label": "Organic KOC"
+    },
+    {
+      "fieldname": "cert_organic_nop_ec_lpo",
+      "fieldtype": "Check",
+      "label": "Organic NOP/EC/LPO"
+    },
+    {
+      "fieldname": "source_warehouse",
+      "fieldtype": "Link",
+      "label": "Almacén Origen",
+      "options": "Warehouse"
+    },
+    {
+      "fieldname": "coa_source",
+      "fieldtype": "Select",
+      "label": "Fuente de COA",
+      "options": "COA AMB2\nCOA AMB",
+      "default": "COA AMB2"
+    },
+    {
+      "fieldname": "fefo_key",
+      "fieldtype": "Select",
+      "label": "Clave FEFO",
+      "options": "manufacturing_date\nwwdyy\nboth",
+      "default": "both"
+    },
+    {
+      "fieldname": "candidate_lots",
+      "fieldtype": "Table",
+      "label": "Lotes Candidatos",
+      "options": "BOM Formula Candidate Lot"
+    },
+    {
+      "fieldname": "btn_ver_existencias",
+      "fieldtype": "Button",
+      "label": "Ver existencias",
+      "hidden": 1
+    },
+    {
+      "fieldname": "btn_seleccionar",
+      "fieldtype": "Button",
+      "label": "Seleccionar",
+      "hidden": 1
+    },
+    {
+      "fieldname": "btn_calcular",
+      "fieldtype": "Button",
+      "label": "Calcular",
+      "hidden": 1
+    },
+    {
+      "fieldname": "mix_tab",
+      "fieldtype": "Tab Break",
+      "label": "Mix",
+      "depends_on": "eval:doc.formula_type=='Mix'"
+    },
+    {
+      "fieldname": "mix_input_lines",
+      "fieldtype": "Table",
+      "label": "Mix Input Lines",
+      "options": "BOM Formula Mix Input"
+    },
+    {
+      "fieldname": "total_input_kg",
+      "fieldtype": "Float",
+      "label": "Total Kg de Entrada",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_pct",
+      "fieldtype": "Percent",
+      "label": "Total %",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sum_check",
+      "fieldtype": "Data",
+      "label": "Verificación de Suma",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rc_estimate",
+      "fieldtype": "Percent",
+      "label": "RC Estimado",
+      "default": "85",
+      "reqd": 0,
+      "description": "RC estimado — editable por lote; pre-cargar con el RC real del último lote del mismo producto"
+    },
+    {
+      "fieldname": "theoretical_powder_kg",
+      "fieldtype": "Float",
+      "label": "Polvo Teórico (Kg)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "received_powder_kg",
+      "fieldtype": "Float",
+      "label": "Polvo Recibido (Kg)"
+    },
+    {
+      "fieldname": "rc_actual",
+      "fieldtype": "Percent",
+      "label": "RC Real",
+      "read_only": 1
+    },
+    {
+      "fieldname": "shelf_life_days",
+      "fieldtype": "Int",
+      "label": "Vida de Anaquel (días)",
+      "default": "730",
+      "description": "vida de anaquel del lote = fecha de mezcla + 730 d"
+    },
+    {
+      "fieldname": "solver_memory",
+      "fieldtype": "Long Text",
+      "label": "Solver Memory",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "prediccion_tab",
+      "fieldtype": "Tab Break",
+      "label": "Predicción y puerta"
+    },
+    {
+      "fieldname": "predicted_analytics",
+      "fieldtype": "Table",
+      "label": "Predicted Analytics",
+      "options": "BOM Formula Predicted Analytic",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "estimated_total_solids_pct",
+      "fieldtype": "Percent",
+      "label": "Sólidos Totales Estimados",
+      "read_only": 1
+    },
+    {
+      "fieldname": "estimated_yield_kg",
+      "fieldtype": "Float",
+      "label": "Rendimiento Estimado (Kg)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "prediction_note",
+      "fieldtype": "Small Text",
+      "label": "Nota de Predicción",
+      "read_only": 1
+    },
+    {
+      "fieldname": "costo_tab",
+      "fieldtype": "Tab Break",
+      "label": "Costo y autorización"
+    },
+    {
+      "fieldname": "blended_cost_per_kg",
+      "fieldtype": "Currency",
+      "label": "Blended Cost per Kg",
+      "read_only": 1,
+      "description": "Solver-populated (Sprint 2). Read-only placeholder."
+    },
+    {
+      "fieldname": "cost_source",
+      "fieldtype": "Select",
+      "label": "Fuente de Costo",
+      "options": "Item rate\nBOM costing\nCost Center",
+      "default": "Item rate"
+    },
+    {
+      "fieldname": "cost_target_per_kg",
+      "fieldtype": "Currency",
+      "label": "Costo Objetivo por Kg",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cost_hard_max_per_kg",
+      "fieldtype": "Currency",
+      "label": "Costo Máximo por Kg",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cost_state",
+      "fieldtype": "Select",
+      "label": "Estado de Costo",
+      "read_only": 1,
+      "options": "\nbelow target\nneeds approval\nover hard max"
+    },
+    {
+      "fieldname": "cost_approval",
+      "fieldtype": "Select",
+      "label": "Autorización de Costo",
+      "options": "\nnot required\nrequested\napproved\nrejected"
+    },
+    {
+      "fieldname": "cost_approved_by",
+      "fieldtype": "Link",
+      "label": "Autorizado por",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "spec_deviation_approval",
+      "fieldtype": "Select",
+      "label": "Autorización de Desviación",
+      "options": "\nnone\nrequested\napproved"
+    },
+    {
+      "fieldname": "authorized_values",
+      "fieldtype": "Table",
+      "label": "Valores Autorizados",
+      "options": "BOM Formula Authorized Value"
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Importe Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "memoria_tab",
+      "fieldtype": "Tab Break",
+      "label": "Memoria de Cálculo"
+    },
+    {
+      "fieldname": "memoria_template",
+      "fieldtype": "Link",
+      "label": "Plantilla de Memoria",
+      "options": "BOM Formula"
+    },
+    {
+      "fieldname": "memoria_lines",
+      "fieldtype": "Table",
+      "label": "Líneas de Memoria",
+      "options": "BOM Formula Memoria Line"
+    },
+    {
+      "fieldname": "btn_eval",
+      "fieldtype": "Button",
+      "label": "Eval",
+      "hidden": 1
+    },
+    {
+      "fieldname": "memoria_text",
+      "fieldtype": "Text Editor",
+      "label": "Memoria (narrativa)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ejecucion_tab",
+      "fieldtype": "Tab Break",
+      "label": "Ejecución"
+    },
+    {
+      "fieldname": "supplier_type",
+      "fieldtype": "Select",
+      "label": "Proveedor",
+      "options": "\ninterno\nexterno"
+    },
+    {
+      "fieldname": "destination_warehouse",
+      "fieldtype": "Select",
+      "label": "Almacén Destino",
+      "options": "\nLaboratorio de calidad\nMezclado"
+    },
+    {
+      "fieldname": "process_instructions",
+      "fieldtype": "Text Editor",
+      "label": "Instrucciones del Proceso"
+    },
+    {
+      "fieldname": "shelf_life_note",
+      "fieldtype": "Data",
+      "label": "Vida Útil (nota)"
+    },
+    {
+      "fieldname": "packaging_primary",
+      "fieldtype": "Data",
+      "label": "Envasado"
+    },
+    {
+      "fieldname": "packaging_secondary",
+      "fieldtype": "Data",
+      "label": "Empacado"
+    },
+    {
+      "fieldname": "delivered_by",
+      "fieldtype": "Link",
+      "label": "Entregó",
+      "options": "User"
+    },
+    {
+      "fieldname": "received_by",
+      "fieldtype": "Link",
+      "label": "Recibió",
+      "options": "User"
+    },
+    {
+      "fieldname": "authorized_by",
+      "fieldtype": "Link",
+      "label": "Autorizó",
+      "options": "User"
+    },
+    {
+      "fieldname": "material_request",
+      "fieldtype": "Link",
+      "label": "Material Request",
+      "options": "Material Request",
+      "read_only": 1
+    },
+    {
+      "fieldname": "work_order",
+      "fieldtype": "Link",
+      "label": "Work Order",
+      "options": "Work Order",
+      "read_only": 1
+    },
+    {
+      "fieldname": "output_batch_amb",
+      "fieldtype": "Link",
+      "label": "Batch AMB de Salida",
+      "options": "Batch AMB",
+      "read_only": 1
+    },
+    {
+      "fieldname": "coa_amb2_draft",
+      "fieldtype": "Link",
+      "label": "COA AMB2 (borrador)",
+      "options": "COA AMB2",
+      "read_only": 1
+    },
+    {
+      "fieldname": "actual_kg_received",
+      "fieldtype": "Float",
+      "label": "Kg Recibidos"
+    },
+    {
+      "fieldname": "scrap_kg",
+      "fieldtype": "Float",
+      "label": "Kg de Merma"
+    },
+    {
+      "fieldname": "juice_tab",
+      "fieldtype": "Tab Break",
+      "label": "Juice",
+      "depends_on": "eval:doc.formula_type && doc.formula_type!='Mix' && doc.formula_type!='Base'"
     },
     {
       "fieldname": "fermentation_time_hours",
@@ -35,7 +537,7 @@
     {
       "fieldname": "fermentation_temperature",
       "fieldtype": "Float",
-      "label": "Temperature (\u00b0C)"
+      "label": "Temperature (°C)"
     },
     {
       "fieldname": "target_ph",
@@ -72,98 +574,6 @@
       "read_only": 1
     },
     {
-      "fieldname": "mix_tab",
-      "fieldtype": "Tab Break",
-      "label": "Mix",
-      "depends_on": "eval:doc.formula_type=='Mix'"
-    },
-    {
-      "fieldname": "target_tds",
-      "fieldtype": "Link",
-      "label": "Target TDS",
-      "options": "TDS Product Specification"
-    },
-    {
-      "fieldname": "batch_size_kg",
-      "fieldtype": "Float",
-      "label": "Batch Size (Kg)",
-      "default": 700
-    },
-    {
-      "fieldname": "mix_input_lines",
-      "fieldtype": "Table",
-      "label": "Mix Input Lines",
-      "options": "BOM Formula Mix Input"
-    },
-    {
-      "fieldname": "predicted_analytics",
-      "fieldtype": "Table",
-      "label": "Predicted Analytics",
-      "options": "BOM Formula Predicted Analytic",
-      "read_only": 1,
-      "description": "Solver-populated (Sprint 2). Read-only placeholder."
-    },
-    {
-      "fieldname": "blended_cost_per_kg",
-      "fieldtype": "Currency",
-      "label": "Blended Cost per Kg",
-      "read_only": 1,
-      "description": "Solver-populated (Sprint 2). Read-only placeholder."
-    },
-    {
-      "fieldname": "rc_estimate",
-      "fieldtype": "Percent",
-      "label": "RC Estimado",
-      "default": "85",
-      "reqd": 0,
-      "description": "RC estimado — editable por lote; pre-cargar con el RC real del último lote del mismo producto"
-    },
-    {
-      "fieldname": "theoretical_powder_kg",
-      "fieldtype": "Float",
-      "label": "Polvo Teórico (Kg)",
-      "read_only": 1
-    },
-    {
-      "fieldname": "received_powder_kg",
-      "fieldtype": "Float",
-      "label": "Polvo Recibido (Kg)"
-    },
-    {
-      "fieldname": "rc_actual",
-      "fieldtype": "Percent",
-      "label": "RC Real",
-      "read_only": 1
-    },
-    {
-      "fieldname": "shelf_life_days",
-      "fieldtype": "Int",
-      "label": "Vida de Anaquel (días)",
-      "default": "730",
-      "description": "vida de anaquel del lote = fecha de mezcla + 730 d"
-    },
-    {
-      "fieldname": "blend_status",
-      "fieldtype": "Select",
-      "label": "Blend Status",
-      "options": "\nProposal\nFeasible\nCost-approval-needed\nInfeasible\nNon-conforming-accepted",
-      "read_only": 1,
-      "description": "Solver-populated (Sprint 2). Read-only placeholder."
-    },
-    {
-      "fieldname": "solver_memory",
-      "fieldtype": "Long Text",
-      "label": "Solver Memory",
-      "read_only": 1,
-      "description": "Solver-populated (Sprint 2). Read-only placeholder."
-    },
-    {
-      "fieldname": "juice_tab",
-      "fieldtype": "Tab Break",
-      "label": "Juice",
-      "depends_on": "eval:['Fermented Aloe Juice','Aloe Concentrate'].includes(doc.formula_type)"
-    },
-    {
       "fieldname": "juice_method",
       "fieldtype": "Select",
       "label": "Juice Method",
@@ -180,6 +590,35 @@
       "fieldtype": "Small Text",
       "label": "Note",
       "default": "Minimal juice tab (Sprint 1.2). A dedicated juice production tree is planned for a future sprint per build-spec §4.4."
+    },
+    {
+      "fieldname": "trazabilidad_tab",
+      "fieldtype": "Tab Break",
+      "label": "Trazabilidad"
+    },
+    {
+      "fieldname": "input_lots_summary",
+      "fieldtype": "Small Text",
+      "label": "Resumen de Lotes de Entrada",
+      "read_only": 1
+    },
+    {
+      "fieldname": "inherited_certifications",
+      "fieldtype": "Data",
+      "label": "Certificaciones Heredadas",
+      "read_only": 1
+    },
+    {
+      "fieldname": "custody_chain",
+      "fieldtype": "Text",
+      "label": "Cadena de Custodia",
+      "read_only": 1
+    },
+    {
+      "fieldname": "traceability_class",
+      "fieldtype": "Select",
+      "label": "Clase de Trazabilidad",
+      "options": "\norgánico\nfair trade\nconvencional"
     }
   ]
 }
