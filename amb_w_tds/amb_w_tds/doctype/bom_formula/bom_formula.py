@@ -10,6 +10,7 @@ _METHOD_MAP = {
     "all_pass": engine.BlendMethod.ALL_PASS,
 }
 _CRITICAL_METHODS = {"hplus_avg", "worst_case", "all_pass"}   # pH / micro / qualitative are release-critical
+_DESCRIPTIVE = "DESCRIPTIVE — lab confirms"
 _PASS_TOKENS = {"PASS", "NEGATIVE", "NEGATIVO", "AUSENTE", "ABSENT", "CONFORMS", "OK", "COMPLIES"}
 
 
@@ -108,6 +109,7 @@ class BOMFormula(Document):
         uom = {p.name: p.uom for p in params}
         unresolved = []
 
+        pmap = {p.name: p for p in params}
         self.set("predicted_analytics", [])
         for name, br in results.items():
             qp = self._resolve_parameter(name)
@@ -117,14 +119,13 @@ class BOMFormula(Document):
                 and not isinstance(br.computed_value, bool) else None
             row = {
                 "parameter": qp,
-                "computed_value": (f"UNRESOLVED: {name}" if qp is None else _fmt(br.computed_value)),
-                "predicted_value": numeric_value,
+                "predicted_value": 0,
                 "blend_method": br.blend_method,
                 "tds_min": br.min_value,
                 "tds_max": br.max_value,
                 "uom": uom.get(name, ""),
-                "is_estimate": 1 if br.is_estimate else 0,
-                "requires_lab_measurement": 1 if br.requires_lab_measurement else 0,
+                "is_estimate": 0,
+                "requires_lab_measurement": 1,
                 "in_spec_estimate": 1 if br.in_spec_estimate else 0,
                 "critical": 1 if br.critical else 0,
                 "status": "" if br.in_spec_estimate is None else ("Pass" if br.in_spec_estimate else "Fail"),
@@ -133,16 +134,35 @@ class BOMFormula(Document):
                 "release_ok": "Pending",
                 "note": br.note,
             }
-            # Qualitative parameters carry PASS/FAIL in computed_value and leave
-            # predicted_value null; a contaminant passes only if EVERY lot passed.
-            # Compare enum members. BlendMethod subclasses (str, Enum), so
-            # str(member) is "BlendMethod.ALL_PASS", never "all_pass" — that
-            # comparison silently never matches and every qualitative row would
-            # keep a blended predicted_value.
-            if br.blend_method == engine.BlendMethod.ALL_PASS:
-                row["predicted_value"] = None
-                row["requires_lab_measurement"] = 1
-                row["per_lot_pass"] = 1 if self._per_lot_pass(lots, name) else 0
+            # AMENDMENT A3: 16 rows in THREE classes. `predicted_value` is a Frappe
+            # Float — decimal(21,9) NOT NULL DEFAULT 0 — so it can never be NULL;
+            # for the 8 non-numeric rows it is 0 and IGNORED, and the discriminant
+            # is computed_value + blend_method. Compare enum members: BlendMethod
+            # subclasses (str, Enum), so str(member) is "BlendMethod.ALL_PASS",
+            # never "all_pass", and that comparison silently never matches.
+            is_allpass = br.blend_method == engine.BlendMethod.ALL_PASS
+            is_numeric = bool(pmap.get(name) and pmap[name].numeric) and not is_allpass
+
+            if is_numeric:
+                # class 1 — a real number the lab will confirm
+                row["predicted_value"] = numeric_value
+                row["computed_value"] = _fmt(br.computed_value)
+                row["is_estimate"] = 1
+                row["requires_lab_measurement"] = 1 if br.requires_lab_measurement else 0
+            elif is_allpass:
+                # class 3 — a contaminant passes only if EVERY lot's COA row passes.
+                # A lot missing the row is NO DATA, never a vacuous PASS.
+                state = self._all_pass_state(lots, name)
+                row["computed_value"] = state
+                row["per_lot_pass"] = 1 if state == "PASS" else 0
+            else:
+                # class 2 — descriptive. Averaging a string is the one thing that
+                # must never happen: report the agreed per-lot text, or say it is
+                # descriptive. Never a number, and never empty.
+                row["computed_value"] = self._descriptive_text(lots, name)
+
+            if qp is None:
+                row["computed_value"] = f"UNRESOLVED: {name}"
             self.append("predicted_analytics", row)
 
         self._recompute_mix_totals()
@@ -184,16 +204,45 @@ class BOMFormula(Document):
                 return False
         return seen
 
+    def _all_pass_state(self, lots, name):
+        """PASS / FAIL / NO DATA for a contaminant (A3 class 3).
+
+        A lot that simply lacks the COA row is NO DATA — never a vacuous PASS.
+        An empty lot list is NO DATA for the same reason.
+        """
+        if not lots:
+            return "NO DATA"
+        for lot in lots:
+            if name not in lot.values:
+                return "NO DATA"
+        return "PASS" if self._per_lot_pass(lots, name) else "FAIL"
+
+    def _descriptive_text(self, lots, name):
+        """The agreed per-lot text, else a fixed descriptive marker (A3 class 2).
+
+        Never a number and never empty — an empty computed_value on a descriptive
+        row is a STOP. Truncated to the varchar(140) the column actually holds.
+        """
+        raw = getattr(self, "_raw_by_lot", []) or []
+        seen = [str(d.get(name, "")).strip() for d in raw if str(d.get(name, "")).strip()]
+        if seen and len(seen) == len(lots) and len(set(seen)) == 1:
+            text = seen[0]
+            if _num(text) is None:          # never report a bare number here
+                return text[:140]
+        return _DESCRIPTIVE
+
     def _build_lots(self):
         """Native mix_input_lines: kg · source_coa_amb2 · batch_amb_sublot|cunete_ref."""
         lots = []
         lines = self.get("mix_input_lines") or []
         with_coa = 0
+        raw_by_lot = []
         for line in lines:
             if not line.source_coa_amb2:
                 continue
             with_coa += 1
             vals = {}
+            raw = {}
             for p in frappe.get_all("COA Quality Test Parameter",
                                     filters={"parent": line.source_coa_amb2, "parenttype": "COA AMB2"},
                                     fields=["specification", "value", "result"]):
@@ -201,9 +250,14 @@ class BOMFormula(Document):
                     continue
                 v = _num(p.value)
                 vals[p.specification] = v if v is not None else _qual(p.result)
+                # The engine needs a number or a bool; a DESCRIPTIVE row needs the
+                # words. Booleanising loses them, so keep the raw text alongside.
+                raw[p.specification] = p.result if p.result not in (None, "") else p.value
+            raw_by_lot.append(raw)
             lots.append(engine.Lot(
                 lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or line.source_coa_amb2,
                 mass_kg=flt(line.kg), values=vals))
+        self._raw_by_lot = raw_by_lot
         return lots, len(lines), with_coa
 
     def _build_parameters(self):
