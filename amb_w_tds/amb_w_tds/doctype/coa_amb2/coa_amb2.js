@@ -205,7 +205,7 @@ function setup_coa_buttons(frm) {
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__('Generate PDF'), function() {
                 frappe.call({
-                    method: 'amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.generate_coa2_pdf',
+                    method: 'amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.generate_coa_pdf',
                     args: { coa_name: frm.doc.name },
                     callback: function(r) {
                         if (r.message) {
