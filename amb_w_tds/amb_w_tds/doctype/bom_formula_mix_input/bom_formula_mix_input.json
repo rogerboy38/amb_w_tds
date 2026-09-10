@@ -46,10 +46,19 @@
       "in_list_view": 1
     },
     {
-      "fieldname": "source_coa_amb2",
+      "fieldname": "source_coa_doctype",
       "fieldtype": "Link",
+      "label": "COA Source Doctype",
+      "options": "DocType",
+      "default": "COA AMB",
+      "in_list_view": 0,
+      "description": "Which COA doctype the line's certificate lives in. COA AMB is the populated one; COA AMB2 is the future home."
+    },
+    {
+      "fieldname": "source_coa_amb2",
+      "fieldtype": "Dynamic Link",
       "label": "Source COA AMB2",
-      "options": "COA AMB2"
+      "options": "source_coa_doctype"
     },
     {
       "fieldname": "unit_cost",

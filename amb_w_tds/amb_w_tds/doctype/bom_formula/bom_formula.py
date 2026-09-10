@@ -33,15 +33,75 @@ def _fmt(v):
     return f"{v:.4g}" if isinstance(v, float) else str(v)
 
 
+# A1 R2: the golden number is a LOT key, not a row key. Sublots chain under a
+# level-1 root via `parent_batch_amb`, and the COA attaches to that root, so a
+# line pointing at any sublot must walk up before it looks for a certificate.
+# Measured 2026-09-10: 10 of 11 goldens resolve to exactly one root, 0 ambiguous
+# -- the ambiguity only appears if you count Batch AMB *rows* instead of lots.
+# `batch_id` and `batch_level` are NULL on all 35 rows; never key on either.
+_MAX_LOT_DEPTH = 20
+
+
+def _batch_root(batch):
+    """Walk `parent_batch_amb` to the root. Returns the root name, or the last
+    node reached if the chain is broken/cyclic -- a bad chain must not hang the
+    reader, and a partial walk is still a better key than the sublot."""
+    seen = []
+    cur = batch
+    while cur and cur not in seen and len(seen) < _MAX_LOT_DEPTH:
+        seen.append(cur)
+        parent = frappe.db.get_value("Batch AMB", cur, "parent_batch_amb")
+        if not parent:
+            return cur
+        cur = parent
+    return seen[-1] if seen else batch
+
+
 class BOMFormula(Document):
     # ---- THE DOOR: release gates on the MEASURED value, never the estimate ----
     def validate(self):
+        self._fetch_cost_thresholds()
         self._recompute_mix_totals()
+        if not self.get("formulation_date"):
+            # Leg D: stamp the date on first save only. Never overwrite a date a
+            # human set -- "today" on every save would silently rewrite history.
+            self.formulation_date = frappe.utils.today()
         for r in (self.get("predicted_analytics") or []):
             if r.confirmed and str(r.measured_value or "").strip() != "":
                 r.release_ok = "Pass" if self._release_from_measured(r) else "Fail"
             else:
                 r.release_ok = "Pending"     # never auto-confirm
+
+    def _fetch_cost_thresholds(self):
+        """Leg D / G-1a defect: the Single holds 600 / 800 but the document kept
+        0.00, so Estado de Costo could never be anything but 'below target' and
+        Alicia saw a cost gate that never fired.
+
+        Fetched only when the field is empty (0 or None): a value typed on the
+        document is a deliberate per-formula override and outranks the default.
+        G-1c will compute the actual cost; this only makes the THRESHOLDS real,
+        and deliberately does not touch `blended_cost_per_kg` or `cost_source`.
+        """
+        if not frappe.db.exists("Formulation Settings", "Formulation Settings"):
+            return
+        s = frappe.get_cached_doc("Formulation Settings", "Formulation Settings")
+        for field in ("cost_target_per_kg", "cost_hard_max_per_kg"):
+            if not flt(self.get(field)):
+                self.set(field, flt(s.get(field)))
+
+        # Derive the state from the fetched thresholds. With both at 0 this used
+        # to read 'below target' for every document, which is a vacuous pass.
+        cost = flt(self.get("blended_cost_per_kg"))
+        target = flt(self.get("cost_target_per_kg"))
+        hard = flt(self.get("cost_hard_max_per_kg"))
+        if not cost or not (target or hard):
+            return                      # nothing measured yet -- say nothing
+        if hard and cost > hard:
+            self.cost_state = "over hard max"
+        elif target and cost > target:
+            self.cost_state = "needs approval"
+        else:
+            self.cost_state = "below target"
 
     def _release_from_measured(self, r):
         if r.blend_method == "all_pass":
@@ -87,14 +147,21 @@ class BOMFormula(Document):
         # predict nothing. Never a vacuous PASS on an empty list.
         if not lots:
             self.set("predicted_analytics", [])
-            msg = (f"no COA AMB2 on {lines_total} of {lines_total} lines — nothing predicted"
+            # A1 R3 (4): never just "no COA" -- say which line, which root, which
+            # golden. A note that does not name the failing step sends Alicia
+            # back to us to find out what it meant.
+            why = "; ".join(f"line {r['line']}: {r['detail']}"
+                            for r in getattr(self, "_resolutions", []) if r["detail"])
+            msg = (f"no COA resolved on {lines_total} of {lines_total} lines — nothing predicted"
+                   + (f" ({why})" if why else "")
                    if lines_total else "no Mix Input Lines — nothing predicted")
             self.prediction_note = msg
             self._recompute_mix_totals()
             self.save(ignore_permissions=True)
             frappe.msgprint(msg)
             return {"lines": lines_total, "lines_with_coa": lines_with_coa,
-                    "parameters": len(params), "predicted_rows": 0, "note": msg}
+                    "parameters": len(params), "predicted_rows": 0, "note": msg,
+                    "resolutions": getattr(self, "_resolutions", [])}
         if not params:
             msg = "Set a TDS Target with parameter rows before simulating — nothing predicted."
             self.set("predicted_analytics", [])
@@ -166,8 +233,11 @@ class BOMFormula(Document):
             self.append("predicted_analytics", row)
 
         self._recompute_mix_totals()
+        res_txt = ", ".join(f"line {r['line']}={r['resolution']}"
+                            for r in getattr(self, "_resolutions", []))
         self.prediction_note = ("Estimates only — release requires measured values "
-                                "(21 CFR 111.75)")
+                                "(21 CFR 111.75)"
+                                + (f" · COA source: {res_txt}" if res_txt else ""))
         self.save(ignore_permissions=True)   # DRAFT only — never submit; no Batch AMB / COA / WO created
         if unresolved:
             frappe.msgprint("Parameters with no Quality Inspection Parameter master: "
@@ -176,6 +246,7 @@ class BOMFormula(Document):
             "lines": lines_total, "lines_with_coa": lines_with_coa,
             "parameters": len(params), "predicted_rows": len(results),
             "unresolved": len(unresolved),
+            "resolutions": getattr(self, "_resolutions", []),
             "total_input_kg": self.total_input_kg, "predicted_cost": self.total_amount,
             "requires_lab": sum(1 for b in results.values() if b.requires_lab_measurement),
             "out_of_spec_estimate": sum(1 for b in results.values() if b.in_spec_estimate is False),
@@ -231,20 +302,82 @@ class BOMFormula(Document):
                 return text[:140]
         return _DESCRIPTIVE
 
+    def _resolve_coa(self, line):
+        """A1 R3 resolution order. Returns (doctype, name, resolution, detail).
+
+        `resolution` is per LINE, not per parameter -- it is surfaced in the
+        simulate_blend return and the Nota, deliberately NOT as a column on
+        Predicted Analytic, where one line's value would be repeated across
+        every parameter row.
+        """
+        # (1) explicit link on the line -- either doctype, via the Dynamic Link
+        if line.get("source_coa_amb2"):
+            dt = line.get("source_coa_doctype") or "COA AMB2"
+            return dt, line.get("source_coa_amb2"), "explicit", ""
+
+        batch = line.get("batch_amb_sublot")
+        if not batch:
+            return None, None, "none", "no COA linked and no Batch AMB sublot on the line"
+
+        root = _batch_root(batch)
+        golden = frappe.db.get_value("Batch AMB", root, "custom_golden_number")
+
+        # (2) the root's own COA link. `coa_reference` is the older field and is
+        # read only as a fallback; leg C writes `coa_amb` and never touches it.
+        for field in ("coa_amb", "coa_reference"):
+            coa = frappe.db.get_value("Batch AMB", root, field)
+            if coa:
+                return "COA AMB", coa, "batch_link", f"root {root} .{field}"
+
+        # (3) a SUBMITTED COA pointing at the root, or carrying its golden.
+        # docstatus=1 only: drafts and cancelled never resolve.
+        cands = {}
+        for dt in ("COA AMB", "COA AMB2"):
+            for r in frappe.get_all(dt, filters={"docstatus": 1, "batch_reference": root},
+                                    fields=["name", "creation"]):
+                cands[(dt, r.name)] = r.creation
+            # COA AMB2 carries NO golden field at all (Node C blocker 153334Z,
+            # ruled 153519Z): guard the golden branch by doctype rather than
+            # querying a column that does not exist.
+            if golden and dt == "COA AMB":
+                for r in frappe.get_all(dt, filters={"docstatus": 1,
+                                                     "custom_golden_number": golden},
+                                        fields=["name", "creation"]):
+                    cands[(dt, r.name)] = r.creation
+
+        if cands:
+            ranked = sorted(cands.items(), key=lambda kv: kv[1], reverse=True)
+            (dt, name), _ = ranked[0]
+            detail = f"root {root}, golden {golden}"
+            if len(ranked) > 1:
+                # Name the runner-up: a silent pick among several certificates is
+                # exactly the kind of choice that should be visible to Alicia.
+                detail += f"; {len(ranked)} candidates, runner-up {ranked[1][0][1]}"
+            return dt, name, "golden_match", detail
+
+        # (4) nothing -- say which line, which root and which golden failed
+        return None, None, "none", (f"sublot {batch} -> root {root}, "
+                                    f"no submitted COA linked or matching golden {golden}")
+
     def _build_lots(self):
-        """Native mix_input_lines: kg · source_coa_amb2 · batch_amb_sublot|cunete_ref."""
+        """Native mix_input_lines: kg · resolved COA · batch_amb_sublot|cunete_ref."""
         lots = []
         lines = self.get("mix_input_lines") or []
         with_coa = 0
         raw_by_lot = []
-        for line in lines:
-            if not line.source_coa_amb2:
+        resolutions = []
+        for idx, line in enumerate(lines, start=1):
+            dt, coa_name, resolution, detail = self._resolve_coa(line)
+            resolutions.append({"line": idx, "sublot": line.get("batch_amb_sublot"),
+                                "coa_doctype": dt, "coa": coa_name,
+                                "resolution": resolution, "detail": detail})
+            if not coa_name:
                 continue
             with_coa += 1
             vals = {}
             raw = {}
             for p in frappe.get_all("COA Quality Test Parameter",
-                                    filters={"parent": line.source_coa_amb2, "parenttype": "COA AMB2"},
+                                    filters={"parent": coa_name, "parenttype": dt},
                                     fields=["specification", "value", "result"]):
                 if not p.specification:
                     continue
@@ -255,9 +388,10 @@ class BOMFormula(Document):
                 raw[p.specification] = p.result if p.result not in (None, "") else p.value
             raw_by_lot.append(raw)
             lots.append(engine.Lot(
-                lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or line.source_coa_amb2,
+                lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or coa_name,
                 mass_kg=flt(line.kg), values=vals))
         self._raw_by_lot = raw_by_lot
+        self._resolutions = resolutions
         return lots, len(lines), with_coa
 
     def _build_parameters(self):

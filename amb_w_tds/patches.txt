@@ -72,3 +72,7 @@ amb_w_tds.patches.e4_ph_blend_method_mass_avg
 # G-1a (2026-09-09): seed Formulation Settings once — cost target 600 / hard max 800 MXN/kg,
 # written explicitly rather than inherited from a DocType default (rule z).
 amb_w_tds.patches.g1a_formulation_settings_defaults
+
+# G-0b-2a leg A (2026-09-10): source_coa_amb2 -> Dynamic Link; tag existing rows
+# with their doctype and set default_coa_source explicitly.
+amb_w_tds.patches.g0b2a_source_coa_doctype
