@@ -201,12 +201,19 @@ class BOMFormula(Document):
                 "release_ok": "Pending",
                 "note": br.note,
             }
-            # AMENDMENT A3: 16 rows in THREE classes. `predicted_value` is a Frappe
-            # Float — decimal(21,9) NOT NULL DEFAULT 0 — so it can never be NULL;
-            # for the 8 non-numeric rows it is 0 and IGNORED, and the discriminant
-            # is computed_value + blend_method. Compare enum members: BlendMethod
-            # subclasses (str, Enum), so str(member) is "BlendMethod.ALL_PASS",
-            # never "all_pass", and that comparison silently never matches.
+            # AMENDMENT A3: THREE classes. The row count is whatever the linked
+            # TDS carries -- one per parameter row, read in this transaction --
+            # NOT a constant. An earlier version of this comment said "16 rows"
+            # and "the 8 non-numeric rows", which were true only of the 0307 case
+            # it was written against; a reader can implement a comment, so the
+            # case numbers are gone and only the invariant is stated.
+            #
+            # `predicted_value` is a Frappe Float -- decimal(21,9) NOT NULL
+            # DEFAULT 0 -- so it can never be NULL; on non-numeric rows it is 0
+            # and IGNORED, and the discriminant is computed_value + blend_method.
+            # Compare enum MEMBERS: BlendMethod subclasses (str, Enum), so
+            # str(member) is "BlendMethod.ALL_PASS", never "all_pass", and that
+            # comparison silently never matches.
             is_allpass = br.blend_method == engine.BlendMethod.ALL_PASS
             is_numeric = bool(pmap.get(name) and pmap[name].numeric) and not is_allpass
 
