@@ -68,3 +68,7 @@ amb_w_tds.patches.v16_delete_fetch_if_empty_property_setters
 # average, so the 794 hplus_avg rows on the three pH spellings move to mass_avg. The
 # hplus_avg Select option itself stays until a later card (Hugh, 2026-09-07).
 amb_w_tds.patches.e4_ph_blend_method_mass_avg
+
+# 2026-09-10: nine pre-v16 Role.home_page routes 404 at the site root; clear them so
+# the role falls through to the site default. Normalised compare - the DB stores "/app".
+amb_w_tds.patches.clear_stale_role_home_page
