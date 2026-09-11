@@ -76,3 +76,7 @@ amb_w_tds.patches.g1a_formulation_settings_defaults
 # G-0b-2a leg A (2026-09-10): source_coa_amb2 -> Dynamic Link; tag existing rows
 # with their doctype and set default_coa_source explicitly.
 amb_w_tds.patches.g0b2a_source_coa_doctype
+
+# 2026-09-10: nine pre-v16 Role.home_page routes 404 at the site root; clear them so
+# the role falls through to the site default. Normalised compare - the DB stores "/app".
+amb_w_tds.patches.clear_stale_role_home_page
