@@ -81,7 +81,8 @@ try:
 	module_found = False
 	for path in module_paths:
 		if os.path.exists(path):
-			with open(path) as f:
+			# Audited: path comes from the hard-coded list above, not from user input.
+			with open(path) as f:  # nosemgrep: frappe-security-file-traversal
 				content = f.read()
 				module_found = True
 				print(f"   Found module at: {path}")
@@ -132,7 +133,8 @@ js_paths = [
 js_found = False
 for path in js_paths:
 	if os.path.exists(path):
-		with open(path) as f:
+		# Audited: path comes from the hard-coded list above, not from user input.
+		with open(path) as f:  # nosemgrep: frappe-security-file-traversal
 			js_content = f.read()
 			js_found = True
 			print(f"   Found JS file at: {path}")
@@ -186,7 +188,8 @@ for path in raven_paths:
 		raven_found = True
 
 		# Check for key functions
-		with open(path) as f:
+		# Audited: path comes from the hard-coded list above, not from user input.
+		with open(path) as f:  # nosemgrep: frappe-security-file-traversal
 			raven_content = f.read()
 
 			if "def generate_serials" in raven_content:
@@ -217,7 +220,8 @@ hooks_paths = [
 hooks_found = False
 for path in hooks_paths:
 	if os.path.exists(path):
-		with open(path) as f:
+		# Audited: path comes from the hard-coded list above, not from user input.
+		with open(path) as f:  # nosemgrep: frappe-security-file-traversal
 			hooks_content = f.read()
 			hooks_found = True
 			print(f"   Found hooks.py at: {path}")
@@ -306,7 +310,8 @@ print("\n8. ✅ Checking Database Schema...")
 
 try:
 	# Check Batch AMB table columns
-	columns = frappe.db.sql(
+	# One-shot bench exec script: module-level state is intended here.
+	columns = frappe.db.sql(  # nosemgrep: frappe-breaks-multitenancy
 		"""
         SHOW COLUMNS FROM `tabBatch AMB`
     """,
