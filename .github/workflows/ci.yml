@@ -115,9 +115,23 @@ jobs:
       - name: Install
         working-directory: /home/runner/frappe-bench
         run: |
+          # amb_w_tds customizes ERPNext DocTypes and ships fixture records of
+          # them (Quality Inspection Parameter, BOM, Sales Order, ...). On bare
+          # frappe, install-app died importing those fixtures:
+          #   Table 'tabQuality Inspection Parameter' doesn't exist
+          # Pinned to the TAG production runs (prod About page: ERPNext
+          # v16.17.0), same discipline as the frappe pin above.
+          bench get-app --branch v16.17.0 https://github.com/frappe/erpnext
+          # amb_w_spc is the required companion app: it owns Batch AMB and
+          # Parameter Group Substrate, which amb_w_tds DocTypes link to.
+          # Public repo, default branch.
+          bench get-app https://github.com/rogerboy38/amb_w_spc
           bench get-app amb_w_tds $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
+          # Same order as production: ERPNext, then amb_w_spc, then this app.
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app amb_w_spc
           bench --site test_site install-app amb_w_tds
           bench build
         env:
