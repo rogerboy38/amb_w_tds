@@ -19,9 +19,9 @@
 | Production | `646ba26` (tag `prod-pin-646ba26`, "t9a") | 2026-09-10 | What production runs. Built from Phase E/F work plus the role home-page hotfix; not yet merged to `main`. |
 | In flight | `phase-g/*` branches | 2026-09-08 → 09-11 | BOM Formula FoxPro-parity tabs and COA AMB2 compliance port. See [Work in progress](#work-in-progress-not-yet-on-main). |
 
-**Version numbering.** The latest release tag is **v14.0.0**. The package itself still
-reports `13.7.0` in `amb_w_tds/__init__.py`, and `version.txt` still reads `10.0.0`; neither
-has been bumped since April 2026.
+**Version numbering.** The code reports `13.7.0` in both `amb_w_tds/__init__.py` and
+`version.txt`, which is also what production's installed record shows. The latest release tag,
+**v14.0.0**, is ahead of the code; it has not been reconciled with the running version.
 
 ---
 
