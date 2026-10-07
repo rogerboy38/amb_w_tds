@@ -1,10 +1,10 @@
 # pharma_batch_migrator.py
-import frappe
-from frappe.utils import nowdate, add_days
-from datetime import datetime
-import requests
 import json
-from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+
+import frappe
+import requests
+from frappe.utils import add_days, nowdate
 
 
 class PharmaBatchMigrator:
@@ -16,7 +16,7 @@ class PharmaBatchMigrator:
 		self.session = requests.Session()
 		self.session.headers.update(self.headers)
 
-	def validate_batch_data(self, batch_data: Dict) -> Dict:
+	def validate_batch_data(self, batch_data: dict) -> dict:
 		"""GMP: Pre-migration validation"""
 		validation_result = {"is_valid": True, "errors": [], "warnings": []}
 
@@ -54,7 +54,7 @@ class PharmaBatchMigrator:
 
 		return validation_result
 
-	def _validate_item(self, item_code: str) -> Dict:
+	def _validate_item(self, item_code: str) -> dict:
 		"""Validate item exists and has shelf life"""
 		try:
 			response = self.session.get(f"{self.base_url}/api/resource/Item/{item_code}")
@@ -66,10 +66,10 @@ class PharmaBatchMigrator:
 					"shelf_life_days": item_data.get("shelf_life_in_days"),
 				}
 			return {"exists": False, "has_shelf_life": False}
-		except:
+		except Exception:
 			return {"exists": False, "has_shelf_life": False}
 
-	def _check_existing_batch(self, item_code: str, batch_id: str) -> Optional[str]:
+	def _check_existing_batch(self, item_code: str, batch_id: str) -> str | None:
 		"""Check if batch already exists"""
 		filters = json.dumps([["item", "=", item_code], ["batch_id", "=", batch_id], ["disabled", "=", 0]])
 
@@ -79,11 +79,11 @@ class PharmaBatchMigrator:
 				data = response.json()
 				if data.get("data"):
 					return data["data"][0]["name"]
-		except:
+		except Exception:
 			pass
 		return None
 
-	def _validate_manufacturing_date(self, mfg_date: str) -> Dict:
+	def _validate_manufacturing_date(self, mfg_date: str) -> dict:
 		"""Validate manufacturing date"""
 		try:
 			mfg_date_obj = datetime.strptime(mfg_date, "%Y-%m-%d")
@@ -95,7 +95,7 @@ class PharmaBatchMigrator:
 		except ValueError:
 			return {"is_valid": False, "errors": ["Invalid date format (use YYYY-MM-DD)"]}
 
-	def create_pharma_batch(self, batch_data: Dict) -> Dict:
+	def create_pharma_batch(self, batch_data: dict) -> dict:
 		"""Create FDA-compliant batch with full traceability"""
 
 		# GMP: Pre-creation validation
@@ -172,9 +172,9 @@ class PharmaBatchMigrator:
 				}
 
 		except Exception as e:
-			return {"success": False, "error": f"Creation failed: {str(e)}"}
+			return {"success": False, "error": f"Creation failed: {e!s}"}
 
-	def migrate_batches_bulk(self, batch_list: List[Dict]) -> Dict:
+	def migrate_batches_bulk(self, batch_list: list[dict]) -> dict:
 		"""Bulk migration with progress tracking"""
 		results = {"total": len(batch_list), "successful": [], "failed": [], "warnings": []}
 
@@ -209,12 +209,12 @@ class PharmaBatchMigrator:
 		self._generate_migration_report(results)
 		return results
 
-	def _create_audit_log(self, action: str, details: Dict):
+	def _create_audit_log(self, action: str, details: dict):
 		"""GMP: Create audit trail"""
 		# In production, implement proper audit logging
 		print(f"🔍 AUDIT: {action} - {json.dumps(details)}")
 
-	def _generate_migration_report(self, results: Dict):
+	def _generate_migration_report(self, results: dict):
 		"""Generate migration summary report"""
 		print("\n" + "=" * 60)
 		print("📊 BATCH MIGRATION REPORT")

@@ -1,9 +1,10 @@
 # verification_script.py
 # Run with: bench --site [site-name] exec verification_script.py
 
-import frappe
 import json
 import os
+
+import frappe
 from frappe.utils import nowdate
 
 print("=" * 70)
@@ -80,7 +81,7 @@ try:
 	module_found = False
 	for path in module_paths:
 		if os.path.exists(path):
-			with open(path, "r") as f:
+			with open(path) as f:
 				content = f.read()
 				module_found = True
 				print(f"   Found module at: {path}")
@@ -106,9 +107,9 @@ try:
 
 				# Check for serial tracking API integration
 				if "amb_w_tds.raven.serial_tracking_agent_api" in content:
-					print(f"      ✅ Raven Serial Tracking API integration")
+					print("      ✅ Raven Serial Tracking API integration")
 				else:
-					print(f"      ⚠️  Raven API integration not found in code")
+					print("      ⚠️  Raven API integration not found in code")
 
 				break
 
@@ -131,7 +132,7 @@ js_paths = [
 js_found = False
 for path in js_paths:
 	if os.path.exists(path):
-		with open(path, "r") as f:
+		with open(path) as f:
 			js_content = f.read()
 			js_found = True
 			print(f"   Found JS file at: {path}")
@@ -154,14 +155,14 @@ for path in js_paths:
 
 			# Check for button groups
 			if "SERIAL TRACKING" in js_content:
-				print(f"      ✅ SERIAL TRACKING button group")
+				print("      ✅ SERIAL TRACKING button group")
 			else:
-				print(f"      ❌ SERIAL TRACKING button group - MISSING")
+				print("      ❌ SERIAL TRACKING button group - MISSING")
 
 			if "PROCESSING ACTIONS" in js_content:
-				print(f"      ✅ PROCESSING ACTIONS button group")
+				print("      ✅ PROCESSING ACTIONS button group")
 			else:
-				print(f"      ❌ PROCESSING ACTIONS button group - MISSING")
+				print("      ❌ PROCESSING ACTIONS button group - MISSING")
 
 			break
 
@@ -185,18 +186,18 @@ for path in raven_paths:
 		raven_found = True
 
 		# Check for key functions
-		with open(path, "r") as f:
+		with open(path) as f:
 			raven_content = f.read()
 
 			if "def generate_serials" in raven_content:
-				print(f"      ✅ generate_serials() function")
+				print("      ✅ generate_serials() function")
 			else:
-				print(f"      ❌ generate_serials() - NOT FOUND")
+				print("      ❌ generate_serials() - NOT FOUND")
 
 			if "def validate_serials" in raven_content:
-				print(f"      ✅ validate_serials() function")
+				print("      ✅ validate_serials() function")
 			else:
-				print(f"      ❌ validate_serials() - NOT FOUND")
+				print("      ❌ validate_serials() - NOT FOUND")
 
 		break
 
@@ -216,28 +217,28 @@ hooks_paths = [
 hooks_found = False
 for path in hooks_paths:
 	if os.path.exists(path):
-		with open(path, "r") as f:
+		with open(path) as f:
 			hooks_content = f.read()
 			hooks_found = True
 			print(f"   Found hooks.py at: {path}")
 
 			# Check for scheduler events
 			if "scheduler_events" in hooks_content:
-				print(f"      ✅ scheduler_events configuration found")
+				print("      ✅ scheduler_events configuration found")
 
 				# Check for batch processing scheduler
 				if "process_daily_batches" in hooks_content:
-					print(f"      ✅ process_daily_batches scheduler configured")
+					print("      ✅ process_daily_batches scheduler configured")
 				else:
-					print(f"      ❌ process_daily_batches scheduler - NOT FOUND")
+					print("      ❌ process_daily_batches scheduler - NOT FOUND")
 			else:
-				print(f"      ❌ scheduler_events - NOT FOUND")
+				print("      ❌ scheduler_events - NOT FOUND")
 
 			# Check for doctype JS inclusion
 			if "doctype_js" in hooks_content and "Batch AMB" in hooks_content:
-				print(f"      ✅ Batch AMB client script configured in hooks")
+				print("      ✅ Batch AMB client script configured in hooks")
 			else:
-				print(f"      ❌ Batch AMB client script not in hooks")
+				print("      ❌ Batch AMB client script not in hooks")
 
 			break
 
@@ -263,7 +264,8 @@ try:
 	# Test scheduling
 	print("   Testing schedule method...")
 	try:
-		# from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import schedule_batch
+		from amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb import schedule_batch
+
 		schedule_result = schedule_batch(batch.name, nowdate())
 		print(f"      ✅ Schedule test: {schedule_result.get('status', 'unknown')}")
 	except Exception as e:
@@ -272,7 +274,8 @@ try:
 	# Test serial number generation
 	print("   Testing serial number generation...")
 	try:
-		# from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import generate_serial_numbers
+		from amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb import generate_serial_numbers
+
 		serial_result = generate_serial_numbers(batch.name, 5)
 		print(f"      ✅ Serial generation: {serial_result.get('status', 'unknown')}")
 		print(f"      Generated {serial_result.get('count', 0)} serials")
@@ -282,7 +285,8 @@ try:
 	# Test integration method
 	print("   Testing integration method...")
 	try:
-		# from amb_w_tds.amb_w_tds.doctype.batch_amb.batch_amb import integrate_serial_tracking
+		from amb_w_spc.sfc_manufacturing.doctype.batch_amb.batch_amb import integrate_serial_tracking
+
 		integrate_result = integrate_serial_tracking(batch.name)
 		print(f"      ✅ Integration test: {integrate_result.get('status', 'unknown')}")
 	except Exception as e:
@@ -290,7 +294,7 @@ try:
 
 	# Clean up test batch
 	frappe.delete_doc("Batch AMB", batch.name)
-	print(f"      ✅ Cleaned up test batch")
+	print("      ✅ Cleaned up test batch")
 
 except Exception as e:
 	print(f"   ❌ Batch test failed: {e}")
@@ -330,7 +334,7 @@ try:
 			missing_columns.append(col)
 
 	if missing_columns:
-		print(f"\n   ⚠️  Missing columns detected. Run: bench --site [site-name] migrate")
+		print("\n   ⚠️  Missing columns detected. Run: bench --site [site-name] migrate")
 
 except Exception as e:
 	print(f"   ❌ Database check failed: {e}")
