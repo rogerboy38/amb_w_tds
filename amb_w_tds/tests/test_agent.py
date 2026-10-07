@@ -2,9 +2,10 @@
 Tests for Agent API
 """
 
-import frappe
-import unittest
 import json
+import unittest
+
+import frappe
 
 # `api/agent.py` was rewritten (5be228c) and no longer exports test / process /
 # debug / generate_serial_numbers. The bare import below used to raise at
@@ -18,7 +19,7 @@ import json
 # not resurrected — the four functions are genuinely gone, so the class is skipped
 # with a reason that says why.
 try:
-	from amb_w_tds.api.agent import test, process, debug, generate_serial_numbers
+	from amb_w_tds.api.agent import debug, generate_serial_numbers, process, test
 
 	_AGENT_API_AVAILABLE = True
 	_AGENT_API_REASON = ""
@@ -60,7 +61,7 @@ class TestAgentAPI(unittest.TestCase):
 		self.assertEqual(result["status"], "success")
 		self.assertIn("system", result)
 		self.assertIn("agent", result)
-		print(f"✓ debug() endpoint working")
+		print("✓ debug() endpoint working")
 
 	def test_003_process_endpoint(self):
 		"""Test the process() endpoint"""
