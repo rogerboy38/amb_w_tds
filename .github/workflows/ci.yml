@@ -122,18 +122,16 @@ jobs:
           # Pinned to the TAG production runs (prod About page: ERPNext
           # v16.17.0), same discipline as the frappe pin above.
           bench get-app --branch v16.17.0 https://github.com/frappe/erpnext
-          # amb_w_spc (the companion app production runs alongside) is NOT
-          # installed here yet: on a fresh site its own install-app crashes in
-          # fixture import, before amb_w_tds is reached:
-          #   'QualityInspectionParameterGroup' object has no attribute 'lft'
-          # Its Quality Inspection Parameter Group fixture records carry no
-          # lft/rgt keys, while its property setters make that DocType a tree.
-          # amb_w_tds installs and its tests run without it. Re-add it here,
-          # between erpnext and amb_w_tds, once that fixture is fixed upstream.
+          # amb_w_spc is the required companion app: it owns Batch AMB and
+          # Parameter Group Substrate, which amb_w_tds DocTypes link to.
+          # Public repo, default branch.
+          bench get-app https://github.com/rogerboy38/amb_w_spc
           bench get-app amb_w_tds $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
+          # Same order as production: ERPNext, then amb_w_spc, then this app.
           bench --site test_site install-app erpnext
+          bench --site test_site install-app amb_w_spc
           bench --site test_site install-app amb_w_tds
           bench build
         env:
