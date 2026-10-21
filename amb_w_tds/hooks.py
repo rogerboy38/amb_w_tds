@@ -373,14 +373,15 @@ fixtures = [
     {"doctype": "Workspace",              "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Number Card",            "filters": [["module", "=", "AMBWTDS"]]},
-    # 13.9.0: UNION (or_filters only, see the Server Script note above) so the
-    # Propuestas de Formulación Script Report is exported by name as well.
-    {"doctype": "Report",                 "or_filters": [
-        ["module", "=", "AMBWTDS"],
-        ["name", "in", ["Propuestas de Formulación"]],
-    ]},
-    # 13.9.0: the PDF surface of that report. Name-filtered: the standard module
-    # Print Format "Materiales para formulación" ships as a module file, not here.
+    # 13.9.0: the Script Report "Propuestas de Formulación" is NOT a fixture. A standard
+    # Report (needed for its Python) without a module file is deleted by
+    # remove_orphan_entities() at every migrate (measured on scratch: imported by
+    # sync_fixtures, then "Deleting entity Report" in the same migrate). It ships as
+    # amb_w_tds/amb_w_tds/report/propuestas_de_formulación/*.json, like the Workspace above.
+    {"doctype": "Report",                 "filters": [["module", "=", "AMBWTDS"]]},
+    # 13.9.0: the PDF surface of that report (non-standard, so a fixture is right).
+    # Name-filtered: the standard Print Format "Materiales para formulación" ships
+    # as a module file, not here.
     {"doctype": "Print Format",           "filters": [["name", "in", ["Propuestas de Formulación"]]]},
 ]
 

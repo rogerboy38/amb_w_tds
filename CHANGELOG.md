@@ -31,7 +31,10 @@
 - Print Format "Propuestas de Formulación" (BOM Formula, Jinja), with a TDS header box,
   per-proposal tables, the comparison and Dirección's decision and signature block.
   Exports to PDF. The report's "PDF para Dirección" button opens it.
-- Both ship as name-filtered fixtures. Read-only: the report writes nothing.
+- The Script Report ships as a standard module file
+  (`report/propuestas_de_formulación/`); a standard Report without a module file is
+  deleted by `remove_orphan_entities()` at every migrate. The Print Format ships as a
+  name-filtered fixture. Read-only: the report writes nothing.
 
 ### Transport note
 - The migrate runs two patches new to production (`g1a_formulation_settings_defaults`,
