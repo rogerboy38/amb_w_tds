@@ -1,0 +1,14 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Authorized Value",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "parameter", "fieldtype": "Link", "label": "Parameter", "options": "Quality Inspection Parameter", "in_list_view": 1 },
+    { "fieldname": "real_value", "fieldtype": "Data", "label": "Real Value (COA AMB2)", "in_list_view": 1 },
+    { "fieldname": "authorized_value", "fieldtype": "Data", "label": "Authorized Value (COA AMB)", "in_list_view": 1 },
+    { "fieldname": "approved_by", "fieldtype": "Link", "label": "Approved By", "options": "User" },
+    { "fieldname": "reason", "fieldtype": "Small Text", "label": "Reason" }
+  ]
+}

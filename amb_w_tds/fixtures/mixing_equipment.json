@@ -1,0 +1,34 @@
+[
+ {
+  "doctype": "Mixing Equipment",
+  "name": "Mezcladora 700 Kg",
+  "equipment_name": "Mezcladora 700 Kg",
+  "plant": "Producción",
+  "capacity_kg": 700.0,
+  "active": 1
+ },
+ {
+  "doctype": "Mixing Equipment",
+  "name": "Mezcladora 100 Kg",
+  "equipment_name": "Mezcladora 100 Kg",
+  "plant": "Producción",
+  "capacity_kg": 100.0,
+  "active": 1
+ },
+ {
+  "doctype": "Mixing Equipment",
+  "name": "Mezcladora 5 Kg",
+  "equipment_name": "Mezcladora 5 Kg",
+  "plant": "Laboratorio",
+  "capacity_kg": 5.0,
+  "active": 1
+ },
+ {
+  "doctype": "Mixing Equipment",
+  "name": "Laboratorio 1 Kg",
+  "equipment_name": "Laboratorio 1 Kg",
+  "plant": "Laboratorio",
+  "capacity_kg": 1.0,
+  "active": 1
+ }
+]

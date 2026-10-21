@@ -6,10 +6,134 @@ from frappe.utils import flt
 
 class SampleRequestAMB(Document):
     
+    #: D-CCY: the ruled born-currency for a Sample Request.
+    DEFAULT_CURRENCY = "USD"
+
+    def before_insert(self):
+        self._apply_default_currency()
+
+    def _apply_default_currency(self):
+        """D-CCY — make "born USD" TRUE, because the JSON default cannot be.
+
+        ⛔ THE JSON DEFAULT IS PRESENT AND UNREACHABLE ON THIS SITE. The field
+        carries `"default": "USD"` and has since 2026-04-30, yet a new document
+        is born **MXN**. Mechanism, read at frappe/model/create_new.py:
+
+            :88   user_default = defaults.get(df.fieldname)   # keyed on "currency"
+            :95   if user_default ...: return user_default    # ⛔ returns here
+            :115  return df.default                          # never reached
+
+        Global Defaults sets `default_currency = MXN`, which surfaces in
+        `frappe.defaults` under the key **"currency"** -- the same string as this
+        field's name -- so a site-wide default wins over the field's own default
+        purely because the names collide. I previously reported the JSON key as
+        "already correct, a no-op"; it is present but INERT, and reporting the
+        key instead of the behaviour is what let that stand.
+
+        ⛔ NOT a fix for the existing MXN documents. Those are a ruled,
+        enumerated, gated prod write at Node C; this only stops new ones.
+
+        ⭐ WHAT THIS DOES, EXACTLY, PER PATH -- and the two are NOT the same:
+
+            DESK SAVE (a person is present)
+              currency is left ALONE, whatever it holds. `sample_request_amb.js`
+              pre-fills a new form with USD, so any other value was TYPED. An
+              explicit MXN survives -- and MXN is precisely what a Mexican
+              company might declare on a domestic shipment.
+
+            API / SCRIPT / IMPORT (nobody is present)
+              a value equal to the site default is replaced with USD, because
+              `create_new` supplied it and no one chose it. This is what keeps
+              "born USD" true for programmatic inserts.
+              ⚠ SO ON THIS PATH AN EXPLICIT MXN IS **NOT** PRESERVED: it is
+              indistinguishable from the site's own default. EUR/CAD/GBP are
+              preserved on both paths; MXN is preserved only on the desk path.
+
+        ⭐ Why a form default rather than a cleverer test: the server was
+        guessing only because the layer above it had already handed the user
+        MXN. Moving the default to where a person can SEE it removes the need to
+        guess. A better guess would still have been a guess.
+
+        ⚠ An earlier version of this docstring claimed "an explicit non-USD
+        choice survives" without qualification. That was false on the API path,
+        and a docstring asserting a property the code does not have is how an
+        acceptance item gets ticked without being met.
+        """
+        site_default = frappe.defaults.get_defaults().get("currency")
+        current = (self.currency or "").strip()
+
+        if not current:
+            self.currency = self.DEFAULT_CURRENCY
+            return
+
+        if self._came_from_the_desk_form():
+            # the form already defaulted to USD; whatever is here is deliberate
+            return
+
+        if site_default and current == site_default and current != self.DEFAULT_CURRENCY:
+            # no human involved on this path: the site supplied it, not a person
+            self.currency = self.DEFAULT_CURRENCY
+
+    @staticmethod
+    def _came_from_the_desk_form():
+        """True when this insert is a desk Save, where the JS default applies.
+
+        ⚠ Deliberately fails CLOSED: any doubt returns False, which keeps the
+        old override behaviour. A wrong False costs an explicit MXN on a
+        non-form path (rare, and the pre-E6 behaviour); a wrong True would let a
+        programmatic insert be born MXN and quietly re-open E8.
+        """
+        try:
+            return (frappe.local.form_dict or {}).get("cmd") == "frappe.desk.form.save.savedocs"
+        except Exception:
+            return False
+
     def before_save(self):
         self.set_customer_name()
         self.update_totals()
         self._assign_control_numbers()
+        self._warn_if_no_bags()
+
+    def _warn_if_no_bags(self):
+        """BUG208 — warn when the shipment declares a value but counts NO bags.
+
+        Under the ruled contract (V-1) the declared total is the stored
+        `commercial_value_usd` scalar, and the per-bag unit is DERIVED as
+        total / sum(samples_count). With zero bags there is no divisor, so the
+        document prints its total with NO per-bag breakdown at all.
+
+        That is handled safely -- `unit_for()` returns None rather than dividing,
+        and the money cells render blank rather than a fabricated $0.00 -- but it
+        is handled SILENTLY, and a customs document that declares a value while
+        showing no quantity is worth a human glance before it is filed. Two live
+        documents are in exactly this state.
+
+        ⚠ A WARNING, NOT A BLOCK. A nominal shipment may legitimately carry no
+        counted bags, and throwing here would refuse saves that are correct
+        today -- including the existing zero-row documents, which would become
+        un-editable. `msgprint` says it out loud and lets the operator decide.
+        """
+        from amb_w_tds.valuation import total_bags
+
+        if not self.get("samples"):
+            bags = 0
+        else:
+            bags = total_bags(self.get("samples"))
+
+        if bags:
+            return
+
+        frappe.msgprint(
+            _(
+                "No samples counted on this request: the declared value "
+                "({0}) will print with no per-unit breakdown. Set "
+                "'Number of Samples' on the sample rows if this shipment "
+                "carries bags."
+            ).format(self.get("commercial_value_usd")),
+            title=_("No sample count"),
+            indicator="orange",
+            alert=True,
+        )
 
     def _assign_control_numbers(self):
         """SR-1 (b): one labelled sample unit = one AMB CONTROL NUMBER, a global
@@ -30,12 +154,62 @@ class SampleRequestAMB(Document):
                 row.total_qty = row.samples_count * row.qty_per_sample
             else:
                 row.total_qty = 0
-    
+        self._roll_up_shipment_weights()
+
+    def _roll_up_shipment_weights(self):
+        """BUG208 D-WEIGHT -- the declared gross is a SERVER rollup of the rows.
+
+        Runs from `before_save`, so it fires on every save: form, API, script or
+        import. The previous rollup lived only in `sample_request_amb.js`
+        (`amb_wt_rollup`), which fires on form interaction, so
+        `computed_gross_kg` was 0/NULL on 14 of 16 live documents while the
+        memos printed the MANUAL `gross_weight_kg` instead -- 500 GR declared
+        for a 160 GR shipment on one, and on SR-2026-00026 the net typed into
+        the gross field (160 GR declared against a true 492 GR).
+
+        ⛔ NEVER DECLARES ZERO FROM AN EMPTY ROLLUP. If the rows carry no
+        weights the operator's own figures are left exactly as entered. Writing
+        a 0 here would trade an over-declaration for a zero-weight customs
+        document, which is worse than the bug -- the failure mode that retired
+        the first draft of this criterion.
+        """
+        rows = self.get("samples") or []
+        net = sum(flt(r.get("row_net_weight")) for r in rows)
+        tara = sum(flt(r.get("row_tara_weight")) for r in rows)
+        gross = sum(flt(r.get("row_gross_weight")) for r in rows)
+
+        if gross > 0:
+            self.computed_gross_kg = gross
+            # The DECLARED field is what the memos print, so the rollup has to
+            # reach it -- computing a correct number into a field nobody prints
+            # is the defect this replaces, one layer over.
+            self.gross_weight_kg = gross
+        if net > 0:
+            self.shipment_net_weight = net
+        if tara > 0:
+            self.shipment_tara_weight = tara
+
     def validate(self):
         self.validate_batch_consistency()
         self.validate_shipment_values()
         self.validate_shipment_weights()
         self._fill_sample_item_names()
+        self._fill_sample_uom()
+
+
+    def _fill_sample_uom(self):
+        """BUG208 D-UOM: a blank row unit is filled from the Item's stock UOM.
+
+        The print formats fell back to a literal "g" when `uom` was empty --
+        NULL on 6 of 11 live child rows whose Item is stocked in Kg, so a 1 Kg
+        line declared "1.000 g" to customs: a 1000x MASS UNDER-DECLARATION.
+        Fixing it here corrects every format at once and, unlike a template
+        fallback, leaves the real unit in the data. Only blanks are filled."""
+        for row in (self.samples or []):
+            if row.item and not (row.get("uom") or "").strip():
+                stock_uom = frappe.db.get_value("Item", row.item, "stock_uom")
+                if stock_uom:
+                    row.uom = stock_uom
     
     def _fill_sample_item_names(self):
         """Backfill each sample row's description from the linked Item.
@@ -94,18 +268,35 @@ class SampleRequestAMB(Document):
                 )
     
     def validate_shipment_values(self):
-        """Validate shipment values for Proforma"""
-        # Ensure commercial value has a default if needed
-        if not self.commercial_value_usd:
+        """Validate shipment values for Proforma.
+
+        ⭐ BUG208 T-BUG208-6 -- THE ZERO FIX IS HERE, NOT IN JINJA. The test was
+        `if not self.commercial_value_usd`, which is TRUE for a deliberate 0, so
+        a Logistics user declaring nothing had it silently rewritten to 1.00 AT
+        SAVE, before any template ran. Measured in memory: 0 -> 1.0, None -> 1.0,
+        0.50 -> 0.50 (the control). The Jinja `or "1.00"` everyone reached for
+        first is DEAD CODE for this field -- it never sees a falsy value,
+        because this ran earlier.
+
+        ⭐ Under the ruled model (V-1) this field IS the declared total -- the
+        total is pinned to this scalar and does not scale with bags or rows. So
+        a silent 0 -> 1.00 is not a rounding nicety: it is the difference
+        between declaring nothing and declaring a dollar, on the document that
+        goes to customs. `is None` preserves a deliberate zero; a genuinely
+        MISSING value still takes the nominal default.
+        """
+        if self.commercial_value_usd is None:
             self.commercial_value_usd = 1.00
-        
+
         # Ensure number of packages has a default
         if not self.number_of_packages:
             self.number_of_packages = 1
-        
-        # Ensure weight has a default
-        if not self.gross_weight_kg:
-            self.gross_weight_kg = 0.5
+
+        # ⛔ The `gross_weight_kg = 0.5` literal that used to live here is GONE.
+        # It fabricated a weight on a customs declaration: on SR-2026-00015 it
+        # printed 500 GR for a 160 GR shipment. The declared gross now comes
+        # from `_roll_up_shipment_weights()`, and when the rows cannot supply
+        # one, nothing is invented -- the operator's figure stands.
 
     def validate_shipment_weights(self):
         """Reject customs weights that print a negative tara (net must not exceed gross)."""

@@ -1,0 +1,14 @@
+{
+  "doctype": "DocType",
+  "name": "BOM Formula Spec Filter",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "parameter", "fieldtype": "Link", "label": "Parameter", "options": "Quality Inspection Parameter", "in_list_view": 1 },
+    { "fieldname": "operator", "fieldtype": "Select", "label": "Operator", "options": "\n>=\n<=\n=\nbetween", "in_list_view": 1 },
+    { "fieldname": "value", "fieldtype": "Float", "label": "Value", "in_list_view": 1 },
+    { "fieldname": "value_max", "fieldtype": "Float", "label": "Value Max", "in_list_view": 1 },
+    { "fieldname": "from_tds", "fieldtype": "Check", "label": "From TDS", "read_only": 1 }
+  ]
+}

@@ -310,72 +310,89 @@ class COAAMB2(Document):
             self.compliance_status = 'Pending'
 
     def check_parameter_compliance(self, param):
-        """Enhanced parameter compliance checking with multiple formats"""
+        """Pass/Fail for one parameter. Robust to unit-suffixed results
+        ('23.5%', '<10 CFU/G') and qualitative specs ('NEGATIVE', descriptive)."""
         if not param.result:
             return False
-
         try:
-            result = flt(param.result)
-            
-            # Priority 1: Use min/max values if available
-            if param.get('min_value') is not None and param.get('max_value') is not None:
-                min_val = flt(param.min_value)
-                max_val = flt(param.max_value)
-                return min_val <= result <= max_val
-            
-            # Priority 2: Parse specification field
+            rnum = _num(param.result)
+
+            # Priority 1: explicit numeric bounds. A 0 on either side means
+            # 'no bound' (NLT specs store max=0, NMT specs store min=0), so only
+            # the non-zero side(s) are enforced. Fixes NLT (e.g. 'NLT 10%', min=10,
+            # max=0) wrongly failing a passing result like 12.
+            lo = _num(param.min_value) if param.get('min_value') not in (None, '') else None
+            hi = _num(param.max_value) if param.get('max_value') not in (None, '') else None
+            lo_b = lo if (lo is not None and lo != 0) else None
+            hi_b = hi if (hi is not None and hi != 0) else None
+            if (lo_b is not None or hi_b is not None) and rnum is not None:
+                if lo_b is not None and rnum < lo_b:
+                    return False
+                if hi_b is not None and rnum > hi_b:
+                    return False
+                return True
+
+            # Priority 2: parse specification text
             if param.specification:
-                return self.parse_specification_compliance(param.specification, result)
-            
-            # Priority 3: Formula-based criteria
+                return self.parse_specification_compliance(param.specification, param.result, rnum)
+
+            # Priority 3: formula-based criteria
             if param.formula_based_criteria and param.acceptance_formula:
-                allowed_namespaces = {'result': result}
-                return frappe.safe_eval(param.acceptance_formula, allowed_namespaces)
-            
-            return True  # No validation criteria specified
-            
+                return bool(frappe.safe_eval(param.acceptance_formula,
+                                             {'result': rnum if rnum is not None else 0}))
+
+            return True
         except Exception as e:
             frappe.log_error(f"Error checking compliance for parameter {param.parameter_name}: {str(e)}", "COA Compliance Check")
             return False
 
-    def parse_specification_compliance(self, spec, result):
-        """Parse specification string for compliance checking"""
+    def parse_specification_compliance(self, spec, result, rnum=None):
+        """Compliance against a spec STRING: range, NMT/NLT limits, >=/<=,
+        tolerance, qualitative/descriptive and negative-expected."""
         if not spec:
             return True
-            
-        spec = cstr(spec).strip()
-        
+        s = cstr(spec).strip()
+        su = s.upper()
+        rtext = cstr(result).strip().upper()
+        if rnum is None:
+            rnum = _num(result)
         try:
-            # Range format: "10-20", "10 - 20", "10 to 20"
-            range_match = re.search(r'([\d\.]+)\s*[-to]+\s*([\d\.]+)', spec, re.IGNORECASE)
-            if range_match:
-                min_val = flt(range_match.group(1))
-                max_val = flt(range_match.group(2))
-                return min_val <= result <= max_val
-            
-            # Greater than or equal: "≥10", ">=10", ">10", "min 10"
-            if '≥' in spec or '>=' in spec or ('>' in spec and not '>>' in spec):
-                min_val = flt(re.search(r'[\d\.]+', spec.replace('≥', '').replace('>=', '').replace('>', '')).group())
-                return result >= min_val
-            
-            # Less than or equal: "≤20", "<=20", "<20", "max 20"
-            if '≤' in spec or '<=' in spec or ('<' in spec and not '<<' in spec):
-                max_val = flt(re.search(r'[\d\.]+', spec.replace('≤', '').replace('<=', '').replace('<', '')).group())
-                return result <= max_val
-            
-            # Target value with tolerance: "10 ± 0.5", "10 +/- 0.5"
-            tolerance_match = re.search(r'([\d\.]+)\s*[±\+\/-]+\s*([\d\.]+)', spec)
-            if tolerance_match:
-                target = flt(tolerance_match.group(1))
-                tolerance = flt(tolerance_match.group(2))
-                return abs(result - target) <= tolerance
-            
-            # Exact match
-            target = flt(spec)
-            return abs(result - target) < 0.001
-            
-        except:
-            return True  # Can't parse specification
+            if 'NEGATIVE' in su or 'ABSENT' in su or su in ('NONE', 'NIL'):
+                return ('NEGATIVE' in rtext or 'ABSENT' in rtext or rtext in ('NONE', 'NIL', '0')
+                        or (rnum is not None and rnum == 0))
+
+            m = re.search(r'([-+]?\d*\.?\d+)\s*(?:-|to)\s*([-+]?\d*\.?\d+)', s, re.IGNORECASE)
+            if m:
+                lo, hi = float(m.group(1)), float(m.group(2))
+                return rnum is not None and lo <= rnum <= hi
+
+            if 'NMT' in su or su.startswith('MAX') or '<=' in s or ('<' in s and '>' not in s):
+                cap = _num(s)
+                return rnum is not None and cap is not None and rnum <= cap
+
+            if 'NLT' in su or su.startswith('MIN') or '>=' in s or ('>' in s and '<' not in s):
+                floor = _num(s)
+                return rnum is not None and floor is not None and rnum >= floor
+
+            mt = re.search(r'([-+]?\d*\.?\d+)\s*\+/?-\s*([-+]?\d*\.?\d+)', s)
+            if mt:
+                tgt, tol = float(mt.group(1)), float(mt.group(2))
+                return rnum is not None and abs(rnum - tgt) <= tol
+
+            snum = _num(s)
+            if snum is not None and rnum is not None:
+                return abs(rnum - snum) < 0.001
+
+            # Qualitative / descriptive spec: no machine-checkable numeric criterion,
+            # so trust the human-entered result unless it is an explicit reject token.
+            # (Preserves long-standing Pass behavior for Appearance/Odor/Color/Taste rows.)
+            if rtext in ('FAIL', 'REJECT', 'REJECTED', 'OUT OF SPEC', 'OUT OF SPECIFICATION',
+                         'NON-CONFORMING', 'NONCONFORMING', 'DOES NOT CONFORM', 'NOT CONFORM',
+                         'NON CONFORME', 'RECHAZADO'):
+                return False
+            return True
+        except Exception:
+            return True
 
     def evaluate_formula_parameters(self):
         """Evaluate all formula-based parameters"""
@@ -479,32 +496,12 @@ class COAAMB2(Document):
             frappe.throw(_("Error syncing from TDS: {0}").format(str(e)))
 
     def set_coa_number(self):
-        """Set COA number based on naming series"""
+        """COA number mirrors the document name (the naming series is already
+        applied to `name`, which is DB-unique), so duplicates are structurally
+        impossible. The previous date+sequence fallback was race-prone
+        (non-atomic SELECT MAX+1) and is removed."""
         if not self.coa_number and not self.amended_from:
-            if self.naming_series:
-                # Let Frappe handle the naming based on series
-                from frappe.model.naming import make_autoname
-                self.coa_number = make_autoname(self.naming_series)
-            else:
-                # Fallback to custom format
-                from datetime import datetime
-                date_str = datetime.now().strftime('%Y-%m')
-                
-                last_coa = frappe.db.sql("""
-                    SELECT coa_number 
-                    FROM `tabCOA AMB2` 
-                    WHERE coa_number LIKE %s 
-                    ORDER BY creation DESC 
-                    LIMIT 1
-                """, (f"COA-{date_str}-%",))
-                
-                if last_coa and last_coa[0][0]:
-                    last_num = int(last_coa[0][0].split('-')[-1])
-                    seq = last_num + 1
-                else:
-                    seq = 1
-                
-                self.coa_number = f"COA-{date_str}-{seq:04d}"
+            self.coa_number = self.name
 
     def set_default_naming_series(self):
         """Set default naming series if not set"""
@@ -773,14 +770,37 @@ def get_batch_quality_data(batch_name):
 
 @frappe.whitelist()
 def generate_coa_pdf(coa_name):
-    """Generate PDF for COA"""
+    """Generate the COA AMB2 PDF via the amb_print pipeline.
+
+    Replaces the old frappe.get_print('Standard', as_pdf=True) path (wrong format,
+    WeasyPrint crash on custom formats, returned raw bytes not a URL, never attached)
+    — the same replacement made on COA AMB.
+
+    ONE DELIBERATE DIFFERENCE from coa_amb.generate_coa_pdf: COA AMB2 has no print
+    format of its own (measured 2026-09-09: zero Print Format rows for the doctype,
+    default_print_format is None), so the format is resolved from meta and a missing
+    one is REPORTED, never substituted. Do not hardcode "COA AMB FoxPro" here — that
+    format is bound to COA AMB and would render an internal lot COA (real values)
+    on a customer certificate (authorised values). See RECORD-AUDIT-COA-AMB2 D4/D5.
+    """
+    from amb_print.amb_print.api import print_document_pdf
+
+    print_format = frappe.get_meta("COA AMB2").default_print_format
+    if not print_format:
+        frappe.throw(_(
+            "COA AMB2 has no print format yet. Set a default print format on COA AMB2 "
+            "before generating a PDF — COA AMB's formats are bound to COA AMB and must "
+            "not be used for an internal lot COA."
+        ))
     try:
-        return frappe.get_print(
-            'COA AMB2',
-            coa_name,
-            print_format='Standard',
-            as_pdf=True
+        res = print_document_pdf(
+            doctype="COA AMB2",
+            docname=coa_name,
+            print_format=print_format,
+            save_attachment=1,
+            is_private=0,
         )
+        return (res or {}).get("file_url")
     except Exception as e:
         frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA PDF Generation")
         frappe.throw(_("Error generating PDF: {0}").format(str(e)))

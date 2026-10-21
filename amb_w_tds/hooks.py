@@ -135,6 +135,16 @@ doc_events = {
 jinja = {
     "methods": [
         "amb_w_tds.coa_qr.coa_qr_img",
+        # BUG208 D-VALUE/D-UOM -- one arithmetic shared by all six armed print
+        # formats, so "the same shipment renders ONE total everywhere" is a
+        # property of the code and not of six hand-edits staying in step.
+        "amb_w_tds.valuation_jinja.amb_valuation",
+        "amb_w_tds.valuation_jinja.amb_customs_value",
+        "amb_w_tds.valuation_jinja.amb_row_uom",
+        # LOOP-1 — the lot-identity resolver. Registering it makes it REACHABLE
+        # from a render (VMG-I I-4); no format calls it yet, migration is
+        # per-format and lands by ruling.
+        "amb_w_tds.lot_identity.amb_lot_identity",
     ],
 }
 
@@ -271,6 +281,9 @@ fixtures = [
     # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
     # custom fields on BOM Formula have their option doctypes present on import.
     {"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},
+    # G-1a (2026-09-09) — mixing equipment catalogue. Values are carried in the
+    # fixture explicitly, never inherited from a DocType default (rule z).
+    {"doctype": "Mixing Equipment"},
     # SR-1 (2026-07-29) — the Sample Request AMB permissions block binds to this role,
     # so it must exist on a tier before the doctype syncs. Paired with the
     # [pre_model_sync] patch v17_sr1.create_verifier_read_only_role (belt and braces:
@@ -282,6 +295,10 @@ fixtures = [
          ["name", "in", _AMB_W_TDS_CF_EXCEPTIONS],
      ]},
     {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
+    # F-L1 (2026-09-06, Hugh's word): BOM Formula runs on Custom DocPerms (standard 0).
+    # Declaring the FULL destination (all four rows) makes the fixture idempotent and
+    # wipe-proof on every migrate — sync_fixtures upserts by name and never deletes.
+    {"doctype": "Custom DocPerm",         "filters": [["parent", "=", "BOM Formula"]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
     # Parameter records. These are the Link targets the picker's title-row

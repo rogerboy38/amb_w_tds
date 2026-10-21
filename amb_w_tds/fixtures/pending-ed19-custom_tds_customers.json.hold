@@ -1,0 +1,13 @@
+[
+ {
+  "doctype": "Custom Field",
+  "name": "TDS Product Specification-custom_tds_customers",
+  "dt": "TDS Product Specification",
+  "fieldname": "custom_tds_customers",
+  "label": "Customers (this TDS applies to)",
+  "fieldtype": "Table",
+  "options": "Customer Item",
+  "insert_after": "form",
+  "__pending_ed19_note": "HOLD leg per CARD E-1 A5. NOT loaded: filename ends .json.hold because sync_fixtures imports EVERY *.json in fixtures/ (hooks list drives export only) - the card's exact filename would auto-import on every migrate and pre-empt ED19 on any future prod use. One rename to .json activates it when Hugh rules carry."
+ }
+]
