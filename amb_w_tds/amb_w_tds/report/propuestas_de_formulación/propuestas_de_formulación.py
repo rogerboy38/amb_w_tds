@@ -32,7 +32,16 @@ def _columns(headline):
 
 
 def _cell(v):
-	return "" if v is None else (f"{v:g}" if isinstance(v, float) else str(v))
+	"""A number stays a number (so the Excel export is numeric); COA text such as
+	"<0.05" or "Negative" is kept verbatim, never coerced."""
+	if v is None or v == "":
+		return None
+	if isinstance(v, (int, float)):
+		return v
+	try:
+		return float(v)
+	except (TypeError, ValueError):
+		return str(v)
 
 
 def execute(filters=None):
@@ -72,7 +81,8 @@ def execute(filters=None):
 				"concepto": f"{c['parameter']}" + (f" ({c['uom']})" if c["uom"] else ""),
 				"minimo": _fmt_bound(c["min"]), "maximo": _fmt_bound(c["max"]),
 				"cumplimiento": "descriptivo — laboratorio" if c["kind"] == "descriptive" else mark(c["ok"]),
-				"nota": f"predicho: {_cell(c['value'])}" if c["value"] is not None else "predicho: sin dato",
+				"nota": f"predicho: {c['value']:g}" if isinstance(c["value"], float)
+					else f"predicho: {c['value']}" if c["value"] is not None else "predicho: sin dato",
 				"indent": 2})
 
 	if data["tds"]:

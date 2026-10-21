@@ -266,7 +266,9 @@ def build(producto, sales_order=None, tds=None):
 	tds_info = None
 	if tds_name:
 		tds_info = {"name": tds_name, "parameters": [
-			{"parameter": p.name, "uom": p.uom, "min": p.min_value, "max": p.max_value,
+			{"parameter": p.name, "uom": p.uom,
+			 # a pass/fail or descriptive row has no numeric bound: its stored 0s are not limits
+			 "min": p.min_value if p.numeric else None, "max": p.max_value if p.numeric else None,
 			 "blend_method": p.blend_method.value, "numeric": p.numeric}
 			for p in params]}
 	return {
