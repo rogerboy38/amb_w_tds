@@ -145,6 +145,10 @@ jinja = {
         # from a render (VMG-I I-4); no format calls it yet, migration is
         # per-format and lands by ruling.
         "amb_w_tds.lot_identity.amb_lot_identity",
+        # 13.9.0 — Print Format "Propuestas de Formulación" (BOM Formula): the same
+        # data as the Script Report of that name, from one module, so PDF and Excel
+        # can never disagree.
+        "amb_w_tds.formulation.propuestas.amb_propuestas_formulacion",
     ],
 }
 
@@ -369,7 +373,15 @@ fixtures = [
     {"doctype": "Workspace",              "filters": [["name", "like", "AMB%"]]},
     {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
     {"doctype": "Number Card",            "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Report",                 "filters": [["module", "=", "AMBWTDS"]]},
+    # 13.9.0: UNION (or_filters only, see the Server Script note above) so the
+    # Propuestas de Formulación Script Report is exported by name as well.
+    {"doctype": "Report",                 "or_filters": [
+        ["module", "=", "AMBWTDS"],
+        ["name", "in", ["Propuestas de Formulación"]],
+    ]},
+    # 13.9.0: the PDF surface of that report. Name-filtered: the standard module
+    # Print Format "Materiales para formulación" ships as a module file, not here.
+    {"doctype": "Print Format",           "filters": [["name", "in", ["Propuestas de Formulación"]]]},
 ]
 
 # ========================================
