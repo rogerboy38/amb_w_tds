@@ -19,9 +19,9 @@
 | Production | `646ba26` (tag `prod-pin-646ba26`, "t9a") | 2026-09-10 | What production runs. Built from Phase E/F work plus the role home-page hotfix; not yet merged to `main`. |
 | In flight | `phase-g/*` branches | 2026-09-08 → 09-11 | BOM Formula FoxPro-parity tabs and COA AMB2 compliance port. See [Work in progress](#work-in-progress-not-yet-on-main). |
 
-**Version numbering.** The latest release tag is **v14.0.0**. The package itself still
-reports `13.7.0` in `amb_w_tds/__init__.py`, and `version.txt` still reads `10.0.0`; neither
-has been bumped since April 2026.
+**Version numbering.** The latest release tag is **v14.0.0** (the same commit as v13.8.1).
+From **13.9.0** the package version in `amb_w_tds/__init__.py` and `version.txt` agree again;
+13.9.0 is the next free minor on the 13.x line (`v13.8.0` is taken). See `CHANGELOG.md`.
 
 ---
 
@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.9.0 | 2026-10 | BOM Formula formulation form (phase-g `a2b6d8c`) onto `main`, COA AMB2 port, lot identity resolver, BUG208 customs valuation, role home-page cleanup, report "Propuestas de Formulación" (PDF/Excel). Requires `bench migrate`. See `CHANGELOG.md` |
 | main (untagged) | 2026-05 → 08 | Sample Request AMB documents and permissions, COA compliance fixes, Pack Plan, Formulation workspace and Mix / Juice tabs, Cost & KPI dashboard, module-name cleanup, CI repaired and pinned to Frappe v16.17.5, agent twins removed |
 | v14.0.0 | 2026-05-01 | Same commit as v13.8.1 |
 | v13.8.1 | 2026-05-01 | Batch AMB dashboard override removed; `amb_w_spc` owns it |

@@ -19,21 +19,120 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "item_code",
+      "fieldtype": "Link",
+      "label": "Item",
+      "options": "Item",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "pct",
+      "fieldtype": "Percent",
+      "label": "% of batch",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "line_class",
+      "fieldtype": "Select",
+      "label": "Line Class",
+      "options": "component\nrecovered_solids\ninsumo",
+      "default": "component",
+      "in_list_view": 1
+    },
+    {
       "fieldname": "kg",
       "fieldtype": "Float",
       "label": "Kg",
       "in_list_view": 1
     },
     {
-      "fieldname": "source_coa_amb2",
+      "fieldname": "source_coa_doctype",
       "fieldtype": "Link",
+      "label": "COA Source Doctype",
+      "options": "DocType",
+      "default": "COA AMB",
+      "in_list_view": 0,
+      "description": "Which COA doctype the line's certificate lives in. COA AMB is the populated one; COA AMB2 is the future home."
+    },
+    {
+      "fieldname": "source_coa_amb2",
+      "fieldtype": "Dynamic Link",
       "label": "Source COA AMB2",
-      "options": "COA AMB2"
+      "options": "source_coa_doctype"
     },
     {
       "fieldname": "unit_cost",
       "fieldtype": "Currency",
       "label": "Unit Cost"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Importe",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "ingredient_role",
+      "fieldtype": "Select",
+      "label": "Ingredient Role",
+      "options": "\nactive\nrecovered_solids\nexcipient_compensating\nfiller\nnone"
+    },
+    {
+      "fieldname": "pct_min",
+      "fieldtype": "Percent",
+      "label": "% Min"
+    },
+    {
+      "fieldname": "pct_max",
+      "fieldtype": "Percent",
+      "label": "% Max"
+    },
+    {
+      "fieldname": "dilutes",
+      "fieldtype": "Small Text",
+      "label": "Dilutes",
+      "description": "Comma list of analytes this line dilutes, e.g. polysaccharides, acemannan"
+    },
+    {
+      "fieldname": "must_not_move",
+      "fieldtype": "Small Text",
+      "label": "Must Not Move",
+      "description": "Analytes that must stay within TDS after dilution"
+    },
+    {
+      "fieldname": "certifications",
+      "fieldtype": "Data",
+      "label": "Certifications",
+      "read_only": 1
+    },
+    {
+      "fieldname": "manufacturing_date",
+      "fieldtype": "Date",
+      "label": "Manufacturing Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "wwdyy",
+      "fieldtype": "Data",
+      "label": "WWDYY",
+      "read_only": 1
+    },
+    {
+      "fieldname": "partial_container",
+      "fieldtype": "Check",
+      "label": "Partial Container"
+    },
+    {
+      "fieldname": "remainder_kg",
+      "fieldtype": "Float",
+      "label": "Remainder Kg"
+    },
+    {
+      "fieldname": "remainder_disposition",
+      "fieldtype": "Select",
+      "label": "Remainder Disposition",
+      "options": "\nreturn SFG\nscrap\nmerma\npending"
     }
   ]
 }
