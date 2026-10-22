@@ -1,5 +1,31 @@
 # Changelog
 
+## 13.9.1 — 2026-10
+
+**Requires `bench migrate`** (the Print Format fixture changed).
+
+### Fixed: Propuestas de Formulación judged nothing on real data
+- Without a TDS filter, the report looked the TDS up by an exact match of
+  `TDS Product Specification.product_item` to the proposal's `product_sku`. Production
+  TDS name a longer descriptive Item, so every proposal showed "SIN TDS".
+- Now, per proposal: the explicit TDS filter if given, else **the proposal's own
+  `target_tds`**, else "SIN TDS". The Item-name lookup is gone.
+- A draft TDS judges, as the gate's Simular already does, but every verdict on it is
+  labelled "TDS en borrador" and counted apart. A cancelled or missing TDS is refused
+  ("TDS CANCELADA" / "TDS NO EXISTE"), with no pass/fail.
+- Report, Excel and PDF use the one resolution. The "PDF para Dirección" button now passes
+  the report's `tds` and `pedido` filters; an empty Pedido means all orders. Before, the
+  PDF could judge and scope differently from the screen.
+- Each verdict shows its basis:
+  - a "TDS aplicada" column in the report and Excel;
+  - "TDS aplicada" and the bounds per proposal in the PDF;
+  - one spec header only when every proposal used the same TDS with the same status.
+- The headline columns (Acemannan, Aloína, Arsénico) take each proposal's own parameter
+  from its own TDS. A column carries a UOM in its header only when all proposals agree;
+  otherwise each value names its parameter and UOM.
+- The report's TDS filter offers any approved or draft TDS. It used to offer only TDS of
+  the product's exact Item, the same miss.
+
 ## 13.9.0 — 2026-10
 
 **Requires `bench migrate` on every site.**
