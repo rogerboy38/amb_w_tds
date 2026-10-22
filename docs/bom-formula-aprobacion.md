@@ -27,6 +27,14 @@ active.
 product's default if the product has no default BOM yet; it never replaces an existing
 default.
 
+## On the form (13.11.1)
+
+- **Badge:** the state shows as the form's badge, next to the record name.
+- **Line at the top:** "Estado: … · Siguiente acción: …" names what *your* role can do next.
+- **Where to act:** the actions themselves are in the **Acciones** menu, at the top right.
+  The **Propuesta** menu next to it holds Generar PDF y Excel, Compartir and Enviar a
+  Dirección.
+
 ## Notes
 
 - **BOM Formula is never submitted.** The approval lives in its state (`workflow_state`).

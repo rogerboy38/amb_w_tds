@@ -1,5 +1,22 @@
 # Changelog
 
+## 13.11.1 — 2026-10
+
+**Requires `bench migrate`** (the workflow fixture changed). No data or schema change.
+
+### Fixed: the approval workflow was hard to see on the BOM Formula form
+- The workflow state badge did not show, because the workflow had `override_status` = 1
+  ("Don't Override Status"), which keeps Frappe from using the workflow state as the form's
+  indicator. It is now 0, so the badge shows Borrador, En Revisión, Autorizado, Liberado or
+  Rechazado.
+- Every state stays at docstatus 0, so BOM Formula remains non-submittable and the migrate
+  changes no document.
+- The role-gated transitions were always offered, in Frappe's **Acciones** menu. The
+  "Propuesta" buttons did not suppress them.
+- **New line at the top of the form:** "Estado: <estado> · Siguiente acción: <acciones>
+  (menú Acciones)", or "Sin acción disponible para su rol". It is built from the same
+  transitions Frappe offers the user, so the next step is obvious.
+
 ## 13.11.0 — 2026-10
 
 **Requires `bench migrate`.** After it, verify that the workflow "BOM Formula Aprobación"
