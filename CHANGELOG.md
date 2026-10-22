@@ -1,5 +1,73 @@
 # Changelog
 
+## 13.11.0 — 2026-10
+
+**Requires `bench migrate`.** After it, verify that the workflow "BOM Formula Aprobación"
+imported and that each role can make its transitions.
+
+### BOM Formula approval workflow
+- Workflow **"BOM Formula Aprobación"** on BOM Formula: Borrador → En Revisión →
+  Autorizado → **Liberado** / Rechazado. It ships as a fixture, together with its 5
+  Workflow States and 6 Actions.
+- **BOM Formula stays non-submittable.** The workflow runs on a new `workflow_state`
+  field, and every state is a draft (docstatus 0).
+- Transitions, each limited to one role:
+
+  | from | action | to | role |
+  |---|---|---|---|
+  | Borrador | Enviar a revisión | En Revisión | Quality Engineer |
+  | En Revisión | Autorizar | Autorizado | Quality Manager |
+  | En Revisión | Devolver | Borrador | Quality Manager |
+  | Autorizado | Liberar a producción | Liberado | Marketing Manager (Dirección) |
+  | Autorizado | Rechazar | Rechazado | Marketing Manager |
+  | Autorizado | Devolver a Calidad | Borrador | Marketing Manager |
+
+- Who can edit in each state:
+  - **Borrador:** Quality Engineer, Quality Manager, RND Manager, Manufacturing Manager,
+    Manufacturing User, System Manager;
+  - **En Revisión:** Quality Manager;
+  - **Autorizado, Liberado, Rechazado:** Marketing Manager.
+- **The state drives `cost_approval`**, so the two never disagree: Autorizado and Liberado
+  mean approved, Rechazado means rejected, En Revisión means requested, and returning to
+  Borrador withdraws an approval or rejection.
+  - The 13.10.0 stamps follow: *Autorizado por* is the user who authorized, and *Fecha de
+    autorización* is when.
+  - With the workflow active, cost authorization is given by the "Autorizar" transition,
+    not by setting the field by hand.
+- **Existing records** without a state are set to Borrador when the workflow is installed,
+  by Frappe's own workflow default.
+
+### Liberar a producción builds a standard BOM
+- New `amb_w_tds/formulation/release.py`, a small builder on ERPNext's native BOM. It does
+  not reuse `BOMService.create_standard_bom` (an MRP-BOM copy tied to a Batch AMB, with
+  `is_default` forced to 1 and its own commit).
+- The BOM is built for the formula's product:
+  - `quantity` = the Mix Input total (kg);
+  - one item per Mix Input row: the row's Item (else its Batch AMB sublot's item), with
+    qty = kg and uom Kg;
+  - `bom_formula` = the source formula;
+  - `is_active` 1, **submitted**, so a Work Order can use it.
+- **Nothing is written unless every row resolves.** The release fails if any Mix Input row
+  has no resolvable Item or a kg ≤ 0, or if the product's stock UOM is not Kg, and the
+  message names the rows.
+- **Default BOM:** `is_default` is requested as 0. ERPNext still makes the BOM the item's
+  default when the item has no default BOM at all; it never takes the default away from an
+  existing BOM.
+- **Back-reference:** a new read-only **"BOM liberada"** field on BOM Formula.
+- **Idempotent on that field:** if the released BOM is still submitted and active, it is
+  reused. Other BOMs that merely carry `bom_formula` (some were tagged by hand) are never
+  searched or touched.
+- The BOM is built server-side, bypassing permission checks only on the Autorizado →
+  Liberado transition. **No role gets a general right to create or submit BOMs.**
+
+### Access
+- **Marketing Manager** (Dirección): read, write and report on BOM Formula (level 0), and
+  access to the "Propuestas de Formulación" report.
+
+### Note
+- The 7 fixture sample formulas (`FMIX-*`, `MEMCAL-*`) are re-created at every migrate, so
+  they return to Borrador each time. They are not meant to be released.
+
 ## 13.10.0 — 2026-10
 
 **Requires `bench migrate`** (doctype and Custom DocPerm changes).
