@@ -57,9 +57,28 @@ def _batch_root(batch):
     return seen[-1] if seen else batch
 
 
+# 13.11.0 approval workflow "BOM Formula Aprobación" (workflow_state; BOM Formula stays
+# non-submittable). The workflow drives cost_approval so state and field never diverge:
+# Autorizado / Liberado mean approved, Rechazado means rejected, En Revisión means requested,
+# and returning to Borrador withdraws an approval or rejection.
+_STATE_COST_APPROVAL = {"Autorizado": "approved", "Liberado": "approved", "Rechazado": "rejected",
+    "En Revisión": "requested"}
+
+
+def cost_approval_for_state(state, current):
+    """cost_approval implied by a workflow state; `current` is kept where the state implies
+    nothing. No state (workflow not installed) keeps the field as the user set it."""
+    if not state:
+        return current
+    if state in _STATE_COST_APPROVAL:
+        return _STATE_COST_APPROVAL[state]
+    return "" if current in ("approved", "rejected") else current
+
+
 class BOMFormula(Document):
     # ---- THE DOOR: release gates on the MEASURED value, never the estimate ----
     def validate(self):
+        self.cost_approval = cost_approval_for_state(self.get("workflow_state"), self.get("cost_approval"))
         self._stamp_cost_approval()
         self._fetch_cost_thresholds()
         self._recompute_mix_totals()
@@ -72,6 +91,24 @@ class BOMFormula(Document):
                 r.release_ok = "Pass" if self._release_from_measured(r) else "Fail"
             else:
                 r.release_ok = "Pending"     # never auto-confirm
+        self._release_on_transition()
+
+    def _release_on_transition(self):
+        """13.11.0: entering "Liberado" builds the standard BOM (formulation/release.py) and
+        records it in bom_liberada. Only an existing record moving Autorizado -> Liberado
+        releases: Frappe's workflow gates that transition to its role; anything else that
+        tries to land in Liberado is refused."""
+        if self.get("workflow_state") != "Liberado":
+            return
+        before = self.get_doc_before_save()
+        if before and before.get("workflow_state") == "Liberado":
+            return  # already released: saving again builds nothing
+        if not before or before.get("workflow_state") != "Autorizado":
+            frappe.throw(frappe._("Solo una fórmula Autorizada puede liberarse a producción."))
+        from amb_w_tds.formulation.release import build_release_bom
+        result = build_release_bom(self)
+        self.bom_liberada = result["bom"]
+        self.flags.release_result = result
 
     def _stamp_cost_approval(self):
         """13.10.0: Calidad's authorization lives in the existing cost_approval /

@@ -122,6 +122,16 @@
       "description": "Solver-populated (Sprint 2). Read-only placeholder."
     },
     {
+      "fieldname": "workflow_state",
+      "fieldtype": "Link",
+      "label": "Estado de Aprobación",
+      "options": "Workflow State",
+      "hidden": 1,
+      "allow_on_submit": 1,
+      "no_copy": 1,
+      "read_only": 1
+    },
+    {
       "fieldname": "base_tab",
       "fieldtype": "Tab Break",
       "label": "Base"
@@ -506,6 +516,15 @@
       "label": "Work Order",
       "options": "Work Order",
       "read_only": 1
+    },
+    {
+      "fieldname": "bom_liberada",
+      "fieldtype": "Link",
+      "label": "BOM liberada",
+      "options": "BOM",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "BOM estándar creada al Liberar a producción (BOM.bom_formula apunta a esta fórmula)."
     },
     {
       "fieldname": "output_batch_amb",
