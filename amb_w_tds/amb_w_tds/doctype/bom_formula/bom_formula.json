@@ -381,7 +381,15 @@
       "fieldtype": "Link",
       "label": "Autorizado por",
       "options": "User",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Se registra al marcar Autorización de Costo = approved."
+    },
+    {
+      "fieldname": "cost_approved_on",
+      "fieldtype": "Datetime",
+      "label": "Fecha de autorización",
+      "read_only": 1,
+      "no_copy": 1
     },
     {
       "fieldname": "spec_deviation_approval",

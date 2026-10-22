@@ -65,3 +65,29 @@ that proposal becomes the Work Order BOM for Producción.
 - **Permissions.** Proposals are read through `frappe.get_list`, so a user sees only the
   BOM Formula records they may read. The report's roles match BOM Formula's four Custom
   DocPerm roles.
+
+## From the BOM Formula form (13.10.0)
+
+Open a saved proposal; the **Propuesta** button group offers the following.
+
+- **Generar PDF y Excel** renders the same PDF and Excel as the report, for this record's
+  product and Sales Order, and attaches both to the record as private files.
+- **Compartir** opens the share dialog. It appears only for users with the share right on
+  BOM Formula.
+- **Enviar a Dirección** is a supporting action. It asks for confirmation, then emails
+  both files to Dirección.
+
+**Where Dirección's recipients are set:** *Formulation Settings → Destinatarios de
+Dirección*, a list of Users, empty by default.
+- With no recipients set, "Enviar a Dirección" sends nothing and shows that instruction.
+- Only enabled users with an email address receive the mail.
+
+**Who sees the buttons:** users who can run the report: System Manager, Manufacturing
+Manager, Manufacturing User, RND Manager, Quality Manager, Quality Engineer.
+
+**Calidad's authorization:** Calidad (Quality Manager / Quality Engineer) prepares and
+edits proposals and sees cost.
+- To authorize, set **Autorización de Costo = approved** on the "Costo y autorización"
+  tab. The system records **Autorizado por** and **Fecha de autorización**, and clears
+  both if the approval is withdrawn.
+- Release to production (submit) stays with the existing authority.

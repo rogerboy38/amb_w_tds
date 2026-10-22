@@ -1,5 +1,46 @@
 # Changelog
 
+## 13.10.0 — 2026-10
+
+**Requires `bench migrate`** (doctype and Custom DocPerm changes).
+
+### BOM Formula: Propuesta actions on the form
+- A **"Propuesta"** button group on BOM Formula (`bom_formula.js`), shown only to users
+  who can run the "Propuestas de Formulación" report:
+  - **Generar PDF y Excel** renders the Propuestas PDF (the Print Format) and Excel (the
+    report's own export) for the record's product and Sales Order, and attaches both to
+    the record as private files.
+  - **Compartir** opens Frappe's share dialog, for users with the share right.
+  - **Enviar a Dirección** is a supporting action. It asks for confirmation, then emails
+    both files to the configured Dirección recipients. With none configured it sends
+    nothing and says where to set them.
+- Server methods are in `amb_w_tds/formulation/propuesta_actions.py`. Each call is checked
+  against the report's own rule: its roles, plus the "report" right on BOM Formula, plus
+  read on the record. Recipients never come from the caller.
+
+### Formulation Settings: "Destinatarios de Dirección"
+- A table of Users who receive "Enviar a Dirección", empty by default. The administrator
+  fills it in on each site; no address ships in the app.
+
+### Permissions on BOM Formula (cost stays visible to Calidad)
+- **Quality Manager** and **Quality Engineer**: read, write, create, report, print, email
+  and export, at permission level 0. Calidad prepares and authorizes, and sees cost. No
+  delete, submit or cancel: release to production stays with the existing authority.
+- **report = 1** for Manufacturing Manager, Manufacturing User and RND Manager.
+  Previously only System Manager could run reports on BOM Formula, so these roles hit
+  "You don't have permission to get a report on: BOM Formula".
+- "Propuestas de Formulación" report roles gain Quality Manager and Quality Engineer.
+
+### Calidad authorization
+- Recorded in the existing fields: **Autorización de Costo** (`cost_approval` =
+  approved) and **Autorizado por** (`cost_approved_by`).
+- `cost_approved_by` was read-only and nothing ever set it. It is now stamped with the
+  user, together with a new read-only **Fecha de autorización** (`cost_approved_on`),
+  when the approval becomes "approved", and both are cleared when it is withdrawn.
+- `cost_approved_on` is the only new field; no change history was kept on BOM Formula.
+- The formal approval Workflow (Borrador → Autorizado Calidad → Dirección → Liberado)
+  is a separate, later task.
+
 ## 13.9.1 — 2026-10
 
 **Requires `bench migrate`** (the Print Format fixture changed).

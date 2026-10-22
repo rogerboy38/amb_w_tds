@@ -60,6 +60,7 @@ def _batch_root(batch):
 class BOMFormula(Document):
     # ---- THE DOOR: release gates on the MEASURED value, never the estimate ----
     def validate(self):
+        self._stamp_cost_approval()
         self._fetch_cost_thresholds()
         self._recompute_mix_totals()
         if not self.get("formulation_date"):
@@ -71,6 +72,20 @@ class BOMFormula(Document):
                 r.release_ok = "Pass" if self._release_from_measured(r) else "Fail"
             else:
                 r.release_ok = "Pending"     # never auto-confirm
+
+    def _stamp_cost_approval(self):
+        """13.10.0: Calidad's authorization lives in the existing cost_approval /
+        cost_approved_by fields. cost_approved_by was read-only and nothing ever set
+        it; stamp who and when on the transition to "approved", and clear both when
+        the approval is withdrawn, so the record always says who authorized it."""
+        if self.get("cost_approval") == "approved":
+            before = self.get_doc_before_save()
+            if not before or before.get("cost_approval") != "approved" or not self.get("cost_approved_by"):
+                self.cost_approved_by = frappe.session.user
+                self.cost_approved_on = frappe.utils.now_datetime()
+        else:
+            self.cost_approved_by = None
+            self.cost_approved_on = None
 
     def _fetch_cost_thresholds(self):
         """Leg D / G-1a defect: the Single holds 600 / 800 but the document kept
