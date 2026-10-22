@@ -43,5 +43,35 @@
   "doctype": "Workflow Action Master",
   "name": "Freeze",
   "workflow_action_name": "Freeze"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Enviar a revisión",
+  "workflow_action_name": "Enviar a revisión"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Autorizar",
+  "workflow_action_name": "Autorizar"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Devolver",
+  "workflow_action_name": "Devolver"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Liberar a producción",
+  "workflow_action_name": "Liberar a producción"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Rechazar",
+  "workflow_action_name": "Rechazar"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Devolver a Calidad",
+  "workflow_action_name": "Devolver a Calidad"
  }
 ]

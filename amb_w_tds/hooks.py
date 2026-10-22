@@ -338,7 +338,9 @@ fixtures = [
     # strip volatile fields post-export (handled at commit time, not here).
     {"doctype": "Preservative System",    "filters": [["is_active", "=", 1]]},
     # V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
-    {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification"]]]},
+    {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification",
+        # 13.11.0: the BOM Formula approval workflow (Borrador -> En Revisión -> Autorizado -> Liberado / Rechazado)
+        "BOM Formula"]]]},
     # 2026-08-06: the "AMB%" filter matched NOTHING — 0 of 11 Workflow Action Masters and
     # 0 of 49 Workflow States. Both fixtures had therefore always exported as `[]`, while the
     # Workflow fixture above shipped transitions that REFERENCE those rows. The workflow only
@@ -352,6 +354,8 @@ fixtures = [
         # workflow.json and references four states this filter never covered, so
         # they were still being exported as nothing. Same [] defect, second workflow.
         "Pending Sales", "Pending Quality", "Pending Director", "Frozen",
+        # 13.11.0: BOM Formula Aprobación
+        "Borrador", "En Revisión", "Autorizado", "Liberado", "Rechazado",
     ]]]},
     {"doctype": "Workflow Action Master", "filters": [["name", "in", [
         "Review", "Submit for Supervisor Approval", "Approve",
@@ -363,6 +367,8 @@ fixtures = [
         "Reject",
         # same pre-flight: the TDS workflow's two actions, previously uncovered.
         "Approve (Sales)", "Freeze",
+        # 13.11.0: BOM Formula Aprobación
+        "Enviar a revisión", "Autorizar", "Devolver", "Liberar a producción", "Rechazar", "Devolver a Calidad",
     ]]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},

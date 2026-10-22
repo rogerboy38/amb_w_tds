@@ -53,5 +53,30 @@
   "doctype": "Workflow State",
   "name": "Frozen",
   "workflow_state_name": "Frozen"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Borrador",
+  "workflow_state_name": "Borrador"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "En Revisión",
+  "workflow_state_name": "En Revisión"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Autorizado",
+  "workflow_state_name": "Autorizado"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Liberado",
+  "workflow_state_name": "Liberado"
+ },
+ {
+  "doctype": "Workflow State",
+  "name": "Rechazado",
+  "workflow_state_name": "Rechazado"
  }
 ]

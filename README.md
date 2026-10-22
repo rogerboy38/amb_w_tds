@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.11.0 | 2026-10 | BOM Formula approval workflow (Borrador → En Revisión → Autorizado → Liberado / Rechazado); Liberar builds a submitted standard BOM (`BOM.bom_formula` filled) for the Work Order. See `CHANGELOG.md` |
 | 13.10.0 | 2026-10 | BOM Formula Propuesta actions (Generar PDF y Excel, Compartir, Enviar a Dirección); Formulation Settings "Destinatarios de Dirección"; Quality Manager/Engineer prepare and authorize on BOM Formula (cost visible); report access for the Manufacturing and RND roles; authorization stamp. See `CHANGELOG.md` |
 | 13.9.1 | 2026-10 | Propuestas de Formulación: each proposal is judged against its own Target TDS when no TDS filter is given (report + PDF), so the verdict resolves on production data. See `CHANGELOG.md` |
 | 13.9.0 | 2026-10 | BOM Formula formulation form (phase-g `a2b6d8c`) onto `main`, COA AMB2 port, lot identity resolver, BUG208 customs valuation, role home-page cleanup, report "Propuestas de Formulación" (PDF/Excel). Requires `bench migrate`. See `CHANGELOG.md` |
