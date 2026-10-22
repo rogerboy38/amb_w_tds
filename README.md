@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.10.0 | 2026-10 | BOM Formula Propuesta actions (Generar PDF y Excel, Compartir, Enviar a Dirección); Formulation Settings "Destinatarios de Dirección"; Quality Manager/Engineer prepare and authorize on BOM Formula (cost visible); report access for the Manufacturing and RND roles; authorization stamp. See `CHANGELOG.md` |
 | 13.9.1 | 2026-10 | Propuestas de Formulación: each proposal is judged against its own Target TDS when no TDS filter is given (report + PDF), so the verdict resolves on production data. See `CHANGELOG.md` |
 | 13.9.0 | 2026-10 | BOM Formula formulation form (phase-g `a2b6d8c`) onto `main`, COA AMB2 port, lot identity resolver, BUG208 customs valuation, role home-page cleanup, report "Propuestas de Formulación" (PDF/Excel). Requires `bench migrate`. See `CHANGELOG.md` |
 | main (untagged) | 2026-05 → 08 | Sample Request AMB documents and permissions, COA compliance fixes, Pack Plan, Formulation workspace and Mix / Juice tabs, Cost & KPI dashboard, module-name cleanup, CI repaired and pinned to Frappe v16.17.5, agent twins removed |
