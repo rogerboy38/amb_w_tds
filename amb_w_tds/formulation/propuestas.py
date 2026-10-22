@@ -10,6 +10,14 @@ Shared by two surfaces so they can never disagree:
   - the Print Format "Propuestas de Formulación" on BOM Formula (PDF), through
     the Jinja method `amb_propuestas_formulacion`.
 
+Which TDS judges a proposal (13.9.1), one order for every surface:
+  1. the report's explicit `tds` filter, for every proposal;
+  2. else the proposal's own `target_tds`;
+  3. else none: "SIN TDS".
+A draft TDS is used, as the gate uses it, but every verdict on it is labelled
+"TDS en borrador"; a cancelled or missing TDS is refused (no pass/fail). There is
+no lookup by Item name (prod TDS name a longer Item than the proposal's SKU).
+
 ⛔ Nothing here computes a quality value. Every number comes from a COA row or
 from the gate's stored Predicted Analytic rows (the last "Simular"); the only
 computation is the pass/fail of that stored value against the TDS bounds, and it
@@ -47,6 +55,12 @@ SIN_SIMULACION = "SIN SIMULACIÓN"
 CUMPLE = "CUMPLE"
 NO_CUMPLE = "NO CUMPLE"
 INCOMPLETO = "INCOMPLETO"
+TDS_CANCELADA = "TDS CANCELADA"
+TDS_NO_EXISTE = "TDS NO EXISTE"
+
+# TDS status by docstatus; only "aprobada" and "borrador" may judge.
+TDS_STATUS = {1: "aprobada", 0: "borrador", 2: "cancelada"}
+_USABLE = ("aprobada", "borrador")
 
 _DESCRIPTIVE_PREFIX = "DESCRIPTIVE"
 _UNRESOLVED_PREFIX = "UNRESOLVED: "
@@ -65,17 +79,16 @@ def _num(value):
 		return None
 
 
-def default_tds(producto):
-	"""The product's TDS: the newest SUBMITTED TDS Product Specification whose
-	product_item is the product. None when the product has none."""
-	rows = frappe.get_all(
-		"TDS Product Specification",
-		filters={"product_item": producto, "docstatus": 1},
-		fields=["name"],
-		order_by="approval_date desc, modified desc",
-		limit=1,
-	)
-	return rows[0].name if rows else None
+def resolve_tds(filter_tds, target_tds, docstatus_of):
+	"""Which TDS judges one proposal: the explicit filter, else its own target_tds,
+	else None (SIN TDS). `docstatus_of(name)` returns the TDS docstatus, or None
+	when it does not exist. Pure, so the order is unit-tested without a site."""
+	name = filter_tds or target_tds or None
+	if not name:
+		return None
+	status = TDS_STATUS.get(docstatus_of(name), "no existe")
+	return {"name": name, "source": "filtro" if filter_tds else "target_tds",
+		"status": status, "usable": status in _USABLE}
 
 
 def tds_parameters(tds):
@@ -162,9 +175,11 @@ def _compliance(params, predicted):
 	return rows
 
 
-def _overall(has_tds, predicted, compliance):
-	if not has_tds:
+def _overall(tds_info, predicted, compliance):
+	if not tds_info:
 		return SIN_TDS
+	if not tds_info["usable"]:
+		return TDS_CANCELADA if tds_info["status"] == "cancelada" else TDS_NO_EXISTE
 	if not predicted:
 		return SIN_SIMULACION
 	gated = [c for c in compliance if c["kind"] != "descriptive"]
@@ -175,13 +190,26 @@ def _overall(has_tds, predicted, compliance):
 	return CUMPLE
 
 
+def _tds_box(info, params):
+	"""The spec a verdict used: TDS name, status, and the bounds applied."""
+	if not info:
+		return None
+	return {"name": info["name"], "status": info["status"], "source": info["source"], "usable": info["usable"],
+		"parameters": [
+			{"parameter": p.name, "uom": p.uom,
+			 # a pass/fail or descriptive row has no numeric bound: its stored 0s are not limits
+			 "min": p.min_value if p.numeric else None, "max": p.max_value if p.numeric else None,
+			 "blend_method": p.blend_method.value, "numeric": p.numeric}
+			for p in params]}
+
+
 def build(producto, sales_order=None, tds=None):
 	"""The whole comparison as plain data. Read-only; permission-checked through
-	frappe.get_list on BOM Formula."""
+	frappe.get_list on BOM Formula. Each proposal is judged against the TDS that
+	resolve_tds gives it (filter > target_tds > none)."""
 	if not producto:
 		frappe.throw("Indique el producto")
-	tds_name = tds or default_tds(producto)
-	params = tds_parameters(tds_name)
+	tds = tds or None
 
 	filters = {"formula_type": "Mix", "docstatus": 0, "product_sku": producto}
 	if sales_order:
@@ -190,29 +218,38 @@ def build(producto, sales_order=None, tds=None):
 		"BOM Formula", filters=filters, pluck="name",
 		order_by="formulation_date asc, creation asc",
 	)
-
 	docs = [frappe.get_doc("BOM Formula", n) for n in names]
-	predicted_by_doc = {d.name: _predicted(d) for d in docs}
 
-	# Headline parameter names: from the TDS; without a TDS, from what the gate
-	# predicted; in either case never from a hard-coded name.
-	name_pool = [p.name for p in params]
-	if not name_pool:
-		for pred in predicted_by_doc.values():
-			name_pool += [n for n in pred if n not in name_pool]
-	headline = pick_headline(name_pool)
-	param_by_name = {p.name: p for p in params}
-	headline_cols = []
-	for key, label, _tokens in HEADLINE:
-		spec = headline.get(key)
-		uom = param_by_name[spec].uom if spec in param_by_name else ""
-		headline_cols.append({"key": key, "label": label, "spec": spec, "uom": uom or "",
-			"min": param_by_name[spec].min_value if spec in param_by_name else None,
-			"max": param_by_name[spec].max_value if spec in param_by_name else None})
-	wanted = {c["spec"] for c in headline_cols if c["spec"]}
+	def docstatus_of(name):
+		return frappe.db.get_value("TDS Product Specification", name, "docstatus")
+
+	params_cache = {}
+
+	def params_for(info):
+		if not (info and info["usable"]):
+			return []
+		if info["name"] not in params_cache:
+			params_cache[info["name"]] = tds_parameters(info["name"])
+		return params_cache[info["name"]]
 
 	proposals = []
 	for d in docs:
+		info = resolve_tds(tds, d.target_tds, docstatus_of)
+		params = params_for(info)
+		predicted = _predicted(d)
+		# Headline parameter names: from THIS proposal's TDS; without one, from what
+		# the gate predicted for it; never from a hard-coded name.
+		pool = [p.name for p in params] or list(predicted)
+		picked = pick_headline(pool)
+		param_by_name = {p.name: p for p in params}
+		headline = {}
+		for key, _label, _tokens in HEADLINE:
+			spec = picked.get(key)
+			p = param_by_name.get(spec)
+			headline[key] = {"spec": spec, "uom": (p.uom if p else "") or "",
+				"min": p.min_value if p else None, "max": p.max_value if p else None}
+		wanted = {h["spec"] for h in headline.values() if h["spec"]}
+
 		lines = []
 		for idx, line in enumerate(d.get("mix_input_lines") or [], start=1):
 			dt, coa, resolution, detail = d._resolve_coa(line)
@@ -225,16 +262,20 @@ def build(producto, sales_order=None, tds=None):
 				"pct": flt(line.pct) if line.pct not in (None, "") else None,
 				"coa_doctype": dt, "coa": coa, "resolution": resolution,
 				"nota": "" if coa else f"{SIN_COA}: {detail}",
-				"values": {c["key"]: (vals.get(c["spec"]) if c["spec"] else None) for c in headline_cols},
+				"values": {k: (vals.get(h["spec"]) if h["spec"] else None) for k, h in headline.items()},
 			})
-		predicted = predicted_by_doc[d.name]
 		compliance = _compliance(params, predicted)
 		ok_by_param = {c["parameter"]: c["ok"] for c in compliance}
-		total = {c["key"]: ((predicted.get(c["spec"]) or {}).get("value") if c["spec"] else None)
-			for c in headline_cols}
-		total_ok = {c["key"]: (ok_by_param.get(c["spec"]) if c["spec"] else None) for c in headline_cols}
+		total = {k: ((predicted.get(h["spec"]) or {}).get("value") if h["spec"] else None)
+			for k, h in headline.items()}
+		total_ok = {k: (ok_by_param.get(h["spec"]) if h["spec"] else None) for k, h in headline.items()}
+
 		notes = []
-		if tds_name and d.target_tds and d.target_tds != tds_name:
+		if info and info["status"] == "borrador":
+			notes.append(f"TDS en borrador ({info['name']}): veredicto contra límites aún no aprobados")
+		elif info and not info["usable"]:
+			notes.append(f"{info['name']}: TDS {info['status']}, sin veredicto")
+		if tds and d.target_tds and d.target_tds != tds:
 			notes.append(f"simulada con TDS {d.target_tds}")
 		if not predicted:
 			notes.append("sin Predicted Analytics: ejecute Simular en la propuesta")
@@ -253,32 +294,63 @@ def build(producto, sales_order=None, tds=None):
 			"target_tds": d.target_tds,
 			"blend_status": d.blend_status,
 			"prediction_note": d.prediction_note,
+			"tds": _tds_box(info, params),
+			"tds_label": tds_label(info),
+			"borrador": bool(info and info["status"] == "borrador"),
+			"headline": headline,
 			"lines": lines,
 			"n_lotes": len(lines),
 			"n_sin_coa": sin_coa,
 			"total": total,
 			"total_ok": total_ok,
 			"compliance": compliance,
-			"overall": _overall(bool(tds_name), predicted, compliance),
+			"overall": _overall(info, predicted, compliance),
 			"notes": notes,
 		})
 
-	tds_info = None
-	if tds_name:
-		tds_info = {"name": tds_name, "parameters": [
-			{"parameter": p.name, "uom": p.uom,
-			 # a pass/fail or descriptive row has no numeric bound: its stored 0s are not limits
-			 "min": p.min_value if p.numeric else None, "max": p.max_value if p.numeric else None,
-			 "blend_method": p.blend_method.value, "numeric": p.numeric}
-			for p in params]}
 	return {
 		"producto": producto,
 		"item_name": frappe.db.get_value("Item", producto, "item_name"),
 		"sales_order": sales_order,
-		"tds": tds_info,
-		"headline": headline_cols,
+		"tds_filter": tds,
+		"tds": shared_tds(proposals, tds, lambda: _tds_box(resolve_tds(tds, None, docstatus_of),
+			params_for(resolve_tds(tds, None, docstatus_of)))),
+		"headline": headline_columns(proposals),
 		"proposals": proposals,
 	}
+
+
+def tds_label(info) -> str:
+	"""'TDS-X', 'TDS-X (borrador)', 'TDS-X (cancelada)' or 'SIN TDS'."""
+	if not info:
+		return SIN_TDS
+	return info["name"] if info["status"] == "aprobada" else f"{info['name']} ({info['status']})"
+
+
+def shared_tds(proposals, tds_filter, filter_box):
+	"""One spec header only when every proposal was judged by the same TDS with the
+	same status (an explicit filter always is); else None = a spec box per proposal."""
+	if not proposals:
+		return filter_box() if tds_filter else None
+	boxes = [p["tds"] for p in proposals]
+	if any(b is None for b in boxes):
+		return None
+	keys = {(b["name"], b["status"]) for b in boxes}
+	return boxes[0] if len(keys) == 1 else None
+
+
+def headline_columns(proposals):
+	"""The three headline columns. A column's UOM goes in the header only when every
+	proposal that has the parameter agrees on it; otherwise `uniform` is False and
+	each proposal's own parameter name and UOM are shown with its value."""
+	cols = []
+	for key, label, _tokens in HEADLINE:
+		used = [p["headline"][key] for p in proposals if p["headline"][key]["spec"]]
+		specs = {(h["spec"], h["uom"]) for h in used}
+		uniform = len(specs) <= 1
+		uom = next(iter(specs))[1] if (uniform and specs) else ""
+		cols.append({"key": key, "label": label, "uom": uom, "uniform": uniform})
+	return cols
 
 
 def mark(ok) -> str:
