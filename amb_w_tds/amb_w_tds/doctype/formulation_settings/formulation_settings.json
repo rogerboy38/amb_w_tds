@@ -11,7 +11,9 @@
     { "fieldname": "currency", "fieldtype": "Link", "label": "Currency", "options": "Currency" },
     { "fieldname": "approver_roles", "fieldtype": "Small Text", "label": "Approver Roles" },
     { "fieldname": "default_source_warehouse", "fieldtype": "Link", "label": "Default Source Warehouse", "options": "Warehouse" },
-    { "fieldname": "default_coa_source", "fieldtype": "Select", "label": "Default COA Source", "options": "\nCOA AMB2\nCOA AMB" }
+    { "fieldname": "default_coa_source", "fieldtype": "Select", "label": "Default COA Source", "options": "\nCOA AMB2\nCOA AMB" },
+    { "fieldname": "direccion_section", "fieldtype": "Section Break", "label": "Destinatarios de Dirección" },
+    { "fieldname": "destinatarios_direccion", "fieldtype": "Table MultiSelect", "label": "Destinatarios de Dirección", "options": "Formulation Settings Recipient", "description": "Usuarios de Dirección que reciben la propuesta de formulación (\"Enviar a Dirección\" en BOM Formula). Vacío por defecto: el administrador los define en cada sitio." }
   ],
   "permissions": [
     { "role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1 },

@@ -1,0 +1,12 @@
+{
+  "doctype": "DocType",
+  "name": "Formulation Settings Recipient",
+  "module": "Amb W Tds",
+  "istable": 1,
+  "editable_grid": 1,
+  "custom": 0,
+  "fields": [
+    { "fieldname": "user", "fieldtype": "Link", "label": "Usuario", "options": "User", "reqd": 1, "in_list_view": 1 }
+  ],
+  "permissions": []
+}
