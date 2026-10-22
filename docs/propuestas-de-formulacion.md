@@ -16,8 +16,8 @@ that proposal becomes the Work Order BOM for Producción.
    (and optionally `Pedido`, `TDS`):
    - **Excel/CSV:** the report's Export.
    - **PDF:** the "PDF para Dirección" button, which renders the Print Format
-     **Propuestas de Formulación**. It can also be printed from any proposal's form,
-     scoped to that proposal's Sales Order.
+     **Propuestas de Formulación** with the report's own filters. It can also be printed
+     from any proposal's form, scoped to that proposal's Sales Order.
 4. **Decision.** Dirección marks the chosen proposal and signs (Aprobó / Revisó /
    Elaboró).
 5. **Work Order.** The chosen proposal goes to Producción as the Work Order BOM.
@@ -37,8 +37,14 @@ that proposal becomes the Work Order BOM for Producción.
   - Lot values come from the COA the gate resolves.
   - The TOTAL comes from the gate's stored Predicted Analytic rows, i.e. the last
     Simular. Re-run Simular after editing lines.
-  - Bounds come from the TDS: the one given in the filter, else the newest submitted TDS
-    whose Product Item is the product.
+  - Bounds come from the TDS, chosen per proposal (13.9.1):
+    1. the TDS filter if given (it then applies to every proposal);
+    2. else the proposal's own **Target TDS** (`target_tds`);
+    3. else "SIN TDS".
+  - There is no lookup by Item name, because production TDS name a longer Item than the
+    proposal's SKU.
+  - A draft TDS judges but is labelled "TDS en borrador"; a cancelled one gives no verdict.
+  - Each verdict shows the TDS it used ("TDS aplicada").
   - Pass/fail uses the gate's own comparator and the gate's own reading of the TDS.
 - **Headline columns** are found in the TDS by name pattern (acemann…, aloin…, arsen…;
   a "total"/"content" name wins when several match). The column header shows the TDS's
@@ -51,7 +57,10 @@ that proposal becomes the Work Order BOM for Producción.
   - **NO CUMPLE:** at least one is out of bounds.
   - **INCOMPLETO:** none fail, but some lack a prediction.
   - **SIN SIMULACIÓN:** Simular has not been run.
-  - **SIN TDS:** no TDS was found; values are shown without bounds or pass/fail.
+  - **SIN TDS:** no filter and no Target TDS; values are shown without bounds or
+    pass/fail.
+  - **TDS CANCELADA / TDS NO EXISTE:** the TDS cannot judge; no pass/fail.
+  - Any of these may carry the label **TDS en borrador**.
 - **Read-only.** The report and the print format create and write nothing.
 - **Permissions.** Proposals are read through `frappe.get_list`, so a user sees only the
   BOM Formula records they may read. The report's roles match BOM Formula's four Custom
