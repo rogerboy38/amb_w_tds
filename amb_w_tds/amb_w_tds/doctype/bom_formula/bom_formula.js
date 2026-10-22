@@ -3,6 +3,7 @@
 frappe.ui.form.on("BOM Formula", {
 	refresh(frm) {
 		frm.trigger("g1a_tab_visibility");
+		frm.trigger("workflow_hint");
 		frm.trigger("propuesta_actions");
 	},
 	formula_type(frm) {
@@ -21,6 +22,23 @@ frappe.ui.form.on("BOM Formula", {
 		["btn_ver_existencias", "btn_seleccionar", "btn_calcular", "btn_eval"].forEach((b) =>
 			frm.toggle_display(b, false)
 		);
+	},
+	// 13.11.1: say where the approval stands and what this user can do next. Built from the
+	// same transitions Frappe puts in the "Acciones" menu, filtered by the user's roles exactly
+	// as Frappe filters them; it adds no action of its own.
+	workflow_hint(frm) {
+		const field = frappe.workflow.get_state_fieldname(frm.doctype);
+		const state = field && frm.doc[field];
+		if (frm.is_new() || !state) return;
+		frappe.workflow.get_transitions(frm.doc).then((transitions) => {
+			const mine = (transitions || [])
+				.filter((t) => frappe.user_roles.includes(t.allowed))
+				.map((t) => __(t.action));
+			const next = mine.length
+				? __("Siguiente acción: {0} (menú Acciones)", [mine.join(", ")])
+				: __("Sin acción disponible para su rol");
+			frm.set_intro(__("Estado: {0} · {1}", [__(state), next]), mine.length ? "blue" : "gray");
+		});
 	},
 	// 13.10.0: "Propuesta" actions. Offered only to users who can run the Propuestas de
 	// Formulación report (the server decides; the methods re-check on every call).
