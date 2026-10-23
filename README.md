@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.11.2 | 2026-10 | Liberar no longer crashes on BOM naming (BOM-<item>-NNN counting amendments; BOM autoname hook for every path); BOM amendments use Amend Counter; the released BOM becomes the item's default, demotion logged. See `CHANGELOG.md` |
 | 13.11.1 | 2026-10 | BOM Formula form shows the approval state badge and a "Siguiente acción" line; transitions are in the Acciones menu. See `CHANGELOG.md` |
 | 13.11.0 | 2026-10 | BOM Formula approval workflow (Borrador → En Revisión → Autorizado → Liberado / Rechazado); Liberar builds a submitted standard BOM (`BOM.bom_formula` filled) for the Work Order. See `CHANGELOG.md` |
 | 13.10.0 | 2026-10 | BOM Formula Propuesta actions (Generar PDF y Excel, Compartir, Enviar a Dirección); Formulation Settings "Destinatarios de Dirección"; Quality Manager/Engineer prepare and authorize on BOM Formula (cost visible); report access for the Manufacturing and RND roles; authorization stamp. See `CHANGELOG.md` |

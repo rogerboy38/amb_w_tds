@@ -23,9 +23,13 @@ naming the rows.
 **Releasing again reuses** the BOM recorded in *BOM liberada* while it is submitted and
 active.
 
-**Default BOM.** The BOM is created with "default" off. ERPNext still makes it the
-product's default if the product has no default BOM yet; it never replaces an existing
-default.
+**Name and default (13.11.2).**
+- **Name:** the BOM is named `BOM-<producto>-NNN`, numbered after every existing BOM of the
+  product, amendments included.
+- **Default:** it becomes the product's **default BOM** (the one a new Work Order picks first).
+  The previous default is unticked, and a comment on the formula and the BOM names it so a planner
+  can tick it back.
+- **Releasing again** reuses the same BOM and does not change the default.
 
 ## On the form (13.11.1)
 
