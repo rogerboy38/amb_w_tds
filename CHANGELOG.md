@@ -1,5 +1,40 @@
 # Changelog
 
+## 13.11.2 — 2026-10
+
+**Requires `bench migrate`** (one patch; a BOM hook).
+
+### Fixed: "Liberar a producción" crashed with "Duplicate Name: BOM BOM-0307-006 already exists"
+- **Cause:** ERPNext's `BOM.autoname` picks the next `BOM-<item>-NNN` while **skipping amended
+  BOMs**. On this site, amendments are named "Default Naming", so they take plain numbers
+  (e.g. `BOM-0307-006` is an amendment of `-005`). The picker therefore re-proposes an existing
+  name.
+- **Release:** the release now names its BOM explicitly, **`BOM-<item>-NNN` counting amended BOMs**
+  (here `BOM-0307-007`), with one retry. There is no new prefix: the released BOM is identified by
+  `bom_formula`.
+- **Every BOM creation path, including the manual "New BOM" dialog:** a BOM `autoname` hook runs
+  after ERPNext's and moves the name to the next free number **only when the proposed name already
+  exists**. Names that would not collide are untouched, and no existing BOM is renamed.
+
+### BOM amendments use "Amend Counter"
+- Patch `v13_11_2_bom_amend_counter`: in Document Naming Settings it sets **only** the BOM
+  amendment override to **Amend Counter**. The global setting and all other rows are untouched,
+  and it is idempotent.
+- **Future** BOM amendments are named `BOM-<item>-NNN-1` instead of taking the next plain number.
+  It renames nothing.
+- ⚠ Amending one of the **existing** amendments that already took a plain number (e.g.
+  `BOM-0307-006`) gives Frappe's counter name `BOM-0307-7`. This is Frappe's Amend Counter
+  rule; the BOM hook above still keeps new BOMs collision-free.
+
+### Liberar makes the released BOM the item's default ("first plan")
+- **Changes the 13.11.0 behaviour (`is_default = 0`).** The released BOM is created with
+  `is_default = 1`, and ERPNext's own `manage_default_bom` unticks the previous default on submit.
+  Exactly one default remains, which is asserted.
+- **The demotion is logged** as a comment on the BOM Formula and on the new BOM, naming the
+  previous default, so a planner can tick it back.
+- **A re-release (reuse of "BOM liberada") never touches defaults.** Existing Work Orders keep
+  their own BOM.
+
 ## 13.11.1 — 2026-10
 
 **Requires `bench migrate`** (the workflow fixture changed). No data or schema change.

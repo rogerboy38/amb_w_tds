@@ -60,6 +60,13 @@ doctype_js = {
 
 doc_events = {
 
+    # 13.11.2: ERPNext's BOM.autoname skips amended BOMs when picking the next BOM-<item>-NNN, so on
+    # items whose amendments took plain numbers it re-proposes an existing name ("Duplicate Name").
+    # Runs right after it; corrects the name ONLY when it already exists (counting amendments).
+    "BOM": {
+        "autoname": "amb_w_tds.formulation.bom_naming.correct_colliding_autoname",
+    },
+
     # ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
     # per-row Σ group_net_kg == SO row qty (block on submit), packaging-catalog
     # link restriction, taras fetched from Item master (F-8), Quotation→SO copy
