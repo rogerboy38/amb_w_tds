@@ -1,5 +1,23 @@
 # Changelog
 
+## 13.11.3 — 2026-10
+
+**Requires `bench migrate`** (no patch; the change is what a migrate no longer does).
+
+### Removed: the FMIX/MEMCAL sample formula fixtures
+- Remove the FMIX/MEMCAL sample formula fixtures so a fresh install/migrate creates **no demo
+  formulas** (prod stays clean). The file `amb_w_tds/fixtures/bom_formula.json` shipped seven
+  sample BOM Formula records (`MEMCAL-T1` … `MEMCAL-T6` and `FMIX-0307-STEP1` with its four Mix
+  Input lines). It was never listed under `fixtures` in `hooks.py`; Frappe imported it only because
+  it sat in the fixtures folder, and re-imported it on every migrate.
+- **Existing sample records on systems that already have them are left in place (no deletion);
+  they are simply no longer re-imported or reset.** No patch touches them and no Workflow Action
+  is generated for them.
+- No code, schema, workflow, role, report, Print Format or release-logic change. The fixture
+  mechanism for the real doctypes (Custom Fields, Custom DocPerms, Workflow, Mixing Equipment,
+  Formulation Settings defaults, Print Format) is unchanged.
+- Nothing in code, reports, Print Formats, JS or tests referenced the samples by name.
+
 ## 13.11.2 — 2026-10
 
 **Requires `bench migrate`** (one patch; a BOM hook).
