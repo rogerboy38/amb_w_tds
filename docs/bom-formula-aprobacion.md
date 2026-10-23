@@ -42,5 +42,7 @@ active.
 ## Notes
 
 - **BOM Formula is never submitted.** The approval lives in its state (`workflow_state`).
-- **Sample formulas never stay released.** The `FMIX-*` / `MEMCAL-*` samples are
-  re-created by every migrate, so they return to Borrador. Release real proposals only.
+- **No sample formulas since 13.11.3.** The app no longer ships the `FMIX-*` / `MEMCAL-*`
+  sample fixtures, so a fresh install or migrate creates no demo formulas and prod gets no demo
+  data. On a test site that already had them, the samples remain as orphans: they are no longer
+  re-imported or reset, and nothing deletes them. Release real proposals only.
