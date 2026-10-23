@@ -80,3 +80,6 @@ amb_w_tds.patches.g0b2a_source_coa_doctype
 # 2026-09-10: nine pre-v16 Role.home_page routes 404 at the site root; clear them so
 # the role falls through to the site default. Normalised compare - the DB stores "/app".
 amb_w_tds.patches.clear_stale_role_home_page
+
+# 13.11.2: future BOM amendments use Amend Counter (BOM-x-006-1), only the BOM override row; renames nothing.
+amb_w_tds.patches.v13_11_2_bom_amend_counter
