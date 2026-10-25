@@ -213,7 +213,8 @@ class BOMFormula(Document):
             frappe.msgprint(msg)
             return {"lines": lines_total, "lines_with_coa": lines_with_coa,
                     "parameters": len(params), "predicted_rows": 0, "note": msg,
-                    "resolutions": getattr(self, "_resolutions", [])}
+                    "resolutions": getattr(self, "_resolutions", []),
+                    "skipped_no_coa": list(getattr(self, "_skipped_no_coa", []))}
         if not params:
             msg = "Set a TDS Target with parameter rows before simulating — nothing predicted."
             self.set("predicted_analytics", [])
@@ -222,7 +223,8 @@ class BOMFormula(Document):
             self.save(ignore_permissions=True)
             frappe.msgprint(msg)
             return {"lines": lines_total, "lines_with_coa": lines_with_coa,
-                    "parameters": 0, "predicted_rows": 0, "note": msg}
+                    "parameters": 0, "predicted_rows": 0, "note": msg,
+                    "skipped_no_coa": list(getattr(self, "_skipped_no_coa", []))}
 
         results = engine.blend(lots, params)
         uom = {p.name: p.uom for p in params}
@@ -301,6 +303,9 @@ class BOMFormula(Document):
         if unresolved:
             frappe.msgprint("Parameters with no Quality Inspection Parameter master: "
                             + ", ".join(unresolved))
+        warning = self._skip_warning()
+        if warning:
+            frappe.msgprint(warning, title="COA missing on some lines", indicator="orange")
         return {
             "lines": lines_total, "lines_with_coa": lines_with_coa,
             "parameters": len(params), "predicted_rows": len(results),
@@ -309,6 +314,8 @@ class BOMFormula(Document):
             "total_input_kg": self.total_input_kg, "predicted_cost": self.total_amount,
             "requires_lab": sum(1 for b in results.values() if b.requires_lab_measurement),
             "out_of_spec_estimate": sum(1 for b in results.values() if b.in_spec_estimate is False),
+            "skipped_no_coa": list(getattr(self, "_skipped_no_coa", [])),
+            "warning": warning,
         }
 
     def _resolve_parameter(self, specification):
@@ -425,12 +432,17 @@ class BOMFormula(Document):
         with_coa = 0
         raw_by_lot = []
         resolutions = []
+        skipped = []
         for idx, line in enumerate(lines, start=1):
             dt, coa_name, resolution, detail = self._resolve_coa(line)
             resolutions.append({"line": idx, "sublot": line.get("batch_amb_sublot"),
                                 "coa_doctype": dt, "coa": coa_name,
                                 "resolution": resolution, "detail": detail})
             if not coa_name:
+                # 13.12.0: the line is still left out of the blend (the gate's acceptance rule is
+                # unchanged) but it is now NAMED -- row number and item code only -- so a partial
+                # prediction cannot pass for a whole one.
+                skipped.append({"line": idx, "item_code": line.get("item_code")})
                 continue
             with_coa += 1
             vals = {}
@@ -451,7 +463,18 @@ class BOMFormula(Document):
                 mass_kg=flt(line.kg), values=vals))
         self._raw_by_lot = raw_by_lot
         self._resolutions = resolutions
+        self._skipped_no_coa = skipped
         return lots, len(lines), with_coa
+
+    def _skip_warning(self):
+        """The visible warning for lines left out because no COA resolved ("" when none)."""
+        skipped = getattr(self, "_skipped_no_coa", None) or []
+        if not skipped:
+            return ""
+        named = ", ".join(f"row {s['line']}" + (f" ({s['item_code']})" if s.get("item_code") else "")
+                          for s in skipped)
+        return (f"{len(skipped)} line(s) have no COA and are NOT in this prediction: {named}. "
+                "The numbers below come only from the lines that resolved a COA.")
 
     def _build_parameters(self):
         if not self.target_tds:
