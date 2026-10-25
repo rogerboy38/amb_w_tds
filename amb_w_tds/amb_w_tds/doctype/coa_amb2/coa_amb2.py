@@ -532,12 +532,26 @@ class COAAMB2(Document):
             frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA AMB2 - PDF Generation")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
 
+    BATCH_COA_FIELD = 'coa_reference'
+
+    def _batch_link_holds_this_doctype(self):
+        """True when the Batch AMB field this update writes can hold THIS document's name: a Link whose options
+        is this DocType. Today `Batch AMB.coa_reference` is a Link to COA AMB, so Frappe's link validation refuses
+        a COA AMB2 name (13.12.1). Read from the meta, so the same code writes the day the field points at COA AMB2."""
+        df = frappe.get_meta('Batch AMB').get_field(self.BATCH_COA_FIELD)
+        return bool(df and df.fieldtype == 'Link' and df.options == self.doctype)
+
     def update_batch_status(self, status=None):
         """Update related batch with COA info"""
         if not self.batch_reference:
             return
 
         try:
+            if not status and not self._batch_link_holds_this_doctype():
+                # 13.12.1: this update has never succeeded (the Link refuses a COA AMB2 name; `quality_status` has
+                # no "Pass" either), so skipping it changes no data. Say so once on the document.
+                self.add_comment('Info', 'Batch not updated: link to COA AMB2 not available yet')
+                return
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
             
             if status:
@@ -546,7 +560,8 @@ class COAAMB2(Document):
             else:
                 batch.coa_generated = 1
                 batch.coa_reference = self.name
-                batch.quality_status = self.overall_result
+                # no `quality_status` write (13.12.1): its options are Pending / Passed / Failed / Hold, "Pass" has never
+                # been accepted, and mapping a COA result onto them is a business decision nobody has made.
                 batch.last_coa_date = nowdate()
                 
                 # Add COA details to batch
