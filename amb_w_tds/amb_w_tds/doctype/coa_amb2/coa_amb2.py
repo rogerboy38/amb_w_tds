@@ -532,21 +532,42 @@ class COAAMB2(Document):
             frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA AMB2 - PDF Generation")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
 
+    BATCH_COA_FIELD = 'coa_reference'
+
+    def _batch_link_holds_this_doctype(self):
+        """True when the Batch AMB field this update writes can hold THIS document's name: a Link whose options
+        is this DocType. Today `Batch AMB.coa_reference` is a Link to COA AMB, so Frappe's link validation refuses
+        a COA AMB2 name (13.12.1). Read from the meta, so the same code writes the day the field points at COA AMB2."""
+        df = frappe.get_meta('Batch AMB').get_field(self.BATCH_COA_FIELD)
+        return bool(df and df.fieldtype == 'Link' and df.options == self.doctype)
+
     def update_batch_status(self, status=None):
         """Update related batch with COA info"""
         if not self.batch_reference:
             return
 
         try:
+            if not self._batch_link_holds_this_doctype():
+                # 13.12.1: this update has never succeeded on submit (the Link refuses a COA AMB2 name; `quality_status`
+                # has no "Pass" either) and the cancel's "COA Cancelled" is not an option of `quality_status` either, so
+                # skipping both changes no data. Say so once on the document. (Not saving the batch also keeps the Batch
+                # AMB controller from announcing a status change that was never going to stick.)
+                self.add_comment('Info', 'Batch not updated on cancel: link to COA AMB2 not available yet' if status
+                                 else 'Batch not updated: link to COA AMB2 not available yet')
+                return
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
             
             if status:
-                batch.quality_status = status
+                # no `quality_status` write on cancel (13.12.1): "COA Cancelled" is not one of its options (Pending /
+                # Passed / Failed / Hold) and what a cancelled COA does to a batch is undecided (Cut 2b). A note on the
+                # batch is all there is to do, and a note needs no save.
                 batch.add_comment('Info', f'COA Status: {status} - {self.name}')
+                return
             else:
                 batch.coa_generated = 1
                 batch.coa_reference = self.name
-                batch.quality_status = self.overall_result
+                # no `quality_status` write (13.12.1): its options are Pending / Passed / Failed / Hold, "Pass" has never
+                # been accepted, and mapping a COA result onto them is a business decision nobody has made.
                 batch.last_coa_date = nowdate()
                 
                 # Add COA details to batch

@@ -6,8 +6,7 @@ Three defect-level fixes so the internal certificate (COA AMB2) is usable by Qua
 COA AMB2 is governed by **Custom DocPerm rows** on every site (the three non-test rows equal the DocType JSON).
 Frappe does not apply a standard DocType's JSON permissions while Custom DocPerm rows exist, so the new rows ship in
 `amb_w_tds/fixtures/custom_docperm.json` (imported by every migrate; hooks.py `or_filters`: parent = BOM Formula, or
-name in the six COA AMB2 rows, so a re-export drags in nothing else). Roles added: Quality User, Manufacturing User, RND Manager, Sales Manager CRM,
-Stock User, Quality Engineer (read, write, create, report, print). Quality User needs `submit` because the workflow's "Submit for
+name in the six COA AMB2 rows, so a re-export drags in nothing else). Six roles are added, one row each, exactly as in the table below. Quality User needs `submit` because the workflow's "Submit for
 Sales Approval" (Approved → Certificate Shared, docstatus 1) is allowed to that role.
 
 ## Submit email
@@ -31,3 +30,35 @@ Three rows were written by every COA AMB2 submit, from `coa_amb2.py` only (the s
 which this release does not touch): the Item fields `last_coa_*` that no site has (now written only if the Item meta has
 them), the `Quality Audit` DocType that Frappe 16 does not ship (step skipped when absent), and the "Notification sent"
 comment of type `Email` (now `Info`). Other failures are still logged.
+
+## The six rows shipped
+One row per role (COA AMB's duplicate rows are not copied: Quality User and Stock User each have two differing rows
+there, and ship as one row holding their union). A cell is the flag value; the flags `select`, `import`, `mask`,
+`impersonate` and `if_owner` are 0 and the permission level is 0 on every row. A test compares this table with
+`fixtures/custom_docperm.json`.
+
+| role | read | write | create | delete | submit | cancel | amend | report | export | print | email | share |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Quality Engineer | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 |
+| Quality User | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 1 | 1 | 1 | 1 | 1 |
+| RND Manager | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Manufacturing User | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 1 | 1 |
+| Sales Manager CRM | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 1 | 1 |
+| Stock User | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 1 | 1 |
+
+# COA AMB2, Cut 2a (13.12.1)
+
+## Batch step on submit and cancel
+`COAAMB2.update_batch_status()` (called by `on_submit`) wrote `Batch AMB.coa_reference`, which is a Link to COA AMB: Frappe's
+link validation refused a COA AMB2 name, and `quality_status` was set to "Pass" (its options are Pending / Passed / Failed /
+Hold). The call has never succeeded and logged "COA AMB2 - Batch Update" on every submit that carried a `batch_reference`.
+Now `_batch_link_holds_this_doctype()` reads the Link field's options from the meta; when it does not point at COA AMB2 the
+write is skipped (one Info comment on the COA AMB2), and `quality_status` is never written. The cancel
+(`update_batch_status('COA Cancelled')`) takes the same guard: it used to set `quality_status = "COA Cancelled"` (not an
+option) and save the batch, which logged an Error Log row and made the Batch AMB controller (`amb_w_spc`,
+`BatchAMB.validate` -> `notify_stakeholders`) announce a status change that could not stick. Now, when the Link cannot hold a COA
+AMB2 name, the batch is not touched and the COA AMB2 gets one Info comment ("Batch not updated on cancel: link to COA AMB2 not
+available yet"); when it can, `quality_status` is still never written, a note is left on the batch and nothing is saved.
+`coa_amb.py` and the other DocTypes are untouched (the same code, with the same defects, remains in `coa_amb.py` at 556, 628,
+637, 663, 679 and in `coa_amb2.py` at the `batch.last_coa_date` line). Cut 2b decides the real Batch AMB link and what a
+cancelled COA does to a batch.
