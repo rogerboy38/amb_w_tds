@@ -622,13 +622,19 @@ class COAAMB2(Document):
                     delayed=False
                 )
                 
-                self.add_comment('Email', f'Notification sent to {len(recipients)} recipient(s)')
+                # 'Info' (13.12.0): Frappe 16 refuses comment type 'Email'; 'Info' is the type this file already uses
+                # for its other system notes, and it shows in the timeline as a note, not as a user comment.
+                self.add_comment('Info', f'Notification sent to {len(recipients)} recipient(s)')
                 
             except Exception as e:
                 frappe.log_error(f"Error sending COA notification: {str(e)}", "COA AMB2 - Notification")
 
     def create_quality_audit(self):
         """Create audit record for submitted COA"""
+        # Frappe 16 has no "Quality Audit" DocType and this app adds none: skip the step when it is absent
+        # (any other failure below is still logged).
+        if not frappe.db.exists('DocType', 'Quality Audit'):
+            return
         try:
             audit_doc = frappe.get_doc({
                 "doctype": "Quality Audit",
@@ -649,6 +655,14 @@ class COAAMB2(Document):
         except Exception as e:
             frappe.log_error(f"Error creating quality audit: {str(e)}", "COA AMB2 - Audit Creation")
 
+    ITEM_COA_FIELDS = ('last_coa_date', 'last_coa_result', 'last_coa_reference')
+
+    def _item_coa_fields(self):
+        """The Item COA fields this site has. No site has them today, and this app adds none (13.12.0): the
+        write below is skipped when a field is absent and works unchanged the day the fields are added."""
+        meta = frappe.get_meta('Item')
+        return [f for f in self.ITEM_COA_FIELDS if meta.has_field(f)]
+
     def update_product_quality_status(self):
         """Update product master with latest quality status"""
         if not self.product_item:
@@ -656,11 +670,12 @@ class COAAMB2(Document):
             
         try:
             # Update item with latest COA information
-            frappe.db.set_value('Item', self.product_item, {
-                'last_coa_date': nowdate(),
-                'last_coa_result': self.overall_result,
-                'last_coa_reference': self.name
-            })
+            values = {'last_coa_date': nowdate(),
+                      'last_coa_result': self.overall_result,
+                      'last_coa_reference': self.name}
+            present = {f: values[f] for f in self._item_coa_fields()}
+            if present:
+                frappe.db.set_value('Item', self.product_item, present)
             
         except Exception as e:
             frappe.log_error(f"Error updating product quality status: {str(e)}", "COA AMB2 - Product Update")
@@ -671,12 +686,10 @@ class COAAMB2(Document):
             return
             
         try:
-            # Clear COA references from item
-            frappe.db.set_value('Item', self.product_item, {
-                'last_coa_date': None,
-                'last_coa_result': None,
-                'last_coa_reference': None
-            })
+            # Clear COA references from item (only the fields this site has)
+            present = {f: None for f in self._item_coa_fields()}
+            if present:
+                frappe.db.set_value('Item', self.product_item, present)
             
         except Exception as e:
             frappe.log_error(f"Error reverting product quality status: {str(e)}", "COA AMB2 - Product Revert")
