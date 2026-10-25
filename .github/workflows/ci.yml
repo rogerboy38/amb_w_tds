@@ -130,3 +130,28 @@ jobs:
           bench --site test_site run-tests --app amb_w_tds
         env:
           TYPE: server
+
+  unit:
+    runs-on: ubuntu-latest
+    name: Unit
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.14'
+
+      - name: Install Frappe and the app (no site, no database)
+        run: |
+          # Same Frappe pin as the Server job (v16.17.5, what prod runs). No bench, no ERPNext, no install-app.
+          pip install "frappe @ git+https://github.com/frappe/frappe.git@v16.17.5"
+          pip install --no-deps -e .
+
+      - name: Run the DB-free tests
+        run: |
+          # test_pack_plan and test_clear_stale_role_home_page need a site and real data: left to the full-install job.
+          mods=$(ls amb_w_tds/tests/test_*.py | xargs -n1 basename | sed 's/\.py$//' | grep -vE '^test_(pack_plan|clear_stale_role_home_page)$' | sed 's/^/amb_w_tds.tests./')
+          echo "running: $mods"
+          python -m unittest -v $mods
