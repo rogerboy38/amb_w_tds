@@ -2,21 +2,31 @@
 
 ## 13.12.0 — 2026-10
 
-**Requires `bench migrate`** (no patch; the new permission rows arrive through the existing fixture sync).
+**Requires `bench migrate`** (no patch; the new permission rows and the workflow row arrive through the existing fixture sync).
 
 ### COA AMB2, Cut 1 (TASKS-227)
 - **Permissions mirrored from COA AMB.** COA AMB2 gains Custom DocPerm rows for six roles that COA AMB already has
   and COA AMB2 lacked: Quality User, Manufacturing User, RND Manager, Sales Manager CRM, Stock User, and Quality
-  Engineer (read / write / create only: no submit, no amend). Quality Inspector, Quality Manager and System Manager keep
+  Engineer (read / write / create / report / print; no submit, cancel, amend, delete, export, email or share). Quality Inspector, Quality Manager and System Manager keep
   the rows they have; COA AMB's duplicate rows are not copied (a role with two differing rows becomes one row holding
   their union). Marketing Manager is not added: COA AMB has no row for it. The rows ship in
   `fixtures/custom_docperm.json`; the `hooks.py` Custom DocPerm fixture entry now also names the six COA AMB2 rows, besides
   `BOM Formula`, selecting the six COA AMB2 rows by name, so a re-export keeps them and drags in nothing else. No patch, no data change.
   Why a fixture: COA AMB2 already runs on Custom DocPerm rows on every site, and a standard DocType's JSON
   permissions are not applied while Custom DocPerm rows exist, so editing `coa_amb2.json` would change nothing.
+- **Workflow.** Quality Manager may now press "Submit for Sales Approval" (Approved -> Certificate Shared, the real
+  submit) on COA AMB2's workflow `submit_and_start_workflow`; Quality User stays allowed. One transition row is added to
+  `fixtures/workflow.json`; the other seven transitions, the states and the COA AMB twin workflow are unchanged. The
+  workflow is delivered by the fixture (every migrate re-imports it), so no patch is needed. A user who holds both
+  roles sees the action twice in the Actions menu (Frappe lists one entry per allowed role); both do the same thing.
 - **Submit email.** `notify_quality_team` now links to `/app/coa-amb2/<name>` (it pointed at `/app/coa-amb/`, the other
   DocType) and tells only the enabled Quality Managers plus the owner and `approved_by` (de-duplicated; never
   Administrator or Guest). Quality Inspector, Quality Analyst and the batch production manager are no longer notified.
+- **Three Error Log rows no longer written on every COA AMB2 submit** (COA AMB2 only; `coa_amb.py` is untouched):
+  the product update and its revert write the Item fields `last_coa_date`, `last_coa_result`, `last_coa_reference`
+  only when the site has them (no site does, and no field is added); the quality-audit step is skipped when the
+  `Quality Audit` DocType is absent (Frappe 16 has none, and none is added); the "Notification sent" note is added as
+  comment type `Info` (Frappe 16 refuses `Email`), still after the mail has gone. Any other failure still goes to `log_error`.
 - **Gate warning.** `BOM Formula.simulate_blend` still builds the blend from the lines that resolve a COA, and the
   acceptance rule is unchanged. A line skipped because it has no COA is now named (row number and item code) in an
   orange message and in two new result fields, `skipped_no_coa` and `warning`. No computed number changes.
