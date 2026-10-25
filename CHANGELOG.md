@@ -1,14 +1,33 @@
 # Changelog
 
+## 13.12.1 — 2026-10
+
+**Requires `bench migrate`** (no patch, no schema change; the change is code only).
+
+### COA AMB2, Cut 2a (TASKS-233)
+- **Fixed: a COA AMB2 submit that carries a `batch_reference` still wrote one Error Log row, "COA AMB2 - Batch Update".**
+  `update_batch_status` handed the COA AMB2 name to `Batch AMB.coa_reference`, a Link to COA AMB, so Frappe's link
+  validation refused it (and `quality_status` was set to "Pass", which is not one of its options Pending / Passed /
+  Failed / Hold). That update has never succeeded, so skipping it changes no data. Now the Batch AMB write is skipped
+  when the field cannot hold a COA AMB2 name (read from the meta, so the same code writes once Cut 2b makes the field
+  point at COA AMB2), `quality_status` is no longer written, and one Info comment on the COA AMB2 says "Batch not
+  updated: link to COA AMB2 not available yet". Any other failure of the batch step is still logged. The cancel path
+  (`update_batch_status('COA Cancelled')`), `coa_amb.py` and every other DocType are untouched.
+- **Corrected the 13.12.0 wording of the six new permission rows** (CHANGELOG, `docs/coa-amb2-cut1.md`): each row is
+  now listed as shipped. The rows themselves did not change, and a test now compares the table in the docs with the
+  rows in `fixtures/custom_docperm.json`.
+
 ## 13.12.0 — 2026-10
 
 **Requires `bench migrate`** (no patch; the new permission rows and the workflow row arrive through the existing fixture sync).
 
 ### COA AMB2, Cut 1 (TASKS-227)
-- **Permissions mirrored from COA AMB.** COA AMB2 gains Custom DocPerm rows for six roles that COA AMB already has
-  and COA AMB2 lacked: Quality User, Manufacturing User, RND Manager, Sales Manager CRM, Stock User, and Quality
-  Engineer (read / write / create / report / print; no submit, cancel, amend, delete, export, email or share). Quality Inspector, Quality Manager and System Manager keep
-  the rows they have; COA AMB's duplicate rows are not copied (a role with two differing rows becomes one row holding
+- **Permissions mirrored from COA AMB.** COA AMB2 gains six Custom DocPerm rows, one per role, exactly as follows
+  (every flag not named is 0): **Quality Engineer** read / write / create / report / print;
+  **Quality User** read / write / create / delete / submit / report / export / print / email / share;
+  **RND Manager** all twelve (read, write, create, delete, submit, cancel, amend, report, export, print, email, share);
+  **Manufacturing User**, **Sales Manager CRM** and **Stock User** read / report / export / print / email / share.
+  Quality Inspector, Quality Manager and System Manager keep the rows they have; COA AMB's duplicate rows are not copied (a role with two differing rows becomes one row holding
   their union). Marketing Manager is not added: COA AMB has no row for it. The rows ship in
   `fixtures/custom_docperm.json`; the `hooks.py` Custom DocPerm fixture entry now also names the six COA AMB2 rows, besides
   `BOM Formula`, selecting the six COA AMB2 rows by name, so a re-export keeps them and drags in nothing else. No patch, no data change.
