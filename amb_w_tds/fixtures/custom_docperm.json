@@ -250,11 +250,11 @@
   "submit": 0,
   "cancel": 0,
   "amend": 0,
-  "report": 0,
+  "report": 1,
   "export": 0,
   "import": 0,
   "share": 0,
-  "print": 0,
+  "print": 1,
   "email": 0,
   "mask": 0,
   "impersonate": 0
