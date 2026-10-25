@@ -547,16 +547,22 @@ class COAAMB2(Document):
             return
 
         try:
-            if not status and not self._batch_link_holds_this_doctype():
-                # 13.12.1: this update has never succeeded (the Link refuses a COA AMB2 name; `quality_status` has
-                # no "Pass" either), so skipping it changes no data. Say so once on the document.
-                self.add_comment('Info', 'Batch not updated: link to COA AMB2 not available yet')
+            if not self._batch_link_holds_this_doctype():
+                # 13.12.1: this update has never succeeded on submit (the Link refuses a COA AMB2 name; `quality_status`
+                # has no "Pass" either) and the cancel's "COA Cancelled" is not an option of `quality_status` either, so
+                # skipping both changes no data. Say so once on the document. (Not saving the batch also keeps the Batch
+                # AMB controller from announcing a status change that was never going to stick.)
+                self.add_comment('Info', 'Batch not updated on cancel: link to COA AMB2 not available yet' if status
+                                 else 'Batch not updated: link to COA AMB2 not available yet')
                 return
             batch = frappe.get_doc('Batch AMB', self.batch_reference)
             
             if status:
-                batch.quality_status = status
+                # no `quality_status` write on cancel (13.12.1): "COA Cancelled" is not one of its options (Pending /
+                # Passed / Failed / Hold) and what a cancelled COA does to a batch is undecided (Cut 2b). A note on the
+                # batch is all there is to do, and a note needs no save.
                 batch.add_comment('Info', f'COA Status: {status} - {self.name}')
+                return
             else:
                 batch.coa_generated = 1
                 batch.coa_reference = self.name
