@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt, get_url, cstr
+from frappe.utils import nowdate, flt, get_url, cstr, quoted
 import json
 import re
 
@@ -563,41 +563,44 @@ class COAAMB2(Document):
         except Exception as e:
             frappe.log_error(f"Error updating batch {self.batch_reference}: {str(e)}", "COA AMB2 - Batch Update")
 
+    def _form_link(self):
+        """The DocType's own route: /app/coa-amb2/<name> (the old mail pointed at /app/coa-amb/, the other DocType)."""
+        return get_url(f"/app/{self.doctype.lower().replace(' ', '-')}/{quoted(self.name)}")
+
+    def _notification_recipients(self):
+        """Who is told when a COA AMB2 is submitted (TASKS-227 ruling 3): the ENABLED Quality Managers,
+        the document owner and `approved_by`. De-duplicated (case-insensitive), in a stable order; never
+        Administrator or Guest. No Quality Inspector, no Quality Analyst, no batch production manager."""
+        skip = {"Administrator", "Guest"}
+        seen, out = set(), []
+
+        def add(email):
+            email = (email or "").strip()
+            if email and email.lower() not in seen:
+                seen.add(email.lower())
+                out.append(email)
+
+        for row in frappe.get_all("Has Role", filters={"role": "Quality Manager", "parenttype": "User"},
+                                  fields=["parent"], order_by="parent"):
+            if row.parent in skip:
+                continue
+            user = frappe.db.get_value("User", row.parent, ["email", "enabled"], as_dict=True)
+            if user and user.enabled:
+                add(user.email)
+        for uid in (self.owner, self.approved_by):
+            if not uid or uid in skip:
+                continue
+            add(frappe.db.get_value("User", uid, "email") or (uid if "@" in uid else None))
+        return out
+
     def notify_quality_team(self):
         """Send notifications to relevant teams"""
-        recipients = set()
-        
-        # Get quality team members
-        quality_roles = ['Quality Manager', 'Quality Inspector', 'Quality Analyst']
-        for role in quality_roles:
-            users = frappe.get_all('Has Role', 
-                filters={'role': role, 'parenttype': 'User'},
-                fields=['parent']
-            )
-            for user in users:
-                email = frappe.db.get_value('User', user.parent, 'email')
-                if email:
-                    recipients.add(email)
-        
-        # Add document owner and approver
-        if self.owner:
-            owner_email = frappe.db.get_value('User', self.owner, 'email')
-            if owner_email:
-                recipients.add(owner_email)
-        
-        if self.approved_by:
-            recipients.add(self.approved_by)
-        
-        # Add production manager if batch exists
-        if self.batch_reference:
-            batch = frappe.get_doc('Batch AMB', self.batch_reference)
-            if hasattr(batch, 'production_manager') and batch.production_manager:
-                recipients.add(batch.production_manager)
-        
+        recipients = self._notification_recipients()
+
         if recipients:
             try:
                 frappe.sendmail(
-                    recipients=list(recipients),
+                    recipients=recipients,
                     subject=f'COA {self.name} - {self.overall_result}',
                     message=f"""
                         <h3>Certificate of Analysis Notification</h3>
@@ -612,7 +615,7 @@ class COAAMB2(Document):
                             <tr><td><strong>Approved By:</strong></td><td>{self.approved_by}</td></tr>
                         </table>
                         <br>
-                        <p><a href="{get_url()}/app/coa-amb/{self.name}">View Complete COA</a></p>
+                        <p><a href="{self._form_link()}">View Complete COA</a></p>
                         <p><em>This is an automated notification from the Quality Management System.</em></p>
                     """,
                     now=True,
