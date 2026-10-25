@@ -1,4 +1,4 @@
-"""13.12.0 COA AMB2 Cut 1: permissions mirrored from COA AMB, the submit email, the gate warning. DB-free.
+"""13.12.0 COA AMB2 Cut 1: permissions mirrored from COA AMB, the workflow, the submit email, the three Error Log fixes, the gate warning. DB-free.
 
 A: the Custom DocPerm fixture rows for COA AMB2 and the workflow roles they must satisfy.
 B: `notify_quality_team` with `frappe.sendmail` mocked: no mail can leave a test.
@@ -43,10 +43,11 @@ class TestPermissionRows(unittest.TestCase):
 		self.assertFalse(roles & {"Quality Manager", "Quality Inspector", "System Manager"})
 		self.assertNotIn("Marketing Manager", roles)  # COA AMB has no Marketing Manager row
 
-	def test_quality_engineer_reads_writes_creates_and_nothing_else(self):
+	def test_quality_engineer_reads_writes_creates_reports_and_prints_and_nothing_else(self):
 		(row,) = [r for r in _amb2_rows() if r["role"] == "Quality Engineer"]
-		self.assertEqual({f for f in FLAGS if row[f]}, {"read", "write", "create"})
-		self.assertEqual((row["submit"], row["amend"], row["cancel"], row["delete"]), (0, 0, 0, 0))
+		self.assertEqual({f for f in FLAGS if row[f]}, {"read", "write", "create", "report", "print"})
+		for f in ("submit", "cancel", "amend", "delete", "export", "email", "share", "import", "select", "mask", "impersonate"):
+			self.assertEqual(row[f], 0, f)
 
 	def test_quality_user_can_do_what_the_workflow_asks(self):
 		(row,) = [r for r in _amb2_rows() if r["role"] == "Quality User"]
@@ -88,6 +89,159 @@ class TestPermissionRows(unittest.TestCase):
 			need = "submit" if docstatus[t["next_state"]] == 1 else "write"
 			self.assertIn(need, perms.get(role, set()),
 				f"{t['state']} --{t['action']}--> {t['next_state']}: role {role} lacks '{need}'")
+
+
+AMB2_TRANSITIONS = [  # prod's rows (state, action, next state, allowed role, condition, allow self approval), in order
+	("Draft", "Review", "Validated", "Quality User", None, 1),
+	("Validated", "Submit for Supervisor Approval", "Pending Supervisor", "Quality Manager", None, 1),
+	("Pending Supervisor", "Approve", "Approved", "Quality Manager", None, 0),
+	("Approved", "Submit for Sales Approval", "Certificate Shared", "Quality User", None, 1),
+	("Validated", "Approve (Quality)", "Pending Supervisor", "Quality User", None, 1),
+	("Auto Approved", "Reopen", "Draft", "Quality User", None, 1),
+	("Pending Supervisor", "Reject", "Draft", "Quality Manager", None, 1),
+	("Approved", "Reject", "Draft", "Quality Manager", None, 1),
+]
+STATES = [("Draft", "0", "All"), ("Validated", "0", "Quality User"), ("Pending Supervisor", "0", "Quality User"),
+	("Approved", "0", "Quality Manager"), ("Certificate Shared", "1", "Quality User"), ("Auto Approved", "0", "Quality User"),
+	("Saved", "0", "All")]
+
+
+def _workflows():
+	with open(os.path.join(PKG, "fixtures", "workflow.json"), encoding="utf8") as f:
+		return {w["name"]: w for w in json.load(f)}
+
+
+def _rows(w):
+	return [(t["state"], t["action"], t["next_state"], t["allowed"], t.get("condition"), int(t.get("allow_self_approval") or 0))
+		for t in w["transitions"]]
+
+
+class TestWorkflowFixture(unittest.TestCase):
+	def test_quality_manager_may_press_submit_for_sales_approval_and_quality_user_still_may(self):
+		rows = _rows(_workflows()["submit_and_start_workflow"])
+		submit = [r for r in rows if r[:3] == ("Approved", "Submit for Sales Approval", "Certificate Shared")]
+		self.assertEqual(sorted(r[3] for r in submit), ["Quality Manager", "Quality User"])
+		self.assertEqual({r[4:] for r in submit}, {(None, 1)})
+
+	def test_the_other_seven_transitions_are_prods_rows_unchanged_and_in_order(self):
+		rows = _rows(_workflows()["submit_and_start_workflow"])
+		self.assertEqual(rows[:8], AMB2_TRANSITIONS)
+		self.assertEqual(len(rows), 9)
+
+	def test_states_and_the_workflow_flags_are_unchanged(self):
+		w = _workflows()["submit_and_start_workflow"]
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES)
+		self.assertEqual((w["document_type"], w["is_active"], w["workflow_state_field"], w["override_status"], w["send_email_alert"]),
+			("COA AMB2", 1, "workflow_state", 0, 0))
+
+	def test_the_coa_amb_twin_workflow_is_untouched(self):
+		w = _workflows()["submit_and_start_workflow_1"]
+		self.assertEqual(w["document_type"], "COA AMB")
+		self.assertEqual(_rows(w), AMB2_TRANSITIONS)
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES)
+
+
+class TestErrorLogFixes(unittest.TestCase):
+	MOD = "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2"
+
+	def doc(self):
+		from amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2 import COAAMB2
+		d = object.__new__(COAAMB2)
+		d.__dict__.update(doctype="COA AMB2", name="COA2-26-0001", owner="o@x.test", approved_by=None, product_item="IT",
+			item_name="I", item_code="IT", coa_number="N-1", approval_date="2026-10-25", batch_reference=None,
+			overall_result="Pass", compliance_status="OK")
+		d.add_comment = mock.Mock()
+		return d
+
+	# --- fix 1: Item columns that no site has ---
+	def run_product(self, method, present):
+		meta = mock.Mock(has_field=lambda f: f in present)
+		set_value, log_error = mock.Mock(), mock.Mock()
+		with mock.patch("frappe.get_meta", lambda dt: meta), mock.patch("frappe.db", mock.Mock(set_value=set_value)), \
+				mock.patch("frappe.log_error", log_error), mock.patch(self.MOD + ".nowdate", lambda: "2026-10-25"):
+			getattr(self.doc(), method)()
+		return set_value, log_error
+
+	def test_no_item_columns_means_no_write_and_no_error(self):
+		for method in ("update_product_quality_status", "revert_product_quality_status"):
+			set_value, log_error = self.run_product(method, present=())
+			set_value.assert_not_called()
+			log_error.assert_not_called()
+
+	def test_only_the_columns_that_exist_are_written(self):
+		set_value, log_error = self.run_product("update_product_quality_status", present=("last_coa_date", "last_coa_reference"))
+		set_value.assert_called_once_with("Item", "IT", {"last_coa_date": "2026-10-25", "last_coa_reference": "COA2-26-0001"})
+		set_value, _ = self.run_product("revert_product_quality_status", present=("last_coa_result",))
+		set_value.assert_called_once_with("Item", "IT", {"last_coa_result": None})
+
+	def test_all_three_columns_present_behaves_as_before(self):
+		set_value, _ = self.run_product("update_product_quality_status", present=("last_coa_date", "last_coa_result", "last_coa_reference"))
+		set_value.assert_called_once_with("Item", "IT", {"last_coa_date": "2026-10-25", "last_coa_result": "Pass",
+			"last_coa_reference": "COA2-26-0001"})
+
+	def test_a_real_write_failure_is_still_logged(self):
+		meta = mock.Mock(has_field=lambda f: True)
+		log_error = mock.Mock()
+		with mock.patch("frappe.get_meta", lambda dt: meta), mock.patch("frappe.log_error", log_error), \
+				mock.patch("frappe.db", mock.Mock(set_value=mock.Mock(side_effect=RuntimeError("boom")))):
+			self.doc().update_product_quality_status()
+		log_error.assert_called_once()
+		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Product Update")
+
+	# --- fix 2: the Quality Audit DocType that Frappe 16 does not have ---
+	def test_audit_step_is_skipped_when_the_doctype_is_absent(self):
+		get_doc, log_error = mock.Mock(), mock.Mock()
+		with mock.patch("frappe.db", mock.Mock(exists=lambda dt, name=None: False)), mock.patch("frappe.get_doc", get_doc), \
+				mock.patch("frappe.log_error", log_error):
+			self.doc().create_quality_audit()
+		get_doc.assert_not_called()
+		log_error.assert_not_called()
+
+	def test_audit_step_still_runs_when_the_doctype_exists(self):
+		audit = mock.Mock(name="audit")
+		audit.name = "QA-1"
+		get_doc = mock.Mock(return_value=audit)
+		with mock.patch("frappe.db", mock.Mock(exists=lambda dt, name=None: True)), mock.patch("frappe.get_doc", get_doc), \
+				mock.patch(self.MOD + ".nowdate", lambda: "2026-10-25"):
+			d = self.doc()
+			d.approved_by = "appr@x.test"  # `audited_by` reads the session user otherwise, and there is no session here
+			d.create_quality_audit()
+		self.assertEqual(get_doc.call_args.args[0]["doctype"], "Quality Audit")
+		audit.insert.assert_called_once()
+		d.add_comment.assert_called_once_with("Info", "Quality audit record created: QA-1")
+
+	def test_a_real_audit_failure_is_still_logged(self):
+		log_error = mock.Mock()
+		with mock.patch("frappe.db", mock.Mock(exists=lambda dt, name=None: True)), \
+				mock.patch("frappe.get_doc", mock.Mock(side_effect=RuntimeError("boom"))), mock.patch("frappe.log_error", log_error):
+			self.doc().create_quality_audit()
+		log_error.assert_called_once()
+		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Audit Creation")
+
+	# --- fix 3: the comment type, after the mail has gone ---
+	def notify(self, sendmail):
+		d = self.doc()
+		log_error = mock.Mock()
+		manager = mock.Mock()
+		manager.attach_mock(sendmail, "sendmail")
+		manager.attach_mock(d.add_comment, "add_comment")
+		with mock.patch.object(type(d), "_notification_recipients", lambda s: ["a@x.test"]), \
+				mock.patch.object(type(d), "_form_link", lambda s: "http://test.invalid/app/coa-amb2/X"), \
+				mock.patch("frappe.sendmail", sendmail), mock.patch("frappe.log_error", log_error):
+			d.notify_quality_team()
+		return d, log_error, manager
+
+	def test_the_sent_note_is_an_info_comment_added_after_the_mail(self):
+		d, log_error, manager = self.notify(mock.Mock())
+		log_error.assert_not_called()
+		d.add_comment.assert_called_once_with("Info", "Notification sent to 1 recipient(s)")
+		self.assertEqual([c[0] for c in manager.mock_calls], ["sendmail", "add_comment"], "the comment comes after the mail")
+
+	def test_a_failing_mail_is_still_logged_and_no_note_is_added(self):
+		d, log_error, _ = self.notify(mock.Mock(side_effect=RuntimeError("smtp down")))
+		d.add_comment.assert_not_called()
+		log_error.assert_called_once()
+		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Notification")
 
 
 class TestSubmitEmail(unittest.TestCase):
