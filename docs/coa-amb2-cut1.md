@@ -48,11 +48,17 @@ there, and ship as one row holding their union). A cell is the flag value; the f
 
 # COA AMB2, Cut 2a (13.12.1)
 
-## Batch step on submit
+## Batch step on submit and cancel
 `COAAMB2.update_batch_status()` (called by `on_submit`) wrote `Batch AMB.coa_reference`, which is a Link to COA AMB: Frappe's
 link validation refused a COA AMB2 name, and `quality_status` was set to "Pass" (its options are Pending / Passed / Failed /
 Hold). The call has never succeeded and logged "COA AMB2 - Batch Update" on every submit that carried a `batch_reference`.
 Now `_batch_link_holds_this_doctype()` reads the Link field's options from the meta; when it does not point at COA AMB2 the
-write is skipped (one Info comment on the COA AMB2), and `quality_status` is never written. The cancel path, `coa_amb.py` and
-the other DocTypes are untouched (the same code, with the same defects, remains in `coa_amb.py` at 556, 628, 637, 663, 679
-and in `coa_amb2.py` at the cancel call and at the `batch.last_coa_date` line). Cut 2b decides the real Batch AMB link.
+write is skipped (one Info comment on the COA AMB2), and `quality_status` is never written. The cancel
+(`update_batch_status('COA Cancelled')`) takes the same guard: it used to set `quality_status = "COA Cancelled"` (not an
+option) and save the batch, which logged an Error Log row and made the Batch AMB controller (`amb_w_spc`,
+`BatchAMB.validate` -> `notify_stakeholders`) announce a status change that could not stick. Now, when the Link cannot hold a COA
+AMB2 name, the batch is not touched and the COA AMB2 gets one Info comment ("Batch not updated on cancel: link to COA AMB2 not
+available yet"); when it can, `quality_status` is still never written, a note is left on the batch and nothing is saved.
+`coa_amb.py` and the other DocTypes are untouched (the same code, with the same defects, remains in `coa_amb.py` at 556, 628,
+637, 663, 679 and in `coa_amb2.py` at the `batch.last_coa_date` line). Cut 2b decides the real Batch AMB link and what a
+cancelled COA does to a batch.

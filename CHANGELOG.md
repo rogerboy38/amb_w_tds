@@ -11,8 +11,15 @@
   Failed / Hold). That update has never succeeded, so skipping it changes no data. Now the Batch AMB write is skipped
   when the field cannot hold a COA AMB2 name (read from the meta, so the same code writes once Cut 2b makes the field
   point at COA AMB2), `quality_status` is no longer written, and one Info comment on the COA AMB2 says "Batch not
-  updated: link to COA AMB2 not available yet". Any other failure of the batch step is still logged. The cancel path
-  (`update_batch_status('COA Cancelled')`), `coa_amb.py` and every other DocType are untouched.
+  updated: link to COA AMB2 not available yet". Any other failure of the batch step is still logged.
+- **Fixed: the same for the cancel.** Cancelling a batch-linked COA AMB2 wrote `quality_status = "COA Cancelled"`
+  (not one of the field's options) and logged one more Error Log row, and because the batch was saved, the Batch AMB
+  controller (`amb_w_spc`) also tried to announce a quality-status change that could never stick (a second row where
+  the outgoing mail account fails, and a real e-mail where it works). The cancel now uses the same guard: when the
+  Link cannot hold a COA AMB2 name the batch is not touched and one Info comment on the COA AMB2 says "Batch not updated
+  on cancel: link to COA AMB2 not available yet"; when it can (Cut 2b), `quality_status` is still never written, a note
+  is left on the batch and nothing is saved. What a cancelled COA should do to a batch is Cut 2b. `coa_amb.py` and every
+  other DocType are untouched.
 - **Corrected the 13.12.0 wording of the six new permission rows** (CHANGELOG, `docs/coa-amb2-cut1.md`): each row is
   now listed as shipped. The rows themselves did not change, and a test now compares the table in the docs with the
   rows in `fixtures/custom_docperm.json`.
