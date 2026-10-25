@@ -105,13 +105,51 @@ class TestBatchStep(unittest.TestCase):
 		get_doc.assert_not_called()
 		d.add_comment.assert_not_called()
 
-	def test_the_cancel_path_is_unchanged(self):
+	# --- the cancel path (13.12.1): same guard, comment only, never quality_status ---
+	CANCEL_NOTE = "Batch not updated on cancel: link to COA AMB2 not available yet"
+
+	def test_cancel_with_a_link_to_coa_amb_skips_the_batch_and_adds_one_note(self):
 		d, batch, get_doc, log_error = self.run_step("COA AMB", status="COA Cancelled")
-		get_doc.assert_called_once()
-		self.assertEqual(batch.assigned, {"quality_status": "COA Cancelled"})
+		get_doc.assert_not_called()
+		batch.save.assert_not_called()
+		batch.add_comment.assert_not_called()
+		log_error.assert_not_called()
+		d.add_comment.assert_called_once_with("Info", self.CANCEL_NOTE)
+
+	def test_cancel_never_assigns_quality_status_in_either_branch(self):
+		for options in ("COA AMB", "COA AMB2"):
+			d, batch, get_doc, log_error = self.run_step(options, status="COA Cancelled")
+			self.assertEqual(batch.assigned, {}, options)
+			batch.save.assert_not_called()
+			log_error.assert_not_called()
+
+	def test_cancel_with_a_link_to_coa_amb2_leaves_a_note_on_the_batch_only(self):
+		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled")
+		get_doc.assert_called_once_with("Batch AMB", "LOTE-1")
 		batch.add_comment.assert_called_once_with("Info", "COA Status: COA Cancelled - COA2-26-0001")
-		batch.save.assert_called_once_with(ignore_permissions=True)
 		d.add_comment.assert_not_called()
+
+	def test_a_real_failure_on_cancel_still_reaches_log_error(self):
+		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled", get_doc_effect=RuntimeError("boom"))
+		log_error.assert_called_once()
+		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Batch Update")
+		b = Batch()
+		b.add_comment.side_effect = RuntimeError("note failed")
+		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled", batch=b)
+		log_error.assert_called_once()
+
+	def test_cancel_without_a_batch_reference_touches_nothing(self):
+		d = self.doc(batch_reference=None)
+		get_meta = mock.Mock()
+		with mock.patch("frappe.get_meta", get_meta), mock.patch("frappe.get_doc", mock.Mock()) as get_doc:
+			d.update_batch_status("COA Cancelled")
+		get_meta.assert_not_called()
+		get_doc.assert_not_called()
+		d.add_comment.assert_not_called()
+
+	def test_the_submit_path_keeps_its_own_note(self):
+		d, batch, get_doc, log_error = self.run_step("COA AMB")
+		d.add_comment.assert_called_once_with("Info", NOTE)
 
 
 class TestWordingMatchesRows(unittest.TestCase):
