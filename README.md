@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.0 | 2026-10 | COA AMB2 Cut 1: permissions mirrored from COA AMB (six roles; Quality Engineer reads, writes, creates, reports, prints), Quality Manager may press Submit for Sales Approval, the submit email links the right DocType and tells only enabled Quality Managers plus owner and approver, the three Error Log rows written on every COA AMB2 submit are gone, and a Mix line skipped for want of a COA is named in a visible warning. No patch. |
 | 13.11.3 | 2026-10 | The FMIX/MEMCAL sample formula fixtures no longer ship: a fresh install/migrate creates no demo formulas (prod gets no demo data). Pre-existing samples on a test site remain as orphans, no longer re-imported or reset. See `CHANGELOG.md` |
 | 13.11.2 | 2026-10 | Liberar no longer crashes on BOM naming (BOM-<item>-NNN counting amendments; BOM autoname hook for every path); BOM amendments use Amend Counter; the released BOM becomes the item's default, demotion logged. See `CHANGELOG.md` |
 | 13.11.1 | 2026-10 | BOM Formula form shows the approval state badge and a "Siguiente acción" line; transitions are in the Acciones menu. See `CHANGELOG.md` |

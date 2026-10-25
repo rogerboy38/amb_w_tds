@@ -288,6 +288,9 @@ _AMB_W_TDS_CF_EXCEPTIONS = [
     "Item Quality Inspection Parameter-custom_blend_method",   # SP-MIX B1 blend rule on the TDS param row
 ]
 
+# COA AMB2 Custom DocPerm rows shipped by fixtures/custom_docperm.json (13.12.0)
+_COA_AMB2_DOCPERM_NAMES = ["xipvz3cfg2", "mzw3gque0e", "lfifwzfi68", "cue7m0rgna", "h8l3vou680", "dh6gqnd8of"]
+
 fixtures = [
     # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
     # custom fields on BOM Formula have their option doctypes present on import.
@@ -309,7 +312,11 @@ fixtures = [
     # F-L1 (2026-09-06, Hugh's word): BOM Formula runs on Custom DocPerms (standard 0).
     # Declaring the FULL destination (all four rows) makes the fixture idempotent and
     # wipe-proof on every migrate — sync_fixtures upserts by name and never deletes.
-    {"doctype": "Custom DocPerm",         "filters": [["parent", "=", "BOM Formula"]]},
+    # 13.12.0 (TASKS-227): the six COA AMB2 rows that mirror COA AMB ship here too, selected BY NAME so a re-export
+    # never drags in the rows a site already has (Quality Inspector / Quality Manager / System Manager) or the
+    # verifier test roles. BOM Formula keeps its all-rows rule.
+    {"doctype": "Custom DocPerm",         "or_filters": [["parent", "=", "BOM Formula"],
+                                                          ["name", "in", _COA_AMB2_DOCPERM_NAMES]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
     # Parameter records. These are the Link targets the picker's title-row
