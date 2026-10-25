@@ -1,5 +1,28 @@
 # Changelog
 
+## 13.12.0 — 2026-10
+
+**Requires `bench migrate`** (no patch; the new permission rows arrive through the existing fixture sync).
+
+### COA AMB2, Cut 1 (TASKS-227)
+- **Permissions mirrored from COA AMB.** COA AMB2 gains Custom DocPerm rows for six roles that COA AMB already has
+  and COA AMB2 lacked: Quality User, Manufacturing User, RND Manager, Sales Manager CRM, Stock User, and Quality
+  Engineer (read / write / create only: no submit, no amend). Quality Inspector, Quality Manager and System Manager keep
+  the rows they have; COA AMB's duplicate rows are not copied (a role with two differing rows becomes one row holding
+  their union). Marketing Manager is not added: COA AMB has no row for it. The rows ship in
+  `fixtures/custom_docperm.json`; the `hooks.py` Custom DocPerm fixture entry now also names the six COA AMB2 rows, besides
+  `BOM Formula`, selecting the six COA AMB2 rows by name, so a re-export keeps them and drags in nothing else. No patch, no data change.
+  Why a fixture: COA AMB2 already runs on Custom DocPerm rows on every site, and a standard DocType's JSON
+  permissions are not applied while Custom DocPerm rows exist, so editing `coa_amb2.json` would change nothing.
+- **Submit email.** `notify_quality_team` now links to `/app/coa-amb2/<name>` (it pointed at `/app/coa-amb/`, the other
+  DocType) and tells only the enabled Quality Managers plus the owner and `approved_by` (de-duplicated; never
+  Administrator or Guest). Quality Inspector, Quality Analyst and the batch production manager are no longer notified.
+- **Gate warning.** `BOM Formula.simulate_blend` still builds the blend from the lines that resolve a COA, and the
+  acceptance rule is unchanged. A line skipped because it has no COA is now named (row number and item code) in an
+  orange message and in two new result fields, `skipped_no_coa` and `warning`. No computed number changes.
+- Not in this release: `Formulation Settings.default_coa_source` (stays COA AMB), any patch, the real/authorized pair,
+  remark field, Batch AMB link, creation path and labels (Cut 2).
+
 ## 13.11.3 — 2026-10
 
 **Requires `bench migrate`** (no patch; the change is what a migrate no longer does).
