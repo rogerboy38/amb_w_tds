@@ -1,5 +1,16 @@
 # Changelog
 
+## 13.12.2 — 2026-10
+
+**Code and docs only** (no patch, no fixture, no DocType JSON change, nothing `bench migrate` would write; the change takes effect with the new image and a container recreate plus a cache clear, because it is a Python module and two form scripts).
+
+### One Batch Reference picker for COA AMB and COA AMB2 (TASKS-238/239)
+- **Fixed: the COA AMB2 Batch Reference dropdown listed nothing.** It asked `docstatus = 1`, but Batch AMB is not submittable (its rows are always `docstatus 0`), so no batch could ever match; the COA AMB copy had been relaxed in June and the COA AMB2 copy was never updated. Both forms now call **one** whitelisted query, `amb_w_tds.amb_w_tds.api.batch_picker.search_batches`; neither carries a filter of its own any more (a unit test fails if one comes back).
+- **The rule:** every Batch AMB whose `batch_status` is not Cancelled and whose `quality_status` is Pending, Hold or not yet set. **No item filter**: the product on a COA and the item on a batch sit at different levels of the Item tree, so each dropdown line shows the batch id, the batch's item and `quality status / batch status`, and the person chooses. Search text matches the batch id, title, golden number and item; newest first; paged; the user's Batch AMB read permission applies as for any Link search.
+- **Fixed: the BOM Formula gate no longer takes a COA AMB2 for a batch's certificate through `batch_reference` alone.** `BOMFormula._resolve_coa` step 3 now counts only a submitted COA AMB. Nothing compared a COA AMB2's product with the batch's item, so with the picker open a COA AMB2 linked to the wrong batch would have satisfied the gate for that batch, and a newer one would have beaten an older correct COA AMB. **Accepted trade-off, until Cut 2b: a COA AMB2 satisfies the gate only through the explicit line link (`source_coa_amb2` + `source_coa_doctype`), not through the batch.** No existing result changes: there is no submitted COA AMB2 on the sandbox, and prod has one draft, none used.
+- **Finding, not changed: `Formulation Settings.default_coa_source` is read by no code.** It is only stored (two patches write it, the Select defines it); the gate behaves the same under "COA AMB" and "COA AMB2". Whether it should work is a separate ruling.
+- **Not changed:** COA AMB's submit and cancel (their invalid `quality_status` writes and Error Log rows stay as reported in REPLY-TASKS-237), `coa_amb.py`, `coa_amb2.py`, the Cut 2a guard, the item match, every Cut 2b item.
+
 ## 13.12.1 — 2026-10
 
 **Requires `bench migrate`** (no patch, no schema change; the change is code only).

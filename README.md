@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.2 | 2026-10 | One Batch Reference picker for COA AMB and COA AMB2 (status terms: not Cancelled, quality Pending/Hold/unset; no item filter, the batch's item is shown on each line), replacing the COA AMB2 `docstatus = 1` filter that listed nothing; the BOM Formula gate counts only a submitted COA AMB at step 3 (a COA AMB2 only through the explicit line link). Code and docs only. |
 | 13.12.1 | 2026-10 | COA AMB2 Cut 2a: a submit with a batch reference no longer writes the "Batch Update" Error Log row (the Batch AMB link to COA AMB2 does not exist yet; one Info comment says so); the CHANGELOG/docs wording of the six permission rows is corrected. No patch, no schema change. |
 | 13.12.0 | 2026-10 | COA AMB2 Cut 1: permissions mirrored from COA AMB (six roles; Quality Engineer reads, writes, creates, reports, prints), Quality Manager may press Submit for Sales Approval, the submit email links the right DocType and tells only enabled Quality Managers plus owner and approver, the three Error Log rows written on every COA AMB2 submit are gone, and a Mix line skipped for want of a COA is named in a visible warning. No patch. |
 | 13.11.3 | 2026-10 | The FMIX/MEMCAL sample formula fixtures no longer ship: a fresh install/migrate creates no demo formulas (prod gets no demo data). Pre-existing samples on a test site remain as orphans, no longer re-imported or reset. See `CHANGELOG.md` |

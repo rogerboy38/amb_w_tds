@@ -395,10 +395,12 @@ class BOMFormula(Document):
             if coa:
                 return "COA AMB", coa, "batch_link", f"root {root} .{field}"
 
-        # (3) a SUBMITTED COA pointing at the root, or carrying its golden.
-        # docstatus=1 only: drafts and cancelled never resolve.
+        # (3) a SUBMITTED COA AMB pointing at the root, or carrying its golden.
+        # docstatus=1 only: drafts and cancelled never resolve. COA AMB2 is NOT a candidate here (13.12.2):
+        # nothing compares its product with the batch's item, so one linked to the wrong batch would be taken
+        # for that batch's certificate. A COA AMB2 resolves through the explicit line link (1) only, until Cut 2b.
         cands = {}
-        for dt in ("COA AMB", "COA AMB2"):
+        for dt in ("COA AMB",):
             for r in frappe.get_all(dt, filters={"docstatus": 1, "batch_reference": root},
                                     fields=["name", "creation"]):
                 cands[(dt, r.name)] = r.creation
