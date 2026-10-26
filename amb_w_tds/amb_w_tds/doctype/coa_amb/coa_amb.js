@@ -296,16 +296,9 @@ function apply_coa_filters(frm) {
         return { filters: filters };
     });
     
-    // Filter batches
+    // Filter batches: one picker shared with COA AMB2 (amb_w_tds.amb_w_tds.api.batch_picker)
     frm.set_query('batch_reference', function() {
-        // Allow draft + submitted batches; match by item CODE (leading token) so
-        // batches of the same product show even if the exact variant name differs.
-        let filters = { 'docstatus': ['in', [0, 1]] };
-        if (frm.doc.product_item && frm.doc.product_item !== "") {
-            let code = (String(frm.doc.product_item).match(/^\S+/) || [frm.doc.product_item])[0];
-            filters['item_to_manufacture'] = ['like', code + '%'];
-        }
-        return { filters: filters };
+        return { query: 'amb_w_tds.amb_w_tds.api.batch_picker.search_batches' };
     });
 }
 
