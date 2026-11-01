@@ -123,10 +123,17 @@ jobs:
           # discipline as the frappe pin above. Fetched by full URL, so bench
           # needs no GitHub API lookup to resolve the bare name.
           bench get-app --branch v16.17.0 https://github.com/frappe/erpnext
+          # amb_w_spc is the required companion app: it owns Batch AMB and
+          # Parameter Group Substrate, which amb_w_tds DocTypes link to.
+          # Public repo, default branch. Its fresh-site install fails until its
+          # Quality Inspection Parameter Group fixture carries lft/rgt.
+          bench get-app https://github.com/rogerboy38/amb_w_spc
           bench get-app amb_w_tds $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
+          # Same order as production: ERPNext, then amb_w_spc, then this app.
           bench --site test_site install-app erpnext
+          bench --site test_site install-app amb_w_spc
           bench --site test_site install-app amb_w_tds
           bench build
         env:
