@@ -3,83 +3,44 @@ frappe.ui.form.on('TDS Product Specification', {
         // Initialize form
         setup_form_customizations(frm);
     },
-    
+
     refresh: function(frm) {
         // Add custom buttons
         add_custom_buttons(frm);
-        
+
         // Setup custom filters
         setup_custom_filters(frm);
     },
-    
+
     product_item: function(frm) {
-        // When product item is selected, fetch details and latest version
-        if (frm.doc.product_item) {
-            fetch_item_details(frm);
-            fetch_latest_tds_version(frm);
-        } else {
+        // 13.12.4 / C18 (TASKS-266): the two calls that ran here (`fetch_item_details`,
+        // `fetch_latest_tds_version`) went to `your_app.quality…`, a module that was never
+        // part of this app; every Item change answered HTTP 417 "App your_app is not
+        // installed" and the callbacks never ran. Removed. item_code is set on Item change
+        // by the "TDS Version" Client Script; the naming-series rewrite still runs from the
+        // item_code / tds_version handlers below.
+        if (!frm.doc.product_item) {
             // Clear item details if no item selected
             frm.set_value('item_name', '');
             frm.set_value('item_code', '');
         }
     },
-    
+
     tds_version: function(frm) {
         // Update naming series when version changes
         update_naming_series(frm);
     },
-    
+
     item_code: function(frm) {
         // Update naming series when item code changes
         update_naming_series(frm);
     },
-    
+
     before_save: function(frm) {
         // Validate form before saving
         return validate_tds_form(frm);
     }
 });
-
-// Fetch item details from Item master
-function fetch_item_details(frm) {
-    frappe.call({
-        method: 'your_app.quality.doctype.tds_product_specification.tds_product_specification.get_item_details',
-        args: {
-            item_code: frm.doc.product_item
-        },
-        callback: function(r) {
-            if (r.message) {
-                frm.set_value('item_name', r.message.item_name || '');
-                frm.set_value('item_code', r.message.item_code || '');
-                
-                // Update naming series with new item code
-                update_naming_series(frm);
-            }
-        }
-    });
-}
-
-// Fetch latest TDS version for the product item
-function fetch_latest_tds_version(frm) {
-    frappe.call({
-        method: 'your_app.quality.doctype.tds_product_specification.tds_product_specification.get_latest_tds_version',
-        args: {
-            product_item: frm.doc.product_item
-        },
-        callback: function(r) {
-            if (r.message) {
-                if (!frm.doc.tds_version || frm.doc.tds_version === '1') {
-                    frm.set_value('tds_version', r.message.tds_version);
-                }
-                if (!frm.doc.tds_sequence) {
-                    frm.set_value('tds_sequence', r.message.tds_sequence);
-                }
-                
-                update_naming_series(frm);
-            }
-        }
-    });
-}
 
 // Update naming series based on current values
 function update_naming_series(frm) {
@@ -88,7 +49,7 @@ function update_naming_series(frm) {
         const item_code = frm.doc.item_code;
         const version = frm.doc.tds_version;
         const new_series = `${base_name}-${item_code}-V${version}`;
-        
+
         if (!frm.doc.naming_series || frm.doc.naming_series.startsWith(base_name)) {
             frm.set_value('naming_series', new_series);
         }
@@ -101,7 +62,7 @@ function setup_form_customizations(frm) {
     frm.set_df_property('amended_from', 'read_only', 1);
     frm.set_df_property('item_name', 'read_only', 1);
     frm.set_df_property('item_code', 'read_only', 1);
-    
+
     // Add custom CSS classes to text editor fields
     frm.get_field('shelf_life').$wrapper.addClass('tds-text-editor');
     frm.get_field('packaging').$wrapper.addClass('tds-text-editor');
@@ -111,10 +72,8 @@ function setup_form_customizations(frm) {
 // Add custom buttons to form
 function add_custom_buttons(frm) {
     if (!frm.is_new() && frm.doc.docstatus === 1) {
-        // Button to create new version
-        frm.add_custom_button(__('Create New Version'), function() {
-            create_new_tds_version(frm);
-        }, __('Actions'));
+        // 13.12.4 / C18 (TASKS-266): the "Create New Version" button called
+        // `your_app.…create_new_version` (HTTP 417, see product_item above) — removed with it.
 
         // Button to create Quality Inspection Template
         frm.add_custom_button(__('Create Inspection Template'), function() {
@@ -129,27 +88,9 @@ function add_custom_buttons(frm) {
         }, __('Actions'));
     }
 
-    if (!frm.is_new() && frm.doc.docstatus === 0) {
-        // Button to copy from latest version
-        frm.add_custom_button(__('Copy from Latest'), function() {
-            copy_from_latest_version(frm);
-        }, __('Actions'));
-    }
-}
-
-// Create new TDS version
-function create_new_tds_version(frm) {
-    frappe.call({
-        method: 'your_app.quality.doctype.tds_product_specification.tds_product_specification.create_new_version',
-        args: {
-            source_name: frm.doc.name
-        },
-        callback: function(r) {
-            if (r.message) {
-                frappe.set_route('Form', 'TDS Product Specification', r.message);
-            }
-        }
-    });
+    // 13.12.4 / C18 (TASKS-266): the "Copy from Latest" button (draft only) called
+    // `your_app.…get_latest_tds_version` (HTTP 417) and, had it answered, only showed a
+    // toast — no parameter was ever copied. Removed.
 }
 
 // Create Quality Inspection Template
@@ -159,29 +100,8 @@ function create_quality_inspection_template(frm) {
         template.item_code = frm.doc.item_code;
         template.item_name = frm.doc.item_name;
         template.tds_product_specification = frm.doc.name;
-        
-        frappe.set_route('Form', 'Quality Inspection Template', template.name);
-    });
-}
 
-// Copy parameters from latest TDS version
-function copy_from_latest_version(frm) {
-    if (!frm.doc.product_item) {
-        frappe.msgprint(__('Please select a Product Item first'));
-        return;
-    }
-    
-    frappe.call({
-        method: 'your_app.quality.doctype.tds_product_specification.tds_product_specification.get_latest_tds_version',
-        args: {
-            product_item: frm.doc.product_item
-        },
-        callback: function(r) {
-            if (r.message && r.message.latest_doc) {
-                // Implementation to copy parameters from latest document
-                frappe.msgprint(__('Parameters copied from latest version'));
-            }
-        }
+        frappe.set_route('Form', 'Quality Inspection Template', template.name);
     });
 }
 
@@ -195,7 +115,7 @@ function setup_custom_filters(frm) {
             }
         };
     });
-    
+
     // Add filter for TDS Settings
     frm.set_query('tds_settings', function() {
         return {
@@ -217,7 +137,7 @@ function validate_tds_form(frm) {
         });
         return false;
     }
-    
+
     // Validate approval date
     if (frm.doc.approval_date && frm.doc.approval_date > frappe.datetime.get_today()) {
         frappe.msgprint({
@@ -227,7 +147,7 @@ function validate_tds_form(frm) {
         });
         return false;
     }
-    
+
     return true;
 }
 
