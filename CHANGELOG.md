@@ -1,5 +1,25 @@
 # Changelog
 
+## 13.12.4 — 2026-11
+
+**Needs `bench migrate`** (fixture sync: one Client Script record changes; no patch, no schema change). Also one form script, so `bench --site <site> clear-cache` after the image swap as in 13.12.3.
+
+### TDS form: the dead `your_app.*` calls are gone (C18, TASKS-266 item 1)
+- **Fixed: every Item change on a TDS raised red dialogs.** `tds_product_specification.js` called `your_app.quality.doctype.tds_product_specification.tds_product_specification.get_item_details` / `get_latest_tds_version` (and `create_new_version` behind *Create New Version*, `get_latest_tds_version` again behind *Copy from Latest*) — a module that was never part of this app; each answered HTTP 417 "App your_app is not installed" and the callbacks never ran. The four functions and the two buttons that only reached them are removed; nothing is resurrected. `item_code` is still set on Item change by the *TDS Version* Client Script; the naming-series rewrite rule (`update_naming_series`) is unchanged.
+- **Not changed here:** four scripts that 404 on every desk page (`warehouse_temperature.js`, `sales_order_upload.js`, `sales_invoice_upload.js`, `documents_panel.js`) are `app_include_js` entries of **other apps** (`raven_ai_agent/hooks.py:13-15`, written as `raven_ai_agent/public/js/…` instead of `/assets/raven_ai_agent/js/…`, one file missing; `rnd_warehouse_management/hooks.py:38`, file missing) — not amb_w_tds's to fix.
+
+### *TDS Version* Client Script: never writes TDS Settings; *Generate Version* sets `custom_version` (TASKS-266 item 2)
+- **Fixed: the second red dialog on every Item change and on every new TDS** ("Naming series must start with the prefix: TDS-SET"). The script tried to keep one TDS Settings record per item (`frappe.client.get_list` by `item_code`, then `frappe.client.insert` / `set_value` of `last_sequence_used`) — but TDS Settings is a **Single**, the server refused every insert and nothing was ever written. The script no longer touches TDS Settings; the sequence suggestion now reads the highest `tds_sequence` among the same item's TDS records and fills `tds_sequence` only when it is empty.
+- **Fixed: `custom_version` was never updated by anything.** *Generate Version* now writes the generated string (`V1.<item>-Date:yy/mm/dd*NNNN`) into `custom_version`, and still into `tds_version` as before (so the naming-series rewrite keeps behaving as it did).
+- Fixture record only (`fixtures/client_script.json`): **this is what makes the cut need `bench migrate`.**
+
+### Fixture export filter + 13.12.3 wording (TASKS-266 item 3)
+- `AMB Cost Factors` and `Quotation Item Escalated` (custom DocTypes that exist only on production) are out of `_AMB_W_TDS_DOCTYPES` (new `_PRODUCTION_ONLY_DOCTYPES`, import-time assert). Measured on the sandbox: `bench export-fixtures` on main pulled 5 of their records into the base files (1 Custom Field, 1 Property Setter, 2 Client Scripts, 1 Server Script); on this branch 0.
+- The 13.12.3 entry, README row and the comment above `sc5v2_fetchCAVMap` said nginx answered the long request line; measured on prod (REPLY-263) it is gunicorn's default `limit_request_line` (4,094 bytes) — corrected.
+
+### Sub-lot titles (G1, TASKS-266 item 4)
+- `auto_set_title` lives in **amb_w_spc** (`sfc_manufacturing/doctype/batch_amb/batch_amb.py`), not in this app, so the fix is an amb_w_spc change delivered as its own branch/PR (`fix/g1-sublot-title-stable`: the stored title of a level-2/3/4 sub-lot stays unless the record is new, has no title, or its parent/level changed; no data patch, existing titles untouched). This entry only records that the two ship together as 13.12.4.
+
 ## 13.12.3 — 2026-11
 
 **Code only** (no patch, no fixture, no DocType JSON change, nothing `bench migrate` would write). The file is a `doctype_js` script: Frappe hands it to the browser inside the DocType meta (`getdoctype` → `__js`), and that meta is cached server-side, so the change takes effect with the new image, a container recreate **and `bench --site <site> clear-cache`** (no `bench build`; a browser hard reload alone is not enough while the old meta is cached — measured in the sandbox).
