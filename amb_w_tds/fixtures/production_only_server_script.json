@@ -1,0 +1,21 @@
+[
+ {
+  "allow_guest": 0,
+  "api_method": "QuotationItemEscalated",
+  "cron_format": null,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Server Script",
+  "doctype_event": "Before Insert",
+  "enable_rate_limit": 0,
+  "event_frequency": "All",
+  "modified": "2025-09-06 18:14:14.093825",
+  "module": "RND",
+  "name": "QuotationItemEscalated",
+  "rate_limit_count": 5,
+  "rate_limit_seconds": 86400,
+  "reference_doctype": "Quotation Item Escalated",
+  "script": "class QuotationItemEscalated(Document):\r\n    def validate(self):\r\n        self.set_quantity_limits()\r\n        self.calculate_prices()\r\n    \r\n    def set_quantity_limits(self):\r\n        \"\"\"Set min and max quantity based on selected range\"\"\"\r\n        if self.quantity_range:\r\n            ranges = {\r\n                '1-5 kg': (1, 5),\r\n                '6-10 kg': (6, 10),\r\n                '11-25 kg': (11, 25),\r\n                '26-200 kg': (26, 200)\r\n            }\r\n            \r\n            if self.quantity_range in ranges:\r\n                self.min_quantity, self.max_quantity = ranges[self.quantity_range]\r\n    \r\n    def calculate_prices(self):\r\n        \"\"\"Calculate all prices based on quantity range\"\"\"\r\n        if self.ex_works_price and self.freight_cost and self.min_quantity:\r\n            # Calculate delivered price\r\n            self.delivered_price = flt(self.ex_works_price) + flt(self.freight_cost)\r\n            \r\n            # Calculate price per kg\r\n            self.price_per_kg = self.delivered_price\r\n            \r\n            # Calculate total price range\r\n            if self.min_quantity == self.max_quantity:\r\n                self.total_price = self.delivered_price * self.min_quantity\r\n            else:\r\n                # Store the maximum total for the range\r\n                self.total_price = self.delivered_price * self.max_quantity\r\n    \r\n    def calculate_freight_based_on_type(self):\r\n        \"\"\"Calculate freight cost based on freight type and quantity range\"\"\"\r\n        if self.quantity_range and self.freight_type:\r\n            freight_matrix = {\r\n                '1-5 kg': {\r\n                    'Air Freight': 58.30,\r\n                    'Sea Freight': 45.00,\r\n                    'Ground': 35.00,\r\n                    'Door to Door': 60.00\r\n                },\r\n                '6-10 kg': {\r\n                    'Air Freight': 19.87,\r\n                    'Sea Freight': 15.00,\r\n                    'Ground': 12.00,\r\n                    'Door to Door': 22.00\r\n                },\r\n                '11-25 kg': {\r\n                    'Air Freight': 16.06,\r\n                    'Sea Freight': 12.00,\r\n                    'Ground': 9.00,\r\n                    'Door to Door': 18.00\r\n                },\r\n                '26-200 kg': {\r\n                    'Air Freight': 13.91,\r\n                    'Sea Freight': 10.00,\r\n                    'Ground': 7.00,\r\n                    'Door to Door': 15.00\r\n                }\r\n            }\r\n            \r\n            if (self.quantity_range in freight_matrix and \r\n                self.freight_type in freight_matrix[self.quantity_range]):\r\n                self.freight_cost = freight_matrix[self.quantity_range][self.freight_type]",
+  "script_type": "API"
+ }
+]
