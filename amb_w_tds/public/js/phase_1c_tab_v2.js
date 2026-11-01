@@ -359,24 +359,40 @@ async function sc5v2_fetchTreeData(substrateCode) {
 
 
 // ─── CSS map fetch — wrapped, returns empty on any failure ───
+//
+// TASKS-261 (2026-11-01): this used to be frappe.db.get_list, which Frappe sends as a
+// GET with the filters in the query string, and the filter carried every parameter
+// name in the catalog (~4-8 KB once encoded). nginx on prod answers that request
+// line with its own 400 page before Frappe sees it, so on every TDS that has a
+// TDS Customers row the picker waited on this promise until the 10 s watchdog
+// fired ("Catalog load timed out"). Now: a POST (frappe.call defaults to POST, the
+// args travel in the body) that asks only for the customers' Approved, active rows,
+// and the catalog match is done here against a Set of the names. Same fields,
+// limit 0, same map shape out — the badges and Add Selected see no difference.
 async function sc5v2_fetchCAVMap(customers, qipNames) {
     if (!customers || !customers.length || !qipNames || !qipNames.length) return {};
     try {
-        const rows = await frappe.db.get_list('Customer-Specific Specification', {
-            filters: {
-                parameter: ['in', qipNames],
-                customer: ['in', customers],
-                status: 'Approved',
-                is_active: 1,
+        const r = await frappe.call({
+            method: 'frappe.client.get_list',
+            args: {
+                doctype: 'Customer-Specific Specification',
+                filters: {
+                    customer: ['in', customers],
+                    status: 'Approved',
+                    is_active: 1,
+                },
+                fields: ['name', 'parameter', 'customer', 'value_type', 'value_text',
+                         'value_min', 'value_max', 'method', 'unit_of_measurement',
+                         'regulatory_reference', 'effective_from', 'effective_to'],
+                limit_page_length: 0,
             },
-            fields: ['name', 'parameter', 'customer', 'value_type', 'value_text',
-                     'value_min', 'value_max', 'method', 'unit_of_measurement',
-                     'regulatory_reference', 'effective_from', 'effective_to'],
-            limit: 0,
         });
+        const rows = (r && r.message) || [];
+        const wanted = new Set(qipNames);
         const today = frappe.datetime.get_today();
         const map = {};
         rows.forEach(css => {
+            if (!wanted.has(css.parameter)) return;
             if (css.effective_from && css.effective_from > today) return;
             if (css.effective_to && css.effective_to < today) return;
             if (!map[css.parameter]) map[css.parameter] = [];
