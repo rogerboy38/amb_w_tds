@@ -30,6 +30,7 @@ except Exception:  # pragma: no cover - second interpreter has no bench
 	_HAVE_FRAPPE = False
 
 _CONNECTED = False
+_OWNS = False  # True only when this module opened the connection itself
 
 
 def setUpModule():
@@ -40,19 +41,24 @@ def setUpModule():
 	layer-confusion this file exists to catch, one level up: a guard on rendered
 	output has to run where rendering actually happens.
 	"""
-	global _CONNECTED
+	global _CONNECTED, _OWNS
 	if not _HAVE_FRAPPE:
+		return
+	if getattr(frappe.local, "db", None):
+		# Already connected, e.g. under bench run-tests: reuse the runner's
+		# connection and never tear it down or commit it.
+		_CONNECTED, _OWNS = True, False
 		return
 	try:
 		frappe.init(site="v2.sysmayal.cloud", sites_path="/home/frappe/frappe-bench/sites")
 		frappe.connect()
-		_CONNECTED = True
+		_CONNECTED, _OWNS = True, True
 	except Exception:
 		_CONNECTED = False
 
 
 def tearDownModule():
-	if _CONNECTED:
+	if _CONNECTED and _OWNS:
 		frappe.destroy()
 
 
@@ -76,7 +82,7 @@ class TestRenderedPrecision(unittest.TestCase):
 		self.assertEqual(fmt_money(1.00, currency="USD", precision=4), "$ 1.00")
 
 	def test_the_jinja_layer_emits_four_decimals_for_the_unit(self):
-		from amb_w_tds.valuation_jinja import _fmt, UNIT_PRECISION
+		from amb_w_tds.valuation_jinja import UNIT_PRECISION, _fmt
 
 		self.assertEqual(UNIT_PRECISION, 4)
 		self.assertEqual(_fmt(0.3333, "USD", precision=UNIT_PRECISION), "$ 0.3333 USD")
@@ -91,7 +97,8 @@ class TestRenderedPrecision(unittest.TestCase):
 		"""The property in the reader's terms: parse the printed unit, multiply
 		by the printed bag count, and land on the declared total."""
 		from decimal import Decimal
-		from amb_w_tds.valuation_jinja import _fmt, UNIT_PRECISION
+
+		from amb_w_tds.valuation_jinja import UNIT_PRECISION, _fmt
 
 		printed_unit = _fmt(Decimal("1.00") / 3, "USD", precision=UNIT_PRECISION)
 		numeric = Decimal(printed_unit.replace("$", "").replace("USD", "").strip())

@@ -35,18 +35,24 @@ except Exception:  # pragma: no cover
 	_HAVE_FRAPPE = False
 
 _CONNECTED = False
+_OWNS = False  # True only when this module opened the connection itself
 _MADE = []
 
 
 def setUpModule():
-	global _CONNECTED
+	global _CONNECTED, _OWNS
 	if not _HAVE_FRAPPE:
+		return
+	if getattr(frappe.local, "db", None):
+		# Already connected, e.g. under bench run-tests: reuse the runner's
+		# connection and never tear it down or commit it.
+		_CONNECTED, _OWNS = True, False
 		return
 	try:
 		frappe.init(site="v2.sysmayal.cloud", sites_path="/home/frappe/frappe-bench/sites")
 		frappe.connect()
 		frappe.set_user("Administrator")
-		_CONNECTED = True
+		_CONNECTED, _OWNS = True, True
 	except Exception:
 		_CONNECTED = False
 
@@ -59,8 +65,10 @@ def tearDownModule():
 			frappe.delete_doc("Sample Request AMB", name, force=True, ignore_permissions=True)
 		except Exception:
 			pass
-	frappe.db.commit()
-	frappe.destroy()
+	if _OWNS:
+		# Persist the cleanup and close only a connection this module opened.
+		frappe.db.commit()
+		frappe.destroy()
 
 
 @unittest.skipUnless(_HAVE_FRAPPE, "needs a bench")
