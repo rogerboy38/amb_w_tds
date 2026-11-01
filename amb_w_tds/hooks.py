@@ -196,6 +196,13 @@ jinja = {
 # QC / Manufacturing / SPC / Stock / Warehouse / Work Order domain DocTypes.
 # Shared ERPNext DocTypes go to whichever app has the dominant use case.
 
+# 13.12.4 (TASKS-266, decision 3 follow-up): the two DocTypes whose records exist only on
+# production (custom DocTypes, not shipped by this app) are kept OUT of the export filter, so
+# a `bench export-fixtures --app amb_w_tds` on a site that holds them never pulls their Custom
+# Fields / Property Setters / Client Scripts / Server Scripts into the base fixture files
+# (PR #31 moves those records to production_only_* files, which carry their own filter).
+_PRODUCTION_ONLY_DOCTYPES = ["AMB Cost Factors", "Quotation Item Escalated"]
+
 _AMB_W_TDS_DOCTYPES = [
     # Owned by amb_w_tds (defined in this app)
     "AMB Pack Plan Item",
@@ -205,7 +212,7 @@ _AMB_W_TDS_DOCTYPES = [
     "COA Quality Test Parameter", "Container Selection", "Container Sync Log",
     "Container Type Rule", "Country Regulation", "Distribution Contact",
     "Distribution Organization", "Formulation", "Intended Purpose",
-    "Juice Conversion Config", "KPI Cost Breakdown", "AMB Cost Factors", "Lote AMB",
+    "Juice Conversion Config", "KPI Cost Breakdown", "Lote AMB",
     "Market Entry Plan", "Market Research", "Plant Configuration",
     "Product Compliance", "Product Development Project", "Production Plant AMB",
     "Quotation AMB", "Quotation AMB Sales Partner", "RND Parent Doctype",
@@ -237,7 +244,7 @@ _AMB_W_TDS_DOCTYPES = [
     "Purchase Order Item", "Purchase Receipt", "Purchase Receipt Item",
     "Quality Goal Objective", "Quality Procedure", "Quality Review",
     "Quality Review Objective", "Quotation", "Quotation Item",
-    "Quotation Item Escalated", "Request for Quotation",
+    "Request for Quotation",
     "Request for Quotation Item", "Salary Slip", "Sales Invoice",
     "Sales Invoice Item", "Sales Order", "Sales Order Item", "Sales Stage",
     "Sales Taxes and Charges", "Shipment", "Shipment Parcel", "Shipping Rule",
@@ -256,6 +263,7 @@ _AMB_W_TDS_DOCTYPES = [
     "Preservative System", "TDS Preservative", "COA Preservative",
     "Preservative Composition",
 ]
+assert not set(_PRODUCTION_ONLY_DOCTYPES) & set(_AMB_W_TDS_DOCTYPES), "production-only DocTypes must stay out of the export filter"
 
 # L153 §4.1 follow-on: Server Scripts with reference_doctype=NULL (scheduled /
 # API / cron-driven) aren't captured by the dt-based filter above. Cowork-ops's
