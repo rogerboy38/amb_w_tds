@@ -126,19 +126,26 @@ class TestWorkflowFixture(unittest.TestCase):
 	def test_the_other_seven_transitions_are_prods_rows_unchanged_and_in_order(self):
 		rows = _rows(_workflows()["submit_and_start_workflow"])
 		self.assertEqual(rows[:8], AMB2_TRANSITIONS)
-		self.assertEqual(len(rows), 9)
+		# 13.12.4.1 (TASKS-270a): row 10 is the Cancel transition Hugh saved in Desk on 2026-11-02
+		self.assertEqual(len(rows), 10)
+		self.assertEqual(rows[9][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
 
 	def test_states_and_the_workflow_flags_are_unchanged(self):
 		w = _workflows()["submit_and_start_workflow"]
-		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES)
+		# 13.12.4.1 (TASKS-270a): the Cancelled state is appended last; the seven Cut-1 states are untouched
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES + [("Cancelled", "2", "Quality Manager")])
 		self.assertEqual((w["document_type"], w["is_active"], w["workflow_state_field"], w["override_status"], w["send_email_alert"]),
 			("COA AMB2", 1, "workflow_state", 0, 0))
 
 	def test_the_coa_amb_twin_workflow_is_untouched(self):
 		w = _workflows()["submit_and_start_workflow_1"]
 		self.assertEqual(w["document_type"], "COA AMB")
-		self.assertEqual(_rows(w), AMB2_TRANSITIONS)
-		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES)
+		# 13.12.4.1 (TASKS-270a): the twin gained the same Cancelled state and Cancel transition, nothing else
+		rows = _rows(w)
+		self.assertEqual(rows[:8], AMB2_TRANSITIONS)
+		self.assertEqual(len(rows), 9)
+		self.assertEqual(rows[8][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES + [("Cancelled", "2", "Quality Manager")])
 
 
 class TestErrorLogFixes(unittest.TestCase):
