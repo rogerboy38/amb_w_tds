@@ -21,6 +21,49 @@ PAIL_25 = "CN025"  # 25 kg pail · Consumables · tara 2.7 (F-8 corrected)
 PAIL_10 = "CN010"  # 10 kg pail · Consumables · tara 1.7
 
 
+# Decision 6 (TASKS-268): the tests build their own fixtures, so they run on a fresh
+# site (CI) as well as on the dev site. Each record is created only when it is
+# missing and nothing that already exists is changed; on the dev site, where the real
+# items exist, this is a no-op. Everything is created inside the test's transaction
+# and rolled back with it by tearDown.
+# (item_code, item_group, weight_per_unit = tara in kg, is_stock_item)
+_FIXTURE_ITEMS = [
+	(ITEM, "Products", 0, 0),  # the product; outside the packaging catalog
+	(BAG_5KG, "FG Packaging Materials", 0.05, 0),
+	(BAG_1KG, "Raw Materials", 0.05, 0),
+	(PAIL_25, "Consumables", 2.7, 0),
+	(PAIL_10, "Consumables", 1.7, 0),
+]
+
+
+def _ensure_item_group(name):
+	if not frappe.db.exists("Item Group", name):
+		root = frappe.db.get_value("Item Group", {"is_group": 1, "parent_item_group": ["in", ["", None]]})
+		frappe.get_doc(
+			{"doctype": "Item Group", "item_group_name": name, "parent_item_group": root, "is_group": 0}
+		).insert(ignore_permissions=True)
+
+
+def _ensure_items():
+	for code, group, tara, is_stock in _FIXTURE_ITEMS:
+		if frappe.db.exists("Item", code):
+			continue
+		_ensure_item_group(group)
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": code,
+				"item_name": code,
+				"item_group": group,
+				"stock_uom": "Kg",
+				"is_stock_item": is_stock,
+				"is_sales_item": 1,
+				"weight_per_unit": tara,
+				"weight_uom": "Kg" if tara else None,
+			}
+		).insert(ignore_permissions=True)
+
+
 def _ensure_customer():
 	if not frappe.db.exists("Customer", {"customer_name": SYNTH_CUSTOMER}):
 		frappe.get_doc(
@@ -43,6 +86,7 @@ class TestPackPlan(unittest.TestCase):
 		# per-test (not setUpClass): each test ends in rollback, which would
 		# erase a class-level customer for the tests after the first
 		frappe.set_user("Administrator")
+		_ensure_items()
 		self.customer = _ensure_customer()
 		self._created = []
 
@@ -90,7 +134,7 @@ class TestPackPlan(unittest.TestCase):
 		return doc
 
 	def _vabon_plan(self, so):
-		"""The 2510101 mirror: 4×5 kg bags in a 25 kg pail / 5×1 kg bags in a
+		"""The 2510101 mirror: 4 x 5 kg bags in a 25 kg pail / 5 x 1 kg bags in a
 		10 kg pail — mixed pail sizes in one order (§1c amendment)."""
 		r1, r2 = so.items[0].name, so.items[1].name
 		return [
