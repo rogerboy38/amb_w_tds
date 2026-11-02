@@ -37,6 +37,45 @@ except Exception:  # pragma: no cover
 _CONNECTED = False
 _OWNS = False  # True only when this module opened the connection itself
 _MADE = []
+# Decision 8 (TASKS-268): fixtures this module builds for itself, so it runs on a
+# fresh site (CI) as well as on the dev site. Created only when missing; undone in
+# tearDownModule. On the dev site (default currency already MXN, Kg items present)
+# this changes nothing.
+_FIXTURE_ITEM = "_Test AMB Born Currency Item"
+_CREATED_ITEM = None
+_PREV_CURRENCY = None
+
+
+def _build_fixtures():
+	"""The site default currency is MXN (the collision this file is about) and an
+	Item stocked in Kg exists for the sample rows."""
+	global _CREATED_ITEM, _PREV_CURRENCY
+	_PREV_CURRENCY = frappe.defaults.get_defaults().get("currency")
+	if _PREV_CURRENCY != "MXN":
+		frappe.db.set_default("currency", "MXN")
+	if not frappe.db.get_value("Item", {"stock_uom": "Kg"}, "name"):
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": _FIXTURE_ITEM,
+				"item_name": _FIXTURE_ITEM,
+				"item_group": frappe.db.get_value("Item Group", {"is_group": 0}),
+				"stock_uom": "Kg",
+				"is_stock_item": 0,
+			}
+		).insert(ignore_permissions=True)
+		_CREATED_ITEM = _FIXTURE_ITEM
+
+
+def _undo_fixtures():
+	if _CREATED_ITEM and frappe.db.exists("Item", _CREATED_ITEM):
+		frappe.delete_doc("Item", _CREATED_ITEM, force=True, ignore_permissions=True)
+	if _PREV_CURRENCY == "MXN":
+		return
+	if _PREV_CURRENCY:
+		frappe.db.set_default("currency", _PREV_CURRENCY)
+	else:
+		frappe.defaults.clear_default("currency", parent="__default")
 
 
 def setUpModule():
@@ -47,6 +86,7 @@ def setUpModule():
 		# Already connected, e.g. under bench run-tests: reuse the runner's
 		# connection and never tear it down or commit it.
 		_CONNECTED, _OWNS = True, False
+		_build_fixtures()
 		return
 	try:
 		frappe.init(site="v2.sysmayal.cloud", sites_path="/home/frappe/frappe-bench/sites")
@@ -55,6 +95,8 @@ def setUpModule():
 		_CONNECTED, _OWNS = True, True
 	except Exception:
 		_CONNECTED = False
+		return
+	_build_fixtures()
 
 
 def tearDownModule():
@@ -65,6 +107,7 @@ def tearDownModule():
 			frappe.delete_doc("Sample Request AMB", name, force=True, ignore_permissions=True)
 		except Exception:
 			pass
+	_undo_fixtures()
 	if _OWNS:
 		# Persist the cleanup and close only a connection this module opened.
 		frappe.db.commit()
