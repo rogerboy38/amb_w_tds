@@ -298,6 +298,11 @@ _AMB_W_TDS_CF_EXCEPTIONS = [
 
 # COA AMB2 Custom DocPerm rows shipped by fixtures/custom_docperm.json (13.12.0)
 _COA_AMB2_DOCPERM_NAMES = ["xipvz3cfg2", "mzw3gque0e", "lfifwzfi68", "cue7m0rgna", "h8l3vou680", "dh6gqnd8of"]
+# 13.12.5 (TASKS-270b): Quality Manager, level 0, every permission on TDS Product Specification — the row
+# Hugh saved in Role Permission Manager on prod on 2026-11-02 (Cancel / Amend / Submit on an approved TDS).
+# Explicit name as the BOM Formula rows carry (bomf-l0-*); prod's Desk-made row has its own hash name,
+# so on prod this ships BESIDE it until the fixture carries prod's name (see the PR).
+_TDS_DOCPERM_NAMES = ["tds-l0-quality-mgr"]
 
 fixtures = [
     # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
@@ -324,7 +329,7 @@ fixtures = [
     # never drags in the rows a site already has (Quality Inspector / Quality Manager / System Manager) or the
     # verifier test roles. BOM Formula keeps its all-rows rule.
     {"doctype": "Custom DocPerm",         "or_filters": [["parent", "=", "BOM Formula"],
-                                                          ["name", "in", _COA_AMB2_DOCPERM_NAMES]]},
+                                                          ["name", "in", _COA_AMB2_DOCPERM_NAMES + _TDS_DOCPERM_NAMES]]},
     {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
     # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
     # Parameter records. These are the Link targets the picker's title-row
