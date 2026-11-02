@@ -44,7 +44,13 @@ def _ensure_item_group(name):
 		).insert(ignore_permissions=True)
 
 
+def _ensure_uom(name):
+	if not frappe.db.exists("UOM", name):
+		frappe.get_doc({"doctype": "UOM", "uom_name": name}).insert(ignore_permissions=True)
+
+
 def _ensure_items():
+	_ensure_uom("Kg")
 	for code, group, tara, is_stock in _FIXTURE_ITEMS:
 		if frappe.db.exists("Item", code):
 			continue

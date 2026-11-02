@@ -54,6 +54,8 @@ def _build_fixtures():
 	if _PREV_CURRENCY != "MXN":
 		frappe.db.set_default("currency", "MXN")
 	if not frappe.db.get_value("Item", {"stock_uom": "Kg"}, "name"):
+		if not frappe.db.exists("UOM", "Kg"):
+			frappe.get_doc({"doctype": "UOM", "uom_name": "Kg"}).insert(ignore_permissions=True)
 		frappe.get_doc(
 			{
 				"doctype": "Item",
