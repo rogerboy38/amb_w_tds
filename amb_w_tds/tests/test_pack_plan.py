@@ -67,7 +67,12 @@ def _ensure_items():
 				"weight_per_unit": tara,
 				"weight_uom": "Kg" if tara else None,
 			}
-		).insert(ignore_permissions=True)
+		).insert(
+			# The fixture is a minimal test record: the house's required Mexico-compliance
+			# Item fields (product_key, mx_product_service_key) are not this test's subject.
+			ignore_permissions=True,
+			ignore_mandatory=True,
+		)
 
 
 def _ensure_customer():
@@ -83,7 +88,11 @@ def _ensure_customer():
 				"tax_id": "XAXX010101000",
 				"tax_system": "612",
 			}
-		).insert(ignore_permissions=True)
+		).insert(
+			# tax_system links to a Mexico-compliance DocType a fresh site may not have.
+			ignore_permissions=True,
+			ignore_links=True,
+		)
 	return frappe.db.get_value("Customer", {"customer_name": SYNTH_CUSTOMER})
 
 

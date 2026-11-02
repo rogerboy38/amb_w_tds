@@ -65,7 +65,12 @@ def _build_fixtures():
 				"stock_uom": "Kg",
 				"is_stock_item": 0,
 			}
-		).insert(ignore_permissions=True)
+		).insert(
+			# A minimal test Item: the house's required Mexico-compliance Item fields are
+			# not this file's subject.
+			ignore_permissions=True,
+			ignore_mandatory=True,
+		)
 		_CREATED_ITEM = _FIXTURE_ITEM
 
 
