@@ -132,10 +132,11 @@ def _ensure_company():
 					"doctype": "Company",
 					"company_name": _FIXTURE_COMPANY,
 					"abbr": "TAPP",
-					# Mexico, as production. ("India" makes Frappe HR's regional setup add
-					# Employee fields, which re-validates Employee and trips over this repo's
-					# Employee fields that link to DocTypes no installed app provides.)
-					"default_currency": "MXN",
+					# Country Mexico, as production. ("India" makes Frappe HR's regional setup
+					# add Employee fields, which re-validates Employee and trips over this
+					# repo's Employee fields that link to DocTypes no installed app provides.)
+					# Currency = the site default, so documents need no exchange rate.
+					"default_currency": frappe.db.get_default("currency") or "MXN",
 					"country": "Mexico",
 				}
 			)
