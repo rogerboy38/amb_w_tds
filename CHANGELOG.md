@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.12.5 — 2026-11
+
+**Fixture only — no code, no patch.** Needs `bench migrate` (fixture sync).
+
+### Quality Manager may cancel and amend a TDS (TASKS-270b)
+- `fixtures/custom_docperm.json`: Custom DocPerm **TDS Product Specification · Quality Manager · level 0 · every permission** (select, read, write, create, delete, submit, cancel, amend, report, export, import, share, print, email, mask; `if_owner` 0) — the row Hugh saved in Role Permission Manager on prod on 2026-11-02, so that after 13.12.4.1's `Approved → Cancel → Cancelled` a Quality Manager also gets Frappe's **Amend** on the cancelled TDS (the role had `amend` 0 / `cancel` 0 / `submit` 0 there). Name `tds-l0-quality-mgr` (explicit, as the BOM Formula rows); the name joins the hooks export filter.
+- **Read before the cut:** prod's Desk-made row carries its own hash name. Fixture sync upserts by `name` and never deletes, so this row lands **beside** prod's (two identical rows for the same DocType / role / level; permissions are the union, so nothing changes functionally) until the fixture carries prod's name — then they are one. The 13.12.4 / 13.12.4.1 migrates carry no TDS Custom DocPerm row at all (filter: BOM Formula rows + six COA AMB2 rows by name) and therefore cannot touch prod's Desk-made row.
+
 ## 13.12.4.1 — 2026-11
 
 **Fixtures only — no code, no patch, no schema change.** Needs `bench migrate` (fixture sync) like 13.12.4; `clear-cache` as before.

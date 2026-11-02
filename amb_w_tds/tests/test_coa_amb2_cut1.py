@@ -70,8 +70,11 @@ class TestPermissionRows(unittest.TestCase):
 		self.assertNotIn("filters", entry)
 		flt = {tuple(x[:2]): x for x in entry["or_filters"]}
 		self.assertEqual(flt[("parent", "=")][2], "BOM Formula")
-		self.assertEqual(set(flt[("name", "in")][2]), {r["name"] for r in _amb2_rows()})
-		self.assertEqual(len(flt[("name", "in")][2]), 6)
+		# 13.12.5 (TASKS-270b): the TDS Quality Manager row joins the by-name list; the six COA AMB2 names stay
+		names = list(flt[("name", "in")][2])
+		self.assertTrue({r["name"] for r in _amb2_rows()} <= set(names))
+		self.assertEqual(len(names), len(set(names)))
+		self.assertEqual(set(names) - {r["name"] for r in _amb2_rows()}, {"tds-l0-quality-mgr"})
 
 	def test_every_workflow_transition_has_a_permission_behind_it(self):
 		with open(os.path.join(PKG, "fixtures", "workflow.json"), encoding="utf8") as f:
