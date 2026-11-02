@@ -186,12 +186,13 @@ jinja = {
 # QC / Manufacturing / SPC / Stock / Warehouse / Work Order domain DocTypes.
 # Shared ERPNext DocTypes go to whichever app has the dominant use case.
 
-# 13.12.4 (TASKS-266, decision 3 follow-up): the two DocTypes whose records exist only on
-# production (custom DocTypes, not shipped by this app) are kept OUT of the export filter, so
-# a `bench export-fixtures --app amb_w_tds` on a site that holds them never pulls their Custom
-# Fields / Property Setters / Client Scripts / Server Scripts into the base fixture files
-# (PR #31 moves those records to production_only_* files, which carry their own filter).
-_PRODUCTION_ONLY_DOCTYPES = ["AMB Cost Factors", "Quotation Item Escalated"]
+# Decision 5 (a), REPLY-TASKS-268: the two custom DocTypes that used to exist only on
+# production now ship with this app as DocType fixtures (custom 1, modules as on prod:
+# Amb W Tds and Selling), in fixtures/00_production_doctype.json, which sorts before every
+# other fixture file so the Custom Fields, Property Setter and scripts on them find their
+# DocType on a fresh site. Their records live in the ordinary fixture files again, so the
+# two names are back in _AMB_W_TDS_DOCTYPES below (this reverses 13.12.4's exclusion).
+_SHIPPED_CUSTOM_DOCTYPES = ["AMB Cost Factors", "Quotation Item Escalated"]
 
 _AMB_W_TDS_DOCTYPES = [
 	# Owned by amb_w_tds (defined in this app)
@@ -236,6 +237,8 @@ _AMB_W_TDS_DOCTYPES = [
 	"TDS Product Specification V2",
 	"TDS Settings",
 	"Third Party API",
+	# Decision 5 (a): shipped as DocType fixtures, see _SHIPPED_CUSTOM_DOCTYPES above.
+	*_SHIPPED_CUSTOM_DOCTYPES,
 	# ERPNext DocTypes amb_w_tds customizes (sales / COA / BOM / TDS-driven)
 	"Address",
 	"Asset",
@@ -344,9 +347,6 @@ _AMB_W_TDS_DOCTYPES = [
 	"COA Preservative",
 	"Preservative Composition",
 ]
-assert not set(_PRODUCTION_ONLY_DOCTYPES) & set(
-	_AMB_W_TDS_DOCTYPES
-), "production-only DocTypes must stay out of the export filter"
 
 # L153 §4.1 follow-on: Server Scripts with reference_doctype=NULL (scheduled /
 # API / cron-driven) aren't captured by the dt-based filter above. Cowork-ops's
@@ -383,6 +383,9 @@ _AMB_W_TDS_CF_EXCEPTIONS = [
 _COA_AMB2_DOCPERM_NAMES = ["xipvz3cfg2", "mzw3gque0e", "lfifwzfi68", "cue7m0rgna", "h8l3vou680", "dh6gqnd8of"]
 
 fixtures = [
+	# Decision 5 (a): the two shipped custom DocTypes. `prefix` makes Frappe write this entry to
+	# 00_production_doctype.json, which imports first (fixture files load in sorted name order).
+	{"doctype": "DocType", "prefix": "00_production", "filters": [["name", "in", _SHIPPED_CUSTOM_DOCTYPES]]},
 	# SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
 	# custom fields on BOM Formula have their option doctypes present on import.
 	{"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},

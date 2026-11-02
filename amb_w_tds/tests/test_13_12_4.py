@@ -98,21 +98,46 @@ class TestTdsVersionClientScript(unittest.TestCase):
 
 
 class TestProductionOnlyDoctypesStayOutOfExport(unittest.TestCase):
+	# Decision 5 (a), REPLY-TASKS-268, reverses 13.12.4's exclusion: the two custom DocTypes
+	# now ship as DocType fixtures and their records live in the ordinary fixture files, so
+	# the invariant is the opposite one, asserted end to end.
+	SHIPPED = ("AMB Cost Factors", "Quotation Item Escalated")
+
 	def test_filter_lists(self):
 		h = hooks_module()
-		self.assertEqual(
-			sorted(h._PRODUCTION_ONLY_DOCTYPES), ["AMB Cost Factors", "Quotation Item Escalated"]
-		)
-		for dt in h._PRODUCTION_ONLY_DOCTYPES:
-			self.assertNotIn(dt, h._AMB_W_TDS_DOCTYPES)
-			for entry in h.fixtures:
-				if isinstance(entry, dict):
-					for flt in list(entry.get("filters") or []) + list(entry.get("or_filters") or []):
-						vals = flt[2] if len(flt) > 2 else None
-						self.assertFalse(
-							isinstance(vals, list | tuple) and dt in vals,
-							f"{dt} in a filter of {entry.get('doctype')}",
-						)
+		self.assertEqual(sorted(h._SHIPPED_CUSTOM_DOCTYPES), list(self.SHIPPED))
+		self.assertFalse(hasattr(h, "_PRODUCTION_ONLY_DOCTYPES"))
+		for dt in self.SHIPPED:
+			# in the export filter, so a re-export keeps their records in the ordinary files
+			self.assertIn(dt, h._AMB_W_TDS_DOCTYPES)
+		entries = [
+			e
+			for e in h.fixtures
+			if isinstance(e, dict) and e.get("doctype") == "DocType" and e.get("prefix") == "00_production"
+		]
+		self.assertEqual(len(entries), 1)
+		self.assertEqual(sorted(entries[0]["filters"][0][2]), list(self.SHIPPED))
+
+	def test_doctype_fixture_imports_first_and_carries_both(self):
+		fixtures = os.path.join(PKG, "fixtures")
+		files = sorted(f for f in os.listdir(fixtures) if f.endswith(".json"))
+		self.assertEqual(files[0], "00_production_doctype.json")
+		docs = json.loads(read(os.path.join(fixtures, "00_production_doctype.json")))
+		self.assertEqual(sorted(d["name"] for d in docs), list(self.SHIPPED))
+		modules = {d["name"]: d["module"] for d in docs}
+		self.assertEqual(modules, {"AMB Cost Factors": "Amb W Tds", "Quotation Item Escalated": "Selling"})
+		for d in docs:
+			self.assertEqual((d["doctype"], d["custom"], d["istable"]), ("DocType", 1, 1))
+			# custom fields ship as Custom Field records, never inline in the definition
+			self.assertFalse(any(f.get("is_custom_field") for f in d["fields"]))
+
+	def test_no_production_only_file_holds_their_records(self):
+		fixtures = os.path.join(PKG, "fixtures")
+		for f in os.listdir(fixtures):
+			if f.startswith("production_only_") and f.endswith(".json"):
+				for r in json.loads(read(os.path.join(fixtures, f))):
+					target = r.get("dt") or r.get("doc_type") or r.get("reference_doctype")
+					self.assertNotIn(target, self.SHIPPED, f"{r.get('name')} in {f}")
 
 	def test_wording_names_gunicorn_not_nginx(self):
 		for path in (
