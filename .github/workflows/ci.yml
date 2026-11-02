@@ -123,6 +123,17 @@ jobs:
           # discipline as the frappe pin above. Fetched by full URL, so bench
           # needs no GitHub API lookup to resolve the bare name.
           bench get-app --branch v16.17.0 https://github.com/frappe/erpnext
+          # Payments and Frappe HR, pinned to what production runs (REPLY-TASKS-268,
+          # decision 4): fixtures/custom_field.json carries Custom Fields on
+          # GoCardless Mandate (payments) and Payroll Entry / Payroll Employee Detail
+          # (hrms). Without them Frappe skips the whole file on a fresh site.
+          # Payments has no version tags; production runs commit 66215cf (develop
+          # lineage). bench get-app cannot take a commit as --branch, so clone,
+          # check the commit out, and hand bench the local repo (as with this app).
+          git clone https://github.com/frappe/payments /tmp/payments
+          git -C /tmp/payments checkout --detach 66215cf01e4f3be96a3b6b5870ba374ac307209b
+          bench get-app /tmp/payments
+          bench get-app --branch v16.6.1 https://github.com/frappe/hrms
           # amb_w_spc is the required companion app: it owns Batch AMB and
           # Parameter Group Substrate, which amb_w_tds DocTypes link to.
           # Public repo, default branch. Its fresh-site install fails until its
@@ -131,8 +142,10 @@ jobs:
           bench get-app amb_w_tds $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
-          # Same order as production: ERPNext, then amb_w_spc, then this app.
+          # Order: frappe, erpnext, payments, hrms, amb_w_spc, amb_w_tds (decision 4).
           bench --site test_site install-app erpnext
+          bench --site test_site install-app payments
+          bench --site test_site install-app hrms
           bench --site test_site install-app amb_w_spc
           bench --site test_site install-app amb_w_tds
           bench build
