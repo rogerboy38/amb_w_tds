@@ -96,6 +96,21 @@ def _ensure_customer():
 	return frappe.db.get_value("Customer", {"customer_name": SYNTH_CUSTOMER})
 
 
+def setUpModule():
+	"""Decision 6: the Pack Plan child table is added by a patch, not a fixture, and
+	`bench install-app` marks every patch as done without running it. So a fresh
+	site (CI) never gets custom_pack_plan. Run that same idempotent patch once
+	when the field is missing. It alters tables, so it runs here, outside the
+	per-test transactions that tearDown rolls back. On the dev site, which got
+	the field through migrate, this does nothing."""
+	if not all(
+		frappe.db.exists("Custom Field", f"{dt}-custom_pack_plan") for dt in ("Quotation", "Sales Order")
+	):
+		from amb_w_tds.patches.v14_4_pack_plan import add_pack_plan_custom_fields
+
+		add_pack_plan_custom_fields.execute()
+
+
 class TestPackPlan(unittest.TestCase):
 	def setUp(self):
 		# per-test (not setUpClass): each test ends in rollback, which would
