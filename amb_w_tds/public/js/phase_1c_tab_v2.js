@@ -362,10 +362,11 @@ async function sc5v2_fetchTreeData(substrateCode) {
 //
 // TASKS-261 (2026-11-01): this used to be frappe.db.get_list, which Frappe sends as a
 // GET with the filters in the query string, and the filter carried every parameter
-// name in the catalog (~4-8 KB once encoded). nginx on prod answers that request
-// line with its own 400 page before Frappe sees it, so on every TDS that has a
-// TDS Customers row the picker waited on this promise until the 10 s watchdog
-// fired ("Catalog load timed out"). Now: a POST (frappe.call defaults to POST, the
+// name in the catalog (~4-8 KB once encoded). On prod, gunicorn refuses a request
+// line longer than its default `limit_request_line` (4,094 bytes) with a 400 before
+// Frappe sees it (nginx/traefik only relay that page — 13.12.4 correction, measured in
+// REPLY-263), so on every TDS that has a TDS Customers row the picker waited on this
+// promise until the 10 s watchdog fired ("Catalog load timed out"). Now: a POST (frappe.call defaults to POST, the
 // args travel in the body) that asks only for the customers' Approved, active rows,
 // and the catalog match is done here against a Set of the names. Same fields,
 // limit 0, same map shape out — the badges and Add Selected see no difference.
