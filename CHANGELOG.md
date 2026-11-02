@@ -1,5 +1,17 @@
 # Changelog
 
+## 13.12.4.1 — 2026-11
+
+**Fixtures only — no code, no patch, no schema change.** Needs `bench migrate` (fixture sync) like 13.12.4; `clear-cache` as before.
+
+### `fixtures/property_setter.json` is prod's own export (TASKS-270 item 1)
+- The 13.12.4 migrate would have re-imported the file's 300 Property Setters over the 81 rows a System Manager saved in Customize Form on 2026-10-28/10-30 (Item, 8 transaction DocTypes, 5 stock DocTypes), setting 32 values back: `base_rounded_total-hidden`, `rounded_total-hidden`, `rounded_total-print_hide`, `disable_rounded_total-default` 1 → 0 on Delivery Note, Purchase Invoice, Purchase Order, Purchase Receipt, Quotation, Sales Invoice, Sales Order, Supplier Quotation. The file is now prod's export of 2026-11-02 (Frappe's own serialisation, main's filter; REPLY-TASKS-269a, sha256 `c1fe57b8…2b31` before the repo's trailing newline): **329 records** = main's 300 + 29 prod UI customisations made after the last export, 102 records updated (the 32 values, 60 `module`, 11 `is_system_generated`, `modified` on 102).
+- **Caveat (Hugh's default, not solved here):** the four **Sales Invoice** rounded-total values are also shipped by mexico_einvoice's `custom/sales_invoice.json` with value 0, and `sync_customizations` runs after `sync_fixtures`, so they revert on the cut and are re-applied in Customize Form afterwards. The 43 exported rows that other apps also ship (42 mexico_einvoice, 1 erpnext_mexico_compliance) were already in the file and stay as they are.
+
+### Three workflows: `Cancelled` state + `Cancel` transition (Quality Manager), as Desk 2026-11-02 (TASKS-270 / 270a item 2)
+- An approved TDS (or a shared COA) could not be corrected: none of the three workflows had a transition to a docstatus-2 state, so Frappe hid Cancel/Amend. `fixtures/workflow.json` now carries, exactly as saved in Desk on prod on 2026-11-02, one state **Cancelled** (doc_status 2, allow_edit Quality Manager) and one transition to it, allowed **Quality Manager** only, on each of: *TDS Approval Workflow* (TDS Product Specification: **Approved → Cancel → Cancelled**; 8 states / 7 transitions), *submit_and_start_workflow* (COA AMB2: **Certificate Shared → Cancel → Cancelled**; 8 / 10), *submit_and_start_workflow_1* (COA AMB: **Certificate Shared → Cancel → Cancelled**; 8 / 9). No other row changes; no System Manager row, no Amended state, no Reopen from Cancelled.
+- The state and action are Links; a fresh site has neither master, so `Cancelled` joins `workflow_state.json` and `Cancel` joins `workflow_action_master.json`, and both names join the hooks export filter (the hooks block's own rule since 2026-08-06).
+
 ## 13.12.4 — 2026-11
 
 **Needs `bench migrate`** (fixture sync: one Client Script record changes; no patch, no schema change). Also one form script, so `bench --site <site> clear-cache` after the image swap as in 13.12.3.
