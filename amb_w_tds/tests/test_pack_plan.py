@@ -27,6 +27,7 @@ PAIL_10 = "CN010"  # 10 kg pail · Consumables · tara 1.7
 # items exist, this is a no-op. Everything is created inside the test's transaction
 # and rolled back with it by tearDown.
 # (item_code, item_group, weight_per_unit = tara in kg, is_stock_item)
+_FIXTURE_COMPANY = "_Test AMB Pack Plan Company"
 _FIXTURE_ITEMS = [
 	(ITEM, "Products", 0, 0),  # the product; outside the packaging catalog
 	(BAG_5KG, "FG Packaging Materials", 0.05, 0),
@@ -109,6 +110,79 @@ def setUpModule():
 		from amb_w_tds.patches.v14_4_pack_plan import add_pack_plan_custom_fields
 
 		add_pack_plan_custom_fields.execute()
+	if _ensure_company() | _ensure_payment_terms() | _ensure_selling_settings():
+		# Only on a fresh site: persist the module-level fixtures, which every test's
+		# rollback would otherwise erase (the patch's ALTER TABLE has committed already).
+		frappe.db.commit()
+
+
+def _ensure_company():
+	"""The Sales Orders and Quotations take their company from Global Defaults; a fresh
+	site has none. Returns True when it created or set something."""
+	if frappe.db.get_single_value("Global Defaults", "default_company"):
+		return False
+	company = frappe.db.get_value("Company", {}, "name")
+	if not company:
+		# ERPNext's setup wizard normally makes this; Company.on_update needs it.
+		if not frappe.db.exists("Warehouse Type", "Transit"):
+			frappe.get_doc({"doctype": "Warehouse Type", "name": "Transit"}).insert(ignore_permissions=True)
+		company = (
+			frappe.get_doc(
+				{
+					"doctype": "Company",
+					"company_name": _FIXTURE_COMPANY,
+					"abbr": "TAPP",
+					"default_currency": frappe.db.get_default("currency") or "INR",
+					"country": "India",
+				}
+			)
+			.insert(ignore_permissions=True)
+			.name
+		)
+	frappe.db.set_single_value("Global Defaults", "default_company", company)
+	frappe.db.set_default("company", company)
+	return True
+
+
+def _ensure_selling_settings():
+	"""The tests put the product on two rows of one order, as the dev site allows, and a
+	fresh site has no selling price list. Returns True when it changed something."""
+	changed = False
+	if not frappe.db.get_single_value("Selling Settings", "allow_multiple_items"):
+		frappe.db.set_single_value("Selling Settings", "allow_multiple_items", 1)
+		changed = True
+	if not frappe.db.get_single_value("Selling Settings", "selling_price_list"):
+		name = "Standard Selling"
+		if not frappe.db.exists("Price List", name):
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+			frappe.get_doc(
+				{
+					"doctype": "Price List",
+					"price_list_name": name,
+					"selling": 1,
+					"currency": frappe.get_cached_value("Company", company, "default_currency"),
+				}
+			).insert(ignore_permissions=True)
+		frappe.db.set_single_value("Selling Settings", "selling_price_list", name)
+		changed = True
+	return changed
+
+
+def _ensure_payment_terms():
+	"""fixtures/property_setter.json defaults Quotation.payment_terms_template to
+	"T/T In Advance"; a fresh site lacks that template. Returns True when it made it."""
+	if frappe.db.exists("Payment Terms Template", "T/T In Advance"):
+		return False
+	frappe.get_doc(
+		{
+			"doctype": "Payment Terms Template",
+			"template_name": "T/T In Advance",
+			"terms": [
+				{"invoice_portion": 100, "due_date_based_on": "Day(s) after invoice date", "credit_days": 0}
+			],
+		}
+	).insert(ignore_permissions=True)
+	return True
 
 
 class TestPackPlan(unittest.TestCase):
