@@ -376,6 +376,8 @@ fixtures = [
         # workflow.json and references four states this filter never covered, so
         # they were still being exported as nothing. Same [] defect, second workflow.
         "Pending Sales", "Pending Quality", "Pending Director", "Frozen",
+        # 13.12.4.1 (TASKS-270): the TDS workflow's Cancelled state (Approved -> Cancel -> Cancelled)
+        "Cancelled",
         # 13.11.0: BOM Formula Aprobación
         "Borrador", "En Revisión", "Autorizado", "Liberado", "Rechazado",
     ]]]},
@@ -389,6 +391,8 @@ fixtures = [
         "Reject",
         # same pre-flight: the TDS workflow's two actions, previously uncovered.
         "Approve (Sales)", "Freeze",
+        # 13.12.4.1 (TASKS-270): the TDS workflow's Cancel action
+        "Cancel",
         # 13.11.0: BOM Formula Aprobación
         "Enviar a revisión", "Autorizar", "Devolver", "Liberar a producción", "Rechazar", "Devolver a Calidad",
     ]]]},

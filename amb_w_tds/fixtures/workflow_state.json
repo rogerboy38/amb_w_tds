@@ -56,6 +56,11 @@
  },
  {
   "doctype": "Workflow State",
+  "name": "Cancelled",
+  "workflow_state_name": "Cancelled"
+ },
+ {
+  "doctype": "Workflow State",
   "name": "Borrador",
   "workflow_state_name": "Borrador"
  },
