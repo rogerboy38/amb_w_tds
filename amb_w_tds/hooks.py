@@ -33,25 +33,25 @@ override_doctype_class = {}
 # Removed doctype_js entries to avoid asset bundle issues
 
 app_include_js = [
-    # sample_request_*.js removed - owned by amb_w_spc
-    # "/assets/amb_w_tds/js/sample_request_utils.js",
-    # "/assets/amb_w_tds/js/sample_request_buttons.js"
+	# sample_request_*.js removed - owned by amb_w_spc
+	# "/assets/amb_w_tds/js/sample_request_utils.js",
+	# "/assets/amb_w_tds/js/sample_request_buttons.js"
 ]
 
 # Phase 1C-B (V14.3.1) — Parameter Selection picker stylesheet.
 app_include_css = [
-    "/assets/amb_w_tds/css/phase_1c_tab.css",
+	"/assets/amb_w_tds/css/phase_1c_tab.css",
 ]
 
 # Phase 1C-B (V14.3.1) — Parameter Selection picker JS, composes with the canonical
 # tds_product_specification.js (Frappe merges frappe.ui.form.on() calls across files).
 doctype_js = {
-    "TDS Product Specification": [
-        "public/js/phase_1c_tab_v2.js",
-        "public/js/tds_product_specification.js",
-    ],
-    "COA AMB":  ["public/js/coa_common.js", "public/js/coa_amb.js"],
-    "COA AMB2": ["public/js/coa_common.js"],
+	"TDS Product Specification": [
+		"public/js/phase_1c_tab_v2.js",
+		"public/js/tds_product_specification.js",
+	],
+	"COA AMB": ["public/js/coa_common.js", "public/js/coa_amb.js"],
+	"COA AMB2": ["public/js/coa_common.js"],
 }
 
 # ========================================
@@ -59,111 +59,101 @@ doctype_js = {
 # ========================================
 
 doc_events = {
-
-    # 13.11.2: ERPNext's BOM.autoname skips amended BOMs when picking the next BOM-<item>-NNN, so on
-    # items whose amendments took plain numbers it re-proposes an existing name ("Duplicate Name").
-    # Runs right after it; corrects the name ONLY when it already exists (counting amendments).
-    "BOM": {
-        "autoname": "amb_w_tds.formulation.bom_naming.correct_colliding_autoname",
-    },
-
-    # ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
-    # per-row Σ group_net_kg == SO row qty (block on submit), packaging-catalog
-    # link restriction, taras fetched from Item master (F-8), Quotation→SO copy
-    "Quotation": {
-        "validate": ["amb_w_tds.selling_edge.pack_plan.validate_quotation"],
-    },
-    "Sales Order": {
-        "validate": ["amb_w_tds.selling_edge.pack_plan.validate_sales_order"],
-        "before_submit": ["amb_w_tds.selling_edge.pack_plan.before_submit_sales_order"],
-    },
-
-    # ---- stock trace / costing / batch migrations
-    "Stock Entry": {
-        "on_submit": [
-            # ""amb_w_tds.stock_entry_hooks.on_stock_entry_submit"",
-            # ""amb_w_tds.raven.utils.on_stock_entry_submit""
-        ],
-        "before_insert": [
-            # ""amb_w_tds.api.agent.pre_stock_entry_agent_validation""
-        ],
-    },
-
-    # Phase 1A Step 2B (relocated here Phase 1A.5) — TDS Product Specification form-derivation + flag-row handling.
-    # custom=1 DocType so override_doctype_class is silently ignored; doc_events is the working hook.
-    "TDS Product Specification": {
-        "validate": [
-            "amb_w_tds.overrides.tds_product_specification.derive_form",
-        ],
-        "before_save": [
-            "amb_w_tds.overrides.tds_product_specification.propagate_flag_row_groups",
-        ],
-    },
-
-    # ---- AMB Quotation + Sales Partner auto mapping + idempotency
-    "Quotation AMB": {
-
-        # Idempotency + sales_partner assignment
-        "before_insert": [
-            # # ""amb_w_tds.api.agent.apply_agent_hooks"",
-            # ""amb_w_tds.api.quotation_amb.idempotency_check""
-        ],
-
-        # logging + lineage trace + legacy ID mapping
-        "before_save": [
-            # ""amb_w_tds.api.agent.apply_activity_log"",
-            # ""amb_w_tds.api.quotation_amb.audit_linkage""
-        ],
-
-        # enforce workflow + commission + agent
-        "before_submit": [
-            # ""amb_w_tds.api.quotation_amb.validate_commission"",
-            # ""amb_w_tds.api.quotation_amb.ensure_sales_partner""
-        ],
-    },
-
-    # ---- Batch AMB: Controller migrated to amb_w_spc
-    # "Batch AMB" doc_events removed - now handled by amb_w_spc
-
-    # SC4 — CSS validation hook fires on COA AMB submit. Reads custom_coa_customers,
-    # cross-references each row in coa_quality_test_parameter against approved
-    # Customer-Specific Specification records. Configurable via the
-    # TDS Settings.css_block_on_mismatch check (0 = warn-only default; 1 = block submit).
-    "COA AMB": {
-        "on_submit": [
-            "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_css_on_submit",
-            # P1.4 QR Phase-1: mint token + attach shared PDF (signature-guarded, never breaks submit)
-            "amb_w_tds.coa_qr.on_coa_submit",
-        ],
-    },
+	# 13.11.2: ERPNext's BOM.autoname skips amended BOMs when picking the next BOM-<item>-NNN, so on
+	# items whose amendments took plain numbers it re-proposes an existing name ("Duplicate Name").
+	# Runs right after it; corrects the name ONLY when it already exists (counting amendments).
+	"BOM": {
+		"autoname": "amb_w_tds.formulation.bom_naming.correct_colliding_autoname",
+	},
+	# ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
+	# per-row Σ group_net_kg == SO row qty (block on submit), packaging-catalog
+	# link restriction, taras fetched from Item master (F-8), Quotation→SO copy
+	"Quotation": {
+		"validate": ["amb_w_tds.selling_edge.pack_plan.validate_quotation"],
+	},
+	"Sales Order": {
+		"validate": ["amb_w_tds.selling_edge.pack_plan.validate_sales_order"],
+		"before_submit": ["amb_w_tds.selling_edge.pack_plan.before_submit_sales_order"],
+	},
+	# ---- stock trace / costing / batch migrations
+	"Stock Entry": {
+		"on_submit": [
+			# ""amb_w_tds.stock_entry_hooks.on_stock_entry_submit"",
+			# ""amb_w_tds.raven.utils.on_stock_entry_submit""
+		],
+		"before_insert": [
+			# ""amb_w_tds.api.agent.pre_stock_entry_agent_validation""
+		],
+	},
+	# Phase 1A Step 2B (relocated here Phase 1A.5) — TDS Product Specification form-derivation + flag-row handling.
+	# custom=1 DocType so override_doctype_class is silently ignored; doc_events is the working hook.
+	"TDS Product Specification": {
+		"validate": [
+			"amb_w_tds.overrides.tds_product_specification.derive_form",
+		],
+		"before_save": [
+			"amb_w_tds.overrides.tds_product_specification.propagate_flag_row_groups",
+		],
+	},
+	# ---- AMB Quotation + Sales Partner auto mapping + idempotency
+	"Quotation AMB": {
+		# Idempotency + sales_partner assignment
+		"before_insert": [
+			# # ""amb_w_tds.api.agent.apply_agent_hooks"",
+			# ""amb_w_tds.api.quotation_amb.idempotency_check""
+		],
+		# logging + lineage trace + legacy ID mapping
+		"before_save": [
+			# ""amb_w_tds.api.agent.apply_activity_log"",
+			# ""amb_w_tds.api.quotation_amb.audit_linkage""
+		],
+		# enforce workflow + commission + agent
+		"before_submit": [
+			# ""amb_w_tds.api.quotation_amb.validate_commission"",
+			# ""amb_w_tds.api.quotation_amb.ensure_sales_partner""
+		],
+	},
+	# ---- Batch AMB: Controller migrated to amb_w_spc
+	# "Batch AMB" doc_events removed - now handled by amb_w_spc
+	# SC4 — CSS validation hook fires on COA AMB submit. Reads custom_coa_customers,
+	# cross-references each row in coa_quality_test_parameter against approved
+	# Customer-Specific Specification records. Configurable via the
+	# TDS Settings.css_block_on_mismatch check (0 = warn-only default; 1 = block submit).
+	"COA AMB": {
+		"on_submit": [
+			"amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_css_on_submit",
+			# P1.4 QR Phase-1: mint token + attach shared PDF (signature-guarded, never breaks submit)
+			"amb_w_tds.coa_qr.on_coa_submit",
+		],
+	},
 }
 
 # P1.4 — expose the defensive COA QR helper to Jinja print formats: {{ coa_qr_img(doc) }}
 jinja = {
-    "methods": [
-        "amb_w_tds.coa_qr.coa_qr_img",
-        # BUG208 D-VALUE/D-UOM -- one arithmetic shared by all six armed print
-        # formats, so "the same shipment renders ONE total everywhere" is a
-        # property of the code and not of six hand-edits staying in step.
-        "amb_w_tds.valuation_jinja.amb_valuation",
-        "amb_w_tds.valuation_jinja.amb_customs_value",
-        "amb_w_tds.valuation_jinja.amb_row_uom",
-        # LOOP-1 — the lot-identity resolver. Registering it makes it REACHABLE
-        # from a render (VMG-I I-4); no format calls it yet, migration is
-        # per-format and lands by ruling.
-        "amb_w_tds.lot_identity.amb_lot_identity",
-        # 13.9.0 — Print Format "Propuestas de Formulación" (BOM Formula): the same
-        # data as the Script Report of that name, from one module, so PDF and Excel
-        # can never disagree.
-        "amb_w_tds.formulation.propuestas.amb_propuestas_formulacion",
-    ],
+	"methods": [
+		"amb_w_tds.coa_qr.coa_qr_img",
+		# BUG208 D-VALUE/D-UOM -- one arithmetic shared by all six armed print
+		# formats, so "the same shipment renders ONE total everywhere" is a
+		# property of the code and not of six hand-edits staying in step.
+		"amb_w_tds.valuation_jinja.amb_valuation",
+		"amb_w_tds.valuation_jinja.amb_customs_value",
+		"amb_w_tds.valuation_jinja.amb_row_uom",
+		# LOOP-1 — the lot-identity resolver. Registering it makes it REACHABLE
+		# from a render (VMG-I I-4); no format calls it yet, migration is
+		# per-format and lands by ruling.
+		"amb_w_tds.lot_identity.amb_lot_identity",
+		# 13.9.0 — Print Format "Propuestas de Formulación" (BOM Formula): the same
+		# data as the Script Report of that name, from one module, so PDF and Excel
+		# can never disagree.
+		"amb_w_tds.formulation.propuestas.amb_propuestas_formulacion",
+	],
 }
 
 # ========================================
 #  SCHEDULER EVENTS (background consistency)
 # ========================================
 #
-#scheduler_events = {
+# scheduler_events = {
 #
 #    "hourly": [
 #        # ""amb_w_tds.migration.resume_unfinished_migration"",
@@ -179,7 +169,7 @@ jinja = {
 #        # ""amb_w_tds.agent.performance.weekly_commission_reconciliation"",
 #        # ""amb_w_tds.migration.cleanup_stale_migration_state""
 #    ],
-#}
+# }
 #
 # ========================================
 #  FIXTURES (L153 fixtures-discipline rollout 2026-05-20)
@@ -204,66 +194,159 @@ jinja = {
 _PRODUCTION_ONLY_DOCTYPES = ["AMB Cost Factors", "Quotation Item Escalated"]
 
 _AMB_W_TDS_DOCTYPES = [
-    # Owned by amb_w_tds (defined in this app)
-    "AMB Pack Plan Item",
-    "Amb KPI Factors", "Animal Trial", "Barrel", "BOM Enhancement",
-    "BOM Formula", "BOM Formula Amino Acid", "BOM Template", "BOM Template Item",
-    "BOM Version", "Certification Document", "COA AMB", "COA AMB2",
-    "COA Quality Test Parameter", "Container Selection", "Container Sync Log",
-    "Container Type Rule", "Country Regulation", "Distribution Contact",
-    "Distribution Organization", "Formulation", "Intended Purpose",
-    "Juice Conversion Config", "KPI Cost Breakdown", "Lote AMB",
-    "Market Entry Plan", "Market Research", "Plant Configuration",
-    "Product Compliance", "Product Development Project", "Production Plant AMB",
-    "Quotation AMB", "Quotation AMB Sales Partner", "RND Parent Doctype",
-    "Sample Request AMB", "Sample Request AMB Item", "TDS Default Parameter",
-    "TDS Product Specification", "TDS Product Specification V2", "TDS Settings",
-    "Third Party API",
-    # ERPNext DocTypes amb_w_tds customizes (sales / COA / BOM / TDS-driven)
-    "Address", "Asset", "Asset Maintenance Log", "Asset Repair",
-    "Assignment Rule", "Attendance", "BOM", "BOM Creator", "Communication",
-    "Company", "Contact", "Cost Center", "CRM Deal", "CRM Lead", "CRM Product",
-    "Customer", "Customer Item", "Delivery Note", "Delivery Note Item",
-    "Department", "Designation", "Email Account", "Employee", "Event",
-    # Removed in V14.3.4 (2026-05-21T05:21Z corrective): 5 orphan-drift entries
-    # below were never present in any AMB substrate (provenance probe confirmed
-    # NOT IN VM3 EITHER — pure stale claim list residue). Triggered L156
-    # silent file-level abort on sync_fixtures during sysmayal hostinger-vpt
-    # rehearsal pull. Excluding them prevents future fixture re-capture.
-    # Excluded: HD Ticket Type, Freight Location, Event Category AMB,
-    # Custom Clearance (workflow-only ref), Direct Shipping (workflow-only ref).
-    "GoCardless Mandate",
-    "Incoterm", "Industry Type", "Issue", "Item",
-    "Item Group", "Item Tax Template Detail", "Item Variant", "Lead",
-    "Mode of Payment", "Operation", "Opportunity", "Packed Item",
-    "Packing Slip", "Payment Entry", "Payment Term",
-    "Payroll Employee Detail", "Payroll Entry", "Pick List", "POS Invoice",
-    "POS Invoice Item", "Pricing Rule", "Print Format", "Print Settings",
-    "Production Plan", "Project", "Project Update", "Prospect",
-    "Purchase Invoice", "Purchase Invoice Item", "Purchase Order",
-    "Purchase Order Item", "Purchase Receipt", "Purchase Receipt Item",
-    "Quality Goal Objective", "Quality Procedure", "Quality Review",
-    "Quality Review Objective", "Quotation", "Quotation Item",
-    "Request for Quotation",
-    "Request for Quotation Item", "Salary Slip", "Sales Invoice",
-    "Sales Invoice Item", "Sales Order", "Sales Order Item", "Sales Stage",
-    "Sales Taxes and Charges", "Shipment", "Shipment Parcel", "Shipping Rule",
-    "Subscription", "Supplier", "Supplier Quotation", "Supplier Quotation Item",
-    "Task", "Terms and Conditions", "Timesheet", "UTM Campaign", "Web Form",
-    # Task #14 (2026-05-30) — Preservative integration doctypes (module=Amb W
-    # Tds). Adding to this list ensures future CFs/Property Setters/Client
-    # Scripts on these doctypes auto-capture in bench export-fixtures.
-    # The 4 doctype JSONs themselves are shipped in this commit at
-    # apps/amb_w_tds/amb_w_tds/doctype/{preservative_system, tds_preservative,
-    # coa_preservative, preservative_composition}/. Their 3 CFs on TDS Product
-    # Specification (preservative_tab, preservative_system, tds_preservatives)
-    # are appended to fixtures/custom_field.json. Discovered via Task #14
-    # investigation of missing "Sistema de Conservadores" tab on vpt-docker
-    # (browser smoke Hugh 2026-05-30 ~15:30 local). L173/L180 pattern.
-    "Preservative System", "TDS Preservative", "COA Preservative",
-    "Preservative Composition",
+	# Owned by amb_w_tds (defined in this app)
+	"AMB Pack Plan Item",
+	"Amb KPI Factors",
+	"Animal Trial",
+	"Barrel",
+	"BOM Enhancement",
+	"BOM Formula",
+	"BOM Formula Amino Acid",
+	"BOM Template",
+	"BOM Template Item",
+	"BOM Version",
+	"Certification Document",
+	"COA AMB",
+	"COA AMB2",
+	"COA Quality Test Parameter",
+	"Container Selection",
+	"Container Sync Log",
+	"Container Type Rule",
+	"Country Regulation",
+	"Distribution Contact",
+	"Distribution Organization",
+	"Formulation",
+	"Intended Purpose",
+	"Juice Conversion Config",
+	"KPI Cost Breakdown",
+	"Lote AMB",
+	"Market Entry Plan",
+	"Market Research",
+	"Plant Configuration",
+	"Product Compliance",
+	"Product Development Project",
+	"Production Plant AMB",
+	"Quotation AMB",
+	"Quotation AMB Sales Partner",
+	"RND Parent Doctype",
+	"Sample Request AMB",
+	"Sample Request AMB Item",
+	"TDS Default Parameter",
+	"TDS Product Specification",
+	"TDS Product Specification V2",
+	"TDS Settings",
+	"Third Party API",
+	# ERPNext DocTypes amb_w_tds customizes (sales / COA / BOM / TDS-driven)
+	"Address",
+	"Asset",
+	"Asset Maintenance Log",
+	"Asset Repair",
+	"Assignment Rule",
+	"Attendance",
+	"BOM",
+	"BOM Creator",
+	"Communication",
+	"Company",
+	"Contact",
+	"Cost Center",
+	"CRM Deal",
+	"CRM Lead",
+	"CRM Product",
+	"Customer",
+	"Customer Item",
+	"Delivery Note",
+	"Delivery Note Item",
+	"Department",
+	"Designation",
+	"Email Account",
+	"Employee",
+	"Event",
+	# Removed in V14.3.4 (2026-05-21T05:21Z corrective): 5 orphan-drift entries
+	# below were never present in any AMB substrate (provenance probe confirmed
+	# NOT IN VM3 EITHER — pure stale claim list residue). Triggered L156
+	# silent file-level abort on sync_fixtures during sysmayal hostinger-vpt
+	# rehearsal pull. Excluding them prevents future fixture re-capture.
+	# Excluded: HD Ticket Type, Freight Location, Event Category AMB,
+	# Custom Clearance (workflow-only ref), Direct Shipping (workflow-only ref).
+	"GoCardless Mandate",
+	"Incoterm",
+	"Industry Type",
+	"Issue",
+	"Item",
+	"Item Group",
+	"Item Tax Template Detail",
+	"Item Variant",
+	"Lead",
+	"Mode of Payment",
+	"Operation",
+	"Opportunity",
+	"Packed Item",
+	"Packing Slip",
+	"Payment Entry",
+	"Payment Term",
+	"Payroll Employee Detail",
+	"Payroll Entry",
+	"Pick List",
+	"POS Invoice",
+	"POS Invoice Item",
+	"Pricing Rule",
+	"Print Format",
+	"Print Settings",
+	"Production Plan",
+	"Project",
+	"Project Update",
+	"Prospect",
+	"Purchase Invoice",
+	"Purchase Invoice Item",
+	"Purchase Order",
+	"Purchase Order Item",
+	"Purchase Receipt",
+	"Purchase Receipt Item",
+	"Quality Goal Objective",
+	"Quality Procedure",
+	"Quality Review",
+	"Quality Review Objective",
+	"Quotation",
+	"Quotation Item",
+	"Request for Quotation",
+	"Request for Quotation Item",
+	"Salary Slip",
+	"Sales Invoice",
+	"Sales Invoice Item",
+	"Sales Order",
+	"Sales Order Item",
+	"Sales Stage",
+	"Sales Taxes and Charges",
+	"Shipment",
+	"Shipment Parcel",
+	"Shipping Rule",
+	"Subscription",
+	"Supplier",
+	"Supplier Quotation",
+	"Supplier Quotation Item",
+	"Task",
+	"Terms and Conditions",
+	"Timesheet",
+	"UTM Campaign",
+	"Web Form",
+	# Task #14 (2026-05-30) — Preservative integration doctypes (module=Amb W
+	# Tds). Adding to this list ensures future CFs/Property Setters/Client
+	# Scripts on these doctypes auto-capture in bench export-fixtures.
+	# The 4 doctype JSONs themselves are shipped in this commit at
+	# apps/amb_w_tds/amb_w_tds/doctype/{preservative_system, tds_preservative,
+	# coa_preservative, preservative_composition}/. Their 3 CFs on TDS Product
+	# Specification (preservative_tab, preservative_system, tds_preservatives)
+	# are appended to fixtures/custom_field.json. Discovered via Task #14
+	# investigation of missing "Sistema de Conservadores" tab on vpt-docker
+	# (browser smoke Hugh 2026-05-30 ~15:30 local). L173/L180 pattern.
+	"Preservative System",
+	"TDS Preservative",
+	"COA Preservative",
+	"Preservative Composition",
 ]
-assert not set(_PRODUCTION_ONLY_DOCTYPES) & set(_AMB_W_TDS_DOCTYPES), "production-only DocTypes must stay out of the export filter"
+assert not set(_PRODUCTION_ONLY_DOCTYPES) & set(
+	_AMB_W_TDS_DOCTYPES
+), "production-only DocTypes must stay out of the export filter"
 
 # L153 §4.1 follow-on: Server Scripts with reference_doctype=NULL (scheduled /
 # API / cron-driven) aren't captured by the dt-based filter above. Cowork-ops's
@@ -272,10 +355,10 @@ assert not set(_PRODUCTION_ONLY_DOCTYPES) & set(_AMB_W_TDS_DOCTYPES), "productio
 # module attribution drift bites here too. Explicit name list instead, per
 # triage 2026-05-20T23:30Z.
 _AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
-    "Create Sample Request from Lead",  # Lead → TDS sample request pipeline
-    "coa_amb_api",                       # COA AMB API
-    "fix_invoice_debit_to",              # Sales Invoice fix
-    "load_tds_parameters",               # TDS Product Specification loader
+	"Create Sample Request from Lead",  # Lead → TDS sample request pipeline
+	"coa_amb_api",  # COA AMB API
+	"fix_invoice_debit_to",  # Sales Invoice fix
+	"load_tds_parameters",  # TDS Product Specification loader
 ]
 
 # Task #67 (2026-05-29) — Custom Fields on doctypes NOT in _AMB_W_TDS_DOCTYPES
@@ -292,125 +375,196 @@ _AMB_W_TDS_NOREF_SERVER_SCRIPTS = [
 # accepted as latent dual-capture per Hugh 2026-05-29 (Task #67 directive:
 # "Custom Fields stay in amb_w_tds fixtures").
 _AMB_W_TDS_CF_EXCEPTIONS = [
-    "Quality Inspection Parameter Group-applicable_substrates",
-    "Item Quality Inspection Parameter-custom_blend_method",   # SP-MIX B1 blend rule on the TDS param row
+	"Quality Inspection Parameter Group-applicable_substrates",
+	"Item Quality Inspection Parameter-custom_blend_method",  # SP-MIX B1 blend rule on the TDS param row
 ]
 
 # COA AMB2 Custom DocPerm rows shipped by fixtures/custom_docperm.json (13.12.0)
 _COA_AMB2_DOCPERM_NAMES = ["xipvz3cfg2", "mzw3gque0e", "lfifwzfi68", "cue7m0rgna", "h8l3vou680", "dh6gqnd8of"]
 
 fixtures = [
-    # SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
-    # custom fields on BOM Formula have their option doctypes present on import.
-    {"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},
-    # G-1a (2026-09-09) — mixing equipment catalogue. Values are carried in the
-    # fixture explicitly, never inherited from a DocType default (rule z).
-    {"doctype": "Mixing Equipment"},
-    # SR-1 (2026-07-29) — the Sample Request AMB permissions block binds to this role,
-    # so it must exist on a tier before the doctype syncs. Paired with the
-    # [pre_model_sync] patch v17_sr1.create_verifier_read_only_role (belt and braces:
-    # the patch covers migrate, the fixture covers install/fresh-provision).
-    {"doctype": "Role", "filters": [["name", "in", ["Verifier Read Only"]]]},
-    {"doctype": "Custom Field",
-     "or_filters": [
-         ["dt", "in", _AMB_W_TDS_DOCTYPES],
-         ["name", "in", _AMB_W_TDS_CF_EXCEPTIONS],
-     ]},
-    {"doctype": "Property Setter",        "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
-    # F-L1 (2026-09-06, Hugh's word): BOM Formula runs on Custom DocPerms (standard 0).
-    # Declaring the FULL destination (all four rows) makes the fixture idempotent and
-    # wipe-proof on every migrate — sync_fixtures upserts by name and never deletes.
-    # 13.12.0 (TASKS-227): the six COA AMB2 rows that mirror COA AMB ship here too, selected BY NAME so a re-export
-    # never drags in the rows a site already has (Quality Inspector / Quality Manager / System Manager) or the
-    # verifier test roles. BOM Formula keeps its all-rows rule.
-    {"doctype": "Custom DocPerm",         "or_filters": [["parent", "=", "BOM Formula"],
-                                                          ["name", "in", _COA_AMB2_DOCPERM_NAMES]]},
-    {"doctype": "Client Script",          "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
-    # Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
-    # Parameter records. These are the Link targets the picker's title-row
-    # injection in phase_1c_tab_v2.js writes into IQI.specification when
-    # users add params from each L1 category. Tight `name in [...]` filter
-    # so re-export only picks up the 7 placeholders, not all 60+ QIP records.
-    {"doctype": "Quality Inspection Parameter",
-     "filters": [["name", "in", ["Organoleptic", "Physicochemical", "Microbiological",
-                                  "Pesticides", "Contaminants", "Other Analysis",
-                                  "Aloe Vera Nutrients"]]]},
-    # Server Script: UNION via or_filters only (empty filters) — Frappe's
-    # get_list semantics are: filters=AND, or_filters=OR, combined=AND-of-both.
-    # So filters + or_filters in same dict means BOTH must match (intersection,
-    # not union). For UNION, put both conditions inside or_filters (one list,
-    # all OR'd). Two separate fixture entries for same doctype also fails — the
-    # second one's export_json call overwrites the first one's JSON file
-    # (frappe/utils/fixtures.py L94 — one filename per (doctype, prefix)).
-    # The `prefix` key would let two entries write separate files but UNION is
-    # cleaner for "any of these conditions" semantics.
-    {
-        "doctype": "Server Script",
-        "or_filters": [
-            ["reference_doctype", "in", _AMB_W_TDS_DOCTYPES],
-            ["name", "in", _AMB_W_TDS_NOREF_SERVER_SCRIPTS],
-        ],
-    },
-    # Task #15 §1 (2026-05-31 Alicia-ratified) — Preservative System data fixture.
-    # Ships 15 active Preservative System records on first export; child rows
-    # (composition: tabPreservative Composition + applicable_substrates:
-    # tabParameter Group Substrate filtered by parenttype=Preservative System)
-    # auto-include via parent.as_dict() child-table embedding. Filter is_active=1
-    # so future inactive records don't accidentally export. L191 fixture hygiene:
-    # strip volatile fields post-export (handled at commit time, not here).
-    {"doctype": "Preservative System",    "filters": [["is_active", "=", 1]]},
-    # V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
-    {"doctype": "Workflow",               "filters": [["document_type", "in", ["COA AMB","COA AMB2","TDS Product Specification",
-        # 13.11.0: the BOM Formula approval workflow (Borrador -> En Revisión -> Autorizado -> Liberado / Rechazado)
-        "BOM Formula"]]]},
-    # 2026-08-06: the "AMB%" filter matched NOTHING — 0 of 11 Workflow Action Masters and
-    # 0 of 49 Workflow States. Both fixtures had therefore always exported as `[]`, while the
-    # Workflow fixture above shipped transitions that REFERENCE those rows. The workflow only
-    # imported successfully on tiers where someone had hand-created the actions; on a fresh
-    # tier the transitions fail link validation. Scope the filters to the names our workflows
-    # actually use, so `bench export-fixtures` captures them instead of erasing them.
-    {"doctype": "Workflow State",         "filters": [["name", "in", [
-        "Draft", "Validated", "Pending Supervisor", "Approved",
-        "Certificate Shared", "Auto Approved", "Saved",
-        # 2026-08-06 pre-flight: the TDS Approval Workflow ships in the SAME
-        # workflow.json and references four states this filter never covered, so
-        # they were still being exported as nothing. Same [] defect, second workflow.
-        "Pending Sales", "Pending Quality", "Pending Director", "Frozen",
-        # 13.11.0: BOM Formula Aprobación
-        "Borrador", "En Revisión", "Autorizado", "Liberado", "Rechazado",
-    ]]]},
-    {"doctype": "Workflow Action Master", "filters": [["name", "in", [
-        "Review", "Submit for Supervisor Approval", "Approve",
-        "Submit for Sales Approval", "Approve (Quality)", "Reopen",
-        # D2 (2026-08-06): the Reject action. The workflow transitions reference it,
-        # so if it is missing from this filter `bench export-fixtures` writes it out of
-        # existence and the transitions fail link validation on a fresh tier — the
-        # exact failure this filter block was rewritten to stop.
-        "Reject",
-        # same pre-flight: the TDS workflow's two actions, previously uncovered.
-        "Approve (Sales)", "Freeze",
-        # 13.11.0: BOM Formula Aprobación
-        "Enviar a revisión", "Autorizar", "Devolver", "Liberar a producción", "Rechazar", "Devolver a Calidad",
-    ]]]},
-    {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
-    {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},
-    # Sprint 1.2 note: the "Formulation" workspace ships as a standard module
-    # workspace file (amb_w_tds/amb_w_tds/workspace/formulation/), NOT a fixture —
-    # remove_orphan_entities() deletes public module-owned Workspaces that lack
-    # a module file on every migrate, so the fixture path cannot survive.
-    {"doctype": "Workspace",              "filters": [["name", "like", "AMB%"]]},
-    {"doctype": "Dashboard Chart",        "filters": [["module", "=", "AMBWTDS"]]},
-    {"doctype": "Number Card",            "filters": [["module", "=", "AMBWTDS"]]},
-    # 13.9.0: the Script Report "Propuestas de Formulación" is NOT a fixture. A standard
-    # Report (needed for its Python) without a module file is deleted by
-    # remove_orphan_entities() at every migrate (measured on scratch: imported by
-    # sync_fixtures, then "Deleting entity Report" in the same migrate). It ships as
-    # amb_w_tds/amb_w_tds/report/propuestas_de_formulación/*.json, like the Workspace above.
-    {"doctype": "Report",                 "filters": [["module", "=", "AMBWTDS"]]},
-    # 13.9.0: the PDF surface of that report (non-standard, so a fixture is right).
-    # Name-filtered: the standard Print Format "Materiales para formulación" ships
-    # as a module file, not here.
-    {"doctype": "Print Format",           "filters": [["name", "in", ["Propuestas de Formulación"]]]},
+	# SP-MIX B1 — Mix-tab child doctypes (custom). Exported first so the Table
+	# custom fields on BOM Formula have their option doctypes present on import.
+	{"doctype": "DocType", "filters": [["name", "in", ["BOM Formula Mix Line", "BOM Formula Mix Result"]]]},
+	# G-1a (2026-09-09) — mixing equipment catalogue. Values are carried in the
+	# fixture explicitly, never inherited from a DocType default (rule z).
+	{"doctype": "Mixing Equipment"},
+	# SR-1 (2026-07-29) — the Sample Request AMB permissions block binds to this role,
+	# so it must exist on a tier before the doctype syncs. Paired with the
+	# [pre_model_sync] patch v17_sr1.create_verifier_read_only_role (belt and braces:
+	# the patch covers migrate, the fixture covers install/fresh-provision).
+	{"doctype": "Role", "filters": [["name", "in", ["Verifier Read Only"]]]},
+	{
+		"doctype": "Custom Field",
+		"or_filters": [
+			["dt", "in", _AMB_W_TDS_DOCTYPES],
+			["name", "in", _AMB_W_TDS_CF_EXCEPTIONS],
+		],
+	},
+	{"doctype": "Property Setter", "filters": [["doc_type", "in", _AMB_W_TDS_DOCTYPES]]},
+	# F-L1 (2026-09-06, Hugh's word): BOM Formula runs on Custom DocPerms (standard 0).
+	# Declaring the FULL destination (all four rows) makes the fixture idempotent and
+	# wipe-proof on every migrate — sync_fixtures upserts by name and never deletes.
+	# 13.12.0 (TASKS-227): the six COA AMB2 rows that mirror COA AMB ship here too, selected BY NAME so a re-export
+	# never drags in the rows a site already has (Quality Inspector / Quality Manager / System Manager) or the
+	# verifier test roles. BOM Formula keeps its all-rows rule.
+	{
+		"doctype": "Custom DocPerm",
+		"or_filters": [["parent", "=", "BOM Formula"], ["name", "in", _COA_AMB2_DOCPERM_NAMES]],
+	},
+	{"doctype": "Client Script", "filters": [["dt", "in", _AMB_W_TDS_DOCTYPES]]},
+	# Task #63 (2026-05-28) — 7 L1 category placeholder Quality Inspection
+	# Parameter records. These are the Link targets the picker's title-row
+	# injection in phase_1c_tab_v2.js writes into IQI.specification when
+	# users add params from each L1 category. Tight `name in [...]` filter
+	# so re-export only picks up the 7 placeholders, not all 60+ QIP records.
+	{
+		"doctype": "Quality Inspection Parameter",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Organoleptic",
+					"Physicochemical",
+					"Microbiological",
+					"Pesticides",
+					"Contaminants",
+					"Other Analysis",
+					"Aloe Vera Nutrients",
+				],
+			]
+		],
+	},
+	# Server Script: UNION via or_filters only (empty filters) — Frappe's
+	# get_list semantics are: filters=AND, or_filters=OR, combined=AND-of-both.
+	# So filters + or_filters in same dict means BOTH must match (intersection,
+	# not union). For UNION, put both conditions inside or_filters (one list,
+	# all OR'd). Two separate fixture entries for same doctype also fails — the
+	# second one's export_json call overwrites the first one's JSON file
+	# (frappe/utils/fixtures.py L94 — one filename per (doctype, prefix)).
+	# The `prefix` key would let two entries write separate files but UNION is
+	# cleaner for "any of these conditions" semantics.
+	{
+		"doctype": "Server Script",
+		"or_filters": [
+			["reference_doctype", "in", _AMB_W_TDS_DOCTYPES],
+			["name", "in", _AMB_W_TDS_NOREF_SERVER_SCRIPTS],
+		],
+	},
+	# Task #15 §1 (2026-05-31 Alicia-ratified) — Preservative System data fixture.
+	# Ships 15 active Preservative System records on first export; child rows
+	# (composition: tabPreservative Composition + applicable_substrates:
+	# tabParameter Group Substrate filtered by parenttype=Preservative System)
+	# auto-include via parent.as_dict() child-table embedding. Filter is_active=1
+	# so future inactive records don't accidentally export. L191 fixture hygiene:
+	# strip volatile fields post-export (handled at commit time, not here).
+	{"doctype": "Preservative System", "filters": [["is_active", "=", 1]]},
+	# V14.3.4: dropped "Custom Clearance" + "Direct Shipping" (orphan DocTypes — not on any AMB substrate).
+	{
+		"doctype": "Workflow",
+		"filters": [
+			[
+				"document_type",
+				"in",
+				[
+					"COA AMB",
+					"COA AMB2",
+					"TDS Product Specification",
+					# 13.11.0: the BOM Formula approval workflow (Borrador -> En Revisión -> Autorizado -> Liberado / Rechazado)
+					"BOM Formula",
+				],
+			]
+		],
+	},
+	# 2026-08-06: the "AMB%" filter matched NOTHING — 0 of 11 Workflow Action Masters and
+	# 0 of 49 Workflow States. Both fixtures had therefore always exported as `[]`, while the
+	# Workflow fixture above shipped transitions that REFERENCE those rows. The workflow only
+	# imported successfully on tiers where someone had hand-created the actions; on a fresh
+	# tier the transitions fail link validation. Scope the filters to the names our workflows
+	# actually use, so `bench export-fixtures` captures them instead of erasing them.
+	{
+		"doctype": "Workflow State",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Draft",
+					"Validated",
+					"Pending Supervisor",
+					"Approved",
+					"Certificate Shared",
+					"Auto Approved",
+					"Saved",
+					# 2026-08-06 pre-flight: the TDS Approval Workflow ships in the SAME
+					# workflow.json and references four states this filter never covered, so
+					# they were still being exported as nothing. Same [] defect, second workflow.
+					"Pending Sales",
+					"Pending Quality",
+					"Pending Director",
+					"Frozen",
+					# 13.11.0: BOM Formula Aprobación
+					"Borrador",
+					"En Revisión",
+					"Autorizado",
+					"Liberado",
+					"Rechazado",
+				],
+			]
+		],
+	},
+	{
+		"doctype": "Workflow Action Master",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Review",
+					"Submit for Supervisor Approval",
+					"Approve",
+					"Submit for Sales Approval",
+					"Approve (Quality)",
+					"Reopen",
+					# D2 (2026-08-06): the Reject action. The workflow transitions reference it,
+					# so if it is missing from this filter `bench export-fixtures` writes it out of
+					# existence and the transitions fail link validation on a fresh tier — the
+					# exact failure this filter block was rewritten to stop.
+					"Reject",
+					# same pre-flight: the TDS workflow's two actions, previously uncovered.
+					"Approve (Sales)",
+					"Freeze",
+					# 13.11.0: BOM Formula Aprobación
+					"Enviar a revisión",
+					"Autorizar",
+					"Devolver",
+					"Liberar a producción",
+					"Rechazar",
+					"Devolver a Calidad",
+				],
+			]
+		],
+	},
+	{"doctype": "Notification", "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
+	{"doctype": "Role", "filters": [["name", "like", "AMB%"]]},
+	# Sprint 1.2 note: the "Formulation" workspace ships as a standard module
+	# workspace file (amb_w_tds/amb_w_tds/workspace/formulation/), NOT a fixture —
+	# remove_orphan_entities() deletes public module-owned Workspaces that lack
+	# a module file on every migrate, so the fixture path cannot survive.
+	{"doctype": "Workspace", "filters": [["name", "like", "AMB%"]]},
+	{"doctype": "Dashboard Chart", "filters": [["module", "=", "AMBWTDS"]]},
+	{"doctype": "Number Card", "filters": [["module", "=", "AMBWTDS"]]},
+	# 13.9.0: the Script Report "Propuestas de Formulación" is NOT a fixture. A standard
+	# Report (needed for its Python) without a module file is deleted by
+	# remove_orphan_entities() at every migrate (measured on scratch: imported by
+	# sync_fixtures, then "Deleting entity Report" in the same migrate). It ships as
+	# amb_w_tds/amb_w_tds/report/propuestas_de_formulación/*.json, like the Workspace above.
+	{"doctype": "Report", "filters": [["module", "=", "AMBWTDS"]]},
+	# 13.9.0: the PDF surface of that report (non-standard, so a fixture is right).
+	# Name-filtered: the standard Print Format "Materiales para formulación" ships
+	# as a module file, not here.
+	{"doctype": "Print Format", "filters": [["name", "in", ["Propuestas de Formulación"]]]},
 ]
 
 # ========================================
@@ -436,9 +590,9 @@ override_whitelisted_methods = {
 # ================================================
 
 override_doctype_dashboards = {
-    "Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
-    "Lead": "amb_w_tds.amb_w_tds.utils.lead_dashboard.get_data",
-    "Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
-    "Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
-    "Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
+	"Quotation": "amb_w_tds.amb_w_tds.utils.quotation_dashboard.get_data",
+	"Lead": "amb_w_tds.amb_w_tds.utils.lead_dashboard.get_data",
+	"Prospect": "amb_w_tds.amb_w_tds.utils.prospect_dashboard.get_data",
+	"Opportunity": "amb_w_tds.amb_w_tds.utils.opportunity_dashboard.get_data",
+	"Sales Order": "amb_w_tds.amb_w_tds.utils.sales_order_dashboard.get_data",
 }
