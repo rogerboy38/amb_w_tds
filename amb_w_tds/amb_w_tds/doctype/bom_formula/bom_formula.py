@@ -1,3 +1,5 @@
+import re
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils import flt
@@ -21,8 +23,56 @@ def _num(v):
         return None
 
 
+# 13.12.7 (TASKS-281): the leading number of a COA cell, as coa_amb2._num / coa_amb._num read it:
+# '2.22' -> 2.22, '23.5%' -> 23.5, '<10 CFU/G' -> 10 (the worst case the cell can mean), 'ND' /
+# 'NEGATIVE' / '<LOQ' / '' -> None (no number). `_num` above stays float()-strict for the places that
+# must not see a number inside a descriptive text (`_descriptive_text`, `_release_from_measured`).
+_LEAD_NUM = re.compile(r'[-+]?\d*\.?\d+')
+
+
+def _lead_num(v):
+    if v is None:
+        return None
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    m = _LEAD_NUM.search(str(v).replace(',', ''))
+    return float(m.group()) if m else None
+
+
 def _qual(result):
     return str(result or "").strip().upper() in _PASS_TOKENS
+
+
+def _is_text(v):
+    return v not in (None, "") and str(v).strip() != ""
+
+
+def _lot_value(row, kind):
+    """What one COA row contributes to the engine for its specification, by the PARAMETER'S kind
+    (never by whether a number happened to parse). 13.12.7, TASKS-281 §1.1-1.2:
+
+      numeric      (i) the leading number in `result`; (ii) else a NON-ZERO leading number in `value`
+                   (`value` is a Data column the form fills with "0" by default, so 0 there is unset,
+                   not a measurement); else NO DATA (None). ND / '<LOQ' / free text carry no number ->
+                   NO DATA, never 0. '<10' -> 10.
+      qualitative  the Pass-token test on `result` -> True / False (a non-token text such as ND is
+                   NOT a pass and keeps today's per-lot rejection); an EMPTY result -> NO DATA.
+      descriptive  nothing for the engine (the words travel in `_raw_by_lot`).
+      None         a specification the TDS does not define: number if any, else token, else NO DATA.
+    """
+    result, value = row.get("result"), row.get("value")
+    if kind == "descriptive":
+        return None
+    if kind == "qualitative":
+        return _qual(result) if _is_text(result) else None
+    n = _lead_num(result)
+    if n is None:
+        v = _lead_num(value)
+        if v is not None and v != 0:
+            n = v
+    if n is not None or kind == "numeric":
+        return n
+    return _qual(result) if _is_text(result) else None
 
 
 def _fmt(v):
@@ -192,8 +242,9 @@ class BOMFormula(Document):
     # ---- read-only preview: predict -> (lab measures) -> confirm ----
     @frappe.whitelist()
     def simulate_blend(self):
-        lots, lines_total, lines_with_coa = self._build_lots()
+        # 13.12.7: the parameters first -- their kind decides how each COA row is read.
         params = self._build_parameters()
+        lots, lines_total, lines_with_coa = self._build_lots(params)
 
         # A COA-less formula is the normal prod state, not an error: say so and
         # predict nothing. Never a vacuous PASS on an empty list.
@@ -229,6 +280,7 @@ class BOMFormula(Document):
         results = engine.blend(lots, params)
         uom = {p.name: p.uom for p in params}
         unresolved = []
+        no_data = {}   # 13.12.7: {parameter: lots without a number, their mass, and the lots used}
 
         pmap = {p.name: p for p in params}
         self.set("predicted_analytics", [])
@@ -272,9 +324,12 @@ class BOMFormula(Document):
             is_numeric = bool(pmap.get(name) and pmap[name].numeric) and not is_allpass
 
             if is_numeric:
-                # class 1 — a real number the lab will confirm
+                # class 1 — a real number the lab will confirm. 13.12.7 (TASKS-281): with no
+                # number in any lot the row says NO DATA (predicted_value stays the column's 0
+                # and is never read -- status "" is neither Pass nor Fail); with a number in
+                # SOME lots the estimate is their average and the note names the lots left out.
                 row["predicted_value"] = numeric_value
-                row["computed_value"] = _fmt(br.computed_value)
+                row["computed_value"] = _fmt(br.computed_value) if br.computed_value is not None else "NO DATA"
                 row["is_estimate"] = 1
                 row["requires_lab_measurement"] = 1 if br.requires_lab_measurement else 0
             elif is_allpass:
@@ -289,6 +344,9 @@ class BOMFormula(Document):
                 # descriptive. Never a number, and never empty.
                 row["computed_value"] = self._descriptive_text(lots, name)
 
+            if br.lots_no_data:   # every class: a lot left out for want of data is named, with its mass
+                no_data[name] = {"lots": list(br.lots_no_data), "mass_kg": br.mass_no_data_kg,
+                                 "lots_used": list(br.lots_used), "mass_used_kg": br.mass_used_kg}
             if qp is None:
                 row["computed_value"] = f"UNRESOLVED: {name}"
             self.append("predicted_analytics", row)
@@ -314,6 +372,8 @@ class BOMFormula(Document):
             "total_input_kg": self.total_input_kg, "predicted_cost": self.total_amount,
             "requires_lab": sum(1 for b in results.values() if b.requires_lab_measurement),
             "out_of_spec_estimate": sum(1 for b in results.values() if b.in_spec_estimate is False),
+            "no_data_estimate": sum(1 for b in results.values() if b.computed_value is None),
+            "no_data": no_data,
             "skipped_no_coa": list(getattr(self, "_skipped_no_coa", [])),
             "warning": warning,
         }
@@ -427,8 +487,30 @@ class BOMFormula(Document):
         return None, None, "none", (f"sublot {batch} -> root {root}, "
                                     f"no submitted COA linked or matching golden {golden}")
 
-    def _build_lots(self):
-        """Native mix_input_lines: kg · resolved COA · batch_amb_sublot|cunete_ref."""
+    @staticmethod
+    def _parameter_kinds(params):
+        """{specification: 'numeric' | 'qualitative' | 'descriptive'} from the engine's own
+        Parameter rows (blend_method / numeric), as simulate_blend classes them."""
+        kinds = {}
+        for p in params or []:
+            if p.blend_method == engine.BlendMethod.ALL_PASS:
+                kinds[p.name] = "qualitative"
+            elif p.numeric:
+                kinds[p.name] = "numeric"
+            else:
+                kinds[p.name] = "descriptive"
+        return kinds
+
+    def _build_lots(self, params=None):
+        """Native mix_input_lines: kg · resolved COA · batch_amb_sublot|cunete_ref.
+
+        13.12.7 (TASKS-281): each COA row is read by the KIND of its parameter (`params`, the
+        TDS rows simulate_blend builds first): a numeric parameter gets the measured number
+        (`result` first), a qualitative one the Pass-token bool, a descriptive one nothing; a
+        row with no usable value is left out of `values` -- NO DATA, never 0 (see `_lot_value`).
+        Without `params` (direct callers) a row is typed by its content: number, else token.
+        """
+        kinds = self._parameter_kinds(params)
         lots = []
         lines = self.get("mix_input_lines") or []
         with_coa = 0
@@ -454,8 +536,9 @@ class BOMFormula(Document):
                                     fields=["specification", "value", "result"]):
                 if not p.specification:
                     continue
-                v = _num(p.value)
-                vals[p.specification] = v if v is not None else _qual(p.result)
+                v = _lot_value(p, kinds.get(p.specification))
+                if v is not None:
+                    vals[p.specification] = v
                 # The engine needs a number or a bool; a DESCRIPTIVE row needs the
                 # words. Booleanising loses them, so keep the raw text alongside.
                 raw[p.specification] = p.result if p.result not in (None, "") else p.value

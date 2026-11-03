@@ -364,7 +364,7 @@ class TestGateWarning(unittest.TestCase):
 		from amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula import BOMFormula
 		d = self.formula(self.LINES)
 
-		def fake_build(self_):
+		def fake_build(self_, params=None):   # 13.12.7: _build_lots takes the parameters
 			self_._skipped_no_coa = list(skipped)
 			self_._resolutions = []
 			return ["lot"], 3, 2

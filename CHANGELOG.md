@@ -1,5 +1,16 @@
 # Changelog
 
+## 13.12.7 — 2026-11
+
+**Code only — no fixture, no patch, no schema change.** `bench --site <site> clear-cache` and a restart of the web/worker processes; no `migrate`.
+
+### BOM Formula: the blend uses the measured number; no number is not 0 (TASKS-281)
+- **Why.** `_build_lots` read a COA row as `float(value)` first and fell back to the Pass-token test of `result`: on the sandbox not one of 514 COA AMB rows delivered a number that way (every `value` string fails `float()`), 466 became `False` and averaged as **0**, and a measured `2.22` never reached a blend (REPLY-TASKS-280 A3). Hugh's two rulings (2026-11-03): (1) a lot whose OWN number is over its limit still enters a blend — only the blend is judged; (2) a lot with no usable number is **NO DATA**, never 0.
+- **`bom_formula.py`** — `_lead_num` (the leading number, as `coa_amb2._num` reads it: `'<10 CFU/G'` → 10, `'23.5%'` → 23.5, `ND`/`<LOQ`/text → none); `_lot_value(row, kind)`: by the parameter's kind from the engine's own `Parameter` (`_parameter_kinds`: all_pass → qualitative, `numeric` → numeric, else descriptive) — numeric: `result`'s number, else a **non-zero** number in `value` (`value` is a Data column the form fills with "0"; 0 there is unset), else NO DATA; qualitative: the Pass-token test of `result` (ND / free text is not a pass — today's per-lot rejection stays), an empty result is NO DATA; descriptive: nothing (the words stay in `_raw_by_lot`). `_build_lots(params=None)` takes the parameters; `simulate_blend` builds them first and passes them (direct callers without params get content-typed rows as before). Class-1 rows with no number anywhere read **NO DATA** (status "", neither Pass nor Fail; `predicted_value` stays the column's 0 and is never read); the row note names the lots left out and their mass; the return carries `no_data` ({parameter: lots, mass_kg, lots_used, mass_used_kg}) and `no_data_estimate`.
+- **`formulation/engine.py`** — `Lot.values` may hold `None`/absent = NO DATA; `_mass_avg`, `_ph_hplus`, `_worst_case` read only the lots with a real number (`_is_number`: never a bool), `_all_pass` only the lots with a bool; `_within_spec(None, …)` → None; `BlendResult` gains `lots_used`, `lots_no_data`, `mass_used_kg`, `mass_no_data_kg`, and its note names the lots without data. The arithmetic for lots that have data is unchanged (the LORAND F-2886-26 lock and the self-test values hold).
+- **Not changed:** the qualitative per-lot rule, `_per_lot_pass` / `_all_pass_state` / `_descriptive_text`, `_num` (float-strict, still used by `_descriptive_text` and `_release_from_measured`), the form, the solver, the Raven reader, `coa_amb2.py` scoring, ND semantics (TASKS-282), the COA AMB2 workflow. `propuestas._coa_values` (the report's per-lot cell) still reads `value` before `result` — reported, not touched.
+- Tests: `tests/test_13_12_7.py` (Hugh's 1.7/2.22 → 1.96 example against NMT 3 and NMT 2, 70/30 masses, over-limit blend, NO DATA naming, pH/worst-case with a lot without data, qualitative unchanged, the reader's precedence table, the preview's return shape).
+
 ## 13.12.6 — 2026-11
 
 **Fixture only — no code, no patch, no schema change.** Needs `bench migrate` (fixture sync re-imports the Workflow record); `clear-cache` as before (the Workflow is cached with the DocType meta).
