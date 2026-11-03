@@ -98,14 +98,15 @@ AMB2_TRANSITIONS = [  # prod's rows (state, action, next state, allowed role, co
 	("Draft", "Review", "Validated", "Quality User", None, 1),
 	("Validated", "Submit for Supervisor Approval", "Pending Supervisor", "Quality Manager", None, 1),
 	("Pending Supervisor", "Approve", "Approved", "Quality Manager", None, 0),
-	("Approved", "Submit for Sales Approval", "Certificate Shared", "Quality User", None, 1),
+	# 13.12.6 (TASKS-280c): ("Approved", "Submit for Sales Approval", "Certificate Shared", ...) — both rows — are gone;
+	# Quality's Approve is the last transition and Approved (docstatus 0) is the final state.
 	("Validated", "Approve (Quality)", "Pending Supervisor", "Quality User", None, 1),
 	("Auto Approved", "Reopen", "Draft", "Quality User", None, 1),
 	("Pending Supervisor", "Reject", "Draft", "Quality Manager", None, 1),
 	("Approved", "Reject", "Draft", "Quality Manager", None, 1),
 ]
 STATES = [("Draft", "0", "All"), ("Validated", "0", "Quality User"), ("Pending Supervisor", "0", "Quality User"),
-	("Approved", "0", "Quality Manager"), ("Certificate Shared", "1", "Quality User"), ("Auto Approved", "0", "Quality User"),
+	("Approved", "0", "Quality Manager"), ("Auto Approved", "0", "Quality User"),
 	("Saved", "0", "All")]
 
 
@@ -120,35 +121,35 @@ def _rows(w):
 
 
 class TestWorkflowFixture(unittest.TestCase):
-	def test_quality_manager_may_press_submit_for_sales_approval_and_quality_user_still_may(self):
+	def test_nobody_may_press_submit_for_sales_approval_any_more(self):
+		# 13.12.6 (TASKS-280c): the Cut-1 amendment B rows (Quality User + Quality Manager) are both gone
 		rows = _rows(_workflows()["submit_and_start_workflow"])
-		submit = [r for r in rows if r[:3] == ("Approved", "Submit for Sales Approval", "Certificate Shared")]
-		self.assertEqual(sorted(r[3] for r in submit), ["Quality Manager", "Quality User"])
-		self.assertEqual({r[4:] for r in submit}, {(None, 1)})
+		self.assertEqual([r for r in rows if r[1] == "Submit for Sales Approval"], [])
+		self.assertEqual([r for r in rows if "Certificate Shared" in (r[0], r[2])], [])
 
-	def test_the_other_seven_transitions_are_prods_rows_unchanged_and_in_order(self):
+	def test_the_seven_remaining_transitions_are_prods_rows_unchanged_and_in_order(self):
 		rows = _rows(_workflows()["submit_and_start_workflow"])
-		self.assertEqual(rows[:8], AMB2_TRANSITIONS)
-		# 13.12.4.1 (TASKS-270a): row 10 is the Cancel transition Hugh saved in Desk on 2026-11-02
-		self.assertEqual(len(rows), 10)
-		self.assertEqual(rows[9][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
+		self.assertEqual(rows, AMB2_TRANSITIONS)
+		# 13.12.6 (TASKS-280c): the 13.12.4.1 Cancel row (Certificate Shared -> Cancelled) went with its state
 
 	def test_states_and_the_workflow_flags_are_unchanged(self):
 		w = _workflows()["submit_and_start_workflow"]
-		# 13.12.4.1 (TASKS-270a): the Cancelled state is appended last; the seven Cut-1 states are untouched
-		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES + [("Cancelled", "2", "Quality Manager")])
+		# 13.12.6 (TASKS-280c): six states, all docstatus 0 — Certificate Shared (1) and Cancelled (2) are gone
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES)
 		self.assertEqual((w["document_type"], w["is_active"], w["workflow_state_field"], w["override_status"], w["send_email_alert"]),
 			("COA AMB2", 1, "workflow_state", 0, 0))
 
 	def test_the_coa_amb_twin_workflow_is_untouched(self):
 		w = _workflows()["submit_and_start_workflow_1"]
 		self.assertEqual(w["document_type"], "COA AMB")
-		# 13.12.4.1 (TASKS-270a): the twin gained the same Cancelled state and Cancel transition, nothing else
+		# 13.12.4.1 (TASKS-270a): the twin gained the same Cancelled state and Cancel transition, nothing else.
+		# 13.12.6 (TASKS-280c): the twin KEEPS its Sales step — only COA AMB2's workflow ends at Approved.
 		rows = _rows(w)
-		self.assertEqual(rows[:8], AMB2_TRANSITIONS)
+		self.assertEqual(rows[:8], AMB2_TRANSITIONS[:3] + [("Approved", "Submit for Sales Approval", "Certificate Shared", "Quality User", None, 1)] + AMB2_TRANSITIONS[3:])
 		self.assertEqual(len(rows), 9)
 		self.assertEqual(rows[8][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
-		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], STATES + [("Cancelled", "2", "Quality Manager")])
+		twin_states = STATES[:4] + [("Certificate Shared", "1", "Quality User")] + STATES[4:] + [("Cancelled", "2", "Quality Manager")]
+		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], twin_states)
 
 
 class TestErrorLogFixes(unittest.TestCase):
