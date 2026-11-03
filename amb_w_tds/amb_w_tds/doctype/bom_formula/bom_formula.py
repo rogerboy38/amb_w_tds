@@ -51,10 +51,11 @@ def _lot_value(row, kind):
     """What one COA row contributes to the engine for its specification, by the PARAMETER'S kind
     (never by whether a number happened to parse). 13.12.7, TASKS-281 §1.1-1.2:
 
-      numeric      (i) the leading number in `result`; (ii) else a NON-ZERO leading number in `value`
-                   (`value` is a Data column the form fills with "0" by default, so 0 there is unset,
-                   not a measurement); else NO DATA (None). ND / '<LOQ' / free text carry no number ->
-                   NO DATA, never 0. '<10' -> 10.
+      numeric      (i) the leading number in `result`; (ii) else `value` when it is a PURE non-zero
+                   number (float() strict: on COA AMB rows `value` carries the acceptance text --
+                   'NMT 1 PPM', '3.5 - 5.0', 'Specification' -- whose digits are a LIMIT, never a
+                   measurement; and the form fills "0" by default, so 0 there is unset); else NO DATA
+                   (None). ND / '<LOQ' / free text carry no number -> NO DATA, never 0. '<10' -> 10.
       qualitative  the Pass-token test on `result` -> True / False (a non-token text such as ND is
                    NOT a pass and keeps today's per-lot rejection); an EMPTY result -> NO DATA.
       descriptive  nothing for the engine (the words travel in `_raw_by_lot`).
@@ -67,7 +68,7 @@ def _lot_value(row, kind):
         return _qual(result) if _is_text(result) else None
     n = _lead_num(result)
     if n is None:
-        v = _lead_num(value)
+        v = _num(value)          # strict: a pure number only, never the digits of an acceptance text
         if v is not None and v != 0:
             n = v
     if n is not None or kind == "numeric":

@@ -211,6 +211,9 @@ class TestReaderResultFirst(unittest.TestCase):
             (("numeric", "2.22", "0"), 2.22), (("numeric", "", "0"), None), (("numeric", None, None), None),
             (("numeric", "ND", "0"), None), (("numeric", "<10", ""), 10.0), (("numeric", "<LOQ", ""), None),
             (("numeric", None, "1.5"), 1.5), (("numeric", "NEGATIVE", "3"), 3.0), (("numeric", 2, None), 2.0),
+            # `value` on COA AMB rows is the ACCEPTANCE text: its digits are a limit, never a measurement
+            (("numeric", "", "NMT 1 PPM"), None), (("numeric", None, "3.5 - 5.0"), None), (("numeric", "", "NMT 35%"), None),
+            (("numeric", "", "Specification"), None), (("numeric", "ND", "NMT 1 PPM"), None), (("numeric", "2.22", "NMT 3 PPM"), 2.22),
             (("qualitative", "NEGATIVE", "0"), True), (("qualitative", "ND", "0"), False), (("qualitative", "", "0"), None),
             (("qualitative", "<10", ""), False), (("descriptive", "FINE POWDER", "0"), None),
             ((None, "2.22", "0"), 2.22), ((None, "NEGATIVE", "0"), True), ((None, "", "0"), None), ((None, "ND", ""), False),
