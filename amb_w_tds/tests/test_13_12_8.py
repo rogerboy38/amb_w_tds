@@ -152,11 +152,14 @@ class TestGuardAndTwinUntouched(unittest.TestCase):
         self.assertNotIn("_NA_TOKENS", src)
         self.assertNotIn("_is_na", src)
 
-    def test_version(self):
+    def test_version_is_13_12_8_or_later(self):
+        # TASKS-283: 13.12.9 (the blend reader + missing_data_policy) merged after this; the pin is a floor
+        import re
         with open(os.path.join(PKG, "__init__.py"), encoding="utf8") as f:
-            self.assertIn('__version__ = "13.12.8"', f.read())
+            ver = re.search(r'__version__ = "([^"]+)"', f.read()).group(1)
         with open(os.path.join(os.path.dirname(PKG), "version.txt"), encoding="utf8") as f:
-            self.assertEqual(f.read().strip(), "13.12.8")
+            self.assertEqual(f.read().strip(), ver)
+        self.assertGreaterEqual(tuple(int(x) for x in ver.split(".")), (13, 12, 8))
 
 
 if __name__ == "__main__":

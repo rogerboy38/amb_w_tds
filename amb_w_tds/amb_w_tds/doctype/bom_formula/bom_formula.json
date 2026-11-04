@@ -64,6 +64,14 @@
       "options": "TDS Product Specification"
     },
     {
+      "fieldname": "missing_data_policy",
+      "fieldtype": "Select",
+      "label": "Missing Data Policy",
+      "options": "No data\nTDS upper limit",
+      "default": "No data",
+      "description": "What the blend does with a lot that has no usable number for a parameter: \"No data\" leaves the lot out of that parameter's estimate and names it; \"TDS upper limit\" assumes the lot at the limit on its own COA row (max for NMT, min for NLT) and labels the result as assumed. TASKS-282."
+    },
+    {
       "fieldname": "kg_to_obtain",
       "fieldtype": "Float",
       "label": "Total Producto a Obtener (Kg)"

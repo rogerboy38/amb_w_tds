@@ -114,11 +114,14 @@ class TestNoCodeRodeAlong(unittest.TestCase):
 		self.assertIn("is above maximum value", src)
 		self.assertIn("if self.docstatus == 0 and not self._is_submit_flow():", src)
 
-	def test_bom_formula_reader_still_parses_value_first(self):
-		# task (c) — not in this release: `_build_lots` still reads `value` before `result`
+	def test_bom_formula_reader_changed_only_in_13_12_7(self):
+		# task (c) landed as 13.12.7 (TASKS-281): `_build_lots` now reads the measured number, `result` first,
+		# through `_lot_value`; the 13.12.6 fixture change itself carried no code (see test_13_12_7).
 		with open(os.path.join(PKG, "amb_w_tds", "doctype", "bom_formula", "bom_formula.py"), encoding="utf8") as f:
 			src = f.read()
-		self.assertRegex(src, re.compile(r"v = _num\(p\.value\)"))
+		self.assertNotRegex(src, re.compile(r"v = _num\(p\.value\)"))
+		self.assertRegex(src, re.compile(r"n = _lead_num\(result\)"))
+		self.assertRegex(src, re.compile(r"_lot_value\(p, kinds\.get\(p\.specification\)\)"))
 
 	def test_version_is_13_12_6_or_later(self):
 		def tup(s):

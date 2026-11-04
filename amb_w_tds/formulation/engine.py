@@ -108,25 +108,77 @@ class Parameter:
 class Lot:
     lot_id: str
     mass_kg: float
-    values: Dict[str, Union[float, bool]] = field(default_factory=dict)  # numeric->float; qualitative->PASS(True)/FAIL(False)
+    # numeric -> float; qualitative -> PASS(True)/FAIL(False); NO DATA -> key absent or None.
+    # 13.12.7 (TASKS-281, ruling 2): a number that is missing is never 0. A numeric rule reads
+    # only the lots that carry a real number for the parameter and reports the others by name;
+    # a qualitative rule reads only the lots that carry a bool. A bool never enters an average.
+    values: dict[str, float | bool | None] = field(default_factory=dict)
+    # 13.12.7 (TASKS-282 Part B): the limit copied onto this lot's own COA row, per specification,
+    # as (min, max) with 0 / absent meaning "no bound" -- what `assume_at_limit` reads.
+    limits: dict[str, tuple] = field(default_factory=dict)
+
+
+# ---- missing-data policy (TASKS-282 Part B, Hugh's ruling 2026-11-03) ---------------------------
+MISSING_NO_DATA = "No data"             # default: a lot without a number is left out and named (281)
+MISSING_TDS_LIMIT = "TDS upper limit"   # a lot without a number is ASSUMED at the limit on its own COA row
+
+
+def assume_at_limit(lots: list[Lot], parameters: list[Parameter]) -> dict[str, dict]:
+    """Policy "TDS upper limit": for every NUMERIC parameter and every lot with no usable number,
+    put the limit copied onto that lot's own COA row into `lot.values` -- the max for a parameter
+    the TDS caps (NMT), the min for one it floors (NLT) -- so the blend is conservative, and say
+    so: returns {parameter: {"value": limit, "lots": [...], "mass_kg": ...}} (one entry per
+    assumed value; several when the lots carry different limits). Left as NO DATA, never guessed:
+    a row without the needed bound, a two-sided TDS range (the engine does not know which side
+    is worse), and every qualitative (all_pass) parameter. Mutates `lots`; returns the assumptions."""
+    out: dict[str, dict] = {}
+    for p in parameters:
+        if p.blend_method == BlendMethod.ALL_PASS or not p.numeric:
+            continue
+        has_max = p.max_value not in (None, 0)
+        has_min = p.min_value not in (None, 0)
+        if has_max == has_min:          # two-sided range, or no bound at all: direction unknown
+            continue
+        side = 1 if has_max else 0
+        for lot in lots:
+            if _is_number(lot.values.get(p.name)):
+                continue
+            lim = (lot.limits.get(p.name) or (None, None))
+            bound = lim[side] if len(lim) > side else None
+            if bound in (None, 0) or not _is_number(bound):
+                continue
+            lot.values[p.name] = float(bound)
+            entry = out.setdefault(p.name, {"value": float(bound), "lots": [], "mass_kg": 0.0, "bound": "max" if side else "min"})
+            if entry["value"] != float(bound):
+                # a second lot with a different limit: keep one entry per value, keyed by parameter + value
+                entry = out.setdefault(f"{p.name}@{float(bound):g}", {"value": float(bound), "lots": [], "mass_kg": 0.0, "bound": "max" if side else "min"})
+            entry["lots"].append(lot.lot_id)
+            entry["mass_kg"] += lot.mass_kg
+    return out
 
 
 @dataclass
 class BlendResult:
     parameter: str
     blend_method: str
-    computed_value: Union[float, bool, None]   # the ESTIMATE (float, or bool for all_pass)
+    computed_value: float | bool | None   # the ESTIMATE (float, or bool for all_pass; None = NO DATA)
     is_estimate: bool
     requires_lab_measurement: bool             # THE DOOR: lab must confirm before release
-    in_spec_estimate: Optional[bool]           # estimate vs TDS min/max (None if n/a)
+    in_spec_estimate: bool | None           # estimate vs TDS min/max (None if n/a or NO DATA)
     critical: bool
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    measured_value: Union[float, bool, None] = None   # lab fills this on the ACTUAL blend
+    min_value: float | None = None
+    max_value: float | None = None
+    measured_value: float | bool | None = None   # lab fills this on the ACTUAL blend
     confirmed: bool = False
     note: str = ""
+    # 13.12.7: which lots the estimate is made of, and which were left out for want of data.
+    # Nothing is dropped silently: a lot without a usable value is NAMED, with its mass.
+    lots_used: list[str] = field(default_factory=list)
+    lots_no_data: list[str] = field(default_factory=list)
+    mass_used_kg: float = 0.0
+    mass_no_data_kg: float = 0.0
 
-    def release_ok(self) -> Optional[bool]:
+    def release_ok(self) -> bool | None:
         """Release gates on the MEASURED value, never the estimate.
         Returns None while awaiting lab confirmation."""
         if not self.confirmed or self.measured_value is None:
@@ -134,7 +186,17 @@ class BlendResult:
         return _within_spec(self.measured_value, self.min_value, self.max_value, self.blend_method)
 
 
-def _within_spec(value, mn, mx, method) -> bool:
+def _is_number(v) -> bool:
+    """A real number: int/float, never a bool (True would otherwise average as 1)."""
+    return isinstance(v, int | float) and not isinstance(v, bool)
+
+
+def _within_spec(value, mn, mx, method) -> bool | None:
+    """The blend value against the specification. None in -> None out (NO DATA is neither
+    Pass nor Fail). This is the ONLY place a number is judged: a single lot's own number is
+    never compared with the limit (ruling 1, TASKS-281) -- the blend decides."""
+    if value is None:
+        return None
     if method == BlendMethod.ALL_PASS.value:
         return bool(value)
     if mn is not None and value < mn:
@@ -144,56 +206,88 @@ def _within_spec(value, mn, mx, method) -> bool:
     return True
 
 
+def _numeric_lots(lots, p):
+    """The lots that carry a real NUMBER for p. Absent, None, bool or text is NO DATA."""
+    return [l for l in lots if _is_number(l.values.get(p.name))]
+
+
+def _bool_lots(lots, p):
+    """The lots that carry a PASS/FAIL for p (qualitative rules only)."""
+    return [l for l in lots if isinstance(l.values.get(p.name), bool)]
+
+
 def _mass_avg(lots, p):
-    tot = sum(l.mass_kg for l in lots if p.name in l.values)
+    use = _numeric_lots(lots, p)
+    tot = sum(l.mass_kg for l in use)
     if tot == 0:
         return None
-    return sum(l.mass_kg * l.values[p.name] for l in lots if p.name in l.values) / tot
+    return sum(l.mass_kg * l.values[p.name] for l in use) / tot
 
 
 def _ph_hplus(lots, p):
     """Correct pH blend estimate: average [H+] by mass, then reconvert. NEVER linear."""
-    tot = sum(l.mass_kg for l in lots if p.name in l.values)
+    use = _numeric_lots(lots, p)
+    tot = sum(l.mass_kg for l in use)
     if tot == 0:
         return None
-    h = sum(l.mass_kg * (10 ** (-l.values[p.name])) for l in lots if p.name in l.values) / tot
+    h = sum(l.mass_kg * (10 ** (-l.values[p.name])) for l in use) / tot
     return -log10(h)
 
 
 def _worst_case(lots, p):
-    vals = [l.values[p.name] for l in lots if p.name in l.values]
+    vals = [l.values[p.name] for l in _numeric_lots(lots, p)]
     return max(vals) if vals else None
 
 
 def _all_pass(lots, p):
-    vals = [bool(l.values[p.name]) for l in lots if p.name in l.values]
-    return all(vals) if vals else None
+    """Every lot must carry a PASS. A lot without a verdict (no row, blank) is NO DATA for the
+    whole parameter (None) -- never a vacuous PASS over the lots that happen to have one; this
+    is the rule simulate_blend's class 3 (`_all_pass_state`) has always stated. A FAIL anywhere
+    fails the blend: the per-lot rejection of a qualitative parameter is unchanged."""
+    use = _bool_lots(lots, p)
+    if not use or len(use) != len(lots):
+        return None
+    return all(l.values[p.name] for l in use)
 
 
 def blend(lots: List[Lot], parameters: List[Parameter]) -> Dict[str, BlendResult]:
     """Compute the predicted blend per parameter, applying the correct rule per class,
-    and wire 'the door' (requires_lab_measurement for critical attrs / pH / micro)."""
+    and wire 'the door' (requires_lab_measurement for critical attrs / pH / micro).
+
+    13.12.7 (TASKS-281): a numeric rule averages the lots that have a number and names the
+    rest (`lots_no_data`, `mass_no_data_kg`); with no number anywhere the estimate is None
+    and `in_spec_estimate` is None -- NO DATA, neither Pass nor Fail. A lot whose own number
+    is over the limit still enters the average; only the blend is judged."""
     out: Dict[str, BlendResult] = {}
     for p in parameters:
         if p.blend_method == BlendMethod.MASS_AVG:
             cv, est, door, note = _mass_avg(lots, p), True, p.critical, "mass-weighted average of per-gram values"
+            used = _numeric_lots(lots, p)
         elif p.blend_method == BlendMethod.PH_HPLUS:
             cv, est, door, note = _ph_hplus(lots, p), True, True, "pH via [H+] mass-average — ESTIMATE; lab must measure the blend (buffered)"
+            used = _numeric_lots(lots, p)
         elif p.blend_method == BlendMethod.WORST_CASE:
             cv, est, door, note = _worst_case(lots, p), True, True, "worst-case (max) screen — RE-TEST the homogenized blend"
+            used = _numeric_lots(lots, p)
         elif p.blend_method == BlendMethod.ALL_PASS:
             cv, est, door, note = _all_pass(lots, p), False, True, "every input lot must pass — composite/blend confirmation"
+            used = _bool_lots(lots, p)
         else:
             raise ValueError(f"unknown blend_method {p.blend_method}")
 
-        in_spec = None
-        if cv is not None:
-            in_spec = _within_spec(cv, p.min_value, p.max_value, p.blend_method.value)
+        used_ids = [l.lot_id for l in used]
+        no_data = [l for l in lots if l not in used]
+        if no_data:
+            note += (f" — NO DATA on {len(no_data)} of {len(lots)} lots ("
+                     + ", ".join(l.lot_id for l in no_data)
+                     + f"; {sum(l.mass_kg for l in no_data):g} kg not in this estimate)")
         out[p.name] = BlendResult(
             parameter=p.name, blend_method=p.blend_method.value, computed_value=cv,
             is_estimate=est, requires_lab_measurement=door or p.critical,
-            in_spec_estimate=in_spec, critical=p.critical,
-            min_value=p.min_value, max_value=p.max_value, note=note,
+            in_spec_estimate=_within_spec(cv, p.min_value, p.max_value, p.blend_method.value),
+            critical=p.critical, min_value=p.min_value, max_value=p.max_value, note=note,
+            lots_used=used_ids, lots_no_data=[l.lot_id for l in no_data],
+            mass_used_kg=sum(l.mass_kg for l in used), mass_no_data_kg=sum(l.mass_kg for l in no_data),
         )
     return out
 
