@@ -77,6 +77,29 @@ def _lot_value(row, kind):
     return _qual(result) if _is_text(result) else None
 
 
+def _row_key(row, kinds, qip_cache):
+    """The parameter a COA Quality Test Parameter row belongs to. 13.12.11, TASKS-289.
+
+    `parameter_name` (a Link to Quality Inspection Parameter) wins whenever it is set: on real
+    COA AMB2 rows `specification` holds the acceptance text and may even equal ANOTHER parameter's
+    name (e.g. 'NONE'), so it must never override it. Only when `parameter_name` is blank is
+    `specification` taken -- and only if it names a parameter (one the TDS defines, or a Quality
+    Inspection Parameter); acceptance text is never a name, so that row stays unkeyed (NO DATA,
+    never guessed).
+    """
+    name = (row.get("parameter_name") or "").strip()
+    if name:
+        return name
+    spec = (row.get("specification") or "").strip()
+    if not spec:
+        return None
+    if spec in kinds:
+        return spec
+    if spec not in qip_cache:
+        qip_cache[spec] = bool(frappe.db.exists("Quality Inspection Parameter", spec))
+    return spec if qip_cache[spec] else None
+
+
 def _fmt(v):
     if isinstance(v, bool):
         return "PASS" if v else "FAIL"
@@ -522,8 +545,12 @@ class BOMFormula(Document):
         (`result` first), a qualitative one the Pass-token bool, a descriptive one nothing; a
         row with no usable value is left out of `values` -- NO DATA, never 0 (see `_lot_value`).
         Without `params` (direct callers) a row is typed by its content: number, else token.
+
+        13.12.11 (TASKS-289): a COA row is filed under `parameter_name` (see `_row_key`), not under
+        `specification`, which on real COA rows holds the ACCEPTANCE text ('NMT 40%', '3.5 - 5.0').
         """
         kinds = self._parameter_kinds(params)
+        qip_cache = {}
         lots = []
         lines = self.get("mix_input_lines") or []
         with_coa = 0
@@ -547,18 +574,20 @@ class BOMFormula(Document):
             limits = {}   # TASKS-282 Part B: the bounds copied onto this COA's rows, for the "TDS upper limit" policy
             for p in frappe.get_all("COA Quality Test Parameter",
                                     filters={"parent": coa_name, "parenttype": dt},
-                                    fields=["specification", "value", "result", "min_value", "max_value"]):
-                if not p.specification:
+                                    fields=["parameter_name", "specification", "value", "result",
+                                            "min_value", "max_value"]):
+                key = _row_key(p, kinds, qip_cache)
+                if not key:
                     continue
-                v = _lot_value(p, kinds.get(p.specification))
+                v = _lot_value(p, kinds.get(key))
                 if v is not None:
-                    vals[p.specification] = v
+                    vals[key] = v
                 lo, hi = _num(p.get("min_value")), _num(p.get("max_value"))
                 if lo or hi:
-                    limits[p.specification] = (lo or None, hi or None)
+                    limits[key] = (lo or None, hi or None)
                 # The engine needs a number or a bool; a DESCRIPTIVE row needs the
                 # words. Booleanising loses them, so keep the raw text alongside.
-                raw[p.specification] = p.result if p.result not in (None, "") else p.value
+                raw[key] = p.result if p.result not in (None, "") else p.value
             raw_by_lot.append(raw)
             lots.append(engine.Lot(
                 lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or coa_name,

@@ -121,7 +121,8 @@ class TestNoCodeRodeAlong(unittest.TestCase):
 			src = f.read()
 		self.assertNotRegex(src, re.compile(r"v = _num\(p\.value\)"))
 		self.assertRegex(src, re.compile(r"n = _lead_num\(result\)"))
-		self.assertRegex(src, re.compile(r"_lot_value\(p, kinds\.get\(p\.specification\)\)"))
+		# 13.12.11 (TASKS-289): the row is typed by its parameter key (`_row_key`: parameter_name, else specification)
+		self.assertRegex(src, re.compile(r"_lot_value\(p, kinds\.get\(key\)\)"))
 
 	def test_version_is_13_12_6_or_later(self):
 		def tup(s):

@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.12.11 — 2026-11
+
+**Code only — `amb_w_tds/doctype/bom_formula/bom_formula.py` (`_build_lots` + a new helper `_row_key`).** No DocType JSON, fixture or patch changes, so **no `bench migrate`**: backend restart (web and workers) + `bench --site <site> clear-cache`.
+
+### The BOM Formula blend reads real COA rows (TASKS-289)
+- `_build_lots` filed every COA row under `specification` and typed it by `kinds.get(specification)`. On real COA AMB2 documents `specification` holds the **acceptance text** ('NMT 40%', '3.5 - 5.0', 'NONE') and the parameter is in `parameter_name` (a Link to Quality Inspection Parameter), so the measured pH of the real submitted COAs read NO DATA and the blend was empty. The rows built in the sandbox for 1.96 and 2.584 had the name in `specification`, which is why they passed.
+- Now the row is filed under `parameter_name` whenever it is set (it wins even if `specification` happens to be another parameter's name); only when `parameter_name` is blank is `specification` taken, and only if it names a parameter (one the TDS defines or an existing Quality Inspection Parameter). Acceptance text with a blank `parameter_name` stays unkeyed: NO DATA, never guessed. `kinds` and the limits copied for the "TDS upper limit" policy are keyed the same way. The query also fetches `parameter_name` (a column of `COA Quality Test Parameter`, shared by COA AMB and COA AMB2).
+- Kept: the measured number from `result` first; NO DATA is never 0; both `missing_data_policy` values; the output keys `no_data`, `assumed_at_limit`, `missing_data_policy`. COA AMB (v1) scoring and the docstatus-1 guard are untouched.
+- Tests: `tests/test_13_12_11.py`; the source pin in `test_13_12_6` follows the renamed call.
+
 ## 13.12.10 — 2026-11
 
 **Data only — `fixtures/property_setter.json`, one record. No code, no patch, no schema change.** Needs `bench migrate` (fixture sync) and `bench --site <site> clear-cache`; no restart beyond the migrate's own.
