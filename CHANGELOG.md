@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.12.10 — 2026-11
+
+**Data only — `fixtures/property_setter.json`, one record. No code, no patch, no schema change.** Needs `bench migrate` (fixture sync) and `bench --site <site> clear-cache`; no restart beyond the migrate's own.
+
+### The Sales Invoice field order stops reverting at migrate (TASKS-287, Part A)
+- `Sales Invoice-main-field_order` now carries **prod's 273-entry list** (stored text 5,622 B, `json.dumps` default separators, no trailing newline, sha256 `55195716b2fd7b23b13c88234f0eb7b150cbb60ee05e5194d0aa95eaddb17b65`) instead of the 231-entry list of 2026-04-20. The record's own `modified` is prod's current stamp for the row (`2026-11-02 17:31:32.188396`, the Customize Form save), so the imported row equals prod's. This fixture is the **only writer** of that row at a migrate; before this, every migrate put 231 entries back and Customize Form's 273 were lost. The 224 names common to both lists keep their relative order; 49 names are new (31 core ERPNext 16.17 fields, 18 ERPNext Mexico Compliance custom fields), 7 stale names dropped.
+- The other 328 records of the file are byte-identical to 13.12.9. The four rounded-total records already carry `1` and are right; they lost at migrate only because the Mexico-EInvoice fork's `custom/sales_invoice.json` is applied after every fixture (its four values are fixed in the fork, TASKS-287 Part B).
+- Tests: `tests/test_13_12_10.py`.
+
 ## 13.12.9 — 2026-11 (built as 13.12.7; renumbered after 13.12.8 shipped first)
 
 **Code + one DocType field** (`BOM Formula.missing_data_policy`, TASKS-282 Part B — a schema change): needs **`bench migrate`**, then `bench --site <site> clear-cache` and a restart of the web/worker processes.
