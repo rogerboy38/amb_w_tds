@@ -279,9 +279,9 @@ class TestSimulateBlendShape(unittest.TestCase):
 class TestVersion(unittest.TestCase):
     def test_version(self):
         with open(os.path.join(PKG, "__init__.py"), encoding="utf8") as f:
-            self.assertIn('__version__ = "13.12.7"', f.read())
+            self.assertIn('__version__ = "13.12.9"', f.read())
         with open(os.path.join(os.path.dirname(PKG), "version.txt"), encoding="utf8") as f:
-            self.assertEqual(f.read().strip(), "13.12.7")
+            self.assertEqual(f.read().strip(), "13.12.9")
 
 
 if __name__ == "__main__":
