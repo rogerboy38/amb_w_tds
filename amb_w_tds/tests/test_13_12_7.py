@@ -277,11 +277,14 @@ class TestSimulateBlendShape(unittest.TestCase):
 
 
 class TestVersion(unittest.TestCase):
-    def test_version(self):
+    def test_version_is_13_12_9_or_later(self):
+        # TASKS-287: 13.12.10 (data only) shipped after this; the pin is a floor, as the 13.12.6 and 13.12.8 ones are
+        import re
         with open(os.path.join(PKG, "__init__.py"), encoding="utf8") as f:
-            self.assertIn('__version__ = "13.12.9"', f.read())
+            ver = re.search(r'__version__ = "([^"]+)"', f.read()).group(1)
         with open(os.path.join(os.path.dirname(PKG), "version.txt"), encoding="utf8") as f:
-            self.assertEqual(f.read().strip(), "13.12.9")
+            self.assertEqual(f.read().strip(), ver)
+        self.assertGreaterEqual(tuple(int(x) for x in ver.split(".")), (13, 12, 9))
 
 
 if __name__ == "__main__":
