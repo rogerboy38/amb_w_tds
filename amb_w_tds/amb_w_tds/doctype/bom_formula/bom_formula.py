@@ -246,6 +246,11 @@ class BOMFormula(Document):
         # 13.12.7: the parameters first -- their kind decides how each COA row is read.
         params = self._build_parameters()
         lots, lines_total, lines_with_coa = self._build_lots(params)
+        # TASKS-282 Part B: the planner's missing-data policy. Default "No data" (a lot without a
+        # number is left out and named); "TDS upper limit" assumes such a lot at the limit on its
+        # own COA row and says so (`assumed_at_limit`), so `no_data` stays empty for those lots.
+        policy = self.get("missing_data_policy") or engine.MISSING_NO_DATA
+        assumed = engine.assume_at_limit(lots, params) if policy == engine.MISSING_TDS_LIMIT else {}
 
         # A COA-less formula is the normal prod state, not an error: say so and
         # predict nothing. Never a vacuous PASS on an empty list.
@@ -348,6 +353,10 @@ class BOMFormula(Document):
             if br.lots_no_data:   # every class: a lot left out for want of data is named, with its mass
                 no_data[name] = {"lots": list(br.lots_no_data), "mass_kg": br.mass_no_data_kg,
                                  "lots_used": list(br.lots_used), "mass_used_kg": br.mass_used_kg}
+            for key, a in assumed.items():   # TASKS-282 Part B: never silent about an assumed value
+                if key == name or key.startswith(name + "@"):
+                    row["note"] = (row.get("note") or "") + (f" — ASSUMED at TDS limit {a['value']:g} ({a['bound']} on the COA row) "
+                                                             f"for {', '.join(a['lots'])} ({a['mass_kg']:g} kg) — policy \"{policy}\"")
             if qp is None:
                 row["computed_value"] = f"UNRESOLVED: {name}"
             self.append("predicted_analytics", row)
@@ -375,6 +384,8 @@ class BOMFormula(Document):
             "out_of_spec_estimate": sum(1 for b in results.values() if b.in_spec_estimate is False),
             "no_data_estimate": sum(1 for b in results.values() if b.computed_value is None),
             "no_data": no_data,
+            "missing_data_policy": policy,
+            "assumed_at_limit": assumed,   # TASKS-282 Part B: {parameter: {value, bound, lots, mass_kg}}
             "skipped_no_coa": list(getattr(self, "_skipped_no_coa", [])),
             "warning": warning,
         }
@@ -532,21 +543,25 @@ class BOMFormula(Document):
             with_coa += 1
             vals = {}
             raw = {}
+            limits = {}   # TASKS-282 Part B: the bounds copied onto this COA's rows, for the "TDS upper limit" policy
             for p in frappe.get_all("COA Quality Test Parameter",
                                     filters={"parent": coa_name, "parenttype": dt},
-                                    fields=["specification", "value", "result"]):
+                                    fields=["specification", "value", "result", "min_value", "max_value"]):
                 if not p.specification:
                     continue
                 v = _lot_value(p, kinds.get(p.specification))
                 if v is not None:
                     vals[p.specification] = v
+                lo, hi = _num(p.get("min_value")), _num(p.get("max_value"))
+                if lo or hi:
+                    limits[p.specification] = (lo or None, hi or None)
                 # The engine needs a number or a bool; a DESCRIPTIVE row needs the
                 # words. Booleanising loses them, so keep the raw text alongside.
                 raw[p.specification] = p.result if p.result not in (None, "") else p.value
             raw_by_lot.append(raw)
             lots.append(engine.Lot(
                 lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or coa_name,
-                mass_kg=flt(line.kg), values=vals))
+                mass_kg=flt(line.kg), values=vals, limits=limits))
         self._raw_by_lot = raw_by_lot
         self._resolutions = resolutions
         self._skipped_no_coa = skipped

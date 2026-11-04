@@ -113,6 +113,48 @@ class Lot:
     # only the lots that carry a real number for the parameter and reports the others by name;
     # a qualitative rule reads only the lots that carry a bool. A bool never enters an average.
     values: Dict[str, Union[float, bool, None]] = field(default_factory=dict)
+    # 13.12.7 (TASKS-282 Part B): the limit copied onto this lot's own COA row, per specification,
+    # as (min, max) with 0 / absent meaning "no bound" -- what `assume_at_limit` reads.
+    limits: Dict[str, tuple] = field(default_factory=dict)
+
+
+# ---- missing-data policy (TASKS-282 Part B, Hugh's ruling 2026-11-03) ---------------------------
+MISSING_NO_DATA = "No data"             # default: a lot without a number is left out and named (281)
+MISSING_TDS_LIMIT = "TDS upper limit"   # a lot without a number is ASSUMED at the limit on its own COA row
+
+
+def assume_at_limit(lots: List[Lot], parameters: List[Parameter]) -> Dict[str, dict]:
+    """Policy "TDS upper limit": for every NUMERIC parameter and every lot with no usable number,
+    put the limit copied onto that lot's own COA row into `lot.values` -- the max for a parameter
+    the TDS caps (NMT), the min for one it floors (NLT) -- so the blend is conservative, and say
+    so: returns {parameter: {"value": limit, "lots": [...], "mass_kg": ...}} (one entry per
+    assumed value; several when the lots carry different limits). Left as NO DATA, never guessed:
+    a row without the needed bound, a two-sided TDS range (the engine does not know which side
+    is worse), and every qualitative (all_pass) parameter. Mutates `lots`; returns the assumptions."""
+    out: Dict[str, dict] = {}
+    for p in parameters:
+        if p.blend_method == BlendMethod.ALL_PASS or not p.numeric:
+            continue
+        has_max = p.max_value not in (None, 0)
+        has_min = p.min_value not in (None, 0)
+        if has_max == has_min:          # two-sided range, or no bound at all: direction unknown
+            continue
+        side = 1 if has_max else 0
+        for lot in lots:
+            if _is_number(lot.values.get(p.name)):
+                continue
+            lim = (lot.limits.get(p.name) or (None, None))
+            bound = lim[side] if len(lim) > side else None
+            if bound in (None, 0) or not _is_number(bound):
+                continue
+            lot.values[p.name] = float(bound)
+            entry = out.setdefault(p.name, {"value": float(bound), "lots": [], "mass_kg": 0.0, "bound": "max" if side else "min"})
+            if entry["value"] != float(bound):
+                # a second lot with a different limit: keep one entry per value, keyed by parameter + value
+                entry = out.setdefault(f"{p.name}@{float(bound):g}", {"value": float(bound), "lots": [], "mass_kg": 0.0, "bound": "max" if side else "min"})
+            entry["lots"].append(lot.lot_id)
+            entry["mass_kg"] += lot.mass_kg
+    return out
 
 
 @dataclass
