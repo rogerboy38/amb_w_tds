@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.12.8 — 2026-11
+
+**Code only — no fixture, no patch, no schema change.** `bench --site <site> clear-cache` and a restart; no `migrate`. (Branched from main after 13.12.6; `version.txt` / `__init__.py` will conflict trivially with 13.12.7's bump when the second of the two PRs is merged — take the higher number.)
+
+### COA AMB2: ND / "not analysed" is N/A, never Fail (TASKS-282 Part A)
+- **Why.** A COA AMB2 on a pure-powder lot is the analytical INPUT of a formulation, not a verdict against a TDS (Hugh, 2026-11-03): the verdict belongs to the new mix. Today `ND` scored Fail against any NMT / range / NEGATIVE specification (`check_parameter_compliance` → `_num("ND")` is None → False), and a lot with 34 ND cells read "Quality: Fail".
+- **`coa_amb2.py`** — `_NA_TOKENS` / `_is_na()`: a result that is exactly (case-insensitive, whitespace-collapsed, trailing dot stripped) one of `ND`, `N/D`, `N.D`, `N D`, `NOT DETECTED`, `NO DETECTADO/A`, `NOT DETECTABLE`, `NO DETECTABLE`, `NO DISPONIBLE`, `NOT AVAILABLE`, `NOT ANALYZED`, `NOT ANALYSED`, `NO ANALIZADO/A`, `NOT TESTED`, `N/A`, `N.A`, `NA`, `-`, `—`, `–` → row `status` **N/A**. `evaluate_overall_result`: N/A rows are set before the Pending test and leave `total`, so `pass_percentage` / `tested_percentage` speak of the rows that can be scored (all-N/A → 0 / 0, overall **Pending**); Fail only for a measured number outside its non-zero bound or a qualitative Fail; scored rows all Pass with N/A rows beside them → **Pass / Compliant**; Pending rows (blank) with passes and no fails → **Partial / Under Review** as before, N/A rows not counted as pending. `get_test_summary` adds `na` and `na_parameters` (`total` excludes N/A); *Validate All Tests* says "… ; n N/A (no data, not scored): names". `calculate_child_table_status` mirrors the rule.
+- **Unchanged:** `<10`, `<0.021 PPM` keep their number (Pass vs NMT 100 as today); `<LOQ` carries no digit and is N/A; NEGATIVE / NONE / descriptive text against presence or qualitative specifications keep today's result; `validate_numeric_result` / `validate_test_parameters` (the submit-time guard) untouched; COA AMB (v1) untouched — its own `_num` / `check_parameter_compliance` are a separate copy. No patch rewrites stored statuses: a Draft is re-scored by *Validate All Tests* as before.
+- Tests: `tests/test_13_12_8.py`.
+
 ## 13.12.6 — 2026-11
 
 **Fixture only — no code, no patch, no schema change.** Needs `bench migrate` (fixture sync re-imports the Workflow record); `clear-cache` as before (the Workflow is cached with the DocType meta).

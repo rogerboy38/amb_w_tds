@@ -28,6 +28,25 @@ def _num(v):
     return float(m.group()) if m else None
 
 
+# 13.12.8 (TASKS-282, Hugh's ruling 2026-11-03): a COA AMB2 on a pure-powder lot is the analytical
+# INPUT of a formulation, not a verdict — a cell that says "not detected" / "not analysed" /
+# "not available" is N/A (no data), never a Fail. Exact, case-insensitive, whitespace-collapsed,
+# trailing-dot-stripped matches ONLY. '<10', '<0.021 PPM' keep their number; '<LOQ' has none.
+_NA_TOKENS = {
+    "ND", "N/D", "N.D", "N D", "NOT DETECTED", "NO DETECTADO", "NO DETECTADA", "NOT DETECTABLE", "NO DETECTABLE",
+    "NO DISPONIBLE", "NOT AVAILABLE", "NOT ANALYZED", "NOT ANALYSED", "NO ANALIZADO", "NO ANALIZADA", "NOT TESTED",
+    "N/A", "N.A", "NA", "-", "—", "–",
+}
+
+
+def _is_na(result):
+    """True when the result cell is one of the N/A tokens (see _NA_TOKENS)."""
+    if result is None:
+        return False
+    t = " ".join(str(result).upper().split()).rstrip(".")
+    return t in _NA_TOKENS
+
+
 class COAAMB2(Document):
     """
     COA AMB2 - Certificate of Analysis with enhanced validation and workflow
@@ -262,7 +281,8 @@ class COAAMB2(Document):
         failed_tests = []
         passed_tests = []
         pending_tests = []
-        
+        na_tests = []        # 13.12.8: ND / not analysed / not available — no data, scored by nobody
+
         total_tests = 0
         tested_tests = 0
 
@@ -271,12 +291,19 @@ class COAAMB2(Document):
                 param.status = 'Title'
                 continue
 
+            # 13.12.8 (TASKS-282): an N/A token is neither Pending (nothing entered) nor a result to
+            # judge. It leaves `total` so the percentages speak of the rows that were measured.
+            if _is_na(param.result):
+                param.status = 'N/A'
+                na_tests.append(param.parameter_name)
+                continue
+
             total_tests += 1
-            
+
             if not param.result:
                 pending_tests.append(param.parameter_name)
                 continue
-                
+
             tested_tests += 1
             
             # Check parameter compliance
@@ -289,12 +316,17 @@ class COAAMB2(Document):
                 failed_tests.append(param.parameter_name)
                 param.status = 'Fail'
 
-        # Calculate percentages
+        # Calculate percentages (over the rows that can be scored: N/A rows are not in `total`)
         if total_tests > 0:
             self.pass_percentage = (len(passed_tests) / total_tests) * 100 if tested_tests > 0 else 0
             self.tested_percentage = (tested_tests / total_tests) * 100
-        
-        # Determine overall result
+        else:
+            self.pass_percentage = 0
+            self.tested_percentage = 0
+        self._na_tests = na_tests   # read by get_test_summary / validate_all_tests; no column for it
+
+        # Determine overall result. N/A rows never decide: a COA is Fail only for a measured
+        # number outside its limit (or a qualitative Fail); all-N/A with nothing measured is Pending.
         if failed_tests:
             self.overall_result = 'Fail'
             self.failed_parameters = ', '.join(failed_tests)
@@ -721,11 +753,15 @@ class COAAMB2(Document):
             if self._is_header_row(param):
                 param.status = 'Title'
                 continue
-                
+
+            if _is_na(param.result):        # 13.12.8: no data, not a verdict
+                param.status = 'N/A'
+                continue
+
             if not param.result:
                 param.status = 'Pending'
                 continue
-                
+
             # Check compliance
             is_compliant = self.check_parameter_compliance(param)
             param.status = 'Pass' if is_compliant else 'Fail'
@@ -738,16 +774,20 @@ class COAAMB2(Document):
             return {}
             
         non_title = [p for p in self.coa_quality_test_parameter if not self._is_header_row(p)]
-        total = len(non_title)
-        passed = len([p for p in non_title if p.status == 'Pass'])
-        failed = len([p for p in non_title if p.status == 'Fail'])
-        pending = len([p for p in non_title if p.status == 'Pending'])
-        
+        na_rows = [p for p in non_title if p.status == 'N/A']      # 13.12.8: counted and named, never scored
+        scored = [p for p in non_title if p.status != 'N/A']
+        total = len(scored)
+        passed = len([p for p in scored if p.status == 'Pass'])
+        failed = len([p for p in scored if p.status == 'Fail'])
+        pending = len([p for p in scored if p.status == 'Pending'])
+
         return {
             'total': total,
             'passed': passed,
             'failed': failed,
             'pending': pending,
+            'na': len(na_rows),
+            'na_parameters': [p.parameter_name for p in na_rows],
             'pass_rate': (passed / total * 100) if total > 0 else 0
         }
 
@@ -872,8 +912,11 @@ def validate_all_tests(coa_name):
         
         summary = coa.get_test_summary()
         
+        na = summary.get('na') or 0
         return {
-            'message': f"Validated {summary['total']} tests: {summary['passed']} passed, {summary['failed']} failed, {summary['pending']} pending",
+            'message': (f"Validated {summary['total']} tests: {summary['passed']} passed, {summary['failed']} failed, "
+                        f"{summary['pending']} pending"
+                        + (f"; {na} N/A (no data, not scored): {', '.join(summary['na_parameters'])}" if na else "")),
             'summary': summary
         }
         

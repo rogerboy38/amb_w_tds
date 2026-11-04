@@ -120,11 +120,14 @@ class TestNoCodeRodeAlong(unittest.TestCase):
 			src = f.read()
 		self.assertRegex(src, re.compile(r"v = _num\(p\.value\)"))
 
-	def test_version(self):
+	def test_version_is_13_12_6_or_later(self):
+		def tup(s):
+			return tuple(int(x) for x in s.strip().split("."))
 		with open(os.path.join(PKG, "__init__.py"), encoding="utf8") as f:
-			self.assertIn('__version__ = "13.12.6"', f.read())
+			ver = re.search(r'__version__ = "([^"]+)"', f.read()).group(1)
 		with open(os.path.join(os.path.dirname(PKG), "version.txt"), encoding="utf8") as f:
-			self.assertEqual(f.read().strip(), "13.12.6")
+			self.assertEqual(f.read().strip(), ver)
+		self.assertGreaterEqual(tup(ver), (13, 12, 6))
 
 
 if __name__ == "__main__":
