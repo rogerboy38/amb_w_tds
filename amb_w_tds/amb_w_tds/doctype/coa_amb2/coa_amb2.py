@@ -31,20 +31,33 @@ def _num(v):
 # 13.12.8 (TASKS-282, Hugh's ruling 2026-11-03): a COA AMB2 on a pure-powder lot is the analytical
 # INPUT of a formulation, not a verdict — a cell that says "not detected" / "not analysed" /
 # "not available" is N/A (no data), never a Fail. Exact, case-insensitive, whitespace-collapsed,
-# trailing-dot-stripped matches ONLY. '<10', '<0.021 PPM' keep their number; '<LOQ' has none.
+# trailing-dot-stripped matches ONLY. '<10', '<0.021 PPM' keep their number.
+# TASKS-282a (Hugh, 2026-11-03): a "below the limit" cell WITHOUT a number ('<LOQ', '< LOQ', '<LOD',
+# '<MDL', '<DL', 'BLQ', 'BELOW LOQ', 'BELOW DETECTION LIMIT'…) is N/A too — no number, no verdict — the
+# same reading the BOM Formula reader gives it (NO DATA). A '<' followed by a digit is never N/A.
 _NA_TOKENS = {
     "ND", "N/D", "N.D", "N D", "NOT DETECTED", "NO DETECTADO", "NO DETECTADA", "NOT DETECTABLE", "NO DETECTABLE",
     "NO DISPONIBLE", "NOT AVAILABLE", "NOT ANALYZED", "NOT ANALYSED", "NO ANALIZADO", "NO ANALIZADA", "NOT TESTED",
     "N/A", "N.A", "NA", "-", "—", "–",
+    # below-limit spellings that carry no number (282a); any '<…' without a digit is covered by _is_na's rule
+    "BLQ", "BLD", "BDL", "BELOW LOQ", "BELOW LOD", "BELOW DL", "BELOW MDL", "BELOW DETECTION LIMIT",
+    "BELOW QUANTIFICATION LIMIT", "BELOW LIMIT OF QUANTIFICATION", "BELOW LIMIT OF DETECTION",
+    "MENOR A LOQ", "MENOR A LOD", "MENOR AL LIMITE DE DETECCION", "MENOR AL LIMITE DE CUANTIFICACION",
 }
+_BELOW_PREFIXES = ("<", "≤", "<=")
 
 
 def _is_na(result):
-    """True when the result cell is one of the N/A tokens (see _NA_TOKENS)."""
+    """True when the result cell is one of the N/A tokens (see _NA_TOKENS), or a '<' / '≤' cell that
+    carries no digit at all ('<LOQ', '< LOD', '<MDL'); '<10', '< 10', '<0.021 PPM' are numbers, not N/A."""
     if result is None:
         return False
     t = " ".join(str(result).upper().split()).rstrip(".")
-    return t in _NA_TOKENS
+    if t in _NA_TOKENS:
+        return True
+    if t.startswith(_BELOW_PREFIXES) and not any(ch.isdigit() for ch in t):
+        return True
+    return False
 
 
 class COAAMB2(Document):

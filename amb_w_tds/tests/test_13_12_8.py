@@ -40,13 +40,18 @@ class TestTokens(unittest.TestCase):
                   "NOT AVAILABLE", "Not Analyzed", "not analysed", "NO ANALIZADO", "N/A", "n.a.", "NA", "-", "—"):
             self.assertTrue(_is_na(t), t)
 
+    def test_below_limit_cells_without_a_number_are_na_282a(self):
+        for t in ("<LOQ", "< LOQ", "<LOD", "<MDL", "<DL", "≤LOQ", "<= LOQ", "< loq.", "BLQ", "BDL", "Below LOQ", "BELOW LOD",
+                  "BELOW DETECTION LIMIT", "BELOW QUANTIFICATION LIMIT", "<LOQ (0.5% ST)".split(" (")[0]):
+            self.assertTrue(_is_na(t), t)
+
     def test_what_is_not_a_token(self):
-        for t in ("", None, "<10", "<10 CFU/G", "<0.021 PPM", "<LOQ", "NEGATIVE", "NONE", "PASS", "2.22", "ND 2", "NDA",
-                  "NOT DETECTED 0.1", "FINE HOMOGENEOUS POWDER", "0"):
+        for t in ("", None, "<10", "<10 CFU/G", "< 10", "<0.021 PPM", "≤10", "<1 PPM", "NEGATIVE", "NONE", "PASS", "2.22", "ND 2", "NDA",
+                  "NOT DETECTED 0.1", "FINE HOMOGENEOUS POWDER", "0", "LOQ", "BLQ 2"):
             self.assertFalse(_is_na(t), repr(t))
-        self.assertNotIn("<LOQ", _NA_TOKENS)        # no digit -> _num None -> handled as before, not as a token
         self.assertIsNone(_num("<LOQ"))
         self.assertEqual(_num("<10 CFU/G"), 10.0)
+        self.assertEqual(_num("<0.021 PPM"), 0.021)
 
 
 class TestScoring(unittest.TestCase):
@@ -92,11 +97,23 @@ class TestScoring(unittest.TestCase):
         self.assertEqual((d.overall_result, d.compliance_status), ("Partial", "Under Review"))
         self.assertEqual((d.pass_percentage, d.tested_percentage), (50, 50))               # over the 2 scorable rows
 
-    def test_less_than_ten_vs_nmt_100_passes_as_today_and_loq_is_na(self):
-        d = score([row("APC", "<10 CFU/G", "NMT 100 CFU/G", 0, 100), row("Aloin", "<LOQ", "NMT 0.1 PPM", 0, 0.1)])
-        self.assertEqual(d.coa_quality_test_parameter[0].status, "Pass")
-        # '<LOQ' is not a token; _num gives None -> check_parameter_compliance False -> Fail, exactly as before 13.12.8
-        self.assertEqual(d.coa_quality_test_parameter[1].status, "Fail")
+    def test_less_than_a_number_is_scored_as_today_and_below_limit_without_a_number_is_na(self):
+        # 282a rewrote this test: before it asserted '<LOQ' -> Fail (as before 13.12.8); Hugh ruled it N/A.
+        d = score([row("APC", "<10 CFU/G", "NMT 100 CFU/G", 0, 100), row("APC2", "< 10", "NMT 100", 0, 100),
+                   row("Lead", "<0.021 PPM", "NMT 1 PPM", 0, 1), row("Hi", "<10", "NMT 5", 0, 5),
+                   row("Aloin", "<LOQ", "NMT 0.1 PPM", 0, 0.1), row("Aloin B", "< LOQ", "0.01-0.1", 0.01, 0.1),
+                   row("Cd", "<LOD", "NMT 1 PPM", 0, 1), row("Hg", "BLQ", "NMT 0.1", 0, 0.1)])
+        self.assertEqual([r.status for r in d.coa_quality_test_parameter], ["Pass", "Pass", "Pass", "Fail", "N/A", "N/A", "N/A", "N/A"])
+        self.assertEqual((d.overall_result, d.failed_parameters), ("Fail", "Hi"))     # the number 10 vs NMT 5, nothing else
+        self.assertEqual(d._na_tests, ["Aloin", "Aloin B", "Cd", "Hg"])
+
+    def test_the_34_nd_pattern_plus_a_loq_row_still_passes(self):
+        rows = [row(f"P{i}", "ND", "NMT 1 PPM", 0, 1) for i in range(34)] + [row(f"M{i}", "0.5", "NMT 1 PPM", 0, 1) for i in range(35)]
+        rows.append(row("Aloin", "<LOQ", "NMT 0.1 PPM", 0, 0.1))
+        d = score(rows)
+        self.assertEqual((d.overall_result, d.compliance_status), ("Pass", "Compliant"))
+        self.assertEqual(len(d._na_tests), 35)
+        self.assertEqual(d.get_test_summary()["na"], 35)
 
     def test_a_qualitative_fail_still_fails(self):
         d = score([row("Coliforms", "PRESENT", "NEGATIVE", 0, 0, numeric=0), row("Arsenic", "ND", "NMT 3", 0, 3)])
