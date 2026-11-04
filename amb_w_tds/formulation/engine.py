@@ -112,10 +112,10 @@ class Lot:
     # 13.12.7 (TASKS-281, ruling 2): a number that is missing is never 0. A numeric rule reads
     # only the lots that carry a real number for the parameter and reports the others by name;
     # a qualitative rule reads only the lots that carry a bool. A bool never enters an average.
-    values: Dict[str, Union[float, bool, None]] = field(default_factory=dict)
+    values: dict[str, float | bool | None] = field(default_factory=dict)
     # 13.12.7 (TASKS-282 Part B): the limit copied onto this lot's own COA row, per specification,
     # as (min, max) with 0 / absent meaning "no bound" -- what `assume_at_limit` reads.
-    limits: Dict[str, tuple] = field(default_factory=dict)
+    limits: dict[str, tuple] = field(default_factory=dict)
 
 
 # ---- missing-data policy (TASKS-282 Part B, Hugh's ruling 2026-11-03) ---------------------------
@@ -123,7 +123,7 @@ MISSING_NO_DATA = "No data"             # default: a lot without a number is lef
 MISSING_TDS_LIMIT = "TDS upper limit"   # a lot without a number is ASSUMED at the limit on its own COA row
 
 
-def assume_at_limit(lots: List[Lot], parameters: List[Parameter]) -> Dict[str, dict]:
+def assume_at_limit(lots: list[Lot], parameters: list[Parameter]) -> dict[str, dict]:
     """Policy "TDS upper limit": for every NUMERIC parameter and every lot with no usable number,
     put the limit copied onto that lot's own COA row into `lot.values` -- the max for a parameter
     the TDS caps (NMT), the min for one it floors (NLT) -- so the blend is conservative, and say
@@ -131,7 +131,7 @@ def assume_at_limit(lots: List[Lot], parameters: List[Parameter]) -> Dict[str, d
     assumed value; several when the lots carry different limits). Left as NO DATA, never guessed:
     a row without the needed bound, a two-sided TDS range (the engine does not know which side
     is worse), and every qualitative (all_pass) parameter. Mutates `lots`; returns the assumptions."""
-    out: Dict[str, dict] = {}
+    out: dict[str, dict] = {}
     for p in parameters:
         if p.blend_method == BlendMethod.ALL_PASS or not p.numeric:
             continue
@@ -161,24 +161,24 @@ def assume_at_limit(lots: List[Lot], parameters: List[Parameter]) -> Dict[str, d
 class BlendResult:
     parameter: str
     blend_method: str
-    computed_value: Union[float, bool, None]   # the ESTIMATE (float, or bool for all_pass; None = NO DATA)
+    computed_value: float | bool | None   # the ESTIMATE (float, or bool for all_pass; None = NO DATA)
     is_estimate: bool
     requires_lab_measurement: bool             # THE DOOR: lab must confirm before release
-    in_spec_estimate: Optional[bool]           # estimate vs TDS min/max (None if n/a or NO DATA)
+    in_spec_estimate: bool | None           # estimate vs TDS min/max (None if n/a or NO DATA)
     critical: bool
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    measured_value: Union[float, bool, None] = None   # lab fills this on the ACTUAL blend
+    min_value: float | None = None
+    max_value: float | None = None
+    measured_value: float | bool | None = None   # lab fills this on the ACTUAL blend
     confirmed: bool = False
     note: str = ""
     # 13.12.7: which lots the estimate is made of, and which were left out for want of data.
     # Nothing is dropped silently: a lot without a usable value is NAMED, with its mass.
-    lots_used: List[str] = field(default_factory=list)
-    lots_no_data: List[str] = field(default_factory=list)
+    lots_used: list[str] = field(default_factory=list)
+    lots_no_data: list[str] = field(default_factory=list)
     mass_used_kg: float = 0.0
     mass_no_data_kg: float = 0.0
 
-    def release_ok(self) -> Optional[bool]:
+    def release_ok(self) -> bool | None:
         """Release gates on the MEASURED value, never the estimate.
         Returns None while awaiting lab confirmation."""
         if not self.confirmed or self.measured_value is None:
@@ -188,10 +188,10 @@ class BlendResult:
 
 def _is_number(v) -> bool:
     """A real number: int/float, never a bool (True would otherwise average as 1)."""
-    return isinstance(v, (int, float)) and not isinstance(v, bool)
+    return isinstance(v, int | float) and not isinstance(v, bool)
 
 
-def _within_spec(value, mn, mx, method) -> Optional[bool]:
+def _within_spec(value, mn, mx, method) -> bool | None:
     """The blend value against the specification. None in -> None out (NO DATA is neither
     Pass nor Fail). This is the ONLY place a number is judged: a single lot's own number is
     never compared with the limit (ruling 1, TASKS-281) -- the blend decides."""

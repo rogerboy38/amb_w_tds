@@ -3,7 +3,8 @@ import re
 import frappe
 from frappe.model.document import Document
 from frappe.utils import flt
-from amb_w_tds.formulation import engine   # imported, not duplicated
+
+from amb_w_tds.formulation import engine  # imported, not duplicated
 
 _METHOD_MAP = {
     "mass_avg": engine.BlendMethod.MASS_AVG,
@@ -33,7 +34,7 @@ _LEAD_NUM = re.compile(r'[-+]?\d*\.?\d+')
 def _lead_num(v):
     if v is None:
         return None
-    if isinstance(v, (int, float)) and not isinstance(v, bool):
+    if isinstance(v, int | float) and not isinstance(v, bool):
         return float(v)
     m = _LEAD_NUM.search(str(v).replace(',', ''))
     return float(m.group()) if m else None

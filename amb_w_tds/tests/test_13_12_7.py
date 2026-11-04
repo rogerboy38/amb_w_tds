@@ -140,7 +140,7 @@ class TestQualitativeUnchanged(unittest.TestCase):
         self.assertAlmostEqual(res["pH"].computed_value, 3.153, places=2)
         self.assertEqual(res["AerobicPlate"].computed_value, 500)
         self.assertIs(res["Salmonella"].computed_value, True)
-        self.assertIs(blend(lots + [Lot("C", 50, {"Salmonella": False})], params)["Salmonella"].computed_value, False)
+        self.assertIs(blend([*lots, Lot("C", 50, {"Salmonella": False})], params)["Salmonella"].computed_value, False)
 
 
 # ---- the reader: COA rows -> Lot.values, by the parameter's kind ----
@@ -227,7 +227,7 @@ class TestReaderResultFirst(unittest.TestCase):
 class TestSimulateBlendShape(unittest.TestCase):
     def test_no_data_rows_and_the_return_structure(self):
         from amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula import BOMFormula
-        d = _formula(LINES + [dict(cunete_ref="C-3", item_code="IT-C", kg=300, batch_amb_sublot=None, source_coa_amb2="COA2-3", source_coa_doctype="COA AMB2")])
+        d = _formula([*LINES, dict(cunete_ref="C-3", item_code="IT-C", kg=300, batch_amb_sublot=None, source_coa_amb2="COA2-3", source_coa_doctype="COA AMB2")])
         rows = {"COA2-1": [_row("Arsenic", result="1.7"), _row("pH", result="4.0"), _row("Coliforms", result="NEGATIVE")],
                 "COA2-2": [_row("Arsenic", result="2.22"), _row("pH", result="ND"), _row("Coliforms", result="NEGATIVE")],
                 "COA2-3": [_row("Arsenic", result=""), _row("pH", result=""), _row("Coliforms", result="")]}
