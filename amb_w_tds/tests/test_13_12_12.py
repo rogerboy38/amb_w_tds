@@ -132,7 +132,7 @@ class TestDefectB_AnEmptyFailureListIsWritten(unittest.TestCase):
         self.assertFalse(d.failed_parameters)
 
     def test_zero_failures_with_pending_or_all_na_also_clears_it(self):
-        for rows in (synthetic(3, 0, 0) + [row("pending", "")], synthetic(0, 0, 4)):
+        for rows in ([*synthetic(3, 0, 0), row("pending", "")], synthetic(0, 0, 4)):
             d = coa(rows, failed_parameters="stale")
             d.evaluate_overall_result()
             self.assertFalse(d.failed_parameters)
