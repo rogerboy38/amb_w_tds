@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.12.12 — 2026-11
+
+**Code only — `amb_w_tds/doctype/coa_amb2/coa_amb2.py`.** No DocType JSON, fixture or patch: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
+
+### COA AMB2: the totals follow the rows, and an empty failure list is written (TASKS-291)
+- **A.** `validate()` returned early for a Draft, before `evaluate_overall_result`, so a single-cell edit (a save of the parent) left `pass_percentage`, `tested_percentage`, `overall_result`, `compliance_status`, `failed_parameters` and the rows' `status` as the last "Validate All Tests" left them. A Draft save now runs the evaluation after its three light checks. Nothing else of the Draft path changes; the submit path is untouched.
+- **B.** `failed_parameters` was written only when something failed, so a re-score with 0 failures kept the old text (COA2-26-0004: Pass / 100 % with the names of an earlier Fail). It is now written on every evaluation: the failing parameters' names, or empty.
+- Not changed: the scoring of a row (13.12.8: ND and "<"/LOQ without a number = N/A), who may edit a cell and when, the workflow, the BOM Formula reader, `missing_data_policy`.
+- Tests: `tests/test_13_12_12.py`.
+
 ## 13.12.10 — 2026-11
 
 **Data only — `fixtures/property_setter.json`, one record. No code, no patch, no schema change.** Needs `bench migrate` (fixture sync) and `bench --site <site> clear-cache`; no restart beyond the migrate's own.
