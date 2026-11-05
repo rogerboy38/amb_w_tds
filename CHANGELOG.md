@@ -1,14 +1,14 @@
 # Changelog
 
-## 13.12.11 — 2026-11
+## 13.12.12 — 2026-11
 
-**Code only — `amb_w_tds/doctype/bom_formula/bom_formula.py` (`_build_lots` + a new helper `_row_key`).** No DocType JSON, fixture or patch changes, so **no `bench migrate`**: backend restart (web and workers) + `bench --site <site> clear-cache`.
+**Code only — `amb_w_tds/doctype/coa_amb2/coa_amb2.py`.** No DocType JSON, fixture or patch: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
 
-### The BOM Formula blend reads real COA rows (TASKS-289)
-- `_build_lots` filed every COA row under `specification` and typed it by `kinds.get(specification)`. On real COA AMB2 documents `specification` holds the **acceptance text** ('NMT 40%', '3.5 - 5.0', 'NONE') and the parameter is in `parameter_name` (a Link to Quality Inspection Parameter), so the measured pH of the real submitted COAs read NO DATA and the blend was empty. The rows built in the sandbox for 1.96 and 2.584 had the name in `specification`, which is why they passed.
-- Now the row is filed under `parameter_name` whenever it is set (it wins even if `specification` happens to be another parameter's name); only when `parameter_name` is blank is `specification` taken, and only if it names a parameter (one the TDS defines or an existing Quality Inspection Parameter). Acceptance text with a blank `parameter_name` stays unkeyed: NO DATA, never guessed. `kinds` and the limits copied for the "TDS upper limit" policy are keyed the same way. The query also fetches `parameter_name` (a column of `COA Quality Test Parameter`, shared by COA AMB and COA AMB2).
-- Kept: the measured number from `result` first; NO DATA is never 0; both `missing_data_policy` values; the output keys `no_data`, `assumed_at_limit`, `missing_data_policy`. COA AMB (v1) scoring and the docstatus-1 guard are untouched.
-- Tests: `tests/test_13_12_11.py`; the source pin in `test_13_12_6` follows the renamed call.
+### COA AMB2: the totals follow the rows, and an empty failure list is written (TASKS-291)
+- **A.** `validate()` returned early for a Draft, before `evaluate_overall_result`, so a single-cell edit (a save of the parent) left `pass_percentage`, `tested_percentage`, `overall_result`, `compliance_status`, `failed_parameters` and the rows' `status` as the last "Validate All Tests" left them. A Draft save now runs the evaluation after its three light checks. Nothing else of the Draft path changes; the submit path is untouched.
+- **B.** `failed_parameters` was written only when something failed, so a re-score with 0 failures kept the old text (COA2-26-0004: Pass / 100 % with the names of an earlier Fail). It is now written on every evaluation: the failing parameters' names, or empty.
+- Not changed: the scoring of a row (13.12.8: ND and "<"/LOQ without a number = N/A), who may edit a cell and when, the workflow, the BOM Formula reader, `missing_data_policy`.
+- Tests: `tests/test_13_12_12.py`.
 
 ## 13.12.10 — 2026-11
 

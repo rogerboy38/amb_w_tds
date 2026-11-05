@@ -78,6 +78,11 @@ class COAAMB2(Document):
             self.validate_linked_tds()
             self.validate_batch_reference()
             self.check_mandatory_tds_link()
+            # 13.12.12 (TASKS-291): the totals are refreshed on EVERY save of the parent. A single-cell edit is a
+            # save of the parent, and this early return used to skip the evaluation, so the percentages, the
+            # overall result, `failed_parameters` and the rows' status stayed as the last "Validate All Tests" left
+            # them. The evaluation is arithmetic over the rows (no query), unlike the checks skipped above.
+            self.evaluate_overall_result()
             return
         
         # FULL VALIDATION (only on submit)
@@ -289,6 +294,7 @@ class COAAMB2(Document):
         """Enhanced overall test result evaluation with detailed tracking"""
         if not self.coa_quality_test_parameter:
             self.overall_result = 'No Tests'
+            self.failed_parameters = ''
             return
 
         failed_tests = []
@@ -338,11 +344,14 @@ class COAAMB2(Document):
             self.tested_percentage = 0
         self._na_tests = na_tests   # read by get_test_summary / validate_all_tests; no column for it
 
+        # 13.12.12 (TASKS-291): written on EVERY evaluation -- the failing names, or '' when nothing fails -- so a
+        # re-score with 0 failures no longer keeps the text of an earlier one.
+        self.failed_parameters = ', '.join(failed_tests)
+
         # Determine overall result. N/A rows never decide: a COA is Fail only for a measured
         # number outside its limit (or a qualitative Fail); all-N/A with nothing measured is Pending.
         if failed_tests:
             self.overall_result = 'Fail'
-            self.failed_parameters = ', '.join(failed_tests)
             self.compliance_status = 'Non-Compliant'
         elif pending_tests and not failed_tests and passed_tests:
             self.overall_result = 'Partial'
