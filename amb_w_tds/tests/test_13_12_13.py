@@ -114,18 +114,70 @@ class TestPropuestasCoaValues(unittest.TestCase):
         self.assertEqual(seen["order_by"], "idx asc")
 
     def test_one_source_of_truth_the_reader_functions_are_the_ones_used(self):
+        # the key function and the float-strict number test are the reader's own objects, imported, not copied;
+        # the reader keeps `_raw_text` for its own `raw` (TASKS-301: the report no longer uses it)
         self.assertIs(propuestas._row_key, reader._row_key)
+        self.assertIs(propuestas._reader_num, reader._num)       # propuestas has its own unrelated `_num`; the helper uses the reader's
         self.assertTrue(hasattr(reader, "_raw_text"))
-        self.assertIs(propuestas._raw_text, reader._raw_text)
+        self.assertFalse(hasattr(propuestas, "_raw_text"))
 
-    def test_the_reader_and_the_report_read_the_same_cell(self):
-        # the reader's raw text (kept for descriptive rows) and the report's value agree on every shape
-        rows = [row("Moisture", "NMT 8%", result="5.6", value="NMT 8%"), row("pH", "x", result="", value="4.1"),
-                row("Ash", "x", result=None, value=None)]
-        out, _ = coa_values(rows, {"Moisture", "pH", "Ash"})
+    def test_the_report_and_the_reader_agree_on_every_cell_that_has_a_result(self):
+        rows = [row("Moisture", "NMT 8%", result="5.6", value="NMT 8%"), row("pH", "x", result="4.1", value="3.5 - 5.0")]
+        out, _ = coa_values(rows, {"Moisture", "pH"})
         for r in rows:
-            expect = r.result if r.result not in (None, "") else r.value
-            self.assertEqual(out[r.parameter_name], expect if expect not in (None, "") else None)
+            self.assertEqual(out[r.parameter_name], reader._raw_text(r))
+
+
+class TestReportCellBlankRule(unittest.TestCase):
+    """TASKS-301 (Hugh, 2026-11-05): a lot's cell is `result` when non-empty; else `value` ONLY if it is a pure
+    non-zero number (the reader's float-strict test); else EMPTY (None). The acceptance text is never the value."""
+
+    def cell(self, **kw):
+        out, _ = coa_values([row("Moisture", "Moisture", **kw)], {"Moisture"})
+        return out["Moisture"]
+
+    def test_result_set_and_value_acceptance_text_gives_result(self):
+        self.assertEqual(self.cell(result="5.6", value="NMT 8%"), "5.6")
+
+    def test_result_empty_and_value_a_limit_or_text_gives_none(self):
+        for v in ("NMT 8%", "3.5 - 5.0", " 1.002 - 1.020", "FINE HOMOGENEOUS POWDER", "Specification", "NEGATIVE",
+                  "99% THROUGH NO. 100 MESH", "NMT 100 CFU/ML", "<10"):
+            self.assertIsNone(self.cell(result="", value=v), v)
+            self.assertIsNone(self.cell(result=None, value=v), v)
+
+    def test_result_empty_and_value_a_pure_number_gives_the_value(self):
+        self.assertEqual(self.cell(result="", value="0.099"), "0.099")
+        self.assertEqual(self.cell(result=None, value="12"), "12")
+        self.assertEqual(self.cell(result="", value="-3.5"), "-3.5")
+
+    def test_zero_in_value_is_unset_not_a_value(self):
+        for v in ("0", "0.0", "0.000", " 0 "):
+            self.assertIsNone(self.cell(result="", value=v), v)
+
+    def test_a_zero_in_result_is_a_result(self):
+        self.assertEqual(self.cell(result="0", value="8"), "0")
+        self.assertEqual(self.cell(result="0.0", value=None), "0.0")
+
+    def test_whitespace_only_result_or_value_is_empty(self):
+        self.assertIsNone(self.cell(result="   ", value="  "))
+        self.assertEqual(self.cell(result="  ", value="0.5"), "0.5")        # an empty result falls back to a pure number
+        self.assertIsNone(self.cell(result="  ", value="NMT 8%"))
+        self.assertIsNone(self.cell(result=None, value=None))
+
+    def test_the_number_test_is_the_readers_so_a_value_the_reader_would_not_take_is_not_shown(self):
+        for v in ("1,5", "5 %", "~3", "3 ppm"):
+            self.assertIsNone(reader._num(v), v)                    # not a pure number for the reader ...
+            self.assertIsNone(self.cell(result="", value=v), v)     # ... so not shown by the report
+
+    def test_the_first_row_of_a_parameter_still_wins_even_when_its_cell_is_blank(self):
+        rows = [row("Moisture", "x", result="", value="NMT 8%"), row("Moisture", "y", result="5.6")]
+        out, _ = coa_values(rows, {"Moisture"})
+        self.assertEqual(out, {"Moisture": None})
+
+    def test_the_helper_is_only_used_by_the_read_only_report_path(self):
+        import inspect
+        src = inspect.getsource(propuestas)
+        self.assertEqual(src.count("_report_cell("), 2)     # its definition and its one call in _coa_values
 
 
 class TestQipFallbackIsCaseSensitive(unittest.TestCase):
