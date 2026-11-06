@@ -34,6 +34,8 @@ import unicodedata
 import frappe
 from frappe.utils import flt
 
+from amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula import _num as _reader_num
+from amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula import _row_key
 from amb_w_tds.formulation import engine
 
 # The three headline columns of the approved format. These are NAME PATTERNS for
@@ -131,21 +133,46 @@ def _predicted(doc):
 	return out
 
 
+def _report_cell(row):
+	"""What a lot's cell shows for one COA row (TASKS-301, Hugh 2026-11-05): `result` when it is not empty; when it is
+	empty, `value` ONLY if it is a pure non-zero number (the reader's own float-strict `_num` test, imported as
+	`_reader_num` because this module has its own `_num`); otherwise None (an empty cell). On real rows `value` holds
+	the acceptance text ("NMT 8%", "3.5 - 5.0", "FINE HOMOGENEOUS POWDER"), which is never a lot's value, and the form
+	fills "0" for unset. Whitespace counts as empty. Report-only: the reader's `_raw_text` is unchanged."""
+	result = row.get("result")
+	if result is not None and str(result).strip() != "":
+		return result
+	value = row.get("value")
+	if value is None or str(value).strip() == "":
+		return None
+	n = _reader_num(value)
+	return value if (n is not None and n != 0) else None
+
+
 def _coa_values(doctype, name, specs):
-	"""{specification: raw value} for the wanted specifications on one COA."""
+	"""{parameter: cell} for the wanted parameters on one COA.
+
+	13.12.13 (TASKS-298/301): a row is filed under its `parameter_name` first, and under `specification` only when
+	that names a parameter (the reader's `_row_key`); the cell is `_report_cell` (result, else a pure non-zero number
+	in value, else None). On real COA AMB2 rows `specification` and `value` hold the acceptance text, so the old
+	specification-keyed, value-first read showed the limit's text, not the lot's measurement. The first row of a
+	parameter wins, even when its cell is empty."""
 	if not (doctype and name and specs):
 		return {}
+	wanted = set(specs)
+	kinds = dict.fromkeys(wanted)       # `_row_key` accepts a name the caller wants without a lookup
+	qip_cache = {}
 	out = {}
 	for p in frappe.get_all(
 		"COA Quality Test Parameter",
-		filters={"parent": name, "parenttype": doctype, "specification": ("in", list(specs))},
-		fields=["specification", "value", "result"],
+		filters={"parent": name, "parenttype": doctype},
+		fields=["parameter_name", "specification", "value", "result"],
 		order_by="idx asc",
 	):
-		if p.specification in out:
+		key = _row_key(p, kinds, qip_cache)
+		if key not in wanted or key in out:
 			continue
-		raw = p.value if p.value not in (None, "") else p.result
-		out[p.specification] = raw if raw not in (None, "") else None
+		out[key] = _report_cell(p)
 	return out
 
 

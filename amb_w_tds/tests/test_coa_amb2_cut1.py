@@ -336,7 +336,7 @@ class TestGateWarning(unittest.TestCase):
 		rows = {"COA2-1": [frappe._dict(specification="Acemannan", value="14", result=None)],
 			"COA2-3": [frappe._dict(specification="Acemannan", value="18", result=None)]}
 		with mock.patch("frappe.get_all", lambda dt, filters=None, fields=None, **k: rows[filters["parent"]]), \
-				mock.patch("frappe.db", mock.Mock(get_value=lambda *a, **k: None)):
+				mock.patch("frappe.db", mock.Mock(get_value=lambda *a, **k: None, exists=lambda dt, name=None, *a, **k: name)):
 			out = d._build_lots()
 		return d, out
 

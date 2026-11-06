@@ -162,7 +162,7 @@ PARAMS = [AS, COLI, Parameter("Appearance", BlendMethod.MASS_AVG, numeric=False)
 def _build(rows, params=PARAMS):
     d = _formula(LINES)
     with mock.patch("frappe.get_all", lambda dt, filters=None, fields=None, **k: rows[filters["parent"]]), \
-            mock.patch("frappe.db", mock.Mock(get_value=lambda *a, **k: None)):
+            mock.patch("frappe.db", mock.Mock(get_value=lambda *a, **k: None, exists=lambda dt, name=None, *a, **k: name)):
         lots, total, with_coa = d._build_lots(params)
     return {l.lot_id: l.values for l in lots}
 

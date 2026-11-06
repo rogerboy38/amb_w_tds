@@ -96,8 +96,18 @@ def _row_key(row, kinds, qip_cache):
     if spec in kinds:
         return spec
     if spec not in qip_cache:
-        qip_cache[spec] = bool(frappe.db.exists("Quality Inspection Parameter", spec))
+        # 13.12.13 (TASKS-298): `exists` answers through MariaDB's case-insensitive collation and returns the STORED
+        # name, so compare it with the input: acceptance text that equals a parameter only by case ("NONE" vs the
+        # parameter "None") is not that parameter. One query per distinct spec, as before.
+        qip_cache[spec] = frappe.db.exists("Quality Inspection Parameter", spec) == spec
     return spec if qip_cache[spec] else None
+
+
+def _raw_text(row):
+    """The cell of a COA row the reader keeps as text (and the Propuestas report shows): `result` first, else `value`.
+    13.12.13: one definition for `_build_lots` and `propuestas._coa_values`."""
+    result = row.get("result")
+    return result if result not in (None, "") else row.get("value")
 
 
 def _fmt(v):
@@ -587,7 +597,7 @@ class BOMFormula(Document):
                     limits[key] = (lo or None, hi or None)
                 # The engine needs a number or a bool; a DESCRIPTIVE row needs the
                 # words. Booleanising loses them, so keep the raw text alongside.
-                raw[key] = p.result if p.result not in (None, "") else p.value
+                raw[key] = _raw_text(p)
             raw_by_lot.append(raw)
             lots.append(engine.Lot(
                 lot_id=line.batch_amb_sublot or line.cunete_ref or line.item_code or coa_name,
