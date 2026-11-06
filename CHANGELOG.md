@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.12.13 — 2026-11
+
+**Code only — `amb_w_tds/doctype/bom_formula/bom_formula.py` (`_row_key`, new `_raw_text`) and `amb_w_tds/formulation/propuestas.py` (`_coa_values`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
+
+### The Propuestas report reads a COA row the way the BOM Formula reader does (TASKS-298)
+- `propuestas._coa_values` filtered `specification in (…)`, returned `{specification: …}` and read `value` before `result`. On real COA rows `specification` and `value` hold the acceptance text, so the report showed the limit's text ("NMT 100 CFU/ML", "3.5-5.0") as the lot's value, or nothing. It now files a row through the reader's `_row_key` (`parameter_name` first, `specification` only when it names a parameter) and reads the cell with the reader's `_raw_text` (`result` first, else `value`): one definition each, imported, not copied. The first row of a parameter still wins. The report and the print format only read; nothing is saved.
+### The reader's QIP fallback is case-sensitive (TASKS-298)
+- `_row_key` asked `frappe.db.exists("Quality Inspection Parameter", spec)`, which MariaDB's collation answers case-insensitively (the literal `NONE` found the parameter `None`) and answers with the STORED name. The fallback now takes `specification` only when the stored name equals it exactly; still one query per distinct specification (cached). Acceptance text that equals a parameter name only by case is not taken as that parameter.
+- Tests: `tests/test_13_12_13.py`; two existing mocks (`test_13_12_7`, `test_coa_amb2_cut1`) now answer `exists` with the name, as frappe does.
+
 ## 13.12.12 — 2026-11
 
 **Code only — `amb_w_tds/doctype/coa_amb2/coa_amb2.py`.** No DocType JSON, fixture or patch: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.

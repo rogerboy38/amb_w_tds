@@ -34,6 +34,7 @@ import unicodedata
 import frappe
 from frappe.utils import flt
 
+from amb_w_tds.amb_w_tds.doctype.bom_formula.bom_formula import _raw_text, _row_key
 from amb_w_tds.formulation import engine
 
 # The three headline columns of the approved format. These are NAME PATTERNS for
@@ -132,20 +133,29 @@ def _predicted(doc):
 
 
 def _coa_values(doctype, name, specs):
-	"""{specification: raw value} for the wanted specifications on one COA."""
+	"""{parameter: raw value} for the wanted parameters on one COA.
+
+	13.12.13 (TASKS-298): a row is filed under its `parameter_name` first, and under `specification` only when that
+	names a parameter (the reader's `_row_key`); the cell is `result` first, else `value` (the reader's `_raw_text`).
+	On real COA AMB2 rows `specification` and `value` hold the acceptance text, so the old specification-keyed,
+	value-first read showed the limit's text, not the lot's measurement. The first row of a parameter wins."""
 	if not (doctype and name and specs):
 		return {}
+	wanted = set(specs)
+	kinds = dict.fromkeys(wanted)       # `_row_key` accepts a name the caller wants without a lookup
+	qip_cache = {}
 	out = {}
 	for p in frappe.get_all(
 		"COA Quality Test Parameter",
-		filters={"parent": name, "parenttype": doctype, "specification": ("in", list(specs))},
-		fields=["specification", "value", "result"],
+		filters={"parent": name, "parenttype": doctype},
+		fields=["parameter_name", "specification", "value", "result"],
 		order_by="idx asc",
 	):
-		if p.specification in out:
+		key = _row_key(p, kinds, qip_cache)
+		if key not in wanted or key in out:
 			continue
-		raw = p.value if p.value not in (None, "") else p.result
-		out[p.specification] = raw if raw not in (None, "") else None
+		raw = _raw_text(p)
+		out[key] = raw if raw not in (None, "") else None
 	return out
 
 
