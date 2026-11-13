@@ -30,7 +30,10 @@ class _Doc:
 class TestApprovedLock(unittest.TestCase):
 	def run_it(self, **kw):
 		d = _Doc(**kw)
-		with mock.patch.object(mod, "_", lambda s: s), mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError) as t:
+		with (
+			mock.patch.object(mod, "_", lambda s: s),
+			mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError) as t,
+		):
 			try:
 				d.refuse()
 				return False, t
