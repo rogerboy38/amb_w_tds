@@ -65,6 +65,21 @@ class TestHeadline(unittest.TestCase):
 	def test_first_match_in_tds_order_without_preferred_word(self):
 		self.assertEqual(pick_headline(["Aloin A", "Aloin B"])["aloina"], "Aloin A")
 
+	def test_nmr_row_wins_over_the_other_acemannan_rows_in_any_tds_order(self):
+		# TASKS-335 D-11: prod's COAs carry three Acemannan rows; the column is the NMR one
+		rows = ["ACEMANNAN BY O-ACETIL METHOD", "Acemannan [NMR]", "Acemannan [ORTO-ACETYL/AMB]"]
+		self.assertEqual(pick_headline(rows)["acemannan"], "Acemannan [NMR]")
+		self.assertEqual(pick_headline(list(reversed(rows)))["acemannan"], "Acemannan [NMR]")
+
+	def test_without_an_nmr_row_the_old_first_match_stands(self):
+		rows = ["ACEMANNAN BY O-ACETIL METHOD", "Acemannan [ORTO-ACETYL/AMB]"]
+		self.assertEqual(pick_headline(rows)["acemannan"], "ACEMANNAN BY O-ACETIL METHOD")
+
+	def test_nmr_preference_does_not_touch_aloin_or_arsenic(self):
+		h = pick_headline(["Aloin Content", "Aloin Content [BY DRY WEIGHT]", "Arsenic-AMB", "Arsenic", "Acemannan [NMR]"])
+		self.assertEqual(h["aloina"], "Aloin Content")
+		self.assertEqual(h["arsenico"], "Arsenic-AMB")
+
 	def test_accents_and_case_fold(self):
 		self.assertEqual(pick_headline(["ARSÉNICO (ppm)"])["arsenico"], "ARSÉNICO (ppm)")
 
