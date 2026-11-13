@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.12.14 — 2026-11
+
+**Code only — `amb_w_tds/formulation/propuestas.py` (`pick_headline`, new `_SPECIFIC_TOKENS`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
+
+### The Propuesta's Acemannan column reads the NMR row when the TDS has one (TASKS-335 D-11)
+- `pick_headline` chose the Acemannan column by a substring match on the TDS parameter names and then the first match in TDS order; with several Acemannan rows (O-acetyl method, NMR, ortho-acetyl) the first one won, not the NMR value Calidad uses. A name carrying `nmr` now wins inside the Acemannan family, before the "total / content" preference; a TDS without such a row keeps the old first-match behaviour. The column label and the Aloína and Arsénico columns are unchanged.
+- Not changed: how a range or an ND is read (the engine's `_lead_num`), the other headline columns, any choice of parameter per proposal (waits for Calidad).
+- Tests: three new cases in `tests/test_propuestas_formulacion.py`.
+
 ## 13.12.13 — 2026-11
 
 **Code only — `amb_w_tds/doctype/bom_formula/bom_formula.py` (`_row_key`, new `_raw_text`) and `amb_w_tds/formulation/propuestas.py` (`_coa_values`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
