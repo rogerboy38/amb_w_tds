@@ -76,7 +76,9 @@ class TestHeadline(unittest.TestCase):
 		self.assertEqual(pick_headline(rows)["acemannan"], "ACEMANNAN BY O-ACETIL METHOD")
 
 	def test_nmr_preference_does_not_touch_aloin_or_arsenic(self):
-		h = pick_headline(["Aloin Content", "Aloin Content [BY DRY WEIGHT]", "Arsenic-AMB", "Arsenic", "Acemannan [NMR]"])
+		h = pick_headline(
+			["Aloin Content", "Aloin Content [BY DRY WEIGHT]", "Arsenic-AMB", "Arsenic", "Acemannan [NMR]"]
+		)
 		self.assertEqual(h["aloina"], "Aloin Content")
 		self.assertEqual(h["arsenico"], "Arsenic-AMB")
 
