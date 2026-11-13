@@ -60,6 +60,12 @@ def _is_na(result):
     return False
 
 
+# TASKS-335 D-12: an Approved COA AMB2 is still docstatus 0 (13.12.6), and the workflow's `allow_edit` is a client-side
+# hint only. From this state the only legitimate save is a workflow transition (Reject -> Draft), which changes
+# `workflow_state`; any other save of an Approved certificate is refused on the server.
+LOCKED_WORKFLOW_STATES = ("Approved",)
+
+
 class COAAMB2(Document):
     """
     COA AMB2 - Certificate of Analysis with enhanced validation and workflow
@@ -68,8 +74,26 @@ class COAAMB2(Document):
         """Check if we're in submit flow vs normal edit"""
         return getattr(self, '_action', None) == 'submit'
 
+    def refuse_edit_of_approved(self):
+        """A certificate that was Approved and is still Approved may not be saved again (TASKS-335 D-12).
+        A transition changes the state, so Reject (Approved -> Draft) and the Approve that reaches Approved pass."""
+        if self.is_new() or self.docstatus != 0:
+            return
+        before = self.get_doc_before_save()
+        if not before:
+            return
+        state = self.get("workflow_state")
+        if before.get("workflow_state") in LOCKED_WORKFLOW_STATES and state == before.get("workflow_state"):
+            frappe.throw(
+                _("COA {0} is {1}: its results cannot be changed. A Quality Manager must Reject it to Draft first.").format(
+                    self.name, state
+                ),
+                title=_("Approved certificate"),
+            )
+
     def validate(self):
         """Comprehensive validation logic - SKIPS heavy checks for draft"""
+        self.refuse_edit_of_approved()
         
         # CRITICAL: For draft documents being edited, skip heavy validation to prevent timeout
         # Only run full validation on submit

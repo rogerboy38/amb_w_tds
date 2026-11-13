@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.12.15 — 2026-11
+
+**Code only — `amb_w_tds/doctype/coa_amb2/coa_amb2.py` (`COAAMB2.refuse_edit_of_approved`, called first in `validate`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
+
+### An Approved COA AMB2 cannot be saved again (TASKS-335 D-12)
+- All six states of the COA AMB2 workflow are docstatus 0 and the state's `allow_edit` is applied by the browser only, so an Approved certificate kept its Save button and accepted writes. `validate` now refuses a save of a document that was Approved before the save and still is. A workflow transition changes the state, so Approve and Reject (Approved → Draft) still pass. **Effect:** an Approved certificate cannot be saved again, including by "Validate All Tests", until a Quality Manager rejects it to Draft.
+- Not changed: who may press each transition, the workflow fixture, scoring.
+- Tests: `tests/test_coa_amb2_approved_lock.py`.
 ## 13.12.13 — 2026-11
 
 **Code only — `amb_w_tds/doctype/bom_formula/bom_formula.py` (`_row_key`, new `_raw_text`) and `amb_w_tds/formulation/propuestas.py` (`_coa_values`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.
