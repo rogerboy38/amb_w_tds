@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.14 | 2026-11 | Code only (`propuestas.py`): the Propuesta's Acemannan column prefers the TDS row named NMR over the other Acemannan rows; no NMR row = unchanged. No migrate: restart + clear-cache. TASKS-335 D-11. |
 | 13.12.13 | 2026-11 | Code only (`bom_formula.py`, `propuestas.py`): the Propuestas report files a COA row by `parameter_name` and shows `result` before `value` (the reader's own functions); the reader's QIP fallback compares names case-sensitively. No migrate: restart + clear-cache. TASKS-298. |
 | 13.12.12 | 2026-11 | Code only (`coa_amb2.py`): a COA AMB2 Draft recomputes its totals, result and `failed_parameters` on every save (not only at the button/submit), and `failed_parameters` is cleared when 0 rows fail. Scoring unchanged. No migrate: restart + clear-cache. TASKS-291. |
 | 13.12.11 | 2026-11 | Code only (`bom_formula.py`): the BOM Formula blend files a COA row under `parameter_name` (fallback `specification` only when it names a parameter), so real COA AMB2 rows (acceptance text in `specification`) give their measured number instead of NO DATA. No migrate: restart + clear-cache. TASKS-289. |
