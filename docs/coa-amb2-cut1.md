@@ -1,6 +1,6 @@
 # COA AMB2, Cut 1 (13.12.0)
 
-Three defect-level fixes so the internal certificate (COA AMB2) is usable by Quality before the first LORAND run.
+Three defect-level fixes so the internal certificate (COA AMB2) is usable by Quality before the first EXAMPLE CUSTOMER A run.
 
 ## Permissions
 COA AMB2 is governed by **Custom DocPerm rows** on every site (the three non-test rows equal the DocType JSON).
