@@ -2,9 +2,9 @@
 # See license.txt
 """Regression lock for the blend engine, built from a REAL Alicia case.
 
-LORAND F-2886-26 (1200 kg, 2026-09-09) is the first production formulation we
+EXAMPLE CUSTOMER A F-2886-26 (1200 kg, 2026-09-09) is the first production formulation we
 have with her own arithmetic visible in the cells, so the expected values below
-are hers (INVENTARIO-LORAND-F-2886-26-1200-KG, Hoja1 K34/L34/M34) — not values
+are hers (INVENTARIO-CUSTOMER-A-F-2886-26-1200-KG, Hoja1 K34/L34/M34) — not values
 this codebase produced and then blessed. That is the whole point of the lock:
 if `mass_avg` ever drifts, it drifts away from what the analyst actually does.
 
@@ -22,7 +22,7 @@ import unittest
 from amb_w_tds.formulation import engine
 
 # kg · acemannan % · aloína ppm · arsénico ppm — her six selected lots, Σ 1228 kg
-LORAND_LINES = [
+CUSTOMER_A_LINES = [
     ("0803018261",    34, 17.2, 1.2630, 2.02),
     ("0302125251-2",  40, 24.5, 1.3439, 2.57),
     ("0302125251-1", 320, 23.5, 2.2717, 2.42),
@@ -57,9 +57,9 @@ def _lots(lines):
 
 
 class TestBOMFormulaBlend(unittest.TestCase):
-    def test_simulate_blend_lorand_f2886(self):
+    def test_simulate_blend_customer_a_f2886(self):
         """Her three predicted values, reproduced to 1e-3."""
-        lots = _lots(LORAND_LINES)
+        lots = _lots(CUSTOMER_A_LINES)
         self.assertEqual(sum(l.mass_kg for l in lots), 1228)
 
         results = engine.blend(lots, SPEC)
@@ -88,7 +88,7 @@ class TestBOMFormulaBlend(unittest.TestCase):
         # Floor: the 500 kg lot carries the blend, so dropping it to 5 % pulls
         # the mean under 15 %.
         low = [l if l[0] != "0302055261" else ("0302055261", 500, 5.0, 0.9878, 2.22)
-               for l in LORAND_LINES]
+               for l in CUSTOMER_A_LINES]
         acemannan = engine.blend(_lots(low), SPEC)[ACEMANNAN]
         self.assertLess(acemannan.computed_value, 15.0)
         self.assertFalse(acemannan.in_spec_estimate,
@@ -96,7 +96,7 @@ class TestBOMFormulaBlend(unittest.TestCase):
 
         # Ceiling: her lowest lot (1 %) is what holds this blend down; lifting it
         # to 12 % carries the mean past 20 %.
-        high = LORAND_LINES[:-1] + [("0301234251-HIGH", 300, 12.0, 0.3281, 2.06)]
+        high = CUSTOMER_A_LINES[:-1] + [("0301234251-HIGH", 300, 12.0, 0.3281, 2.06)]
         acemannan = engine.blend(_lots(high), SPEC)[ACEMANNAN]
         self.assertGreater(acemannan.computed_value, 20.0)
         self.assertFalse(acemannan.in_spec_estimate,
