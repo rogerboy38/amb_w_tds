@@ -6,7 +6,7 @@ Ruling 1: the "30" is an artifact (a per-mL liquid limit landed on a per-gram
           tier shapes.
 Ruling 2: the AUTORIZADO text spec governs, NOT the migrated ERPNext numeric.
 Ruling 3: key the deterministic customers (53 on 500/100, 11 on 50/50).
-Ruling 4: Brenntag entities keyed individually, never by trading name.
+Ruling 4: Example Customer B entities keyed individually, never by trading name.
 Ruling 5: customer+order resolution for genuinely multi-tier customers, keyed
           provisionally with pending_alicia=1 and reported for one-shot confirm.
 
