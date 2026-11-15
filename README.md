@@ -116,7 +116,7 @@ prod pins listed below.
 
 | Branch | Tip | Topic |
 |--------|-----|-------|
-| `phase-g/g1a-tabs` | `4ad591a` (2026-09-09) | G-1a: BOM Formula FoxPro-parity tabs, controller re-pointed to native tables, 16 predicted analytic rows, blend engine locked to the LORAND F-2886-26 reference arithmetic |
+| `phase-g/g1a-tabs` | `4ad591a` (2026-09-09) | G-1a: BOM Formula FoxPro-parity tabs, controller re-pointed to native tables, 16 predicted analytic rows, blend engine locked to the EXAMPLE CUSTOMER A F-2886-26 reference arithmetic |
 | `phase-g/g0b1-coa-amb2-port` | `03a4400` (2026-09-09) | Port COA AMB's fixed compliance methods to COA AMB2, with scorer tests |
 | `phase-g/g0b-2a` | `a2b6d8c` (2026-09-11) | Cut 2 of t10: resolve a Mix line to its lot's COA, real cost gate, plus G-0b-1 and the role home-page fix folded in |
 
