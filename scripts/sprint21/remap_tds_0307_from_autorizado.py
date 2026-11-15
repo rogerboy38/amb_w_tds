@@ -83,7 +83,7 @@ def match_customer(fox_name, erp_customers):
     """FoxPro NOM_CLI -> ERPNext Customer, ENTITY-level (Ruling 4).
 
     Never collapse a distinct legal entity onto a shorter trading-name customer:
-    'BARENTZ IBERIA S.L.U' must not match a generic 'Barentz'. Prefix matching is
+    'EXAMPLE CUSTOMER A IBERIA S.L.U' must not match a generic 'Example Customer A'. Prefix matching is
     therefore only allowed when the leftover is pure legal-form noise, never when
     it carries a geography or entity word.
     """
