@@ -116,7 +116,7 @@ prod pins listed below.
 
 | Branch | Tip | Topic |
 |--------|-----|-------|
-| `phase-g/g1a-tabs` | `4ad591a` (2026-09-09) | G-1a: BOM Formula FoxPro-parity tabs, controller re-pointed to native tables, 16 predicted analytic rows, blend engine locked to the LORAND F-2886-26 reference arithmetic |
+| `phase-g/g1a-tabs` | `4ad591a` (2026-09-09) | G-1a: BOM Formula FoxPro-parity tabs, controller re-pointed to native tables, 16 predicted analytic rows, blend engine locked to the EXAMPLE CUSTOMER A F-2886-26 reference arithmetic |
 | `phase-g/g0b1-coa-amb2-port` | `03a4400` (2026-09-09) | Port COA AMB's fixed compliance methods to COA AMB2, with scorer tests |
 | `phase-g/g0b-2a` | `a2b6d8c` (2026-09-11) | Cut 2 of t10: resolve a Mix line to its lot's COA, real cost gate, plus G-0b-1 and the role home-page fix folded in |
 
@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.14 | 2026-11 | Code only (`propuestas.py`): the Propuesta's Acemannan column prefers the TDS row named NMR over the other Acemannan rows; no NMR row = unchanged. No migrate: restart + clear-cache. TASKS-335 D-11. |
 | 13.12.13 | 2026-11 | Code only (`bom_formula.py`, `propuestas.py`): the Propuestas report files a COA row by `parameter_name` and shows `result` before `value` (the reader's own functions); the reader's QIP fallback compares names case-sensitively. No migrate: restart + clear-cache. TASKS-298. |
 | 13.12.12 | 2026-11 | Code only (`coa_amb2.py`): a COA AMB2 Draft recomputes its totals, result and `failed_parameters` on every save (not only at the button/submit), and `failed_parameters` is cleared when 0 rows fail. Scoring unchanged. No migrate: restart + clear-cache. TASKS-291. |
 | 13.12.11 | 2026-11 | Code only (`bom_formula.py`): the BOM Formula blend files a COA row under `parameter_name` (fallback `specification` only when it names a parameter), so real COA AMB2 rows (acceptance text in `specification`) give their measured number instead of NO DATA. No migrate: restart + clear-cache. TASKS-289. |

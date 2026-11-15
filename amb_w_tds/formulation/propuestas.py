@@ -50,6 +50,11 @@ HEADLINE = (
 # When several TDS rows match a pattern (Aloin A / Aloin B / Total Aloin A + B),
 # a name carrying one of these words is the blend-level figure and wins.
 _PREFERRED_WORDS = ("total", "content", "contenido")
+# TASKS-335 D-11: when the TDS carries several rows of one headline family (Acemannan by the O-acetyl method,
+# "Acemannan [NMR]", "[ORTO-ACETYL/AMB]"), a name carrying one of these tokens is the one the column means
+# (Calidad, 2026-11-12: the NMR value). Applied before the "total"/"content" preference; a TDS without such a
+# row keeps the old first-match behaviour. The headline's wording is unchanged.
+_SPECIFIC_TOKENS = {"acemannan": ("nmr",)}
 
 SIN_COA = "sin COA"
 SIN_TDS = "SIN TDS"
@@ -109,6 +114,8 @@ def pick_headline(names):
 	out = {}
 	for key, _label, tokens in HEADLINE:
 		matches = [n for n in names if any(t in _fold(n) for t in tokens)]
+		specific = [n for n in matches if any(t in _fold(n) for t in _SPECIFIC_TOKENS.get(key, ()))]
+		matches = specific or matches
 		preferred = [n for n in matches if any(w in _fold(n) for w in _PREFERRED_WORDS)]
 		out[key] = (preferred or matches or [None])[0]
 	return out

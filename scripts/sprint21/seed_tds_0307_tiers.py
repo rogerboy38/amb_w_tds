@@ -72,7 +72,7 @@ TIERS = {
     "TDS-0307-BASE": {"desc": "Canonical 0307 contract (Alicia's official 16-parameter table)", "ov": {}},
     "TDS-0307-ASH35": {"desc": "Ash tightened to 35%", "ov": {"Ash": 35.0}},
     "TDS-0307-ASH35-M50": {"desc": "Ash 35% + microbial 50/50", "ov": {"Ash": 35.0, "Aerobic Plate Count": 50.0, "Mold And Yeast": 50.0}},
-    "TDS-0307-ASH35-M30": {"desc": "Ash 35% + microbial 30/30 (Brenntag/Barentz UK)", "ov": {"Ash": 35.0, "Aerobic Plate Count": 30.0, "Mold And Yeast": 30.0}},
+    "TDS-0307-ASH35-M30": {"desc": "Ash 35% + microbial 30/30 (Example Customer A/Example Customer B UK)", "ov": {"Ash": 35.0, "Aerobic Plate Count": 30.0, "Mold And Yeast": 30.0}},
     "TDS-0307-HM-M30": {"desc": "Heavy-metals/pesticide block + Ash 35% + APC 30 / M&Y 50", "ov": {"Ash": 35.0, "Aerobic Plate Count": 30.0, "Mold And Yeast": 50.0}, "hm": True},
     "TDS-0307-HM-M50": {"desc": "Heavy-metals/pesticide block + Ash 35% + microbial 50/50", "ov": {"Ash": 35.0, "Aerobic Plate Count": 50.0, "Mold And Yeast": 50.0}, "hm": True},
     "TDS-0307-PH40": {"desc": "Ash 35% + pH 4.0-5.0 (release-gating, Alicia-confirmed real)", "ov": {"Ash": 35.0, "pH": (4.0, 5.0)}},
