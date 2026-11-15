@@ -1,3 +1,4 @@
+# Manual runner, in no test suite. Before a manual run set CUSTOMER below to a Customer that exists on the site: the value shipped is a placeholder.
 import frappe
 
 
@@ -11,7 +12,7 @@ def run():
 
     frappe.db.rollback()  # safety for repeated runs
 
-    CUSTOMER = "ALBAFLOR"
+    CUSTOMER = "EXAMPLE CUSTOMER"  # placeholder: not a Customer of any site
     COMPANY = "AMB-Wellness"
     FOLIO = "TEST-FOLIO-955"
 
