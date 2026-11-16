@@ -60,6 +60,18 @@ doctype_js = {
 
 doc_events = {
 
+    # TASKS-361 decision 115: the Approved lock of COA AMB2 reaches its rows. Both child tables of the certificate;
+    # the hook acts only on a row whose parent is an Approved, not submitted COA AMB2 (rows of COA AMB and of any
+    # other parent are not judged). `before_validate` runs for a save and an insert of the row alone.
+    "COA Quality Test Parameter": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+        "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+    },
+    "SPC Batch Parameter": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+        "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+    },
+
     # 13.11.2: ERPNext's BOM.autoname skips amended BOMs when picking the next BOM-<item>-NNN, so on
     # items whose amendments took plain numbers it re-proposes an existing name ("Duplicate Name").
     # Runs right after it; corrects the name ONLY when it already exists (counting amendments).

@@ -64,6 +64,33 @@ def _is_na(result):
 # hint only. From this state the only legitimate save is a workflow transition (Reject -> Draft), which changes
 # `workflow_state`; any other save of an Approved certificate is refused on the server.
 LOCKED_WORKFLOW_STATES = ("Approved",)
+# TASKS-361 decision 115: the lock also reaches the certificate's rows. Its child tables are DocTypes of their own,
+# and a row saved, inserted or deleted BY ITSELF never passes through the certificate's `validate` above.
+LOCKED_PARENT_DOCTYPE = "COA AMB2"
+
+
+def _approved_parent(doc):
+    """The name of the Approved, not submitted COA AMB2 this row belongs to, else None."""
+    if doc.get("parenttype") != LOCKED_PARENT_DOCTYPE or not doc.get("parent"):
+        return None
+    row = frappe.db.get_value(LOCKED_PARENT_DOCTYPE, doc.get("parent"), ["workflow_state", "docstatus"], as_dict=True)
+    if row and int(row.docstatus or 0) == 0 and row.workflow_state in LOCKED_WORKFLOW_STATES:
+        return doc.get("parent")
+    return None
+
+
+def refuse_row_of_approved(doc, method=None):
+    """doc_events hook on the child DocTypes of COA AMB2 (`before_validate`, which runs for a save and an insert even
+    under `ignore_validate`, and `on_trash`): a row of an Approved certificate cannot be changed, added or removed on
+    its own. A save of the certificate itself does not come here: Frappe writes the rows of a parent without running
+    their events, so the workflow's Reject (Approved -> Draft) and the Approve that reaches Approved are untouched."""
+    parent = _approved_parent(doc)
+    if parent:
+        what = _("removed") if method == "on_trash" else (_("added") if doc.is_new() else _("changed"))
+        frappe.throw(
+            _("COA {0} is Approved: a result row cannot be {1}. A Quality Manager must Reject it to Draft first.").format(parent, what),
+            title=_("Approved certificate"),
+        )
 
 
 class COAAMB2(Document):
@@ -87,6 +114,17 @@ class COAAMB2(Document):
             frappe.throw(
                 _("COA {0} is {1}: its results cannot be changed. A Quality Manager must Reject it to Draft first.").format(
                     self.name, state
+                ),
+                title=_("Approved certificate"),
+            )
+
+    def on_trash(self):
+        """An Approved certificate cannot be deleted (TASKS-361 decision 115, VM3 D12-3): same rule as the edit lock.
+        Reject it to Draft first; a Draft can be deleted by whoever holds the right."""
+        if self.docstatus == 0 and self.get("workflow_state") in LOCKED_WORKFLOW_STATES:
+            frappe.throw(
+                _("COA {0} is {1}: it cannot be deleted. A Quality Manager must Reject it to Draft first.").format(
+                    self.name, self.get("workflow_state")
                 ),
                 title=_("Approved certificate"),
             )
