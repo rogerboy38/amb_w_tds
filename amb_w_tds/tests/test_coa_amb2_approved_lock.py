@@ -282,3 +282,18 @@ class TestDeleteOfApproved(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestChildTablesDoNotTrackSeen(unittest.TestCase):
+	"""TASKS-365, T-1: a child table has no `_seen` column; "track seen" on it makes every save of a row by itself fail."""
+
+	def test_no_child_doctype_of_the_certificate_declares_track_seen(self):
+		import glob, json, os
+
+		root = os.path.dirname(os.path.dirname(os.path.dirname(mod.__file__)))
+		seen = []
+		for f in glob.glob(os.path.join(root, "doctype", "*", "*.json")):
+			d = json.load(open(f, encoding="utf-8"))
+			if isinstance(d, dict) and d.get("doctype") == "DocType" and d.get("istable") and d.get("track_seen"):
+				seen.append(d["name"])
+		self.assertEqual(seen, [])
