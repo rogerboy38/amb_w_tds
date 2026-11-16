@@ -13,9 +13,9 @@ class _Doc:
 
 	refuse = mod.COAAMB2.refuse_edit_of_approved
 
-	def __init__(self, state, before_state, docstatus=0, new=False, has_before=True):
+	def __init__(self, state, before_state, docstatus=0, new=False, has_before=True, before_docstatus=0):
 		self.name, self.docstatus, self._state, self._new = "COA-1", docstatus, state, new
-		self._before = {"workflow_state": before_state} if has_before else None
+		self._before = {"workflow_state": before_state, "docstatus": before_docstatus} if has_before else None
 
 	def is_new(self):
 		return self._new
@@ -56,15 +56,37 @@ class TestApprovedLock(unittest.TestCase):
 
 	def test_new_document_and_submitted_document_are_untouched(self):
 		self.assertFalse(self.run_it(state="Approved", before_state="Approved", new=True)[0])
-		self.assertFalse(self.run_it(state="Approved", before_state="Approved", docstatus=1)[0])
+		self.assertFalse(self.run_it(state="Approved", before_state="Approved", docstatus=1, before_docstatus=1)[0])
 		self.assertFalse(self.run_it(state="Approved", before_state=None, has_before=False)[0])
+
+	def test_a_submit_of_an_approved_certificate_is_refused(self):
+		"""TASKS-365, VM3 D12-6: during a submit the document is already at docstatus 1; the lock used to return."""
+		refused, t = self.run_it(state="Approved", before_state="Approved", docstatus=1)
+		self.assertTrue(refused)
+		self.assertIn("cannot be submitted", t.call_args.args[0])
+		# also when the caller changes the state in the same call, and when the docstatus arrives as text
+		self.assertTrue(self.run_it(state="Draft", before_state="Approved", docstatus=1)[0])
+		self.assertTrue(self.run_it(state="Approved", before_state="Approved", docstatus="1")[0])
+
+	def test_a_submit_from_any_other_state_is_not_this_locks_business(self):
+		for s in ("Draft", "Validated", "Pending Supervisor", "Auto Approved", "Saved"):
+			self.assertFalse(self.run_it(state=s, before_state=s, docstatus=1)[0], s)
+
+	def test_the_lock_also_runs_before_validate(self):
+		calls = []
+		d = type("D", (), {"refuse_edit_of_approved": lambda self: calls.append("lock")})()
+		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")):
+			mod.COAAMB2.before_validate(d)
+		self.assertEqual(calls, ["lock", "rows"])
 
 
 class _Row:
 	"""A child row as the hook sees it."""
 
-	def __init__(self, parenttype="COA AMB2", parent="COA-1", new=False):
-		self._d = {"parenttype": parenttype, "parent": parent}
+	doctype = "SPC Batch Parameter"
+
+	def __init__(self, parenttype="COA AMB2", parent="COA-1", new=False, name="row-1"):
+		self._d = {"parenttype": parenttype, "parent": parent, "name": name}
 		self._new = new
 
 	def get(self, key):
@@ -74,24 +96,43 @@ class _Row:
 		return self._new
 
 
+class _Db:
+	"""Certificates by name, and where each row is STORED: the two things the hooks read."""
+
+	def __init__(self, certs=None, rows=None):
+		self.certs, self.rows, self.asked = certs or {}, rows or {}, []
+
+	def get_value(self, doctype, name, fields, as_dict=False):
+		self.asked.append((doctype, name))
+		if doctype == "COA AMB2":
+			c = self.certs.get(name)
+			return frappe._dict(workflow_state=c[0], docstatus=c[1]) if c else None
+		r = self.rows.get(name)
+		return frappe._dict(parent=r[0], parenttype=r[1]) if r else None
+
+
+def _run(fn, db, get_all=None):
+	with (
+		mock.patch.object(mod, "_", lambda s: s),
+		mock.patch.object(mod.frappe, "db", db),
+		mock.patch.object(mod.frappe, "get_all", get_all or (lambda *a, **k: [])),
+		mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError) as t,
+	):
+		try:
+			fn()
+			return False, t
+		except frappe.ValidationError:
+			return True, t
+
+
 class TestRowsOfApproved(unittest.TestCase):
 	"""TASKS-361 decision 115, DB-free: a row of an Approved COA AMB2 cannot be changed, added or removed on its own,
 	and an Approved certificate cannot be deleted. The real document paths are run on a scratch site (see the reply)."""
 
-	def hook(self, row, state="Approved", docstatus=0, method="before_validate", exists=True):
-		parent = frappe._dict(workflow_state=state, docstatus=docstatus) if exists else None
-		with (
-			mock.patch.object(mod, "_", lambda s: s),
-			mock.patch.object(mod.frappe, "db", mock.MagicMock()) as db,
-			mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError) as t,
-		):
-			db.get_value.return_value = parent
-			gv = db.get_value
-			try:
-				mod.refuse_row_of_approved(row, method)
-				return False, t, gv
-			except frappe.ValidationError:
-				return True, t, gv
+	def hook(self, row, state="Approved", docstatus=0, method="before_validate", exists=True, stored=None):
+		db = _Db({"COA-1": (state, docstatus)} if exists else {}, {"row-1": stored} if stored else {})
+		refused, t = _run(lambda: mod.refuse_row_of_approved(row, method), db)
+		return refused, t, db
 
 	def test_a_row_of_an_approved_certificate_cannot_be_changed_added_or_removed(self):
 		for method, new, word in (("before_validate", False, "changed"), ("before_validate", True, "added"), ("on_trash", False, "removed")):
@@ -108,9 +149,31 @@ class TestRowsOfApproved(unittest.TestCase):
 
 	def test_rows_of_another_parent_type_are_never_read_or_judged(self):
 		for row in (_Row(parenttype="COA AMB"), _Row(parenttype=None), _Row(parent=None), _Row(parenttype="Batch AMB")):
-			refused, _t, gv = self.hook(row)
+			refused, _t, db = self.hook(row, stored=("BATCH-1", "Batch AMB"))
 			self.assertFalse(refused)
-			gv.assert_not_called()
+			# the certificate is never read: only where the row itself is stored (one statement, TASKS-365)
+			self.assertEqual(db.asked, [("SPC Batch Parameter", "row-1")])
+
+	def test_a_row_is_judged_by_the_parent_it_has_in_the_database_too(self):
+		"""TASKS-365, VM3 D12-4 b and c: `parent` or `parenttype` changed in the same save."""
+		for sent in (
+			_Row(parent="COA-2"),                      # another certificate, a Draft
+			_Row(parenttype="COA AMB", parent="X"),    # another parent type
+			_Row(parenttype="Batch AMB", parent="COA-1"),  # only the type changed
+			_Row(parent=None),                         # the parent emptied
+			_Row(parenttype=None, parent=None),
+		):
+			db = _Db({"COA-1": ("Approved", 0), "COA-2": ("Draft", 0)}, {"row-1": ("COA-1", "COA AMB2")})
+			for method in ("before_validate", "on_trash"):
+				self.assertTrue(_run(lambda: mod.refuse_row_of_approved(sent, method), db)[0], (sent._d, method))
+		# a row stored under a Draft may go where the caller sends it, but not INTO an Approved one
+		db = _Db({"COA-1": ("Approved", 0), "COA-2": ("Draft", 0)}, {"row-1": ("COA-2", "COA AMB2")})
+		self.assertFalse(_run(lambda: mod.refuse_row_of_approved(_Row(parent="COA-2"), "before_validate"), db)[0])
+		self.assertTrue(_run(lambda: mod.refuse_row_of_approved(_Row(parent="COA-1"), "before_validate"), db)[0])
+		# a row stored under a submitted certificate, or under one whose state is not locked: not judged
+		for cert in (("Approved", 1), ("Auto Approved", 0), ("Draft", 0)):
+			db = _Db({"COA-1": cert}, {"row-1": ("COA-1", "COA AMB2")})
+			self.assertFalse(_run(lambda: mod.refuse_row_of_approved(_Row(parent="COA-9"), "before_validate"), db)[0], cert)
 
 	def test_a_row_whose_parent_is_gone_is_not_judged(self):
 		self.assertFalse(self.hook(_Row(), exists=False)[0])
@@ -125,6 +188,78 @@ class TestRowsOfApproved(unittest.TestCase):
 		self.assertEqual(tables, ["COA Quality Test Parameter", "SPC Batch Parameter"])
 		for dt in tables:
 			self.assertEqual(hooks.doc_events[dt], {"before_validate": path, "on_trash": path}, dt)
+		self.assertEqual(sorted(mod.LOCKED_CHILD_DOCTYPES), tables)
+
+
+class _Parent:
+	"""A document that carries one of the two child tables."""
+
+	def __init__(self, doctype, name, rows, options="SPC Batch Parameter"):
+		self.doctype, self.name, self._rows = doctype, name, rows
+		df = frappe._dict(fieldname="t", options=options)
+		self.meta = type("M", (), {"get_table_fields": lambda self: [df, frappe._dict(fieldname="other", options="Something Else")]})()
+
+	def get(self, key):
+		return self._rows if key == "t" else [{"name": "never-read"}]
+
+
+class TestRowsTakenByAnotherDocument(unittest.TestCase):
+	"""TASKS-365, VM3 D12-4 a: a document saved with the name of an Approved certificate's row in its own table."""
+
+	def take(self, parent, stored, certs):
+		asked = []
+
+		def get_all(doctype, filters=None, fields=None):
+			asked.append((doctype, filters))
+			return [frappe._dict(name=n, parent=p) for n, p in stored.items() if n in filters["name"][1]]
+
+		refused, t = _run(lambda: mod.refuse_taking_rows_of_approved(parent), _Db(certs), get_all)
+		return refused, t, asked
+
+	def test_every_carrier_is_refused_the_row_of_an_approved_certificate(self):
+		certs = {"COA-1": ("Approved", 0), "COA-2": ("Draft", 0)}
+		for dt in ("COA AMB2", "COA AMB", "Batch AMB", "SPC Batch Record"):
+			refused, t, asked = self.take(_Parent(dt, "OTHER", [{"name": "row-1"}, {"name": None}]), {"row-1": "COA-1"}, certs)
+			self.assertTrue(refused, dt)
+			self.assertEqual(asked, [("SPC Batch Parameter", {"name": ["in", ["row-1"]], "parenttype": "COA AMB2"})])
+
+	def test_what_is_not_judged(self):
+		certs = {"COA-1": ("Approved", 0), "COA-2": ("Draft", 0), "COA-3": ("Approved", 1)}
+		# the certificate's own rows (its own lock judges that save, and Reject must pass)
+		self.assertFalse(self.take(_Parent("COA AMB2", "COA-1", [{"name": "row-1"}]), {"row-1": "COA-1"}, certs)[0])
+		# rows of a Draft and of a submitted certificate; rows with no name; a table with no named row asks nothing
+		self.assertFalse(self.take(_Parent("COA AMB2", "COA-9", [{"name": "row-1"}]), {"row-1": "COA-2"}, certs)[0])
+		self.assertFalse(self.take(_Parent("Batch AMB", "B-1", [{"name": "row-1"}]), {"row-1": "COA-3"}, certs)[0])
+		refused, _t, asked = self.take(_Parent("Batch AMB", "B-1", [{"name": None}, {}]), {}, certs)
+		self.assertEqual((refused, asked), (False, []))
+		# a COA AMB whose NAME equals the Approved certificate's is still another document
+		self.assertTrue(self.take(_Parent("COA AMB", "COA-1", [{"name": "row-1"}]), {"row-1": "COA-1"}, certs)[0])
+
+	def test_the_carriers_are_hooked(self):
+		import importlib
+
+		hooks = importlib.import_module("amb_w_tds.hooks")
+		path = "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_taking_rows_of_approved"
+		for dt in ("COA AMB", "Batch AMB", "SPC Batch Record"):
+			self.assertEqual(hooks.doc_events[dt]["before_validate"], path, dt)
+
+
+class TestRenameOfApproved(unittest.TestCase):
+	"""TASKS-365, VM3 D12-5."""
+
+	def rename(self, old, new, merge=False):
+		db = _Db({"COA-1": ("Approved", 0), "COA-2": ("Draft", 0), "COA-3": ("Approved", 1)})
+		return _run(lambda: mod.COAAMB2.before_rename(object(), old, new, merge), db)[0]
+
+	def test_an_approved_certificate_is_not_renamed_and_nothing_is_merged_into_it(self):
+		self.assertTrue(self.rename("COA-1", "COA-X"))
+		self.assertTrue(self.rename("COA-1", "COA-2", merge=True))
+		self.assertTrue(self.rename("COA-2", "COA-1", merge=True))
+
+	def test_a_draft_and_a_submitted_one_are_renamed_as_before(self):
+		self.assertFalse(self.rename("COA-2", "COA-X"))
+		self.assertFalse(self.rename("COA-3", "COA-X"))
+		self.assertFalse(self.rename("COA-2", "COA-3", merge=True))
 
 
 class TestDeleteOfApproved(unittest.TestCase):

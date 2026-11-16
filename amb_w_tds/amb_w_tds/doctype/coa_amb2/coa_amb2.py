@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt, get_url, cstr, quoted
+from frappe.utils import nowdate, flt, get_url, cstr, quoted, cint
 import json
 import re
 
@@ -69,13 +69,31 @@ LOCKED_WORKFLOW_STATES = ("Approved",)
 LOCKED_PARENT_DOCTYPE = "COA AMB2"
 
 
+# TASKS-365 decision 128: the two child DocTypes of the certificate. COA AMB, Batch AMB and SPC Batch Record carry
+# them too, so a row can be named in another document's table (VM3 D12-4).
+LOCKED_CHILD_DOCTYPES = ("COA Quality Test Parameter", "SPC Batch Parameter")
+
+
+def _is_approved_certificate(name):
+    """True when `name` is a COA AMB2 that is Approved and not submitted, read from the database."""
+    if not name:
+        return False
+    row = frappe.db.get_value(LOCKED_PARENT_DOCTYPE, name, ["workflow_state", "docstatus"], as_dict=True)
+    return bool(row and cint(row.docstatus) == 0 and row.workflow_state in LOCKED_WORKFLOW_STATES)
+
+
 def _approved_parent(doc):
-    """The name of the Approved, not submitted COA AMB2 this row belongs to, else None."""
-    if doc.get("parenttype") != LOCKED_PARENT_DOCTYPE or not doc.get("parent"):
-        return None
-    row = frappe.db.get_value(LOCKED_PARENT_DOCTYPE, doc.get("parent"), ["workflow_state", "docstatus"], as_dict=True)
-    if row and int(row.docstatus or 0) == 0 and row.workflow_state in LOCKED_WORKFLOW_STATES:
+    """The name of the Approved, not submitted COA AMB2 this row belongs to, else None.
+
+    A row is judged twice (TASKS-365, VM3 D12-4): by the parent the caller SENDS, and by the parent the row HAS in
+    the database. The second is what stops a row from leaving an Approved certificate with `parent` or `parenttype`
+    changed in the same save: the caller chooses what is sent, not what is stored."""
+    if doc.get("parenttype") == LOCKED_PARENT_DOCTYPE and _is_approved_certificate(doc.get("parent")):
         return doc.get("parent")
+    if doc.get("name"):
+        stored = frappe.db.get_value(doc.doctype, doc.get("name"), ["parent", "parenttype"], as_dict=True)
+        if stored and stored.parenttype == LOCKED_PARENT_DOCTYPE and _is_approved_certificate(stored.parent):
+            return stored.parent
     return None
 
 
@@ -93,6 +111,35 @@ def refuse_row_of_approved(doc, method=None):
         )
 
 
+def refuse_taking_rows_of_approved(doc, method=None):
+    """`before_validate` of every DocType that carries one of the two child tables (COA AMB2 by its controller; COA
+    AMB, Batch AMB and SPC Batch Record by doc_events): a document saved with, in its own table, the NAME of a row
+    that belongs to an Approved COA AMB2 would take that row away, because Frappe writes a parent's rows by name and
+    runs no row event (TASKS-365, VM3 D12-4 a). Refused. Nothing else of those documents is judged: one query per
+    such table, and only for rows that carry a name."""
+    for df in doc.meta.get_table_fields():
+        if df.options not in LOCKED_CHILD_DOCTYPES:
+            continue
+        names = [row.get("name") for row in (doc.get(df.fieldname) or []) if row.get("name")]
+        if not names:
+            continue
+        stored = frappe.get_all(
+            df.options,
+            filters={"name": ["in", names], "parenttype": LOCKED_PARENT_DOCTYPE},
+            fields=["name", "parent"],
+        )
+        for row in stored:
+            if doc.doctype == LOCKED_PARENT_DOCTYPE and row.parent == doc.name:
+                continue  # the certificate's own rows: its own lock judges that save
+            if _is_approved_certificate(row.parent):
+                frappe.throw(
+                    _("Row {0} belongs to COA {1}, which is Approved: it cannot be moved to {2} {3}. A Quality Manager must Reject that certificate to Draft first.").format(
+                        row.name, row.parent, _(doc.doctype), doc.name or ""
+                    ),
+                    title=_("Approved certificate"),
+                )
+
+
 class COAAMB2(Document):
     """
     COA AMB2 - Certificate of Analysis with enhanced validation and workflow
@@ -104,17 +151,46 @@ class COAAMB2(Document):
     def refuse_edit_of_approved(self):
         """A certificate that was Approved and is still Approved may not be saved again (TASKS-335 D-12).
         A transition changes the state, so Reject (Approved -> Draft) and the Approve that reaches Approved pass."""
-        if self.is_new() or self.docstatus != 0:
+        if self.is_new():
             return
         before = self.get_doc_before_save()
-        if not before:
+        if not before or cint(before.get("docstatus")) != 0 or before.get("workflow_state") not in LOCKED_WORKFLOW_STATES:
             return
         state = self.get("workflow_state")
-        if before.get("workflow_state") in LOCKED_WORKFLOW_STATES and state == before.get("workflow_state"):
+        if cint(self.docstatus) != 0:
+            # TASKS-365 decision 128 (VM3 D12-6): during a submit the document is already at docstatus 1, and the
+            # lock used to return here. Since 13.12.6 no path of the workflow submits a COA AMB2: Approved, at
+            # docstatus 0, is its end. So an Approved certificate is not submitted at all, changed or unchanged,
+            # with or without a signature in the call.
+            frappe.throw(
+                _("COA {0} is Approved: it cannot be submitted. Quality's approval is the end of this workflow; a Quality Manager can Reject it to Draft.").format(self.name),
+                title=_("Approved certificate"),
+            )
+        if state == before.get("workflow_state"):
             frappe.throw(
                 _("COA {0} is {1}: its results cannot be changed. A Quality Manager must Reject it to Draft first.").format(
                     self.name, state
                 ),
+                title=_("Approved certificate"),
+            )
+
+    def before_validate(self):
+        """Runs for a save and for a submit, also under `ignore_validate` (TASKS-365)."""
+        self.refuse_edit_of_approved()
+        refuse_taking_rows_of_approved(self)
+
+    def before_rename(self, old, new, merge=False):
+        """An Approved certificate keeps its number (TASKS-365, VM3 D12-5): no rename, by API or by the form's title,
+        and nothing is merged into it. Refused for the Approved one only; `allow_rename` stays on for the type, so a
+        Draft is renamed as before."""
+        if _is_approved_certificate(old):
+            frappe.throw(
+                _("COA {0} is Approved: it cannot be renamed. A Quality Manager must Reject it to Draft first.").format(old),
+                title=_("Approved certificate"),
+            )
+        if merge and _is_approved_certificate(new):
+            frappe.throw(
+                _("COA {0} is Approved: another certificate cannot be merged into it.").format(new),
                 title=_("Approved certificate"),
             )
 
