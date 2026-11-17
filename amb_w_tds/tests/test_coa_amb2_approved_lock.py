@@ -74,7 +74,7 @@ class TestApprovedLock(unittest.TestCase):
 
 	def test_the_lock_also_runs_before_validate(self):
 		calls = []
-		d = type("D", (), {"refuse_edit_of_approved": lambda self: calls.append("lock")})()
+		d = type("D", (), {"refuse_submit": lambda self: None, "refuse_edit_of_approved": lambda self: calls.append("lock")})()
 		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")):
 			mod.COAAMB2.before_validate(d)
 		self.assertEqual(calls, ["lock", "rows"])
@@ -282,6 +282,61 @@ class TestDeleteOfApproved(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class _Sub:
+	"""The slice of a Document that refuse_submit touches."""
+
+	def __init__(self, docstatus, action=None, new=False, before_docstatus=None):
+		self.name, self.docstatus, self._new = "COA-1", docstatus, new
+		if action:
+			self._action = action
+		self._before = None if before_docstatus is None else {"docstatus": before_docstatus}
+
+	def is_new(self):
+		return self._new
+
+	def get_doc_before_save(self):
+		return self._before
+
+
+class TestNoSubmitInAnyState(unittest.TestCase):
+	"""TASKS-366 decision 129: nothing of this type is submitted. The state is not even read."""
+
+	def refused(self, **kw):
+		with mock.patch.object(mod, "_", lambda s: s), mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError) as t:
+			try:
+				mod.COAAMB2.refuse_submit(_Sub(**kw))
+				return False, t
+			except frappe.ValidationError:
+				return True, t
+
+	def test_every_way_from_docstatus_zero_to_one_is_refused(self):
+		refused, t = self.refused(docstatus=1, action="submit", before_docstatus=0)
+		self.assertTrue(refused)
+		self.assertIn("ends at Quality approval", t.call_args.args[0])
+		self.assertTrue(self.refused(docstatus=1, before_docstatus=0)[0])            # a save that carries docstatus 1
+		self.assertTrue(self.refused(docstatus="1", before_docstatus="0")[0])        # as text
+		self.assertTrue(self.refused(docstatus=1, new=True)[0])                      # an insert that carries docstatus 1
+		self.assertTrue(self.refused(docstatus=1, action="submit")[0])               # no stored copy at hand
+
+	def test_a_draft_save_and_an_already_submitted_certificate_are_not_touched(self):
+		self.assertFalse(self.refused(docstatus=0, action="save", before_docstatus=0)[0])
+		self.assertFalse(self.refused(docstatus=0, new=True)[0])
+		self.assertFalse(self.refused(docstatus=1, action="update_after_submit", before_docstatus=1)[0])
+		self.assertFalse(self.refused(docstatus=2, action="cancel", before_docstatus=1)[0])
+		self.assertFalse(self.refused(docstatus=1, action="update_after_submit")[0])
+
+	def test_it_runs_first_in_before_validate_and_in_validate(self):
+		calls = []
+		d = type("D", (), {"refuse_submit": lambda self: calls.append("submit"), "refuse_edit_of_approved": lambda self: calls.append("lock")})()
+		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")):
+			mod.COAAMB2.before_validate(d)
+		self.assertEqual(calls, ["submit", "lock", "rows"])
+		import inspect
+
+		src = inspect.getsource(mod.COAAMB2.validate)
+		self.assertLess(src.index("self.refuse_submit()"), src.index("self.refuse_edit_of_approved()"))
 
 
 class TestChildTablesDoNotTrackSeen(unittest.TestCase):

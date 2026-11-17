@@ -148,6 +148,20 @@ class COAAMB2(Document):
         """Check if we're in submit flow vs normal edit"""
         return getattr(self, '_action', None) == 'submit'
 
+    def refuse_submit(self):
+        """No COA AMB2 is submitted, in any workflow state (TASKS-366, decision 129; Hugh's ruling of 2026-11-03:
+        Quality approval is the end). Refused for every role and every way that takes a certificate from docstatus 0
+        to 1: `frappe.client.submit`, the form's Submit, a save or an insert that carries docstatus 1, a bulk submit.
+        A certificate that is ALREADY submitted is not touched: its update after submit and its cancel are as before."""
+        if cint(self.docstatus) != 1:
+            return
+        before = None if self.is_new() else self.get_doc_before_save()
+        if getattr(self, "_action", None) == "submit" or self.is_new() or (before and cint(before.get("docstatus")) == 0):
+            frappe.throw(
+                _("COA {0} cannot be submitted: a certificate ends at Quality approval (state Approved); nothing of this type is submitted.").format(self.name or ""),
+                title=_("Certificate not submitted"),
+            )
+
     def refuse_edit_of_approved(self):
         """A certificate that was Approved and is still Approved may not be saved again (TASKS-335 D-12).
         A transition changes the state, so Reject (Approved -> Draft) and the Approve that reaches Approved pass."""
@@ -176,6 +190,7 @@ class COAAMB2(Document):
 
     def before_validate(self):
         """Runs for a save and for a submit, also under `ignore_validate` (TASKS-365)."""
+        self.refuse_submit()
         self.refuse_edit_of_approved()
         refuse_taking_rows_of_approved(self)
 
@@ -207,6 +222,7 @@ class COAAMB2(Document):
 
     def validate(self):
         """Comprehensive validation logic - SKIPS heavy checks for draft"""
+        self.refuse_submit()
         self.refuse_edit_of_approved()
         
         # CRITICAL: For draft documents being edited, skip heavy validation to prevent timeout

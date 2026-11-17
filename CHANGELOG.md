@@ -21,6 +21,12 @@
 - **Rename (VM3 D12-5).** `COAAMB2.before_rename` refuses the rename of an Approved certificate (API and the form's title) and a merge of another certificate into it. `allow_rename` stays on for the type: a Draft is renamed as before.
 - Not changed: who may press each transition; "Auto Approved"; `db_set` and SQL run no event.
 
+### No COA AMB2 is submitted, in any state (TASKS-366 decision 129)
+- Round 9c refused the submit of an Approved certificate only; a Draft, Validated or Pending Supervisor one could still be submitted directly by a role that holds submit, past the workflow. `COAAMB2.refuse_submit` (first in `before_validate`, which runs under `ignore_validate` too, and in `validate`) now refuses every move of a certificate from docstatus 0 to 1, for every role, with one message: the certificate ends at Quality approval.
+- A certificate that is already submitted on a site is not touched: update after submit, cancel and its print code behave as before. An amended copy of a cancelled one is a new draft and, like any draft, cannot be submitted.
+- Not changed: the fixture's permission rows (two roles still hold the submit right, now without effect); the submit-time code in the controller, which no new document can reach any more.
+- **Code only: no `bench migrate` added by this change;** restart + `clear-cache`.
+
 ### The result-row DocType no longer declares "track seen" (TASKS-365, T-1) — **this part needs `bench migrate`**
 - `COA Quality Test Parameter` had `track_seen` = 1 and its table has no `_seen` column, so every save of an existing result row by itself ended in a database error (HTTP 500) before any handler ran. `track_seen` has no meaning for a child table and is removed from the DocType JSON. No column is added or dropped; the migrate only re-reads the DocType. After it, a result row of a Draft certificate can be saved by itself, and a result row of an Approved one is refused by the lock (which is why this repair comes after the lock on moved rows).
 ## 13.12.14 — 2026-11
