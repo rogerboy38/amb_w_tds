@@ -1,5 +1,34 @@
 # Changelog
 
+## 13.12.15 — 2026-11
+
+**Code, hooks and one DocType JSON (`coa_quality_test_parameter.json`, round 9c).** The lock itself is code and hooks: it is in force after a backend restart (web + workers) **and** `bench --site <site> clear-cache` (not optional: the hooks are read from the cache). **`bench migrate` is needed for one thing only, the `_seen` repair below**; without it the lock is complete and the old database error on a result row saved by itself stays.
+
+### An Approved COA AMB2 cannot be saved again (TASKS-335 D-12)
+- All six states of the COA AMB2 workflow are docstatus 0 and the state's `allow_edit` is applied by the browser only, so an Approved certificate kept its Save button and accepted writes. `validate` now refuses a save of a document that was Approved before the save and still is. A workflow transition changes the state, so Approve and Reject (Approved → Draft) still pass. **Effect:** an Approved certificate cannot be saved again, including by "Validate All Tests", until a Quality Manager rejects it to Draft.
+- Not changed: who may press each transition, the workflow fixture, scoring.
+- Tests: `tests/test_coa_amb2_approved_lock.py`.
+
+### The lock reaches the certificate's rows, and deletion (TASKS-361 decision 115)
+- A result row of an Approved certificate saved, inserted or deleted **by itself** never passed through the certificate's `validate`, so `frappe.client.save` of one row changed it. Both child tables of COA AMB2 (`COA Quality Test Parameter`, `SPC Batch Parameter`) now carry a `doc_events` hook (`before_validate`, `on_trash`) that refuses when the row's parent is an Approved, not submitted COA AMB2. Rows of any other parent are not judged. A save of the certificate itself (the workflow's Reject and Approve) does not run row events and is unchanged.
+- An Approved certificate cannot be deleted (`COAAMB2.on_trash`); a Draft can.
+- **Still code and hooks only: no `bench migrate`; restart + `clear-cache`** (the hooks are read from the cache).
+- Not changed: the "Auto Approved" state stays unlocked (pending list); `db_set` and SQL run no event.
+
+### The lock also refuses a submit, a row taken away and a rename (TASKS-365 decision 128)
+- **Submit (VM3 D12-6).** During a submit the document is already at docstatus 1 and the lock returned at once, so `frappe.client.submit` with a signature in the call changed an Approved certificate in place and submitted it. Since 13.12.6 no path of the workflow submits a COA AMB2 (Approved, at docstatus 0, is its end), so **an Approved certificate is not submitted at all**, changed or not, with or without a signature. The lock now also runs in `before_validate` (it runs under `ignore_validate` too). A submit from any other state is outside this lock and as it was.
+- **A row taken away (VM3 D12-4).** A row is judged by the parent it **has in the database** as well as by the parent the caller sends: `parent` or `parenttype` changed in the same save no longer takes it out of an Approved certificate, for any role. And a document saved with the **name** of such a row in its own table is refused in its `before_validate`: another COA AMB2 by its controller, and COA AMB, Batch AMB and SPC Batch Record (the other DocTypes that carry `COA Quality Test Parameter` / `SPC Batch Parameter`) by `doc_events` registered here. Nothing else of those documents is judged; rows under any other parent are not judged.
+- **Rename (VM3 D12-5).** `COAAMB2.before_rename` refuses the rename of an Approved certificate (API and the form's title) and a merge of another certificate into it. `allow_rename` stays on for the type: a Draft is renamed as before.
+- Not changed: who may press each transition; "Auto Approved"; `db_set` and SQL run no event.
+
+### No COA AMB2 is submitted, in any state (TASKS-366 decision 129)
+- Round 9c refused the submit of an Approved certificate only; a Draft, Validated or Pending Supervisor one could still be submitted directly by a role that holds submit, past the workflow. `COAAMB2.refuse_submit` (first in `before_validate`, which runs under `ignore_validate` too, and in `validate`) now refuses every move of a certificate from docstatus 0 to 1, for every role, with one message: the certificate ends at Quality approval.
+- A certificate that is already submitted on a site is not touched: update after submit, cancel and its print code behave as before. An amended copy of a cancelled one is a new draft and, like any draft, cannot be submitted.
+- Not changed: the fixture's permission rows (two roles still hold the submit right, now without effect); the submit-time code in the controller, which no new document can reach any more.
+- **Code only: no `bench migrate` added by this change;** restart + `clear-cache`.
+
+### The result-row DocType no longer declares "track seen" (TASKS-365, T-1) — **this part needs `bench migrate`**
+- `COA Quality Test Parameter` had `track_seen` = 1 and its table has no `_seen` column, so every save of an existing result row by itself ended in a database error (HTTP 500) before any handler ran. `track_seen` has no meaning for a child table and is removed from the DocType JSON. No column is added or dropped; the migrate only re-reads the DocType. After it, a result row of a Draft certificate can be saved by itself, and a result row of an Approved one is refused by the lock (which is why this repair comes after the lock on moved rows).
 ## 13.12.14 — 2026-11
 
 **Code only — `amb_w_tds/formulation/propuestas.py` (`pick_headline`, new `_SPECIFIC_TOKENS`).** No DocType JSON, fixture, patch or hook: **no `bench migrate`**; backend restart (web + workers) + `bench --site <site> clear-cache`.

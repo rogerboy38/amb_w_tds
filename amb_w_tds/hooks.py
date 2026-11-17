@@ -60,6 +60,28 @@ doctype_js = {
 
 doc_events = {
 
+    # TASKS-361 decision 115: the Approved lock of COA AMB2 reaches its rows. Both child tables of the certificate;
+    # the hook acts only on a row whose parent is an Approved, not submitted COA AMB2 (rows of COA AMB and of any
+    # other parent are not judged). `before_validate` runs for a save and an insert of the row alone.
+    "COA Quality Test Parameter": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+        "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+    },
+    "SPC Batch Parameter": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+        "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+    },
+
+    # TASKS-365 decision 128 (VM3 D12-4 a): the other documents that carry `SPC Batch Parameter` in a table of their
+    # own (both DocTypes belong to amb_w_spc; only this hook is registered here). A save of one of them with the
+    # name of a row of an Approved COA AMB2 in its table is refused; nothing else of them is judged.
+    "Batch AMB": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_taking_rows_of_approved",
+    },
+    "SPC Batch Record": {
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_taking_rows_of_approved",
+    },
+
     # 13.11.2: ERPNext's BOM.autoname skips amended BOMs when picking the next BOM-<item>-NNN, so on
     # items whose amendments took plain numbers it re-proposes an existing name ("Duplicate Name").
     # Runs right after it; corrects the name ONLY when it already exists (counting amendments).
@@ -130,6 +152,8 @@ doc_events = {
     # Customer-Specific Specification records. Configurable via the
     # TDS Settings.css_block_on_mismatch check (0 = warn-only default; 1 = block submit).
     "COA AMB": {
+        # TASKS-365: COA AMB carries both child tables of COA AMB2; a save of it must not take a row of an Approved one
+        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_taking_rows_of_approved",
         "on_submit": [
             "amb_w_tds.amb_w_tds.doctype.coa_amb.coa_amb.validate_css_on_submit",
             # P1.4 QR Phase-1: mint token + attach shared PDF (signature-guarded, never breaks submit)
