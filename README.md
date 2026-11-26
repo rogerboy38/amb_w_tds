@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.16 | 2026-11 | Both certificates: COA AMB derives result and compliance on every save and has the Approved lock of COA AMB2 (same functions); `filled_by` set by the server; "may this be approved" at the Approve, approver and date written by the server; one vocabulary module. **Needs `bench migrate`** (new field `filled_by`), restart + clear-cache. TASKS-384 B1. |
 | 13.12.15 | 2026-11 | Code only (`coa_amb2.py`): an Approved COA AMB2 cannot be saved again until a Quality Manager rejects it to Draft. No migrate: restart + clear-cache. TASKS-335 D-12. |
 | 13.12.14 | 2026-11 | Code only (`propuestas.py`): the Propuesta's Acemannan column prefers the TDS row named NMR over the other Acemannan rows; no NMR row = unchanged. No migrate: restart + clear-cache. TASKS-335 D-11. |
 | 13.12.13 | 2026-11 | Code only (`bom_formula.py`, `propuestas.py`): the Propuestas report files a COA row by `parameter_name` and shows `result` before `value` (the reader's own functions); the reader's QIP fallback compares names case-sensitively. No migrate: restart + clear-cache. TASKS-298. |

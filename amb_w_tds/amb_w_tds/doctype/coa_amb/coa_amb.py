@@ -8,6 +8,9 @@ from frappe.utils import nowdate, flt, get_url, cstr
 import json
 import re
 
+from amb_w_tds import certificate_rules
+from amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2 import ApprovedLock
+
 _LEAD_NUM = re.compile(r'[-+]?\d*\.?\d+')
 
 
@@ -22,7 +25,7 @@ def _num(v):
     return float(m.group()) if m else None
 
 
-class COAAMB(Document):
+class COAAMB(ApprovedLock, Document):
     """
     COA AMB - Certificate of Analysis with enhanced validation and workflow
     """
@@ -30,18 +33,32 @@ class COAAMB(Document):
         """Check if we're in submit flow vs normal edit"""
         return getattr(self, '_action', None) == 'submit'
 
+    def before_validate(self):
+        """The Approved lock (TASKS-384 B1; the functions are COA AMB2's, see `ApprovedLock`). Runs for a save and
+        for a submit, also under `ignore_validate`. The rows taken from another Approved certificate are judged by
+        the `before_validate` doc_event registered for COA AMB in hooks.py."""
+        self.refuse_edit_of_approved()
+
     def validate(self):
-        """Comprehensive validation logic - SKIPS heavy checks for draft"""
-        
-        # CRITICAL: For draft documents being edited, skip heavy validation to prevent timeout
-        # Only run full validation on submit
+        """Draft saves run the light checks and derive the result; the row checks that refuse run at submit."""
+        self.refuse_edit_of_approved()
+
         if self.docstatus == 0 and not self._is_submit_flow():
-            # Lightweight validation for draft editing (saves in <1 second)
             self.validate_linked_tds()
             self.validate_batch_reference()
             self.check_mandatory_tds_link()
+            # TASKS-384 B1: result and compliance are derived from the rows on EVERY save; a typed value does not
+            # survive a save. This branch used to return before the evaluation "to prevent timeout". The
+            # evaluation is arithmetic over the rows already in memory and makes no query (a formula row costs one
+            # `safe_eval`); the three checks above are where a draft save reads the database (two `exists` and two
+            # `get_doc`), and they ran before as well. What still runs at submit only is `validate_test_parameters`,
+            # which REFUSES an out-of-range numeric row: on a draft it would stop a failing result from being
+            # recorded at all.
+            self.evaluate_overall_result()
+            # who filled, "may this be approved", approver and date; after the result is derived
+            certificate_rules.apply(self)
             return
-        
+
         # FULL VALIDATION (only on submit)
         # Core validation sequence
         self.validate_linked_tds()
@@ -50,6 +67,7 @@ class COAAMB(Document):
         # Enhanced test parameter validation
         self.validate_test_parameters()
         self.evaluate_overall_result()
+        certificate_rules.apply(self)
         
         # Additional validations
         self.check_mandatory_tds_link()
@@ -253,7 +271,12 @@ class COAAMB(Document):
     def evaluate_overall_result(self):
         """Enhanced overall test result evaluation with detailed tracking"""
         if not self.coa_quality_test_parameter:
+            # TASKS-384 B1: compliance and the failing names are derived too; an earlier value does not stay.
             self.overall_result = 'No Tests'
+            self.compliance_status = 'Pending'
+            self.failed_parameters = ''
+            self.pass_percentage = 0
+            self.tested_percentage = 0
             return
 
         failed_tests = []
@@ -272,6 +295,8 @@ class COAAMB(Document):
             
             if not param.result:
                 pending_tests.append(param.parameter_name)
+                # TASKS-384 B1: a row whose result was taken away is Pending again, not what it was scored before
+                param.status = 'Pending'
                 continue
                 
             tested_tests += 1
@@ -290,11 +315,16 @@ class COAAMB(Document):
         if total_tests > 0:
             self.pass_percentage = (len(passed_tests) / total_tests) * 100 if tested_tests > 0 else 0
             self.tested_percentage = (tested_tests / total_tests) * 100
-        
+        else:
+            self.pass_percentage = 0
+            self.tested_percentage = 0
+
+        # TASKS-384 B1: written on every evaluation, so a re-score with no failure does not keep an earlier text
+        self.failed_parameters = ', '.join(failed_tests)
+
         # Determine overall result
         if failed_tests:
             self.overall_result = 'Fail'
-            self.failed_parameters = ', '.join(failed_tests)
             self.compliance_status = 'Non-Compliant'
         elif pending_tests and not failed_tests and passed_tests:
             self.overall_result = 'Partial'
@@ -837,22 +867,22 @@ def fetch_parameter_details(parameter_name):
 
 @frappe.whitelist()
 def validate_all_tests(coa_name):
-    """Validate all tests in a COA"""
-    try:
-        coa = frappe.get_doc('COA AMB', coa_name)
-        coa.evaluate_overall_result()
-        coa.save()
-        
-        summary = coa.get_test_summary()
-        
-        return {
-            'message': f"Validated {summary['total']} tests: {summary['passed']} passed, {summary['failed']} failed, {summary['pending']} pending",
-            'summary': summary
-        }
-        
-    except Exception as e:
-        frappe.log_error(title="Test Validation", message=f"Error validating tests: {str(e)}")
-        return {"error": str(e)}
+    """Score every test row and SAVE the certificate; the message says that it was saved (TASKS-384 B1).
+
+    The save is the scoring: `validate` derives the result from the rows on every save. Nothing is caught here: a
+    refusal of the save (an Approved certificate, a missing right) reaches the user as the server's own message,
+    instead of the `{"error": ...}` the form never showed."""
+    coa = frappe.get_doc('COA AMB', coa_name)
+    coa.save()
+
+    summary = coa.get_test_summary()
+    counts = (f"{summary.get('total', 0)} tests: {summary.get('passed', 0)} passed, {summary.get('failed', 0)} failed, "
+              f"{summary.get('pending', 0)} pending")
+    return {
+        'message': _("Certificate {0} was saved. Result: {1}. Validated {2}").format(coa.name, coa.overall_result, counts),
+        'saved': 1,
+        'summary': summary
+    }
 
 @frappe.whitelist()
 def duplicate_coa(source_coa, new_batch=None):

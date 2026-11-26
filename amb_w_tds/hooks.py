@@ -61,11 +61,21 @@ doctype_js = {
 doc_events = {
 
     # TASKS-361 decision 115: the Approved lock of COA AMB2 reaches its rows. Both child tables of the certificate;
-    # the hook acts only on a row whose parent is an Approved, not submitted COA AMB2 (rows of COA AMB and of any
-    # other parent are not judged). `before_validate` runs for a save and an insert of the row alone.
+    # the hook acts only on a row whose parent is an Approved, not submitted certificate (rows of any other parent
+    # are not judged). `before_validate` runs for a save and an insert of the row alone.
+    # TASKS-384 B1: the same lock now holds for the rows of an Approved COA AMB (same function). And a result row
+    # saved, inserted or deleted by itself names the session user as the certificate's `filled_by` when it changes
+    # a result (second function, after the lock): otherwise the row path would let a person change a result and
+    # then approve it.
     "COA Quality Test Parameter": {
-        "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
-        "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+        "before_validate": [
+            "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+            "amb_w_tds.certificate_rules.note_filler_of_row",
+        ],
+        "on_trash": [
+            "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
+            "amb_w_tds.certificate_rules.note_filler_of_row",
+        ],
     },
     "SPC Batch Parameter": {
         "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",

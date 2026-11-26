@@ -12,6 +12,7 @@ class _Doc:
 	"""The slice of a Document that refuse_edit_of_approved touches."""
 
 	refuse = mod.COAAMB2.refuse_edit_of_approved
+	doctype = "COA AMB2"  # TASKS-384 B1: the lock reads the state field of the document's type
 
 	def __init__(self, state, before_state, docstatus=0, new=False, has_before=True, before_docstatus=0):
 		self.name, self.docstatus, self._state, self._new = "COA-1", docstatus, state, new
@@ -148,7 +149,9 @@ class TestRowsOfApproved(unittest.TestCase):
 		self.assertFalse(self.hook(_Row(), docstatus=1)[0])
 
 	def test_rows_of_another_parent_type_are_never_read_or_judged(self):
-		for row in (_Row(parenttype="COA AMB"), _Row(parenttype=None), _Row(parent=None), _Row(parenttype="Batch AMB")):
+		# TASKS-384 B1: a row whose parent is a COA AMB is judged now (tests/test_certificate_rules_b1.py), so it
+		# left this list of parents that are never read
+		for row in (_Row(parenttype="SPC Batch Record"), _Row(parenttype=None), _Row(parent=None), _Row(parenttype="Batch AMB")):
 			refused, _t, db = self.hook(row, stored=("BATCH-1", "Batch AMB"))
 			self.assertFalse(refused)
 			# the certificate is never read: only where the row itself is stored (one statement, TASKS-365)
@@ -186,8 +189,10 @@ class TestRowsOfApproved(unittest.TestCase):
 		meta = __import__("json").load(open(mod.__file__.replace("coa_amb2.py", "coa_amb2.json"), encoding="utf-8"))
 		tables = sorted(f["options"] for f in meta["fields"] if f["fieldtype"] == "Table")
 		self.assertEqual(tables, ["COA Quality Test Parameter", "SPC Batch Parameter"])
-		for dt in tables:
-			self.assertEqual(hooks.doc_events[dt], {"before_validate": path, "on_trash": path}, dt)
+		# TASKS-384 B1: the result rows carry a second function after the lock (who filled); the lock stays first
+		filler = "amb_w_tds.certificate_rules.note_filler_of_row"
+		self.assertEqual(hooks.doc_events["COA Quality Test Parameter"], {"before_validate": [path, filler], "on_trash": [path, filler]})
+		self.assertEqual(hooks.doc_events["SPC Batch Parameter"], {"before_validate": path, "on_trash": path})
 		self.assertEqual(sorted(mod.LOCKED_CHILD_DOCTYPES), tables)
 
 
@@ -211,7 +216,7 @@ class TestRowsTakenByAnotherDocument(unittest.TestCase):
 
 		def get_all(doctype, filters=None, fields=None):
 			asked.append((doctype, filters))
-			return [frappe._dict(name=n, parent=p) for n, p in stored.items() if n in filters["name"][1]]
+			return [frappe._dict(name=n, parent=p, parenttype="COA AMB2") for n, p in stored.items() if n in filters["name"][1]]
 
 		refused, t = _run(lambda: mod.refuse_taking_rows_of_approved(parent), _Db(certs), get_all)
 		return refused, t, asked
@@ -221,7 +226,8 @@ class TestRowsTakenByAnotherDocument(unittest.TestCase):
 		for dt in ("COA AMB2", "COA AMB", "Batch AMB", "SPC Batch Record"):
 			refused, t, asked = self.take(_Parent(dt, "OTHER", [{"name": "row-1"}, {"name": None}]), {"row-1": "COA-1"}, certs)
 			self.assertTrue(refused, dt)
-			self.assertEqual(asked, [("SPC Batch Parameter", {"name": ["in", ["row-1"]], "parenttype": "COA AMB2"})])
+			# TASKS-384 B1: one query still, now for rows of either certificate type
+			self.assertEqual(asked, [("SPC Batch Parameter", {"name": ["in", ["row-1"]], "parenttype": ["in", ["COA AMB2", "COA AMB"]]})])
 
 	def test_what_is_not_judged(self):
 		certs = {"COA-1": ("Approved", 0), "COA-2": ("Draft", 0), "COA-3": ("Approved", 1)}
@@ -249,7 +255,7 @@ class TestRenameOfApproved(unittest.TestCase):
 
 	def rename(self, old, new, merge=False):
 		db = _Db({"COA-1": ("Approved", 0), "COA-2": ("Draft", 0), "COA-3": ("Approved", 1)})
-		return _run(lambda: mod.COAAMB2.before_rename(object(), old, new, merge), db)[0]
+		return _run(lambda: mod.COAAMB2.before_rename(type("D", (), {"doctype": "COA AMB2"})(), old, new, merge), db)[0]
 
 	def test_an_approved_certificate_is_not_renamed_and_nothing_is_merged_into_it(self):
 		self.assertTrue(self.rename("COA-1", "COA-X"))
@@ -264,7 +270,7 @@ class TestRenameOfApproved(unittest.TestCase):
 
 class TestDeleteOfApproved(unittest.TestCase):
 	def trash(self, state, docstatus=0):
-		d = type("D", (), {"name": "COA-1", "docstatus": docstatus, "get": lambda self, k: state if k == "workflow_state" else None})()
+		d = type("D", (), {"doctype": "COA AMB2", "name": "COA-1", "docstatus": docstatus, "get": lambda self, k: state if k == "workflow_state" else None})()
 		with mock.patch.object(mod, "_", lambda s: s), mock.patch.object(mod.frappe, "throw", side_effect=frappe.ValidationError):
 			try:
 				mod.COAAMB2.on_trash(d)
