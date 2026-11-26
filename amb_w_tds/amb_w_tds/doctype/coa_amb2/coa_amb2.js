@@ -112,15 +112,9 @@ frappe.ui.form.on('COA AMB2', {
         }
     },
     
-    approval_date: function(frm) {
-        if (frm.doc.approval_date) {
-            // Auto-set approved by
-            if (!frm.doc.approved_by) {
-                frm.set_value('approved_by', frappe.session.user);
-            }
-        }
-    },
-    
+    // TASKS-384 B1: the approver and the approval date are written by the server when the certificate is
+    // approved; both fields are read-only. The handler that set the approver when a date was typed is removed.
+
     // ============================================================
     // 117K FIX: Dynamic TDS filter based on show_draft_tds checkbox
     // ============================================================

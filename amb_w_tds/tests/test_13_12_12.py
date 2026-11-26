@@ -49,7 +49,10 @@ def save_draft(d):
     """What a Draft save runs: `validate()` (the controller hook), with the three light checks stubbed."""
     with mock.patch.object(COAAMB2, "validate_linked_tds", lambda s: None), \
             mock.patch.object(COAAMB2, "validate_batch_reference", lambda s: None), \
-            mock.patch.object(COAAMB2, "check_mandatory_tds_link", lambda s: None):
+            mock.patch.object(COAAMB2, "check_mandatory_tds_link", lambda s: None), \
+            mock.patch("amb_w_tds.certificate_rules.apply", lambda doc: None):
+        # TASKS-384 B1: `validate` now also runs the shared certificate rules (who filled, approval); they read the
+        # session and the stored document and have their own tests (tests/test_certificate_rules_b1.py)
         d.validate()
     return d
 
@@ -156,6 +159,7 @@ class TestSubmitPathUnchanged(unittest.TestCase):
         names = ("validate_linked_tds", "validate_batch_reference", "validate_test_parameters", "evaluate_overall_result",
                  "check_mandatory_tds_link", "validate_signature_on_submit", "evaluate_formula_parameters")
         patches = [mock.patch.object(COAAMB2, n, lambda s, _n=n: calls.append(_n)) for n in names]
+        patches.append(mock.patch("amb_w_tds.certificate_rules.apply", lambda doc: calls.append("certificate_rules")))
         for p in patches:
             p.start()
         try:
@@ -163,7 +167,8 @@ class TestSubmitPathUnchanged(unittest.TestCase):
         finally:
             for p in patches:
                 p.stop()
-        self.assertEqual(calls, list(names))
+        # TASKS-384 B1: the shared certificate rules run right after the result is derived
+        self.assertEqual(calls, [*names[:4], "certificate_rules", *names[4:]])
 
     def test_a_draft_runs_the_three_light_checks_then_the_evaluation_and_nothing_heavy(self):
         d = coa(synthetic(2, 1, 0))
@@ -171,6 +176,7 @@ class TestSubmitPathUnchanged(unittest.TestCase):
         names = ("validate_linked_tds", "validate_batch_reference", "check_mandatory_tds_link", "evaluate_overall_result",
                  "validate_test_parameters", "validate_signature_on_submit", "evaluate_formula_parameters")
         patches = [mock.patch.object(COAAMB2, n, lambda s, _n=n: calls.append(_n)) for n in names]
+        patches.append(mock.patch("amb_w_tds.certificate_rules.apply", lambda doc: calls.append("certificate_rules")))
         for p in patches:
             p.start()
         try:
@@ -179,7 +185,7 @@ class TestSubmitPathUnchanged(unittest.TestCase):
             for p in patches:
                 p.stop()
         self.assertEqual(calls, ["validate_linked_tds", "validate_batch_reference", "check_mandatory_tds_link",
-                                 "evaluate_overall_result"])
+                                 "evaluate_overall_result", "certificate_rules"])
 
 
 class TestVersion(unittest.TestCase):
