@@ -47,11 +47,11 @@
   "docstatus": 0,
   "doctype": "Client Script",
   "dt": "COA AMB",
-  "enabled": 1,
-  "modified": "2025-08-30 18:06:56.227479",
+  "enabled": 0,
+  "modified": "2026-11-26 13:00:00.000000",
   "module": "RND",
   "name": "custom_naming_series",
-  "script": "frappe.ui.form.on('COA AMB', {\r\n    onload: function(frm) {\r\n        // Only set the value if the document is new and the field is empty\r\n        if (frm.is_new() && frm.doc.naming_series) {\r\n            frm.set_value('naming_series', '');\r\n        }\r\n    }\r\n});",
+  "script": "// Retired by TASKS-384 B2: this script emptied the naming series of a new COA AMB on load, so the series had\r\n// to be picked again by hand. It is disabled and empties nothing; the server sets the default series.\r\n",
   "view": "Form"
  },
  {

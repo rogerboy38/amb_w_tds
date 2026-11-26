@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.17 | 2026-11 | Both certificates: `work_order` written by the server from the lot; one function from the product to the certificate type (its table ships empty: no item is classed yet); `make_certificate_for_lot` for the lot and Work Order forms; the customers list of a COA AMB filled on the server at creation; the lot-change handler and the Client Script that emptied the series repaired. **Needs `bench migrate`**, restart + clear-cache. TASKS-384 B2. |
 | 13.12.16 | 2026-11 | Both certificates: COA AMB derives result and compliance on every save and has the Approved lock of COA AMB2 (same functions); `filled_by` set by the server; "may this be approved" at the Approve, approver and date written by the server; one vocabulary module. **Needs `bench migrate`** (new field `filled_by`), restart + clear-cache. TASKS-384 B1. |
 | 13.12.15 | 2026-11 | Code only (`coa_amb2.py`): an Approved COA AMB2 cannot be saved again until a Quality Manager rejects it to Draft. No migrate: restart + clear-cache. TASKS-335 D-12. |
 | 13.12.14 | 2026-11 | Code only (`propuestas.py`): the Propuesta's Acemannan column prefers the TDS row named NMR over the other Acemannan rows; no NMR row = unchanged. No migrate: restart + clear-cache. TASKS-335 D-11. |

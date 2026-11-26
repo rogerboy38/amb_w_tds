@@ -29,6 +29,21 @@ CUSTOMERS_TABLE = "custom_coa_customers"
 
 # The lot's native Batches: `Batch` rows whose `custom_batch_amb` is the lot (amb_w_spc's projection).
 LOT_DOCTYPE = "Batch AMB"
+# TASKS-384 B2: the certificate's `work_order` follows the lot's `work_order_ref`; the lot's item is the Work
+# Order's item (`item_to_manufacture`, what the lot picker shows).
+LOT_WORK_ORDER_FIELD = "work_order_ref"
+LOT_ITEM_FIELD = "item_to_manufacture"
+# The customers of a COA AMB come from the specification's table, else from the Item's (decision 312).
+SPECIFICATION_CUSTOMERS = ("TDS Product Specification", "custom_tds_customers")
+ITEM_CUSTOMERS = ("Item", "custom_amb_customer_items")
+CUSTOMER_ROW_FIELDS = (
+	"customer",
+	"custom_customer_name",
+	"custom_customer_part_number",
+	"custom_lead_time_days",
+	"custom_min_order_qty",
+	"custom_max_order_qty_",
+)
 BATCH_LOT_FIELD = "custom_batch_amb"
 # rnd_warehouse_management's release check reads Quality Inspection by `batch_no` and Non Conformance by
 # `custom_batch_reference`; the same two keys are read here.
@@ -249,8 +264,82 @@ def set_approval(doc):
 		doc.approval_date = before.get("approval_date")
 
 
+def follow_lot(doc):
+	"""TASKS-384 B2. The certificate's Work Order is the lot's: written here from the lot's `work_order_ref` on
+	every save of a certificate that names a lot whose record names a Work Order (one read of the lot). A lot
+	without a Work Order leaves the field as it is.
+
+	The lot's item and the certificate's product may differ on purpose (they sit at different levels of the Item
+	tree, which is why the lot picker carries no item filter), so a difference is SHOWN, not refused: once, in the
+	save that sets or changes the lot or the product."""
+	lot = doc.get("batch_reference")
+	if not lot:
+		return
+	row = frappe.db.get_value(LOT_DOCTYPE, lot, [LOT_WORK_ORDER_FIELD, LOT_ITEM_FIELD], as_dict=True)
+	if not row:
+		return
+	if row.get(LOT_WORK_ORDER_FIELD):
+		doc.work_order = row.get(LOT_WORK_ORDER_FIELD)
+	before = _before(doc)
+	touched = not before or any(before.get(f) != doc.get(f) for f in ("batch_reference", "product_item"))
+	lot_item, product = row.get(LOT_ITEM_FIELD), doc.get("product_item")
+	if touched and lot_item and product and lot_item != product:
+		frappe.msgprint(
+			_(
+				"Lot {0} is of item {1}; this certificate is for product {2}. The product was not changed."
+			).format(lot, lot_item, product),
+			title=_("Lot and product differ"),
+			indicator="orange",
+			alert=True,
+		)
+
+
+def refuse_wrong_type(doc):
+	"""TASKS-384 B2, decision 317: the product decides the type of its certificate. Judged when the certificate is
+	made and when its product changes, and only for a product that is classed (see
+	`amb_w_tds.api.certificate.certificate_type_for_item`); a stored certificate whose product stays is not judged
+	again, so its workflow is not stopped by a later change of the classification."""
+	before = _before(doc)
+	product = doc.get("product_item")
+	if not product or (before and before.get("product_item") == product):
+		return
+	from amb_w_tds.api.certificate import certificate_type_for_item
+
+	expected = certificate_type_for_item(product)
+	if expected and expected != doc.doctype:
+		frappe.throw(
+			_("Product {0} takes a {1}, not a {2}: make its certificate as {1}.").format(
+				product, _(expected), _(doc.doctype)
+			),
+			title=_("Wrong certificate type"),
+		)
+
+
+def customers_for(specification, item):
+	"""The customers of a product: the rows of the specification's customers table, else the Item's."""
+	for (doctype, table), name in ((SPECIFICATION_CUSTOMERS, specification), (ITEM_CUSTOMERS, item)):
+		if not name or not frappe.db.exists(doctype, name):
+			continue
+		rows = [row for row in (frappe.get_doc(doctype, name).get(table) or []) if row.get("customer")]
+		if rows:
+			return [{field: row.get(field) for field in CUSTOMER_ROW_FIELDS} for row in rows]
+	return []
+
+
+def fill_customers(doc):
+	"""TASKS-384 B2, decision 312: the customers list is filled when the certificate is created, on the server.
+	Called by `before_insert` of a certificate that has the table (COA AMB), after the specification was read. A
+	list that already has rows is left as it is."""
+	if not doc.meta.has_field(CUSTOMERS_TABLE) or doc.get(CUSTOMERS_TABLE):
+		return
+	for row in customers_for(doc.get("linked_tds"), doc.get("product_item") or doc.get("item_code")):
+		doc.append(CUSTOMERS_TABLE, row)
+
+
 def apply(doc):
 	"""Called by `validate` of both certificates, after the result was derived from the rows."""
 	refuse_changed_results_at_share(doc)
+	refuse_wrong_type(doc)
+	follow_lot(doc)
 	set_filled_by(doc)
 	set_approval(doc)

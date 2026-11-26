@@ -95,6 +95,9 @@ class COAAMB(ApprovedLock, Document):
         if self.linked_tds:
             self.sync_from_tds()
         self.set_default_naming_series()
+        # TASKS-384 B2 (decision 312): the customers list is filled on the server when the certificate is made,
+        # from the specification's customers, else the Item's. The browser used to be the only one to fill it.
+        certificate_rules.fill_customers(self)
 
     def before_save(self):
         """Before save hook"""
