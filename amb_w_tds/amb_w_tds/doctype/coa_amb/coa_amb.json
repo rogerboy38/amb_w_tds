@@ -39,6 +39,7 @@
   "item_code",
   "column_break_cure",
   "batch_reference",
+  "work_order",
   "coa_number",
   "approval_date",
   "approved_by",
@@ -140,6 +141,14 @@
    "label": "Batch Reference",
    "options": "Batch AMB",
    "reqd": 0
+  },
+  {
+   "description": "The lot's Work Order. Written by the server from the lot.",
+   "fieldname": "work_order",
+   "fieldtype": "Link",
+   "label": "Work Order",
+   "options": "Work Order",
+   "read_only_depends_on": "eval:doc.work_order"
   },
   {
    "fieldname": "coa_number",
@@ -418,7 +427,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2026-11-26 12:00:00.000000",
+ "modified": "2026-11-26 13:00:00.000000",
  "module": "Amb W Tds",
  "name": "COA AMB",
  "naming_rule": "By \"Naming Series\" field",

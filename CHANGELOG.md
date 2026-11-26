@@ -1,5 +1,18 @@
 # Changelog
 
+## 13.12.17 — 2026-11
+
+**Code, two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: new field `work_order`) and one fixture (`client_script.json`, one Client Script disabled).** **`bench migrate` is needed** (one new column on each certificate; the fixture), then a backend restart (web + workers) and `bench --site <site> clear-cache`. No workflow fixture, no patch, no data change. The other halves of this item are in amb_w_spc (the lot's `coa_amb2` field and the "Certificate" action on the lot) and in rnd_warehouse_management (the action on the Work Order).
+
+### Certificate ↔ Work Order ↔ lot, and creation from a lot (TASKS-384 B2; decisions 312, 317)
+- **`work_order`** (new, Link → Work Order, both certificates): written by the server on every save from the lot's `work_order_ref`; a lot without a Work Order leaves the field as it is. Read-only on the form once it has a value.
+- **The product decides the type.** `amb_w_tds/api/certificate.py` has one function, `certificate_type_for_item`, with its classification table at the top: an item takes the certificate type of the nearest Item Group of its ancestry that the table names. **The table ships empty**: no rule separating finished from semi-finished products could be read from the code or the fixtures (the Item Groups named there class a product by its form, and a powder is both sold and used as an input). With the table empty every item is unclassed and nothing below refuses.
+- **The wrong type is refused** by the certificate's `validate`, when the certificate is made and when its product changes, for a classed product only. A stored certificate whose product stays is not judged again.
+- **`make_certificate_for_lot(lot)`** (whitelisted; called by the lot form and, through the lot, by the Work Order form): inserts a Draft certificate of the product's type with lot, Work Order, product and specification filled, and returns its DocType and name. The product is the specification's product when the lot names a specification, else the lot's item. An unclassed product is refused with a message; so is a lot with neither.
+- **The customers list of a COA AMB is filled on the server** when the certificate is created (`before_insert`, any creation path), from the specification's customers table, else the Item's. A list that already has rows is left alone. The browser's own prefill is unchanged.
+- **Repaired on the way.** The lot-change handler of both forms set two fields the certificate does not have (`production_date`, `batch_quantity`) and overwrote the product with the lot's item: it now shows the lot's Work Order, fills the product only when it is empty and says so when the two differ. On the server a difference between the lot's item and the product is shown once, not refused (the two sit at different levels of the Item tree on purpose). The Client Script `custom_naming_series`, which emptied the naming series of a new COA AMB, is disabled and its body removed.
+- Not changed: the workflow fixtures; the lot picker; `sync_from_tds`.
+- Tests: `tests/test_certificate_links_b2.py`.
 ## 13.12.16 — 2026-11
 
 **Code, hooks and two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: new field `filled_by`; `approved_by` and `approval_date` read-only).** **`bench migrate` is needed** (one new column on each certificate), then a backend restart (web + workers) and `bench --site <site> clear-cache` (the hooks are read from the cache). No workflow fixture, no patch, no data change.

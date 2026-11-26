@@ -93,23 +93,29 @@ frappe.ui.form.on('COA AMB2', {
     },
     
     batch_reference: function(frm) {
-        if (frm.doc.batch_reference) {
-            // Get batch details
-            frappe.call({
-                method: 'frappe.client.get',
-                args: {
-                    doctype: 'Batch AMB',
-                    name: frm.doc.batch_reference
-                },
-                callback: function(r) {
-                    if (r.message) {
-                        frm.set_value('product_item', r.message.item_to_manufacture);
-                        frm.set_value('production_date', r.message.production_end_date);
-                        frm.set_value('batch_quantity', r.message.produced_qty);
-                    }
-                }
-            });
+        // TASKS-384 B2: this handler set `production_date` and `batch_quantity`, two fields the certificate does
+        // not have, and overwrote the product with the lot's item. It now shows the lot's Work Order (the server
+        // writes it on save), fills the product only when it is empty, and says so when the two differ.
+        if (!frm.doc.batch_reference) {
+            return;
         }
+        frappe.db.get_value('Batch AMB', frm.doc.batch_reference, ['item_to_manufacture', 'work_order_ref'], function(r) {
+            if (!r) {
+                return;
+            }
+            if (r.work_order_ref) {
+                frm.set_value('work_order', r.work_order_ref);
+            }
+            if (r.item_to_manufacture && !frm.doc.product_item) {
+                frm.set_value('product_item', r.item_to_manufacture);
+            } else if (r.item_to_manufacture && r.item_to_manufacture !== frm.doc.product_item) {
+                frappe.show_alert({
+                    message: __('Lot {0} is of item {1}; this certificate is for product {2}. The product was not changed.',
+                        [frm.doc.batch_reference, r.item_to_manufacture, frm.doc.product_item]),
+                    indicator: 'orange'
+                });
+            }
+        });
     },
     
     // TASKS-384 B1: the approver and the approval date are written by the server when the certificate is
