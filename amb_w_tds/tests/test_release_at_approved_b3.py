@@ -24,6 +24,10 @@ APPROVED_PATH = "amb_w_spc.sfc_manufacturing.lot_quality.certificate_approved"
 WITHDRAWN_PATH = "amb_w_spc.sfc_manufacturing.lot_quality.certificate_withdrawn"
 
 
+# a certificate that stands was approved by one person and filled by another
+TWO_PEOPLE = {"approved_by": "approver.b", "filled_by": "filler.a"}
+
+
 def _throw(msg, *a, **k):
 	raise frappe.ValidationError(msg)
 
@@ -245,6 +249,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 				overall_result="Fail",
 				approval_date="2026-11-20",
 				modified="2026-11-20 10:00:00",
+				**TWO_PEOPLE,
 			),
 			dict(
 				doctype="COA AMB",
@@ -255,6 +260,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 				overall_result="Pass",
 				approval_date="2026-11-25",
 				modified="2026-11-25 10:00:00",
+				**TWO_PEOPLE,
 			),
 		]
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=others)
@@ -271,7 +277,11 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 
 	def test_what_does_not_stand(self):
 		base = dict(
-			lot="LOTE-1", overall_result="Pass", approval_date="2026-11-25", modified="2026-11-25 10:00:00"
+			lot="LOTE-1",
+			overall_result="Pass",
+			approval_date="2026-11-25",
+			modified="2026-11-25 10:00:00",
+			**TWO_PEOPLE,
 		)
 		not_standing = [
 			dict(
@@ -298,6 +308,61 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 		twin = [dict(base, doctype="COA AMB2", name="COA-1", state="Approved", docstatus=0)]
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=twin)
 		self.assertEqual(fake.withdrawn.call_args.kwargs["standing"]["doctype"], "COA AMB2")
+
+	def test_only_a_certificate_approved_by_a_second_person_stands(self):
+		"""Review 1: a certificate submitted past the approval was "Certificate Shared" and stood for the lot, so
+		one person could turn a Failed lot Passed by rejecting its properly approved certificate."""
+		base = dict(
+			doctype="COA AMB",
+			name="COA-9",
+			lot="LOTE-1",
+			overall_result="Pass",
+			approval_date="2026-11-25",
+			modified="2026-11-25 10:00:00",
+		)
+		people = {
+			"no approver": dict(approved_by=None, filled_by="filler.a"),
+			"an empty approver": dict(approved_by=" ", filled_by="filler.a"),
+			"no filler": dict(approved_by="approver.b", filled_by=None),
+			"neither": dict(approved_by=None, filled_by=None),
+			"neither field read": {},
+			"one person": dict(approved_by="one.person", filled_by="one.person"),
+		}
+		for state, docstatus in (("Certificate Shared", 1), ("Approved", 0)):
+			for what, who in people.items():
+				with self.subTest(state=state, what=what):
+					other = [dict(base, state=state, docstatus=docstatus, **who)]
+					fake = save(cert("COA AMB2", "Draft", "Approved"), standing=other)
+					self.assertEqual(fake.withdrawn.call_args.kwargs, {"standing": None})
+			with self.subTest(state=state, what="two people"):
+				other = [dict(base, state=state, docstatus=docstatus, **TWO_PEOPLE)]
+				fake = save(cert("COA AMB2", "Draft", "Approved"), standing=other)
+				self.assertEqual(
+					fake.withdrawn.call_args.kwargs,
+					{"standing": {"doctype": "COA AMB", "name": "COA-9", "result": "Pass"}},
+				)
+		# an unapproved one does not hide an older one that stands
+		others = [
+			dict(base, state="Certificate Shared", docstatus=1, approved_by=None, filled_by=None),
+			dict(
+				base,
+				name="COA-8",
+				state="Approved",
+				docstatus=0,
+				overall_result="Fail",
+				approval_date="2026-11-01",
+				**TWO_PEOPLE,
+			),
+		]
+		fake = save(cert("COA AMB2", "Draft", "Approved"), standing=others)
+		self.assertEqual(fake.withdrawn.call_args.kwargs["standing"]["name"], "COA-8")
+
+	def test_the_standing_read_asks_for_approver_and_filler(self):
+		with site() as fake:
+			fake.get_all = mock.Mock(return_value=[])
+			rules.standing_certificate("LOTE-1", "COA AMB", "COA-1")
+		for call in fake.get_all.call_args_list:
+			self.assertLessEqual({"approved_by", "filled_by", "overall_result"}, set(call.kwargs["fields"]))
 
 	def test_the_reads_for_the_standing_certificate(self):
 		fake = save(cert("COA AMB2", "Draft", "Approved"))
@@ -342,6 +407,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 				overall_result="Partial",
 				approval_date="2026-11-20",
 				modified="x",
+				**TWO_PEOPLE,
 			)
 		]
 		_d, fake = self.cancel(standing=standing)
@@ -448,17 +514,18 @@ class TestRawLotWritesAreGone(unittest.TestCase):
 
 
 class TestPickerOffersInherited(unittest.TestCase):
-	def search(self, own=(), inherited=(), has_field=True, txt="", **kw):
+	def search(self, own=(), inherited=(), has_field=True, txt="", has_level=False, **kw):
 		calls = []
 
 		def get_list(doctype, **q):
 			calls.append(q)
-			rows = inherited if q["filters"] == batch_picker.inherited_filters() else own
+			rows = inherited if q["filters"][:2] == batch_picker.inherited_filters() else own
 			return [frappe._dict(r) for r in rows][q["start"] : q["start"] + q["page_length"]]
 
 		with (
 			mock.patch.object(frappe, "get_list", get_list),
 			mock.patch.object(batch_picker, "has_source_field", lambda: has_field),
+			mock.patch.object(batch_picker, "has_level_field", lambda: has_level),
 		):
 			return batch_picker.search_batches("Batch AMB", txt, "name", **kw), calls
 
@@ -526,6 +593,34 @@ class TestPickerOffersInherited(unittest.TestCase):
 			(calls[0]["filters"], calls[0]["start"], calls[0]["page_length"]),
 			(batch_picker.picker_filters(), 0, 20),
 		)
+
+	LEVEL = ["Batch AMB", "custom_batch_level", "in", ["1", "2", ""]]
+
+	def test_both_sets_offer_only_a_lot_or_a_sub_lot(self):
+		"""Review 6: the Inherited set offered containers. An empty level is a level 1 record: the "" in the list
+		makes the framework's `in` read an unset level as empty."""
+		self.assertEqual(batch_picker.level_filter(), self.LEVEL)
+		_out, calls = self.search(has_level=True)
+		self.assertEqual(
+			[c["filters"] for c in calls],
+			[batch_picker.picker_filters() + [self.LEVEL], batch_picker.inherited_filters() + [self.LEVEL]],
+		)
+		_out, calls = self.search(has_level=True, has_field=False)
+		self.assertEqual([c["filters"] for c in calls], [batch_picker.picker_filters() + [self.LEVEL]])
+		self.assertEqual(tuple(self.LEVEL[3][:2]), rules.CERTIFICATE_LEVELS)
+
+	def test_a_site_without_the_level_field_has_no_level_term(self):
+		for has_field in (True, False):
+			_out, calls = self.search(has_level=False, has_field=has_field)
+			for c in calls:
+				self.assertNotIn("custom_batch_level", repr(c["filters"]))
+
+	def test_the_level_guard_reads_the_lots_own_field(self):
+		meta = mock.Mock(has_field=lambda f: f == "custom_batch_level")
+		with mock.patch.object(frappe, "get_meta", lambda dt: meta if dt == "Batch AMB" else None):
+			self.assertTrue(batch_picker.has_level_field())
+		with mock.patch.object(frappe, "get_meta", lambda dt: mock.Mock(has_field=lambda f: False)):
+			self.assertFalse(batch_picker.has_level_field())
 
 	def test_the_guard_reads_the_lots_own_fields(self):
 		meta = mock.Mock(has_field=lambda f: f == "status_source")

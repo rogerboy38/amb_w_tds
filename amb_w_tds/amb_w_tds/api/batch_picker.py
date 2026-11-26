@@ -13,6 +13,10 @@ whatever that status is, so a sub-lot under a released lot can still get its own
 with the same call each and merged (newest first), because one `get_list` cannot say "A or B" beside the text
 search, which already is an "or". On a site where Batch AMB has no `status_source` field yet there is one read, as
 before.
+
+A certificate is made for a lot (level 1) or a sub-lot (level 2), never for a record below them (decision 319): both
+sets carry that term, and a record whose level is empty is a level 1 record. On a site where Batch AMB has no
+`custom_batch_level` field the term is left out.
 """
 
 import frappe
@@ -24,6 +28,9 @@ CANCELLED = "Cancelled"
 # amb_w_spc's field that says who decides a record's status; "Inherited" = the certificate of the lot above it.
 SOURCE_FIELD = "status_source"
 INHERITED = "Inherited"
+# The level of a lot record; "" stands for a record whose level was never set, which is a level 1 record.
+LEVEL_FIELD = "custom_batch_level"
+CERTIFICATE_LEVELS = ["1", "2", ""]
 SEARCH_FIELDS = ["name", "title", "custom_golden_number", "item_to_manufacture"]
 
 
@@ -43,6 +50,16 @@ def inherited_filters():
     ]
 
 
+def level_filter():
+    """The term both sets carry: a lot or a sub-lot (an empty level is level 1)."""
+    return [BATCH_DOCTYPE, LEVEL_FIELD, "in", CERTIFICATE_LEVELS]
+
+
+def has_level_field():
+    """False on a site where Batch AMB has no `custom_batch_level`: no record has a level there, none is left out."""
+    return bool(frappe.get_meta(BATCH_DOCTYPE).has_field(LEVEL_FIELD))
+
+
 def has_source_field():
     """False on a site where amb_w_spc has not added `status_source` to Batch AMB yet: nothing is Inherited there."""
     return bool(frappe.get_meta(BATCH_DOCTYPE).has_field(SOURCE_FIELD))
@@ -57,13 +74,15 @@ def search_batches(doctype=None, txt="", searchfield=None, start=0, page_len=20,
     fields = ["name", "item_to_manufacture", "quality_status", "batch_status"]
     order_by = "creation desc, name desc"
 
+    level = [level_filter()] if has_level_field() else []
+
     def line(r):
         return (r.name, r.item_to_manufacture or "-", f"{r.quality_status or '-'} / {r.batch_status or '-'}")
 
     if not has_source_field():
         rows = frappe.get_list(
             BATCH_DOCTYPE,
-            filters=picker_filters(),
+            filters=picker_filters() + level,
             or_filters=or_filters,
             fields=fields,
             order_by=order_by,
@@ -78,7 +97,7 @@ def search_batches(doctype=None, txt="", searchfield=None, start=0, page_len=20,
     for terms in (picker_filters(), inherited_filters()):
         for r in frappe.get_list(
             BATCH_DOCTYPE,
-            filters=terms,
+            filters=terms + level,
             or_filters=or_filters,
             fields=[*fields, "creation"],
             order_by=order_by,

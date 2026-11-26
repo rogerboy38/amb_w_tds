@@ -238,7 +238,15 @@ class TestTheSameLockOnCoaAmb(unittest.TestCase):
 
 	def test_the_lock_runs_before_validate_and_in_validate(self):
 		calls = []
-		d = type("D", (), {"refuse_edit_of_approved": lambda self: calls.append("lock")})()
+		d = type(
+			"D",
+			(),
+			{
+				"doctype": "COA AMB",
+				"docstatus": 0,
+				"refuse_edit_of_approved": lambda self: calls.append("lock"),
+			},
+		)()
 		amb.COAAMB.before_validate(d)
 		self.assertEqual(calls, ["lock"])
 		src = inspect.getsource(amb.COAAMB.validate)
@@ -268,10 +276,77 @@ class TestTheSameLockOnCoaAmb(unittest.TestCase):
 		d.coa_quality_test_parameter[0].result = "6"
 		self.assertIn("cannot be changed while it is shared", save(d) or "")
 
-	def test_a_submit_of_a_coa_amb_from_another_state_is_not_this_locks_business(self):
-		d = cert(state="Draft", docstatus=1, _action="submit")
+	def test_a_coa_amb_is_submitted_from_no_stored_state_but_approved(self):
+		"""Review 1: a Draft submitted directly became "Certificate Shared" without any approval."""
+		for stored_state in ("Draft", "Validated", "Pending Supervisor", "Auto Approved", "Saved", None):
+			# whatever state the caller sends with the submit, the share's own state included
+			for sent in ("Certificate Shared", "Approved", stored_state):
+				for user in ("filler", "manager", "Administrator"):
+					d = cert(
+						state=sent,
+						docstatus=1,
+						_action="submit",
+						before=stored("COA AMB", stored_state, [row("r1", "5")]),
+					)
+					refusal = save(d, user=user)
+					self.assertIn("cannot be submitted", refusal or "", (stored_state, sent, user))
+					self.assertIn("after another person approved it", refusal)
+					self.assertIn(f"its stored state is {stored_state or 'empty'}, not Approved", refusal)
+
+	def test_that_refusal_is_made_in_before_validate_so_a_save_that_skips_validate_meets_it(self):
+		d = cert(
+			state="Certificate Shared",
+			docstatus=1,
+			_action="submit",
+			before=stored("COA AMB", "Draft", [row("r1", "5")]),
+		)
+		d.validate = mock.Mock(
+			side_effect=AssertionError("a save under ignore_validate does not run validate")
+		)
+		with site(), mock.patch.object(amb2, "refuse_taking_rows_of_approved", lambda d: None):
+			with self.assertRaises(frappe.ValidationError) as refused:
+				d.before_validate()
+		self.assertIn("cannot be submitted", str(refused.exception))
+		src = inspect.getsource(amb.COAAMB.before_validate)
+		self.assertLess(
+			src.index("certificate_rules.refuse_submit_unless_approved(self)"),
+			src.index("self.refuse_edit_of_approved()"),
+		)
+
+	def test_a_new_coa_amb_is_never_inserted_as_submitted(self):
+		for kw in ({}, {"amended_from": "COA-0"}):
+			d = cert(
+				state="Certificate Shared",
+				docstatus=1,
+				new=True,
+				_action="submit",
+				approved_by="someone",
+				filled_by="someone.else",
+				**kw,
+			)
+			refusal = save(d)
+			self.assertIn("cannot be submitted: it is new and was never approved", refusal or "", kw)
+
+	def test_the_submit_refusal_reads_no_role_and_no_user_and_has_its_own_message(self):
+		src = inspect.getsource(rules.refuse_submit_unless_approved)
+		for word in ("Administrator", "get_roles", "session", "has_permission", "ignore_permissions"):
+			self.assertNotIn(word, src)
+		lock = inspect.getsource(amb2.ApprovedLock.refuse_edit_of_approved)
+		self.assertNotIn("after another person approved it", lock)
+
+	def test_a_certificate_that_is_already_submitted_and_a_coa_amb2_are_not_judged_by_it(self):
 		with site():
-			d.refuse_edit_of_approved()  # no refusal: decision 129 refuses the submit of COA AMB2 only
+			shared = cert(
+				state="Certificate Shared",
+				docstatus=1,
+				before=stored("COA AMB", "Certificate Shared", [row("r1", "5")], docstatus=1),
+			)
+			rules.refuse_submit_unless_approved(shared)
+			draft = cert(state="Draft", before=stored("COA AMB", "Draft", [row("r1", "5")]))
+			rules.refuse_submit_unless_approved(draft)
+			# COA AMB2 has its own, wider refusal (decision 129)
+			other = cert("COA AMB2", state="Draft", docstatus=1, _action="submit")
+			rules.refuse_submit_unless_approved(other)
 
 	def db(self, state="Approved", docstatus=0):
 		def get_value(doctype, name, fields, as_dict=False):
@@ -365,19 +440,131 @@ class TestFilledBy(unittest.TestCase):
 		removed = cert(
 			rows=[row("r1", "5")], before=stored("COA AMB", "Draft", [row("r1", "5"), row("r2", "7")])
 		)
+		# Review 2: a row added or removed WITHOUT a result changes the verdict too (Pass becomes Partial, or back)
 		empty_added = cert(
 			rows=[row("r1", "5"), row(None, "")], before=stored("COA AMB", "Draft", [row("r1", "5")])
 		)
-		for d, expected in ((added, "u"), (removed, "u"), (empty_added, "filler")):
-			self.assertIsNone(save(d, user="u"))
-			self.assertEqual(d.filled_by, expected)
+		empty_removed = cert(
+			rows=[row("r1", "5")], before=stored("COA AMB", "Draft", [row("r1", "5"), row("r2", "")])
+		)
+		swapped = cert(
+			rows=[row("r1", "5"), row("new-row-1", "")],
+			before=stored("COA AMB", "Draft", [row("r1", "5"), row("r2", "")]),
+		)
+		twice = cert(
+			rows=[row("r1", "5"), row("r1", "5")],
+			before=stored("COA AMB", "Draft", [row("r1", "5"), row("r2", "5")]),
+		)
+		same = cert(
+			rows=[row("r2", ""), row("r1", "5")],
+			before=stored("COA AMB", "Draft", [row("r1", "5"), row("r2", "")]),
+		)
+		cases = (
+			("added", added, "u"),
+			("removed", removed, "u"),
+			("empty added", empty_added, "u"),
+			("empty removed", empty_removed, "u"),
+			("one removed and one added", swapped, "u"),
+			("a name sent twice", twice, "u"),
+			("the same rows in another order", same, "filler"),
+		)
+		for what, d, expected in cases:
+			with self.subTest(what):
+				self.assertIsNone(save(d, user="u"))
+				self.assertEqual(d.filled_by, expected)
+
+	CHANGES = {
+		"result": "6",
+		"min_value": 2,
+		"max_value": 4,
+		"specification": "1 - 4",
+		"value": "Specification",
+		"acceptance_formula": "result < 4",
+		"formula_based_criteria": 1,
+		"numeric": 1,
+		"custom_is_title_row": 1,
+		"parameter_name": "another parameter",
+	}
+
+	def test_a_change_of_any_field_the_evaluation_reads_is_a_change_of_the_results(self):
+		"""Review 2: one case per field, on a save of the certificate."""
+		self.assertEqual(set(self.CHANGES), set(rules.EVALUATION_FIELDS))
+		for doctype in BOTH:
+			for field, value in self.CHANGES.items():
+				with self.subTest(doctype=doctype, field=field):
+					changed = row("r1", "5")
+					changed[field] = value
+					d = cert(doctype, rows=[changed], before=stored(doctype, "Draft", [row("r1", "5")]))
+					self.assertIsNone(save(d, user="u"))
+					self.assertEqual(d.filled_by, "u")
+
+	def test_the_same_row_read_from_the_database_and_sent_by_the_form_is_not_a_change(self):
+		in_db = row("r1", "5")
+		in_db.update(
+			min_value=1.0, max_value=0.0, numeric=1, formula_based_criteria=0, acceptance_formula=None
+		)
+		sent = row("r1", " 5 ")
+		sent.update(
+			min_value="1", max_value=None, numeric="1", formula_based_criteria=None, acceptance_formula=""
+		)
+		sent.update(status="Fail", remarks="a remark", test_method="another method", idx=7)
+		d = cert(rows=[sent], before=stored("COA AMB", "Draft", [in_db]))
+		self.assertIsNone(save(d, user="u"))
+		self.assertEqual(d.filled_by, "filler")
+
+	def test_the_evaluation_reads_no_field_of_a_row_that_is_not_in_the_list(self):
+		"""The list is checked against the code: every `param.<field>` / `row.<field>` the two controllers read in
+		the functions that judge a row."""
+		import re
+
+		judging = (
+			"evaluate_overall_result",
+			"check_parameter_compliance",
+			"_is_header_row",
+			"validate_test_parameters",
+			"validate_numeric_result",
+			"validate_formula_criteria",
+			"evaluate_formula_parameters",
+			"validate_formula_criteria_for_row",
+		)
+		written_or_naming = {"status", "get"}
+		for cls in CLASSES.values():
+			read = set()
+			for name in judging:
+				src = inspect.getsource(getattr(cls, name))
+				read |= set(re.findall(r"\b(?:param|row)\.([a-z_0-9]+)", src))
+				read |= set(re.findall(r"\b(?:param|row)\.get\('([a-z_0-9]+)'\)", src))
+			self.assertEqual(read - written_or_naming - set(rules.EVALUATION_FIELDS), set(), cls.__name__)
+			self.assertLessEqual(
+				{"result", "min_value", "max_value", "specification", "acceptance_formula"}, read
+			)
+
+	def test_an_approver_who_changes_a_limit_in_the_approving_save_is_the_filler_and_is_refused(self):
+		"""Review 2, the case itself: a failing result, the limit moved by the approver, approved as Pass."""
+		for field, value in (("max_value", 100), ("specification", "1 - 100"), ("custom_is_title_row", 1)):
+			with self.subTest(field=field):
+				in_db = row("r1", "50")
+				sent = row("r1", "50")
+				sent[field] = value
+				d = cert(
+					state="Approved",
+					rows=[sent, row("r2", "5")],
+					before=stored("COA AMB", "Pending Supervisor", [in_db, row("r2", "5")]),
+				)
+				refusal = save(d, user="approver")
+				self.assertIn("you entered or changed its results last", refusal or "")
+				self.assertEqual(d.overall_result, "Pass")  # what it would have been approved as
 
 	def test_a_new_certificate_is_filled_by_its_maker_only_when_it_carries_results(self):
 		with_results = cert(new=True, filled_by="typed")
-		without = cert(new=True, rows=[row("r1", "")], filled_by="typed")
-		self.assertIsNone(save(with_results, user="maker"))
-		self.assertIsNone(save(without, user="maker"))
-		self.assertEqual((with_results.filled_by, without.filled_by), ("maker", None))
+		without = cert(new=True, rows=[], filled_by="typed")
+		# rows without a result are rows added by the maker (Review 2: a row added is a change)
+		empty_rows = cert(new=True, rows=[row("r1", "")], filled_by="typed")
+		for d in (with_results, without, empty_rows):
+			self.assertIsNone(save(d, user="maker"))
+		self.assertEqual(
+			(with_results.filled_by, without.filled_by, empty_rows.filled_by), ("maker", None, "maker")
+		)
 
 	def hook(self, sent, stored_row, method="before_validate", new=False):
 		r = type(
@@ -400,6 +587,14 @@ class TestFilledBy(unittest.TestCase):
 		self.assertEqual(self.hook(sent, in_db), [("COA AMB2", "COA-1", "filled_by", "u")])
 		# unchanged result: nothing is written
 		self.assertEqual(self.hook(dict(sent, result="5"), in_db), [])
+		# a new row and a deleted row are changes with or without a result (Review 2)
+		self.assertEqual(
+			self.hook(dict(sent, result=""), None, new=True), [("COA AMB2", "COA-1", "filled_by", "u")]
+		)
+		self.assertEqual(
+			self.hook(sent, dict(in_db, result=""), method="on_trash"),
+			[("COA AMB2", "COA-1", "filled_by", "u")],
+		)
 		# a new row with a result, and a deleted row that had one
 		self.assertEqual(
 			self.hook(dict(sent, parenttype="COA AMB"), None, new=True),
@@ -415,6 +610,33 @@ class TestFilledBy(unittest.TestCase):
 		# a row of any other parent is not touched
 		other = {"parent": "LOTE-1", "parenttype": "Batch AMB", "result": "5"}
 		self.assertEqual(self.hook(dict(sent, parent="LOTE-1", parenttype="Batch AMB"), other), [])
+
+	def test_a_row_saved_by_itself_with_any_evaluated_field_changed_names_the_session_user(self):
+		"""Review 2, the row saved by itself: one case per field."""
+		in_db = {"parent": "COA-1", "parenttype": "COA AMB", "result": "5", "specification": "1 - 10"}
+		sent = dict(in_db, name="row-1")
+		self.assertEqual(self.hook(dict(sent, remarks="a remark", status="Fail"), in_db), [])
+		for field, value in self.CHANGES.items():
+			with self.subTest(field=field):
+				self.assertEqual(
+					self.hook(dict(sent, **{field: value}), in_db), [("COA AMB", "COA-1", "filled_by", "u")]
+				)
+
+	def test_the_row_hook_reads_every_evaluated_field_of_the_stored_row(self):
+		r = type(
+			"R",
+			(),
+			{
+				"doctype": "COA Quality Test Parameter",
+				"get": lambda self, k: {"name": "row-1"}.get(k),
+				"is_new": lambda self: False,
+			},
+		)()
+		with site(user="u") as fake:
+			rules.note_filler_of_row(r, "before_validate")
+		self.assertEqual(
+			fake.db.get_value.call_args.args[2], ["parent", "parenttype", *rules.EVALUATION_FIELDS]
+		)
 
 	def test_the_hook_is_registered_after_the_lock_on_the_result_rows(self):
 		import importlib
@@ -455,7 +677,9 @@ class TestMayThisBeApproved(unittest.TestCase):
 			"no specification is linked": dict(linked_tds=None),
 			"it has no test rows": dict(rows=[]),
 			"only Pass, Fail or Partial can be approved": dict(rows=[row("r1", "")]),
-			"it is not recorded who entered its results": dict(stored_filler=None),
+			"it is not recorded who entered its results (it was filled before this was recorded)": dict(
+				stored_filler=None
+			),
 			"another person must approve it": dict(stored_filler="approver"),
 		}
 		for doctype in BOTH:
@@ -466,6 +690,31 @@ class TestMayThisBeApproved(unittest.TestCase):
 				self.assertTrue(refusal.startswith(f"{doctype} COA-1 cannot be approved: "), refusal)
 				seen.add(refusal)
 			self.assertEqual(len(seen), len(cases))
+
+	def test_the_refusal_for_an_unrecorded_filler_says_what_to_do_as_the_code_behaves(self):
+		"""Review 4, wording only: a certificate filled before `filled_by` existed. No backfill, no bypass."""
+		refusal = save(self.approving(stored_filler=None), user="approver")
+		for text in (
+			"Saving it again unchanged does not record it.",
+			"Whoever fills the certificate must change a result and save",
+			"change it, save, set it back, save again",
+			"Then another person approves.",
+		):
+			self.assertIn(text, refusal or "")
+		# and that is how the code behaves: an unchanged save records nobody, a changed result records the user
+		before = stored("COA AMB", "Pending Supervisor", [row("r1", "5")], filled_by=None)
+		unchanged = cert(state="Pending Supervisor", before=before)
+		self.assertIsNone(save(unchanged, user="filler"))
+		self.assertIsNone(unchanged.filled_by)
+		changed = cert(state="Pending Supervisor", rows=[row("r1", "5.1")], before=before)
+		self.assertIsNone(save(changed, user="filler"))
+		self.assertEqual(changed.filled_by, "filler")
+		# the filler who set it back cannot approve; another person can
+		before = stored("COA AMB", "Pending Supervisor", [row("r1", "5")], filled_by="filler")
+		self.assertIn(
+			"another person must approve", save(cert(state="Approved", before=before), user="filler") or ""
+		)
+		self.assertIsNone(save(cert(state="Approved", before=before), user="approver"))
 
 	def test_no_tests_and_pending_cannot_be_approved(self):
 		for doctype in BOTH:
@@ -579,6 +828,61 @@ class TestMayThisBeApproved(unittest.TestCase):
 		self.assertIsNone(save(d))
 		self.assertEqual((d.approved_by, d.approval_date), (None, None))
 
+	def test_a_new_certificate_that_is_not_becoming_approved_carries_no_approver(self):
+		"""Review 1: a Duplicate, an amendment (the form's Amend copies every field) or an insert by API."""
+		for doctype in BOTH:
+			for kw in ({}, {"amended_from": "COA-0"}):
+				for state in ("Draft", "Validated", "Pending Supervisor", "Cancelled"):
+					d = cert(
+						doctype,
+						state=state,
+						new=True,
+						approved_by="someone",
+						approval_date="1999-01-01",
+						filled_by="someone.else",
+						**kw,
+					)
+					self.assertIsNone(save(d, user="maker"), (doctype, state))
+					self.assertEqual((d.approved_by, d.approval_date), (None, None), (doctype, state, kw))
+					self.assertEqual(d.filled_by, "maker")  # the one who inserts the results is their filler
+
+	def test_a_new_certificate_cannot_be_born_approved_amended_or_not(self):
+		for doctype in BOTH:
+			for kw in ({}, {"amended_from": "COA-0"}):
+				with_results = cert(doctype, state="Approved", new=True, approved_by="x", filled_by="y", **kw)
+				self.assertIn("another person must approve it", save(with_results, user="maker") or "")
+				no_results = cert(
+					doctype, state="Approved", new=True, rows=[row("r1", "")], approved_by="x", **kw
+				)
+				self.assertIn("its result is Pending", save(no_results, user="maker") or "")
+
+	def test_an_amended_certificate_goes_through_approval_again(self):
+		"""The amendment of a cancelled COA AMB is a new draft: stored as a draft with no approver and its
+		amender as filler, it is approved by another person and only then shared."""
+		amended = stored("COA AMB", "Pending Supervisor", [row("r1", "5")], filled_by="amender")
+		amended.amended_from = "COA-0"
+		for state, docstatus in (("Certificate Shared", 1), ("Approved", 1)):
+			d = cert(state=state, docstatus=docstatus, _action="submit", before=amended, amended_from="COA-0")
+			self.assertIn("cannot be submitted", save(d, user="amender") or "")
+		own = cert(state="Approved", before=amended, amended_from="COA-0")
+		self.assertIn("another person must approve it", save(own, user="amender") or "")
+		other = cert(state="Approved", before=amended, amended_from="COA-0")
+		self.assertIsNone(save(other, user="approver"))
+		self.assertEqual((other.approved_by, other.approval_date), ("approver", TODAY))
+		approved = stored(
+			"COA AMB",
+			"Approved",
+			[row("r1", "5")],
+			filled_by="amender",
+			approved_by="approver",
+			approval_date=TODAY,
+			amended_from="COA-0",
+		)
+		share = cert(
+			state="Certificate Shared", docstatus=1, _action="submit", before=approved, amended_from="COA-0"
+		)
+		self.assertIsNone(save(share, user="filler"))
+
 	def test_there_is_no_bypass_in_the_rules(self):
 		src = inspect.getsource(rules)
 		for word in ("Administrator", "get_roles", "ignore_permissions", "flags."):
@@ -625,6 +929,8 @@ class TestFormAndFields(unittest.TestCase):
 			fields = self.fields(doctype)
 			for name in ("approved_by", "approval_date", "filled_by"):
 				self.assertEqual(fields[name].get("read_only"), 1, (doctype, name))
+				# a Duplicate does not carry them (the form's Amend does: the server empties them)
+				self.assertEqual(fields[name].get("no_copy"), 1, (doctype, name))
 			self.assertEqual(
 				(fields["filled_by"]["fieldtype"], fields["filled_by"]["options"]), ("Link", "User")
 			)

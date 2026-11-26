@@ -36,11 +36,17 @@ class COAAMB(ApprovedLock, Document):
     def before_validate(self):
         """The Approved lock (TASKS-384 B1; the functions are COA AMB2's, see `ApprovedLock`). Runs for a save and
         for a submit, also under `ignore_validate`. The rows taken from another Approved certificate are judged by
-        the `before_validate` doc_event registered for COA AMB in hooks.py."""
+        the `before_validate` doc_event registered for COA AMB in hooks.py.
+
+        First: no COA AMB goes from docstatus 0 to 1 unless its stored state is Approved (the workflow's own
+        share). It is refused here because the framework runs `before_validate` for every save and submit, also
+        when the caller set `flags.ignore_validate`, which skips `validate`."""
+        certificate_rules.refuse_submit_unless_approved(self)
         self.refuse_edit_of_approved()
 
     def validate(self):
         """Draft saves run the light checks and derive the result; the row checks that refuse run at submit."""
+        certificate_rules.refuse_submit_unless_approved(self)
         self.refuse_edit_of_approved()
 
         if self.docstatus == 0 and not self._is_submit_flow():
