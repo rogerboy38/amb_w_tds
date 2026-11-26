@@ -29,6 +29,12 @@ CUSTOMERS_TABLE = "custom_coa_customers"
 
 # The lot's native Batches: `Batch` rows whose `custom_batch_amb` is the lot (amb_w_spc's projection).
 LOT_DOCTYPE = "Batch AMB"
+# TASKS-384 B3: the lot's status is written by amb_w_spc, the only writer, through these two functions. They are
+# looked up when they are called (late binding): this app imports without amb_w_spc.
+SPC_APP = "amb_w_spc"
+SPC_LOT_QUALITY = "amb_w_spc.sfc_manufacturing.lot_quality"
+# The state in which a submitted certificate still stands for its lot (COA AMB only; no COA AMB2 is submitted).
+SHARED_STATE = {"COA AMB": "Certificate Shared"}
 # TASKS-384 B2: the certificate's `work_order` follows the lot's `work_order_ref`; the lot's item is the Work
 # Order's item (`item_to_manufacture`, what the lot picker shows).
 LOT_WORK_ORDER_FIELD = "work_order_ref"
@@ -336,6 +342,98 @@ def fill_customers(doc):
 		doc.append(CUSTOMERS_TABLE, row)
 
 
+def note_lot_move(doc):
+	"""TASKS-384 B3, decided in `validate` from the state before the save and the state now: does this save release
+	the lot (the state becomes Approved) or take the release back (an Approved certificate goes back, the
+	workflow's Reject)? The answer is kept on the document for `on_update`, which runs after the certificate is
+	written, in the same transaction. A release speaks of the lot the certificate names now; a withdrawal of the
+	lot it named when it was approved."""
+	doc._lot_move = None
+	if becomes_approved(doc):
+		doc._lot_move = ("approved", doc.get("batch_reference"))
+	elif leaves_approved(doc):
+		doc._lot_move = ("withdrawn", _before(doc).get("batch_reference"))
+
+
+def _spc(function):
+	"""A function of amb_w_spc's lot_quality module, found at the moment of the call. Without that app, or with a
+	version of it that lacks the function, the lot cannot be written: the approval (or the Reject, or the Cancel)
+	fails here with a message that says so. Only the LOOKUP is guarded; the call itself is never wrapped."""
+	path = f"{SPC_LOT_QUALITY}.{function}"
+	if SPC_APP not in frappe.get_installed_apps():
+		frappe.throw(
+			_(
+				"The lot's quality status is written by the app {0}, which is not installed on this site ({1}). Nothing was saved."
+			).format(SPC_APP, path),
+			title=_("Lot not written"),
+		)
+	try:
+		return frappe.get_attr(path)
+	except (ImportError, AttributeError) as e:
+		frappe.throw(
+			_(
+				"The lot's quality status cannot be written: {0} is not available in the installed {1} ({2}). Nothing was saved."
+			).format(path, SPC_APP, e),
+			title=_("Lot not written"),
+		)
+
+
+def standing_certificate(lot, doctype, name):
+	"""ANOTHER certificate of the same lot record, of either type, that still stands: Approved and not submitted,
+	or (COA AMB) Certificate Shared and not cancelled, with a result that maps to a lot status. Returned as
+	{"doctype", "name", "result"}, or None. When several stand, the one approved last (then saved last) is taken."""
+	found = []
+	for certificate_doctype, field in STATE_FIELD.items():
+		standing_states = [(APPROVED, 0)]
+		if certificate_doctype in SHARED_STATE:
+			standing_states.append((SHARED_STATE[certificate_doctype], 1))
+		for state, docstatus in standing_states:
+			filters = {"batch_reference": lot, field: state, "docstatus": docstatus}
+			if certificate_doctype == doctype:
+				filters["name"] = ["!=", name]
+			for row in frappe.get_all(
+				certificate_doctype,
+				filters=filters,
+				fields=["name", "overall_result", "approval_date", "modified"],
+			):
+				if row.get("overall_result") in RESULT_TO_LOT_STATUS:
+					found.append(
+						(cstr(row.get("approval_date")), cstr(row.get("modified")), certificate_doctype, row)
+					)
+	if not found:
+		return None
+	_approved, _modified, certificate_doctype, row = max(found, key=lambda f: f[:3])
+	return {"doctype": certificate_doctype, "name": row.get("name"), "result": row.get("overall_result")}
+
+
+def write_lot(doc):
+	"""TASKS-384 B3, `on_update` of both certificates: carry out what `note_lot_move` decided. A certificate that
+	names no lot has nothing to write. NO try/except: if the lot cannot be written the exception leaves this save
+	and the certificate's own write is rolled back with it; the user sees why."""
+	move = getattr(doc, "_lot_move", None)
+	doc._lot_move = None
+	if not move or not move[1]:
+		return
+	kind, lot = move
+	if kind == "approved":
+		_spc("certificate_approved")(doc.doctype, doc.name, lot, doc.get("overall_result"))
+	else:
+		_spc("certificate_withdrawn")(
+			doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
+		)
+
+
+def withdraw_on_cancel(doc):
+	"""TASKS-384 B3, `on_cancel` of COA AMB: a shared certificate that is cancelled no longer stands for its lot.
+	amb_w_spc resets only what this certificate wrote. No try/except, as in `write_lot`."""
+	lot = doc.get("batch_reference")
+	if not lot:
+		return
+	_spc("certificate_withdrawn")(
+		doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
+	)
+
+
 def apply(doc):
 	"""Called by `validate` of both certificates, after the result was derived from the rows."""
 	refuse_changed_results_at_share(doc)
@@ -343,3 +441,4 @@ def apply(doc):
 	follow_lot(doc)
 	set_filled_by(doc)
 	set_approval(doc)
+	note_lot_move(doc)

@@ -20,7 +20,9 @@ class TestPickerTerms(unittest.TestCase):
 	def search(self, txt="", rows=(), **kw):
 		from amb_w_tds.amb_w_tds.api import batch_picker
 		get_list = mock.Mock(return_value=[frappe._dict(r) for r in rows])
-		with mock.patch.object(frappe, "get_list", get_list):
+		# TASKS-384 B3: on a site whose Batch AMB has no `status_source` field the picker is what it was (one read);
+		# the site that has the field is covered by tests/test_release_at_approved_b3.py
+		with mock.patch.object(frappe, "get_list", get_list), mock.patch.object(batch_picker, "has_source_field", lambda: False):
 			out = batch_picker.search_batches("Batch AMB", txt, "name", **kw)
 		return out, get_list
 

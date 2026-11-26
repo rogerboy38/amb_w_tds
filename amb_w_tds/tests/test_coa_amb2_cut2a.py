@@ -17,139 +17,23 @@ MOD = "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2"
 NOTE = "Batch not updated: link to COA AMB2 not available yet"
 
 
-class Batch:
-	"""A stand-in Batch AMB that remembers what was assigned (a Mock would invent attributes)."""
+class TestBatchStepIsGone(unittest.TestCase):
+	"""TASKS-384 B3 removed what this file pinned since 13.12.1: `update_batch_status` of COA AMB2, a guarded no-op
+	(the lot's link refused a COA AMB2 name, so it only left a note), with `_batch_link_holds_this_doctype` and
+	`BATCH_COA_FIELD`. The lot is now written when the certificate becomes Approved, by amb_w_spc; see
+	tests/test_release_at_approved_b3.py. The eleven tests of the removed step went with it."""
 
-	def __init__(self):
-		self.__dict__["assigned"] = {}
-		self.save = mock.Mock()
-		self.add_comment = mock.Mock()
+	def test_the_controller_has_no_batch_step_and_writes_no_lot_field(self):
+		import inspect
 
-	def __setattr__(self, k, v):
-		if k not in ("save", "add_comment"):
-			self.__dict__["assigned"][k] = v
-		object.__setattr__(self, k, v)
+		from amb_w_tds.amb_w_tds.doctype.coa_amb2 import coa_amb2
 
-
-def _meta(options, fieldtype="Link"):
-	field = frappe._dict(fieldtype=fieldtype, options=options) if options is not None else None
-	return mock.Mock(get_field=lambda name: field if name == "coa_reference" else None)
-
-
-class TestBatchStep(unittest.TestCase):
-	def doc(self, batch_reference="LOTE-1"):
-		from amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2 import COAAMB2
-		d = object.__new__(COAAMB2)
-		d.__dict__.update(doctype="COA AMB2", name="COA2-26-0001", batch_reference=batch_reference, overall_result="Pass",
-			approval_date="2026-10-25", approved_by=None)
-		d.add_comment = mock.Mock()
-		return d
-
-	def run_step(self, options, status=None, batch=None, fieldtype="Link", get_doc_effect=None):
-		batch = batch or Batch()
-		get_doc = mock.Mock(return_value=batch, side_effect=get_doc_effect)
-		log_error = mock.Mock()
-		d = self.doc()
-		with mock.patch("frappe.get_meta", lambda dt: _meta(options, fieldtype)), mock.patch("frappe.get_doc", get_doc), \
-				mock.patch("frappe.log_error", log_error), mock.patch(MOD + ".nowdate", lambda: "2026-10-25"):
-			d.update_batch_status(status)
-		return d, batch, get_doc, log_error
-
-	# --- skip when the Link points elsewhere ---
-	def test_a_link_to_coa_amb_means_no_write_one_note_no_error(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB")
-		get_doc.assert_not_called()
-		batch.save.assert_not_called()
-		log_error.assert_not_called()
-		d.add_comment.assert_called_once_with("Info", NOTE)
-
-	def test_a_missing_field_or_another_field_type_is_skipped_the_same_way(self):
-		for options, fieldtype in ((None, "Link"), ("COA AMB2", "Data"), ("COA AMB2", "Dynamic Link")):
-			d, batch, get_doc, log_error = self.run_step(options, fieldtype=fieldtype)
-			get_doc.assert_not_called()
-			log_error.assert_not_called()
-			d.add_comment.assert_called_once_with("Info", NOTE)
-
-	# --- write when the Link points to COA AMB2 (a stub meta: no schema change anywhere) ---
-	def test_a_link_to_coa_amb2_writes_the_reference_and_never_quality_status(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB2")
-		get_doc.assert_called_once_with("Batch AMB", "LOTE-1")
-		self.assertEqual(batch.assigned, {"coa_generated": 1, "coa_reference": "COA2-26-0001", "last_coa_date": "2026-10-25"})
-		self.assertNotIn("quality_status", batch.assigned, "'Pass' is not an option of quality_status and nobody chose a mapping")
-		batch.save.assert_called_once_with(ignore_permissions=True)
-		log_error.assert_not_called()
-		d.add_comment.assert_not_called()
-
-	# --- a real failure of the step is still logged ---
-	def test_a_real_failure_still_reaches_log_error(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB2", get_doc_effect=RuntimeError("boom"))
-		log_error.assert_called_once()
-		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Batch Update")
-		self.assertIn("boom", log_error.call_args.args[0])
-
-	def test_a_failing_save_is_logged_too(self):
-		b = Batch()
-		b.save.side_effect = frappe.ValidationError("refused")
-		d, batch, get_doc, log_error = self.run_step("COA AMB2", batch=b)
-		log_error.assert_called_once()
-		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Batch Update")
-
-	# --- what does not change ---
-	def test_no_batch_reference_touches_nothing(self):
-		from amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2 import COAAMB2
-		d = self.doc(batch_reference=None)
-		get_meta = mock.Mock()
-		with mock.patch("frappe.get_meta", get_meta), mock.patch("frappe.get_doc", mock.Mock()) as get_doc:
-			d.update_batch_status()
-		get_meta.assert_not_called()
-		get_doc.assert_not_called()
-		d.add_comment.assert_not_called()
-
-	# --- the cancel path (13.12.1): same guard, comment only, never quality_status ---
-	CANCEL_NOTE = "Batch not updated on cancel: link to COA AMB2 not available yet"
-
-	def test_cancel_with_a_link_to_coa_amb_skips_the_batch_and_adds_one_note(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB", status="COA Cancelled")
-		get_doc.assert_not_called()
-		batch.save.assert_not_called()
-		batch.add_comment.assert_not_called()
-		log_error.assert_not_called()
-		d.add_comment.assert_called_once_with("Info", self.CANCEL_NOTE)
-
-	def test_cancel_never_assigns_quality_status_in_either_branch(self):
-		for options in ("COA AMB", "COA AMB2"):
-			d, batch, get_doc, log_error = self.run_step(options, status="COA Cancelled")
-			self.assertEqual(batch.assigned, {}, options)
-			batch.save.assert_not_called()
-			log_error.assert_not_called()
-
-	def test_cancel_with_a_link_to_coa_amb2_leaves_a_note_on_the_batch_only(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled")
-		get_doc.assert_called_once_with("Batch AMB", "LOTE-1")
-		batch.add_comment.assert_called_once_with("Info", "COA Status: COA Cancelled - COA2-26-0001")
-		d.add_comment.assert_not_called()
-
-	def test_a_real_failure_on_cancel_still_reaches_log_error(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled", get_doc_effect=RuntimeError("boom"))
-		log_error.assert_called_once()
-		self.assertEqual(log_error.call_args.args[1], "COA AMB2 - Batch Update")
-		b = Batch()
-		b.add_comment.side_effect = RuntimeError("note failed")
-		d, batch, get_doc, log_error = self.run_step("COA AMB2", status="COA Cancelled", batch=b)
-		log_error.assert_called_once()
-
-	def test_cancel_without_a_batch_reference_touches_nothing(self):
-		d = self.doc(batch_reference=None)
-		get_meta = mock.Mock()
-		with mock.patch("frappe.get_meta", get_meta), mock.patch("frappe.get_doc", mock.Mock()) as get_doc:
-			d.update_batch_status("COA Cancelled")
-		get_meta.assert_not_called()
-		get_doc.assert_not_called()
-		d.add_comment.assert_not_called()
-
-	def test_the_submit_path_keeps_its_own_note(self):
-		d, batch, get_doc, log_error = self.run_step("COA AMB")
-		d.add_comment.assert_called_once_with("Info", NOTE)
+		for name in ("update_batch_status", "_batch_link_holds_this_doctype", "BATCH_COA_FIELD"):
+			self.assertFalse(hasattr(coa_amb2.COAAMB2, name), name)
+		src = inspect.getsource(coa_amb2)
+		self.assertNotIn(NOTE, src)
+		for gone in ("batch.save(", "batch.quality_status", "coa_generated", "batch.last_coa_date"):
+			self.assertNotIn(gone, src, gone)
 
 
 class TestWordingMatchesRows(unittest.TestCase):

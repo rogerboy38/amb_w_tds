@@ -233,6 +233,7 @@ Phase F line.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 13.12.18 | 2026-11 | Both certificates: the lot is released when the state becomes Approved and the release is taken back at Reject and at the Cancel of a shared COA AMB, through amb_w_spc (the only writer; no try/except); the raw lot writes of both controllers are removed; the lot picker also offers an Inherited record. Code only; **deploy with the amb_w_spc version that has `lot_quality.py`**. TASKS-384 B3. |
 | 13.12.17 | 2026-11 | Both certificates: `work_order` written by the server from the lot; one function from the product to the certificate type (its table ships empty: no item is classed yet); `make_certificate_for_lot` for the lot and Work Order forms; the customers list of a COA AMB filled on the server at creation; the lot-change handler and the Client Script that emptied the series repaired. **Needs `bench migrate`**, restart + clear-cache. TASKS-384 B2. |
 | 13.12.16 | 2026-11 | Both certificates: COA AMB derives result and compliance on every save and has the Approved lock of COA AMB2 (same functions); `filled_by` set by the server; "may this be approved" at the Approve, approver and date written by the server; one vocabulary module. **Needs `bench migrate`** (new field `filled_by`), restart + clear-cache. TASKS-384 B1. |
 | 13.12.15 | 2026-11 | Code only (`coa_amb2.py`): an Approved COA AMB2 cannot be saved again until a Quality Manager rejects it to Draft. No migrate: restart + clear-cache. TASKS-335 D-12. |
