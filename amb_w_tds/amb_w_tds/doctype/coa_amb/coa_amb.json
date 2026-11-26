@@ -164,6 +164,7 @@
    "label": "Approval Date",
    "reqd": 0,
    "read_only": 1,
+   "no_copy": 1,
    "description": "Written by the server when the certificate is approved."
   },
   {
@@ -173,6 +174,7 @@
    "options": "User",
    "reqd": 0,
    "read_only": 1,
+   "no_copy": 1,
    "description": "Written by the server when the certificate is approved."
   },
   {
@@ -427,7 +429,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2026-11-26 13:00:00.000000",
+ "modified": "2026-11-26 14:00:00.000000",
  "module": "Amb W Tds",
  "name": "COA AMB",
  "naming_rule": "By \"Naming Series\" field",

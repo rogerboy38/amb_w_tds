@@ -311,20 +311,26 @@ class COAAMB2(ApprovedLock, Document):
         #self.calculate_child_table_status()
         # to be reviewed freezed on save COA AMB2 document
 
+    def on_update(self):
+        """TASKS-384 B3: the lot is released when the certificate becomes Approved, and the release is taken back
+        when an Approved certificate is rejected to Draft. Decided in `validate`, written here, after the
+        certificate's own write and in the same transaction, by amb_w_spc (the only writer of the lot's status)."""
+        certificate_rules.write_lot(self)
+
     def on_submit(self):
-        """On submit actions"""
+        """On submit actions. No new COA AMB2 reaches this (decision 129); the batch step that stood here was a
+        guarded no-op and is removed (TASKS-384 B3)."""
         self.validate_submission_prerequisites()
         self.generate_coa_pdf()
-        self.update_batch_status()
         self.notify_quality_team()
         self.create_quality_audit()
         self.update_product_quality_status()
 
     def on_cancel(self):
-        """On cancel actions"""
-        self.update_batch_status('COA Cancelled')
+        """On cancel actions (only a certificate submitted before 13.12.15 can be cancelled). The lot is not
+        touched: such a certificate never released one (TASKS-384 B3)."""
         self.revert_product_quality_status()
-        frappe.msgprint(_("COA has been cancelled and batch status updated."), alert=True)
+        frappe.msgprint(_("COA has been cancelled."), alert=True)
 
     def on_update_after_submit(self):
         """Actions after amending a submitted document"""
@@ -768,58 +774,6 @@ class COAAMB2(ApprovedLock, Document):
         except Exception as e:
             frappe.log_error(f"Error generating COA PDF: {str(e)}", "COA AMB2 - PDF Generation")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
-
-    BATCH_COA_FIELD = 'coa_reference'
-
-    def _batch_link_holds_this_doctype(self):
-        """True when the Batch AMB field this update writes can hold THIS document's name: a Link whose options
-        is this DocType. Today `Batch AMB.coa_reference` is a Link to COA AMB, so Frappe's link validation refuses
-        a COA AMB2 name (13.12.1). Read from the meta, so the same code writes the day the field points at COA AMB2."""
-        df = frappe.get_meta('Batch AMB').get_field(self.BATCH_COA_FIELD)
-        return bool(df and df.fieldtype == 'Link' and df.options == self.doctype)
-
-    def update_batch_status(self, status=None):
-        """Update related batch with COA info"""
-        if not self.batch_reference:
-            return
-
-        try:
-            if not self._batch_link_holds_this_doctype():
-                # 13.12.1: this update has never succeeded on submit (the Link refuses a COA AMB2 name; `quality_status`
-                # has no "Pass" either) and the cancel's "COA Cancelled" is not an option of `quality_status` either, so
-                # skipping both changes no data. Say so once on the document. (Not saving the batch also keeps the Batch
-                # AMB controller from announcing a status change that was never going to stick.)
-                self.add_comment('Info', 'Batch not updated on cancel: link to COA AMB2 not available yet' if status
-                                 else 'Batch not updated: link to COA AMB2 not available yet')
-                return
-            batch = frappe.get_doc('Batch AMB', self.batch_reference)
-            
-            if status:
-                # no `quality_status` write on cancel (13.12.1): "COA Cancelled" is not one of its options (Pending /
-                # Passed / Failed / Hold) and what a cancelled COA does to a batch is undecided (Cut 2b). A note on the
-                # batch is all there is to do, and a note needs no save.
-                batch.add_comment('Info', f'COA Status: {status} - {self.name}')
-                return
-            else:
-                batch.coa_generated = 1
-                batch.coa_reference = self.name
-                # no `quality_status` write (13.12.1): its options are Pending / Passed / Failed / Hold, "Pass" has never
-                # been accepted, and mapping a COA result onto them is a business decision nobody has made.
-                batch.last_coa_date = nowdate()
-                
-                # Add COA details to batch
-                if hasattr(batch, 'coa_details'):
-                    batch.coa_details = f"""
-                        COA: {self.name}
-                        Result: {self.overall_result}
-                        Approved: {self.approval_date}
-                        Approved By: {self.approved_by}
-                    """
-            
-            batch.save(ignore_permissions=True)
-            
-        except Exception as e:
-            frappe.log_error(f"Error updating batch {self.batch_reference}: {str(e)}", "COA AMB2 - Batch Update")
 
     def _form_link(self):
         """The DocType's own route: /app/coa-amb2/<name> (the old mail pointed at /app/coa-amb/, the other DocType)."""

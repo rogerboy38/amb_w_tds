@@ -53,6 +53,9 @@ def make_certificate_for_lot(lot):
 	carries after its insert), else the lot's item. The caller needs read on the lot and create on the certificate."""
 	lot_doc = frappe.get_doc(LOT_DOCTYPE, lot)
 	lot_doc.check_permission("read")
+	level = certificate_rules.lot_level(lot_doc.get(certificate_rules.LOT_LEVEL_FIELD))
+	if level not in certificate_rules.CERTIFICATE_LEVELS:
+		frappe.throw(certificate_rules.lot_level_refusal(lot_doc.name, level), title=_("Certificate"))
 	specification = lot_doc.get("tds_link")
 	product = None
 	if specification:

@@ -53,6 +53,8 @@ class Db:
 		if doctype == "Item Group":
 			return GROUPS.get(name)
 		if doctype == "Batch AMB":
+			if isinstance(fields, str):  # one field of the lot (its level)
+				return (self.lots.get(name) or {}).get(fields)
 			return frappe._dict(self.lots[name]) if name in self.lots else None
 		if doctype == "TDS Product Specification":
 			return (self.specs.get(name) or {}).get("product_item")
@@ -63,13 +65,15 @@ class Db:
 
 
 @contextmanager
-def site(db=None, table=TABLE, docs=None):
+def site(db=None, table=TABLE, docs=None, level_field=True):
 	db = db or Db()
 	fake = types.SimpleNamespace(
 		session=frappe._dict(user="maker"),
 		throw=_throw,
 		msgprint=mock.Mock(),
 		db=db,
+		# the lot's level field (amb_w_spc's `custom_batch_level`), on a site that has it or not
+		get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: level_field),
 		get_doc=lambda doctype, name: (docs or {})[(doctype, name)],
 		new_doc=mock.Mock(),
 		whitelist=frappe.whitelist,
@@ -223,6 +227,60 @@ class TestWorkOrderFollowsTheLot(unittest.TestCase):
 		self.assertEqual(save(equal, db=Db(lots=dict(self.LOT)))[1].msgprint.call_count, 0)
 
 
+class TestOnlyALotOrASubLotGetsACertificate(unittest.TestCase):
+	"""Review 6: a certificate for a container was made and saved, and failed only at approval."""
+
+	def lots(self, level, name="LOTE-1"):
+		return {name: {"work_order_ref": None, "item_to_manufacture": None, "custom_batch_level": level}}
+
+	def test_a_record_below_the_sub_lot_is_refused_when_it_is_chosen_on_both_types(self):
+		for doctype, product in (("COA AMB", "MIX-1"), ("COA AMB2", "POWDER-1")):
+			for level in ("3", "4", 3, " 3 "):
+				new = cert(doctype, product, batch_reference="LOTE-1")
+				refusal, _fake = save(new, db=Db(lots=self.lots(level)))
+				self.assertIn(
+					f"Lot record LOTE-1 is a level {str(level).strip()} record",
+					refusal or "",
+					(doctype, level),
+				)
+				self.assertIn("Choose the lot or the sub-lot", refusal)
+				changed = cert(
+					doctype, product, new=False, batch_reference="LOTE-1", before={"batch_reference": "L-0"}
+				)
+				self.assertIn("is a level", save(changed, db=Db(lots=self.lots(level)))[0] or "")
+				first = cert(
+					doctype, product, new=False, batch_reference="LOTE-1", before={"batch_reference": None}
+				)
+				self.assertIn("is a level", save(first, db=Db(lots=self.lots(level)))[0] or "")
+
+	def test_a_lot_a_sub_lot_and_a_record_with_no_level_pass(self):
+		for doctype, product in (("COA AMB", "MIX-1"), ("COA AMB2", "POWDER-1")):
+			for level in ("1", "2", 1, None, ""):
+				d = cert(doctype, product, batch_reference="LOTE-1")
+				self.assertIsNone(save(d, db=Db(lots=self.lots(level)))[0], (doctype, level))
+
+	def test_it_is_judged_when_the_lot_is_set_or_changed_and_not_on_every_save(self):
+		db = Db(lots=self.lots("3"))
+		same = cert("COA AMB", "MIX-1", new=False, batch_reference="LOTE-1")
+		self.assertIsNone(save(same, db=db)[0])
+		no_lot = cert("COA AMB", "MIX-1")
+		self.assertIsNone(save(no_lot, db=db)[0])
+
+	def test_a_site_without_the_level_field_reads_nothing_and_refuses_nothing(self):
+		db = Db(lots=self.lots("3"))
+		d = cert("COA AMB", "MIX-1", batch_reference="LOTE-1")
+		self.assertIsNone(save(d, db=db, level_field=False)[0])
+
+	def test_the_levels_are_those_of_the_lot_app(self):
+		self.assertEqual(rules.CERTIFICATE_LEVELS, ("1", "2"))
+		self.assertEqual(rules.LOT_LEVEL_FIELD, "custom_batch_level")
+		try:
+			from amb_w_spc.sfc_manufacturing import lot_quality
+		except ImportError:
+			self.skipTest("amb_w_spc is not importable here")
+		self.assertEqual(tuple(lot_quality.CERTIFICATE_LEVELS), rules.CERTIFICATE_LEVELS)
+
+
 def _customer(name, **kw):
 	return frappe._dict(
 		customer=name, custom_customer_name=name + " name", custom_customer_part_number=None, **kw
@@ -334,6 +392,22 @@ class TestMakeCertificateForLot(unittest.TestCase):
 			out, made = self.make(Lot(item_to_manufacture=item), table=table)
 			self.assertIn("is not classed", out)
 			made.insert.assert_not_called()
+
+	def test_a_container_gets_no_certificate_and_nothing_is_inserted(self):
+		"""Review 6."""
+		for level in ("3", "4"):
+			lot = Lot(tds_link="TDS-1", custom_batch_level=level)
+			out, made = self.make(lot, specs={"TDS-1": {"product_item": "MIX-1"}})
+			self.assertIn(f"Lot record LOTE-1 is a level {level} record", out)
+			self.assertIn("Choose the lot or the sub-lot", out)
+			made.insert.assert_not_called()
+			lot.check_permission.assert_called_once_with(
+				"read"
+			)  # the level is said to one who may read the lot
+		for level in ("1", "2", None, ""):
+			lot = Lot(tds_link="TDS-1", custom_batch_level=level)
+			out, made = self.make(lot, specs={"TDS-1": {"product_item": "MIX-1"}})
+			self.assertEqual(out, {"doctype": "COA AMB", "name": "NEW-1"}, level)
 
 	def test_it_is_whitelisted_under_the_name_the_other_apps_call(self):
 		self.assertIn(api.make_certificate_for_lot, frappe.whitelisted)

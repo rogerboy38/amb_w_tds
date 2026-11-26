@@ -36,11 +36,17 @@ class COAAMB(ApprovedLock, Document):
     def before_validate(self):
         """The Approved lock (TASKS-384 B1; the functions are COA AMB2's, see `ApprovedLock`). Runs for a save and
         for a submit, also under `ignore_validate`. The rows taken from another Approved certificate are judged by
-        the `before_validate` doc_event registered for COA AMB in hooks.py."""
+        the `before_validate` doc_event registered for COA AMB in hooks.py.
+
+        First: no COA AMB goes from docstatus 0 to 1 unless its stored state is Approved (the workflow's own
+        share). It is refused here because the framework runs `before_validate` for every save and submit, also
+        when the caller set `flags.ignore_validate`, which skips `validate`."""
+        certificate_rules.refuse_submit_unless_approved(self)
         self.refuse_edit_of_approved()
 
     def validate(self):
         """Draft saves run the light checks and derive the result; the row checks that refuse run at submit."""
+        certificate_rules.refuse_submit_unless_approved(self)
         self.refuse_edit_of_approved()
 
         if self.docstatus == 0 and not self._is_submit_flow():
@@ -106,18 +112,28 @@ class COAAMB(ApprovedLock, Document):
         #self.calculate_child_table_status()
         # to be reviewed freezed on save COA AMB document
 
+    def on_update(self):
+        """TASKS-384 B3: the lot is released when the certificate becomes Approved, and the release is taken back
+        when an Approved certificate is rejected to Draft. Decided in `validate`, written here, after the
+        certificate's own write and in the same transaction, by amb_w_spc (the only writer of the lot's status)."""
+        certificate_rules.write_lot(self)
+
     def on_submit(self):
         """On submit actions"""
         self.validate_submission_prerequisites()
         self.generate_coa_pdf()
-        self.update_batch_status()
+        # TASKS-384 B3: the batch step that stood here (`update_batch_status`) wrote the lot's `quality_status`
+        # raw, with the certificate's own word ("Pass"), inside a try/except. It is removed: the lot is written at
+        # Approved, through amb_w_spc. The three steps below are as they were and fail as before (a later task).
         self.notify_quality_team()
         self.create_quality_audit()
         self.update_product_quality_status()
 
     def on_cancel(self):
         """On cancel actions"""
-        self.update_batch_status('COA Cancelled')
+        # TASKS-384 B3: no "COA Cancelled" is written to the lot any more (it is not a lot status); the release is
+        # taken back through amb_w_spc, and the lot shows what another standing certificate says, else Pending.
+        certificate_rules.withdraw_on_cancel(self)
         self.revert_product_quality_status()
         frappe.msgprint(_("COA has been cancelled and batch status updated."), alert=True)
 
@@ -570,37 +586,6 @@ class COAAMB(ApprovedLock, Document):
         except Exception as e:
             frappe.log_error(title="COA AMB - PDF Generation", message=f"Error generating COA PDF: {str(e)}")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
-
-    def update_batch_status(self, status=None):
-        """Update related batch with COA info"""
-        if not self.batch_reference:
-            return
-
-        try:
-            batch = frappe.get_doc('Batch AMB', self.batch_reference)
-            
-            if status:
-                batch.quality_status = status
-                batch.add_comment('Info', f'COA Status: {status} - {self.name}')
-            else:
-                batch.coa_generated = 1
-                batch.coa_reference = self.name
-                batch.quality_status = self.overall_result
-                batch.last_coa_date = nowdate()
-                
-                # Add COA details to batch
-                if hasattr(batch, 'coa_details'):
-                    batch.coa_details = f"""
-                        COA: {self.name}
-                        Result: {self.overall_result}
-                        Approved: {self.approval_date}
-                        Approved By: {self.approved_by}
-                    """
-            
-            batch.save(ignore_permissions=True)
-            
-        except Exception as e:
-            frappe.log_error(title="COA AMB - Batch Update", message=f"Error updating batch {self.batch_reference}: {str(e)}")
 
     def notify_quality_team(self):
         """Send notifications to relevant teams"""

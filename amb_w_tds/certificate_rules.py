@@ -12,7 +12,7 @@ The Approved lock itself (TASKS-335 / 361 / 365) lives in `coa_amb2.py` and read
 
 import frappe
 from frappe import _
-from frappe.utils import cint, cstr, nowdate
+from frappe.utils import cint, cstr, flt, nowdate
 
 from amb_w_tds.quality_vocabulary import RESULT_TO_LOT_STATUS
 
@@ -21,6 +21,14 @@ STATE_FIELD = {"COA AMB2": "workflow_state", "COA AMB": "workflow_state_1"}
 APPROVED = "Approved"
 RESULT_TABLE = "coa_quality_test_parameter"
 RESULT_ROW_DOCTYPE = "COA Quality Test Parameter"
+# The fields of a test row that the evaluation reads (`evaluate_overall_result`, `check_parameter_compliance`,
+# `_is_header_row`, and at submit `validate_test_parameters` / `evaluate_formula_parameters`, in both controllers):
+# a change of any of them can change the verdict, or what the certificate says was tested, so it is a change of
+# the results. `status` is not here: the evaluation writes it and never reads it.
+EVALUATION_TEXT_FIELDS = ("result", "specification", "value", "acceptance_formula", "parameter_name")
+EVALUATION_NUMBER_FIELDS = ("min_value", "max_value")
+EVALUATION_CHECK_FIELDS = ("numeric", "formula_based_criteria", "custom_is_title_row")
+EVALUATION_FIELDS = EVALUATION_TEXT_FIELDS + EVALUATION_NUMBER_FIELDS + EVALUATION_CHECK_FIELDS
 
 # Only COA AMB is a customer certificate: it is signed and names its customers before approval (decision 312).
 SIGNED_CERTIFICATES = ("COA AMB",)
@@ -29,6 +37,16 @@ CUSTOMERS_TABLE = "custom_coa_customers"
 
 # The lot's native Batches: `Batch` rows whose `custom_batch_amb` is the lot (amb_w_spc's projection).
 LOT_DOCTYPE = "Batch AMB"
+# A certificate is made for a lot (level 1) or a sub-lot (level 2); the records below follow their sub-lot
+# (decision 319). The same two levels as amb_w_spc's `lot_quality.CERTIFICATE_LEVELS`; an empty level is level 1.
+LOT_LEVEL_FIELD = "custom_batch_level"
+CERTIFICATE_LEVELS = ("1", "2")
+# TASKS-384 B3: the lot's status is written by amb_w_spc, the only writer, through these two functions. They are
+# looked up when they are called (late binding): this app imports without amb_w_spc.
+SPC_APP = "amb_w_spc"
+SPC_LOT_QUALITY = "amb_w_spc.sfc_manufacturing.lot_quality"
+# The state in which a submitted certificate still stands for its lot (COA AMB only; no COA AMB2 is submitted).
+SHARED_STATE = {"COA AMB": "Certificate Shared"}
 # TASKS-384 B2: the certificate's `work_order` follows the lot's `work_order_ref`; the lot's item is the Work
 # Order's item (`item_to_manufacture`, what the lot picker shows).
 LOT_WORK_ORDER_FIELD = "work_order_ref"
@@ -79,25 +97,32 @@ def leaves_approved(doc):
 	return cint(doc.docstatus) == 0 and state_of(doc) != APPROVED and _was_approved(_before(doc))
 
 
-def _result(row):
-	return cstr(row.get("result")).strip()
+def _evaluated(row):
+	"""What the evaluation reads of one test row, in one comparable form: text without the spaces around it, the
+	two limits as numbers (an empty limit and 0 both mean "no bound" to the evaluation), the three checks as 0/1.
+	The same row read from the database and sent back by the form compares equal."""
+	return (
+		tuple(cstr(row.get(f)).strip() for f in EVALUATION_TEXT_FIELDS)
+		+ tuple(round(flt(row.get(f)), 9) for f in EVALUATION_NUMBER_FIELDS)
+		+ tuple(cint(row.get(f)) for f in EVALUATION_CHECK_FIELDS)
+	)
 
 
 def results_changed(doc):
-	"""True when this save changes a test result: a row whose `result` differs from the stored one, a new row that
-	carries a result, or a stored row with a result that is no longer in the table."""
+	"""True when this save changes the results: a stored row with a field the evaluation reads that differs from
+	the stored one (the result, but also a limit, the specification, the formula, the title mark: see
+	`EVALUATION_FIELDS`), a row that was added, or a stored row that is no longer in the table."""
 	before = _before(doc)
-	stored = {row.get("name"): _result(row) for row in (before.get(RESULT_TABLE) or [])} if before else {}
+	stored = {row.get("name"): _evaluated(row) for row in (before.get(RESULT_TABLE) or [])} if before else {}
 	kept = set()
 	for row in doc.get(RESULT_TABLE) or []:
 		name = row.get("name")
-		if name in stored:
-			kept.add(name)
-			if stored[name] != _result(row):
-				return True
-		elif _result(row):
+		if name not in stored or name in kept:
+			return True  # a row that was added (a name sent twice is one stored row and one added)
+		kept.add(name)
+		if stored[name] != _evaluated(row):
 			return True
-	return any(result for name, result in stored.items() if name not in kept)
+	return len(kept) != len(stored)
 
 
 def set_filled_by(doc):
@@ -113,19 +138,20 @@ def set_filled_by(doc):
 def note_filler_of_row(doc, method=None):
 	"""doc_events hook on the result row DocType (`before_validate`, `on_trash`): a result row saved, inserted or
 	deleted BY ITSELF does not pass through the certificate's `validate`, so `set_filled_by` never sees it. When
-	such a save changes a result, the certificate the row belongs to (the one sent and the one stored) gets the
-	session user as `filled_by`. Rows of any other parent are not touched. A save of the certificate itself runs no
-	row event."""
+	such a save changes the results (a field the evaluation reads differs from the stored row, the row is new, or
+	it is deleted: the same rule as `results_changed`), the certificate the row belongs to (the one sent and the
+	one stored) gets the session user as `filled_by`. Rows of any other parent are not touched. A save of the
+	certificate itself runs no row event."""
 	stored = None
 	if doc.get("name") and not doc.is_new():
 		stored = frappe.db.get_value(
-			doc.doctype, doc.get("name"), ["parent", "parenttype", "result"], as_dict=True
+			doc.doctype, doc.get("name"), ["parent", "parenttype", *EVALUATION_FIELDS], as_dict=True
 		)
 	if method == "on_trash":
-		changed = bool(stored and cstr(stored.result).strip())
+		changed = bool(stored)
 		owners = {(stored.parenttype, stored.parent)} if stored else set()
 	else:
-		changed = (cstr(stored.result).strip() if stored else "") != _result(doc)
+		changed = not stored or _evaluated(stored) != _evaluated(doc)
 		owners = {(doc.get("parenttype"), doc.get("parent"))}
 		if stored:
 			owners.add((stored.parenttype, stored.parent))
@@ -133,6 +159,42 @@ def note_filler_of_row(doc, method=None):
 		return
 	for parenttype, parent in sorted(o for o in owners if o[0] in STATE_FIELD and o[1]):
 		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+
+
+def refuse_submit_unless_approved(doc):
+	"""A certificate that its workflow submits (COA AMB: Approved -> Certificate Shared) goes from docstatus 0 to 1
+	only from the STORED state Approved. Every other submit is refused, for every role and every way there: the
+	form's Submit, `frappe.client.submit`, a save or an insert that carries docstatus 1, a bulk submit. Without
+	this a Draft could be submitted directly: the framework then names it by the first submitted state of the
+	workflow, "Certificate Shared", and it would count as a certificate that stands for its lot without ever
+	having been approved by a second person.
+
+	What is read is what the database holds, not what the caller sends. A new document has no stored state, so it
+	is never inserted as submitted; that covers the amendment of a cancelled certificate, which is a new draft and
+	goes through approval again. From Approved, WHERE the submit may go is the lock's business
+	(`ApprovedLock.refuse_edit_of_approved`). A document that is already submitted is not judged here."""
+	if doc.doctype not in SHARED_STATE or cint(doc.docstatus) != 1:
+		return
+	before = _before(doc)
+	if before and cint(before.get("docstatus")) != 0:
+		return
+	if _was_approved(before):
+		return
+	frappe.throw(
+		_(
+			"{0} {1} cannot be submitted: {2}. A certificate is submitted only by its workflow, from the state Approved to {3}, after another person approved it. Take it through Review and Approve first."
+		).format(
+			_(doc.doctype),
+			doc.name or "",
+			_("its stored state is {0}, not Approved").format(
+				before.get(STATE_FIELD[doc.doctype]) or _("empty")
+			)
+			if before
+			else _("it is new and was never approved"),
+			SHARED_STATE[doc.doctype],
+		),
+		title=_("Certificate not approved"),
+	)
 
 
 def refuse_changed_results_at_share(doc):
@@ -218,7 +280,7 @@ def refuse_unless_approvable(doc):
 		_refuse(
 			doc,
 			_(
-				"it is not recorded who entered its results, so the approver cannot be told apart from that person. A result must be saved again by whoever fills the certificate."
+				"it is not recorded who entered its results (it was filled before this was recorded), so the approver cannot be told apart from that person. Saving it again unchanged does not record it. Whoever fills the certificate must change a result and save; to keep the same value: change it, save, set it back, save again. Then another person approves."
 			),
 		)
 	if doc.get("filled_by") == frappe.session.user:
@@ -250,7 +312,9 @@ def refuse_unless_approvable(doc):
 def set_approval(doc):
 	"""`approved_by` and `approval_date` belong to the server. At approval: the session user and today. When an
 	Approved certificate goes back (Reject): emptied, the certificate is no longer approved. On any other save of
-	a stored certificate: the stored values, whatever the caller sent."""
+	a stored certificate: the stored values, whatever the caller sent. On a new certificate that is not becoming
+	Approved: empty, whatever the caller sent. A copy and an amendment are new certificates, and the form's Amend
+	copies every field, the ones marked "no copy" included, so they are emptied here and not by the field mark."""
 	before = _before(doc)
 	if becomes_approved(doc):
 		refuse_unless_approvable(doc)
@@ -262,6 +326,9 @@ def set_approval(doc):
 	elif before:
 		doc.approved_by = before.get("approved_by")
 		doc.approval_date = before.get("approval_date")
+	else:
+		doc.approved_by = None
+		doc.approval_date = None
 
 
 def follow_lot(doc):
@@ -315,6 +382,33 @@ def refuse_wrong_type(doc):
 		)
 
 
+def lot_level(value):
+	"""The level of a lot record as text; an empty level is level 1 (as amb_w_spc reads it)."""
+	return cstr(value).strip() or CERTIFICATE_LEVELS[0]
+
+
+def lot_level_refusal(lot, level):
+	return _(
+		"Lot record {0} is a level {1} record. A certificate is made for a lot (level 1) or a sub-lot (level 2); the records below them follow their sub-lot. Choose the lot or the sub-lot."
+	).format(lot, level)
+
+
+def refuse_lot_level(doc):
+	"""TASKS-384 B3/B4 (decision 319): a certificate names a lot or a sub-lot, never a record below them. Judged in
+	the save that sets or changes the lot, so the wrong record is refused when it is chosen and not only when the
+	certificate is approved. On a site whose lot records have no level field nothing is read and nothing is
+	refused."""
+	lot = doc.get("batch_reference")
+	before = _before(doc)
+	if not lot or (before and before.get("batch_reference") == lot):
+		return
+	if not frappe.get_meta(LOT_DOCTYPE).has_field(LOT_LEVEL_FIELD):
+		return
+	level = lot_level(frappe.db.get_value(LOT_DOCTYPE, lot, LOT_LEVEL_FIELD))
+	if level not in CERTIFICATE_LEVELS:
+		frappe.throw(lot_level_refusal(lot, level), title=_("Lot level"))
+
+
 def customers_for(specification, item):
 	"""The customers of a product: the rows of the specification's customers table, else the Item's."""
 	for (doctype, table), name in ((SPECIFICATION_CUSTOMERS, specification), (ITEM_CUSTOMERS, item)):
@@ -336,10 +430,113 @@ def fill_customers(doc):
 		doc.append(CUSTOMERS_TABLE, row)
 
 
+def note_lot_move(doc):
+	"""TASKS-384 B3, decided in `validate` from the state before the save and the state now: does this save release
+	the lot (the state becomes Approved) or take the release back (an Approved certificate goes back, the
+	workflow's Reject)? The answer is kept on the document for `on_update`, which runs after the certificate is
+	written, in the same transaction. A release speaks of the lot the certificate names now; a withdrawal of the
+	lot it named when it was approved."""
+	doc._lot_move = None
+	if becomes_approved(doc):
+		doc._lot_move = ("approved", doc.get("batch_reference"))
+	elif leaves_approved(doc):
+		doc._lot_move = ("withdrawn", _before(doc).get("batch_reference"))
+
+
+def _spc(function):
+	"""A function of amb_w_spc's lot_quality module, found at the moment of the call. Without that app, or with a
+	version of it that lacks the function, the lot cannot be written: the approval (or the Reject, or the Cancel)
+	fails here with a message that says so. Only the LOOKUP is guarded; the call itself is never wrapped."""
+	path = f"{SPC_LOT_QUALITY}.{function}"
+	if SPC_APP not in frappe.get_installed_apps():
+		frappe.throw(
+			_(
+				"The lot's quality status is written by the app {0}, which is not installed on this site ({1}). Nothing was saved."
+			).format(SPC_APP, path),
+			title=_("Lot not written"),
+		)
+	try:
+		return frappe.get_attr(path)
+	except (ImportError, AttributeError) as e:
+		frappe.throw(
+			_(
+				"The lot's quality status cannot be written: {0} is not available in the installed {1} ({2}). Nothing was saved."
+			).format(path, SPC_APP, e),
+			title=_("Lot not written"),
+		)
+
+
+def _approved_by_another(row):
+	approver, filler = cstr(row.get("approved_by")).strip(), cstr(row.get("filled_by")).strip()
+	return bool(approver and filler and approver != filler)
+
+
+def standing_certificate(lot, doctype, name):
+	"""ANOTHER certificate of the same lot record, of either type, that still stands: Approved and not submitted,
+	or (COA AMB) Certificate Shared and not cancelled, with a result that maps to a lot status, AND approved by
+	the two-person rule: it records who approved it and who filled it, and the two differ. A certificate in one of
+	those states without that record (one written past the approval, or approved before `filled_by` existed) does
+	not stand: it cannot decide the status of a lot when another certificate is taken back. Returned as
+	{"doctype", "name", "result"}, or None. When several stand, the one approved last (then saved last) is taken."""
+	found = []
+	for certificate_doctype, field in STATE_FIELD.items():
+		standing_states = [(APPROVED, 0)]
+		if certificate_doctype in SHARED_STATE:
+			standing_states.append((SHARED_STATE[certificate_doctype], 1))
+		for state, docstatus in standing_states:
+			filters = {"batch_reference": lot, field: state, "docstatus": docstatus}
+			if certificate_doctype == doctype:
+				filters["name"] = ["!=", name]
+			for row in frappe.get_all(
+				certificate_doctype,
+				filters=filters,
+				fields=["name", "overall_result", "approval_date", "modified", "approved_by", "filled_by"],
+			):
+				if row.get("overall_result") in RESULT_TO_LOT_STATUS and _approved_by_another(row):
+					found.append(
+						(cstr(row.get("approval_date")), cstr(row.get("modified")), certificate_doctype, row)
+					)
+	if not found:
+		return None
+	_approved, _modified, certificate_doctype, row = max(found, key=lambda f: f[:3])
+	return {"doctype": certificate_doctype, "name": row.get("name"), "result": row.get("overall_result")}
+
+
+def write_lot(doc):
+	"""TASKS-384 B3, `on_update` of both certificates: carry out what `note_lot_move` decided. A certificate that
+	names no lot has nothing to write. NO try/except: if the lot cannot be written the exception leaves this save
+	and the certificate's own write is rolled back with it; the user sees why."""
+	move = getattr(doc, "_lot_move", None)
+	doc._lot_move = None
+	if not move or not move[1]:
+		return
+	kind, lot = move
+	if kind == "approved":
+		_spc("certificate_approved")(doc.doctype, doc.name, lot, doc.get("overall_result"))
+	else:
+		_spc("certificate_withdrawn")(
+			doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
+		)
+
+
+def withdraw_on_cancel(doc):
+	"""TASKS-384 B3, `on_cancel` of COA AMB: a shared certificate that is cancelled no longer stands for its lot.
+	amb_w_spc resets only what this certificate wrote. No try/except, as in `write_lot`."""
+	lot = doc.get("batch_reference")
+	if not lot:
+		return
+	_spc("certificate_withdrawn")(
+		doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
+	)
+
+
 def apply(doc):
 	"""Called by `validate` of both certificates, after the result was derived from the rows."""
+	refuse_submit_unless_approved(doc)
 	refuse_changed_results_at_share(doc)
 	refuse_wrong_type(doc)
+	refuse_lot_level(doc)
 	follow_lot(doc)
 	set_filled_by(doc)
 	set_approval(doc)
+	note_lot_move(doc)
