@@ -236,7 +236,25 @@ def customers_changed(doc):
 	description = _description(doc.doctype)
 	if description:
 		row_doctype = dict(description[2]).get(CUSTOMERS_TABLE)
-	return _rows_differ(before.get(CUSTOMERS_TABLE), doc.get(CUSTOMERS_TABLE), row_doctype)
+	ignore = tuple(ROW_META_FIELDS) + _fetched_row_fields(row_doctype)
+	return _rows_differ(before.get(CUSTOMERS_TABLE), doc.get(CUSTOMERS_TABLE), row_doctype, ignore=ignore)
+
+
+# TASKS-387 review, finding 1: fields of a customers row that the framework re-fetches on every save of a draft
+# (`fetch_from`, not "fetch if empty"), before any rule runs. Their change is the server's, not the user's, and is
+# not a change of the customers list. The shipped `Customer Item.custom_customer_name` fetches `customer.customer_name`;
+# it is named here too so a document built without the database (a test) is judged the same way.
+FETCHED_CUSTOMER_ROW_FIELDS = ("custom_customer_name",)
+
+
+def _fetched_row_fields(row_doctype):
+	fields = set(FETCHED_CUSTOMER_ROW_FIELDS)
+	if row_doctype:
+		meta = frappe.get_meta(row_doctype)
+		for df in meta.get("fields") or []:
+			if df.get("fetch_from") and not df.get("fetch_if_empty"):
+				fields.add(df.get("fieldname"))
+	return tuple(sorted(fields))
 
 
 def _product_follows_specification(doc, before):

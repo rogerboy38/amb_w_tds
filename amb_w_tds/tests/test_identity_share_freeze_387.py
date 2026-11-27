@@ -354,6 +354,27 @@ class TestCustomersListIsFilling(unittest.TestCase):
 		self.assertIsNone(run(d, user=THIRD))
 		self.assertEqual(d.filled_by, FILLER)
 
+	def test_a_customer_name_refetched_by_the_framework_is_not_a_change(self):
+		"""Review finding 1: `Customer Item.custom_customer_name` is fetched from the Customer on every draft save,
+		before any rule runs. A renamed Customer must not make the approver the filler."""
+		before = in_review(
+			filled_by=FILLER,
+			signed_by=APPROVER,
+			custom_coa_customers=[
+				frappe._dict(name="cust-1", customer="CUST-1", custom_customer_name="Old name")
+			],
+		)
+		sent = [frappe._dict(name="cust-1", customer="CUST-1", custom_customer_name="New name")]
+		d = as_sent("COA AMB", before, state="Approved", custom_coa_customers=sent)
+		self.assertIsNone(run(d, user=APPROVER))
+		self.assertEqual(d.filled_by, FILLER)
+		self.assertIn("custom_customer_name", rules._fetched_row_fields(None))
+		# a field the user types is still a change
+		typed = [frappe._dict(name="cust-1", customer="CUST-2", custom_customer_name="Old name")]
+		d = as_sent("COA AMB", before, custom_coa_customers=typed)
+		self.assertIsNone(run(d, user=APPROVER))
+		self.assertEqual(d.filled_by, APPROVER)
+
 	def row_hook(
 		self, sent, stored_row, parent_state="Pending Supervisor", method="before_validate", new=False
 	):
