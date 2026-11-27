@@ -15,6 +15,7 @@ performs.
 Skipped when amb_w_spc cannot be imported. Run with both apps on the path:
 PYTHONPATH=<amb_w_tds clone>:<amb_w_spc clone> python -m unittest amb_w_tds.tests.test_lot_release_with_spc"""
 
+import copy
 import importlib
 import inspect
 import types
@@ -372,6 +373,59 @@ class TestCertificateToLotThroughBothApps(unittest.TestCase):
 			self.assertTrue(callable(getattr(lq, function)))
 		self.assertEqual(rules.SPC_LOT_QUALITY, lq.__name__)
 		self.assertIn("standing", inspect.signature(lq.certificate_withdrawn).parameters)
+
+
+class FullSite(Site):
+	"""TASKS-388 (decision 332): the same site, with `before_validate` run before `validate` (as the framework runs
+	it) and values the caller sends with the state. The workflow of each certificate is not read here (no Workflow)."""
+
+	def lot_value(self, doctype, name, fields, as_dict=False):
+		if doctype == "Workflow":
+			return None
+		return super().lot_value(doctype, name, fields, as_dict)
+
+	def reject_with(self, doctype, name, lot, user=APPROVER, **values):
+		before = self._stored(doctype, name, lot, "Pass")
+		d = object.__new__(CLASSES[doctype])
+		d.__dict__.update({k: copy.deepcopy(v) for k, v in before.items()})
+		d.__dict__.update(values)
+		d.__dict__[rules.STATE_FIELD[doctype]] = "Draft"
+		d._doc_before_save = before
+		for check in ("validate_linked_tds", "validate_batch_reference", "check_mandatory_tds_link"):
+			setattr(d, check, lambda: None)
+		with self.running(user), mock.patch.object(amb2, "refuse_taking_rows_of_approved", lambda d: None):
+			d.before_validate()
+			d.validate()
+			d.on_update()
+		after = frappe._dict(before)
+		after.update({k: d.__dict__.get(k) for k in before})
+		self.certificates[(doctype, name)] = after
+		return d
+
+
+@unittest.skipIf(lq is None, "amb_w_spc is not importable here")
+class TestTheRejectChangesOnlyTheStateThroughBothApps(unittest.TestCase):
+	def test_the_workflows_reject_withdraws_the_lot_as_before(self):
+		for doctype in BOTH:
+			with self.subTest(doctype=doctype):
+				site = FullSite(lot_tree())
+				site.approve(doctype, "CERT-1", "LOT", "Pass")
+				self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", doctype, "CERT-1"))
+				d = site.reject_with(doctype, "CERT-1", "LOT")
+				self.assertEqual((d.approved_by, d.approval_date, d.filled_by), (None, None, FILLER))
+				for name in ("LOT", "SUB", "CONT"):
+					self.assertEqual(site.table.state(name), PENDING, name)
+
+	def test_a_reject_that_carries_a_new_lot_is_refused_and_the_lot_stays_released(self):
+		site = FullSite(lot_tree().add("LOT-2", "1"))
+		site.approve("COA AMB", "CERT-1", "LOT", "Pass")
+		written = list(site.table.history)
+		with self.assertRaises(frappe.ValidationError) as refused:
+			site.reject_with("COA AMB", "CERT-1", "LOT", batch_reference="LOT-2")
+		self.assertIn("field batch_reference", str(refused.exception))
+		self.assertEqual(site.table.history, written)
+		self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", "COA AMB", "CERT-1"))
+		self.assertEqual(site.table.state("LOT-2"), PENDING)
 
 
 if __name__ == "__main__":

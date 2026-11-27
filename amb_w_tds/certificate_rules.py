@@ -6,9 +6,11 @@ One place for what both controllers do the same way on the server:
   result, the customers list, or (in Draft / Validated) the lot, product or specification. Set here, never taken
   from the caller.
 - `signed_by` (COA AMB): who last drew or changed the signature; the approver must be that person (decision 321).
+  A save that makes someone the filler empties the signature and its signer and says so (TASKS-388, decision 331).
 - Pending Supervisor: the lot, product and specification are refused there; "Return for correction" takes the
   certificate back to Draft (decision 321).
-- The share (COA AMB, Approved -> Certificate Shared) changes nothing but the state (decision 322).
+- The share (COA AMB, Approved -> Certificate Shared) changes nothing but the state (decision 322); nor does the save
+  that takes an Approved certificate back to a docstatus-0 state, the workflow's Reject (TASKS-388, decision 332).
 - "may this be approved": run when the workflow state becomes Approved (decisions 312 and 313). Each refusal
   has its own message. There is no bypass for any role or user, Administrator included.
 - `approved_by` / `approval_date`: filled here at approval, kept as stored on every other save.
@@ -17,9 +19,10 @@ The Approved lock itself (TASKS-335 / 361 / 365) lives in `coa_amb2.py` and read
 """
 
 import datetime
+from types import SimpleNamespace
 
 import frappe
-from frappe import _
+from frappe import _, _dict
 from frappe.utils import cint, cstr, flt, get_datetime, getdate, nowdate
 
 from amb_w_tds.quality_vocabulary import RESULT_TO_LOT_STATUS
@@ -287,6 +290,21 @@ def identity_changes(doc):
 	return changed
 
 
+def filling_changes(doc):
+	"""What this save changes of what the certificate certifies, as text, in this order: its results, its customers
+	list, the identity fields it changes (`identity_changes`). Empty when it changes none of them. A new certificate
+	changes only its results (when it carries test rows); see `set_filled_by`."""
+	before = _before(doc)
+	changes = []
+	if results_changed(doc):
+		changes.append(_("its results"))
+	if before:
+		if customers_changed(doc):
+			changes.append(_("its customers list"))
+		changes.extend(identity_changes(doc))
+	return changes
+
+
 def set_filled_by(doc):
 	"""`filled_by` is the user who last changed what the certificate certifies (decision 313; TASKS-387 decision
 	321): a test result (`results_changed`), the customers list (`customers_changed`), or the lot, product or
@@ -296,12 +314,54 @@ def set_filled_by(doc):
 
 	A new certificate is filled by its maker when it carries test rows, as before: its identity and the customers
 	the server fills in from the specification (`fill_customers`) do not name the maker by themselves. A certificate
-	without test rows cannot be approved, and whoever adds them becomes the filler, so this changes no approval."""
+	without test rows cannot be approved, and whoever adds them becomes the filler, so this changes no approval.
+
+	Returns what made the session user the filler (`filling_changes`), empty when nobody was named by this save."""
 	before = _before(doc)
-	if results_changed(doc) or (before and (customers_changed(doc) or identity_changes(doc))):
+	changes = filling_changes(doc)
+	if changes:
 		doc.filled_by = frappe.session.user
 	else:
 		doc.filled_by = before.get("filled_by") if before else None
+	return changes
+
+
+def _signature_cleared_message(doctype, name, changes):
+	frappe.msgprint(
+		_(
+			"The signature of {0} {1} was cleared: this save changed {2}, and whoever changes that becomes its filler. The approver must draw the signature again before approving."
+		).format(_(doctype), name or "", ", ".join(changes)),
+		title=_("Signature cleared"),
+		indicator="orange",
+	)
+
+
+def clear_signature_on_filling(doc, changes):
+	"""TASKS-388 (decision 331), COA AMB: a save of a stored certificate that makes someone the filler (`changes`, from
+	`set_filled_by`: a change of the results, of the customers list or of the lot, product or specification) also
+	empties the signature (`autorizacion`) and its signer (`signed_by`) in that save, and the user is told so (a
+	message, not a refusal). Run AFTER `set_signed_by`, so a signature drawn in the same save is cleared too and the
+	clear is not undone. A save that only draws the signature names no filler and clears nothing. A new certificate is
+	not judged here: it never carries a signer (`set_signed_by`), so its signature cannot serve an approval."""
+	if doc.doctype not in SIGNED_CERTIFICATES or not changes or not _before(doc):
+		return
+	if not (doc.get(SIGNATURE_FIELD) or doc.get(SIGNER_FIELD)):
+		return
+	setattr(doc, SIGNATURE_FIELD, None)
+	setattr(doc, SIGNER_FIELD, None)
+	_signature_cleared_message(doc.doctype, doc.name, changes)
+
+
+def _clear_stored_signature(parenttype, parent, what):
+	"""TASKS-388 (decision 331), for a row saved by itself that makes someone the filler of a COA AMB (the row hooks
+	below): the certificate's stored signature and signer are emptied in the same transaction, and the user told."""
+	if parenttype not in SIGNED_CERTIFICATES:
+		return
+	stored = frappe.db.get_value(parenttype, parent, [SIGNATURE_FIELD, SIGNER_FIELD], as_dict=True)
+	if not stored or not (stored.get(SIGNATURE_FIELD) or stored.get(SIGNER_FIELD)):
+		return
+	frappe.db.set_value(parenttype, parent, {SIGNATURE_FIELD: None, SIGNER_FIELD: None})
+	_signature_cleared_message(parenttype, parent, [what])
 
 
 def set_signed_by(doc):
@@ -354,7 +414,8 @@ def note_filler_of_row(doc, method=None):
 	deleted BY ITSELF does not pass through the certificate's `validate`, so `set_filled_by` never sees it. When
 	such a save changes the results (a field the evaluation reads differs from the stored row, the row is new, or
 	it is deleted: the same rule as `results_changed`), the certificate the row belongs to (the one sent and the
-	one stored) gets the session user as `filled_by`. Rows of any other parent are not touched. A save of the
+	one stored) gets the session user as `filled_by`, and a COA AMB loses its stored signature and signer
+	(`_clear_stored_signature`, TASKS-388 decision 331). Rows of any other parent are not touched. A save of the
 	certificate itself runs no row event."""
 	stored = None
 	if doc.get("name") and not doc.is_new():
@@ -373,6 +434,7 @@ def note_filler_of_row(doc, method=None):
 		return
 	for parenttype, parent in sorted(o for o in owners if o[0] in STATE_FIELD and o[1]):
 		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+		_clear_stored_signature(parenttype, parent, _("its results"))  # TASKS-388 (decision 331)
 
 
 def note_customer_row(doc, method=None):
@@ -380,7 +442,8 @@ def note_customer_row(doc, method=None):
 	`on_trash`): a row of a certificate's customers list saved, inserted or deleted BY ITSELF does not pass through
 	the certificate's save. When it changes the list (a new row, a deleted row, any field of the row, or the row
 	moved to another parent), the certificate it belongs to (the one sent and the one stored) is refused when it is
-	Approved (the lock), else gets the session user as `filled_by`, as `note_filler_of_row` does for a result row.
+	Approved (the lock), else gets the session user as `filled_by` and loses its stored signature and signer
+	(TASKS-388, decision 331), as `note_filler_of_row` does for a result row.
 	Rows of any other parent (an Item, a specification) are not judged."""
 	stored = None
 	if doc.get("name") and not doc.is_new():
@@ -414,6 +477,7 @@ def note_customer_row(doc, method=None):
 			)
 	for parenttype, parent in owners:
 		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+		_clear_stored_signature(parenttype, parent, _("its customers list"))  # TASKS-388 (decision 331)
 
 
 def refuse_submit_unless_approved(doc):
@@ -499,11 +563,86 @@ SHARE_UNCOMPARED_ROW_FIELDS = frozenset(("docstatus", "modified", "modified_by")
 SHARE_DERIVED_ROW_FIELDS = {RESULT_ROW_DOCTYPE: frozenset(("status",))}
 
 
-def _first_difference_at_share(doc, before):
+# TASKS-388 (decision 332): the fields of both certificates that the framework fetches from the specification
+# (`fetch_from: linked_tds.<field>`), as shipped in coa_amb.json and coa_amb2.json. In a save at docstatus 0 the
+# framework writes them before any rule runs (`BaseDocument.get_invalid_links`, called by `_validate_links`): the
+# first group always (the value sent is overwritten), the second ("fetch if empty") only when the value is empty.
+# At docstatus 1 (the share) it writes none of them. Named here so that a document built without the database (a
+# test) is judged as on a site; on a site the DocType's description is read as well.
+REFETCHED_CERTIFICATE_FIELDS = (
+	"product_item",
+	"item_name",
+	"item_code",
+	"tds_settings",
+	"tds_naming_series",
+	"tds_version",
+	"tds_sequence",
+)
+FETCHED_IF_EMPTY_CERTIFICATE_FIELDS = (
+	"cas_number",
+	"inci_name",
+	"shelf_life",
+	"packaging",
+	"storage_and_handling_conditions",
+	"formula_based_criteria",
+)
+
+
+def _fetch_fields(doctype):
+	"""({field: df} fetched on every draft save, {field: df} fetched when empty) of a DocType, from its description
+	when the site has one, and the shipped fields of the certificates named above."""
+	always = {f: _dict(fieldname=f, fetch_from=f"linked_tds.{f}") for f in REFETCHED_CERTIFICATE_FIELDS}
+	if_empty = {
+		f: _dict(fieldname=f, fetch_from=f"linked_tds.{f}", fetch_if_empty=1)
+		for f in FETCHED_IF_EMPTY_CERTIFICATE_FIELDS
+	}
+	meta = frappe.get_meta(doctype)
+	if callable(getattr(meta, "get", None)):
+		for df in meta.get("fields") or []:
+			if df.get("fetch_from"):
+				(if_empty if df.get("fetch_if_empty") else always)[df.get("fieldname")] = df
+				(always if df.get("fetch_if_empty") else if_empty).pop(df.get("fieldname"), None)
+	return always, if_empty
+
+
+def _fetched_from_empty(doc, before, df):
+	"""A "fetch if empty" field that was empty in the stored certificate and now holds exactly what the framework
+	fetches into it in this save (Frappe's own `set_fetch_from_value`, on the value read from the linked record):
+	the server's write, not the caller's. The link is the stored one; a change of the link is compared by itself."""
+	if cstr(before.get(df.fieldname)).strip() or not cstr(doc.get(df.fieldname)).strip():
+		return False
+	link_field, source = df.fetch_from.split(".", 1)
+	link = doc.get(link_field)
+	if not link or cstr(link) != cstr(before.get(link_field)):
+		return False
+	link_doctype = SPECIFICATION_DOCTYPE
+	meta = frappe.get_meta(doc.doctype)
+	if callable(getattr(meta, "get_field", None)) and meta.get_field(link_field):
+		link_doctype = meta.get_field(link_field).options or link_doctype
+	values = frappe.db.get_value(link_doctype, link, [source], as_dict=True)
+	if not values:
+		return False
+	from frappe.model.base_document import BaseDocument
+
+	probe = SimpleNamespace()
+	BaseDocument.set_fetch_from_value(probe, link_doctype, df, values)
+	return cstr(getattr(probe, df.fieldname, None)) == cstr(doc.get(df.fieldname))
+
+
+def _first_difference_at_share(doc, before, refetched=False):
 	"""The first difference between this save and the stored certificate, as text, or None. Parent fields first (in
-	the DocType's order), then each table: its number of rows, the name of each row in its place, then each field."""
+	the DocType's order), then each table: its number of rows, the name of each row in its place, then each field.
+
+	`refetched` (TASKS-388, decision 332: a save at docstatus 0, where the framework fetches before any rule runs):
+	the fields it always fetches, of the certificate and of each row (`_fetch_fields`, `_fetched_row_fields`), are
+	not compared, and a "fetch if empty" field is not a difference when it was empty and now holds what the framework
+	fetches into it (`_fetched_from_empty`)."""
 	description = _description(doc.doctype)
 	ignore = SHARE_UNCOMPARED_FIELDS | SHARE_DERIVED_FIELDS | {STATE_FIELD[doc.doctype]}
+	fetched_if_empty = {}
+	if refetched:
+		always, fetched_if_empty = _fetch_fields(doc.doctype)
+		ignore = ignore | set(always)
 	if description:
 		columns, types, tables = description
 	else:
@@ -523,6 +662,8 @@ def _first_difference_at_share(doc, before):
 		if f in ignore:
 			continue
 		if _comparable(before.get(f), types.get(f)) != _comparable(doc.get(f), types.get(f)):
+			if f in fetched_if_empty and _fetched_from_empty(doc, before, fetched_if_empty[f]):
+				continue
 			return _("field {0}").format(f)
 	for table, row_doctype in tables:
 		old_rows, new_rows = list(before.get(table) or []), list(doc.get(table) or [])
@@ -535,6 +676,8 @@ def _first_difference_at_share(doc, before):
 		row_ignore = SHARE_UNCOMPARED_ROW_FIELDS | SHARE_DERIVED_ROW_FIELDS.get(row_doctype, frozenset())
 		if not row_doctype and table == RESULT_TABLE:
 			row_ignore = row_ignore | SHARE_DERIVED_ROW_FIELDS[RESULT_ROW_DOCTYPE]
+		if refetched:
+			row_ignore = row_ignore | set(_fetched_row_fields(row_doctype))
 		for place, (old, new) in enumerate(zip(old_rows, new_rows, strict=True), 1):
 			if cstr(old.get("name")) != cstr(new.get("name")):
 				return _("table {0}, row {1}: row {2} instead of the stored row {3}").format(
@@ -571,6 +714,27 @@ def refuse_changes_at_share(doc):
 			_(
 				"{0} {1} is Approved: it is shared exactly as it was approved, and this save changes {2}. Nothing was shared. To change it, a Quality Manager must Reject it to Draft first."
 			).format(_(doc.doctype), doc.name, difference),
+			title=_("Approved certificate"),
+		)
+
+
+def refuse_changes_leaving_approved(doc):
+	"""TASKS-388 (decision 332): the save that takes a certificate from the stored state Approved (docstatus 0) to
+	another state at docstatus 0 (the workflow's Reject, or a plain save that sends another state) changes nothing
+	but the state. The share's comparison is used (`_first_difference_at_share`): every parent field and every row of
+	every table against the stored certificate, the first difference refused by name, with the share's exclusions
+	(the derived fields include `approved_by` / `approval_date`, which `set_approval` empties in this save, and
+	`filled_by` / `signed_by`, which stay as stored), and, because the framework fetches at docstatus 0 before any
+	rule runs, what it fetches (`refetched`). The withdrawal of the lot is as before (`note_lot_move`, `write_lot`).
+	Corrections are made afterwards, in Draft. Both certificates, every role and path; in `before_validate`."""
+	if not leaves_approved(doc):
+		return
+	difference = _first_difference_at_share(doc, _before(doc), refetched=True)
+	if difference:
+		frappe.throw(
+			_(
+				"{0} {1} is Approved: going back to {2} changes nothing but its state, and this save changes {3}. Nothing was saved. Take it back first (the workflow's Reject), then correct it in Draft."
+			).format(_(doc.doctype), doc.name, _(state_of(doc) or ""), difference),
 			title=_("Approved certificate"),
 		)
 
@@ -777,9 +941,11 @@ def follow_lot(doc):
 	tree, which is why the lot picker carries no item filter), so a difference is SHOWN, not refused: once, in the
 	save that sets or changes the lot or the product.
 
-	Not in the share: there the stored Work Order stays (TASKS-387, decision 322)."""
-	if is_share(doc):
-		return  # TASKS-387 (decision 322): the share keeps the stored Work Order (`refuse_changes_at_share`)
+	Not in the share: there the stored Work Order stays (TASKS-387, decision 322). Nor in the save that takes an
+	Approved certificate back (TASKS-388, decision 332: it changes only the state); the next save in Draft follows the
+	lot."""
+	if is_share(doc) or leaves_approved(doc):
+		return  # the share and the Reject keep the stored Work Order (decisions 322, 332)
 	lot = doc.get("batch_reference")
 	if not lot:
 		return
@@ -984,8 +1150,10 @@ def apply(doc):
 	refuse_wrong_type(doc)
 	refuse_lot_level(doc)
 	follow_lot(doc)
-	set_filled_by(doc)
+	filling = set_filled_by(doc)
 	set_signed_by(doc)
+	# TASKS-388 (decision 331): after `set_signed_by`, so the clear wins over a signature drawn in the same save.
+	clear_signature_on_filling(doc, filling)
 	set_approval(doc)
 	note_lot_move(doc)
 
@@ -996,3 +1164,4 @@ def before_validate(doc):
 	refuse_draft_in_submitted_state(doc)
 	refuse_identity_change_in_review(doc)
 	refuse_changes_at_share(doc)
+	refuse_changes_leaving_approved(doc)  # TASKS-388 (decision 332)

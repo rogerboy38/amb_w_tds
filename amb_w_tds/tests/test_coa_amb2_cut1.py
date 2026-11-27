@@ -110,8 +110,9 @@ RETURN_FOR_CORRECTION = [
 	("Pending Supervisor", "Return for correction", "Draft", "Quality User", None, 1),
 	("Pending Supervisor", "Return for correction", "Draft", "Quality Manager", None, 1),
 ]
+# 13.12.22 (TASKS-388, decision 330): Pending Supervisor has a second row, edit right for Quality Manager
 STATES = [("Draft", "0", "All"), ("Validated", "0", "Quality User"), ("Pending Supervisor", "0", "Quality User"),
-	("Approved", "0", "Quality Manager"), ("Auto Approved", "0", "Quality User"),
+	("Pending Supervisor", "0", "Quality Manager"), ("Approved", "0", "Quality Manager"), ("Auto Approved", "0", "Quality User"),
 	("Saved", "0", "All")]
 
 
@@ -154,7 +155,7 @@ class TestWorkflowFixture(unittest.TestCase):
 		self.assertEqual(len(rows), 11)
 		self.assertEqual(rows[8][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
 		self.assertEqual(rows[9:], RETURN_FOR_CORRECTION)
-		twin_states = STATES[:4] + [("Certificate Shared", "1", "Quality User")] + STATES[4:] + [("Cancelled", "2", "Quality Manager")]
+		twin_states = STATES[:5] + [("Certificate Shared", "1", "Quality User")] + STATES[5:] + [("Cancelled", "2", "Quality Manager")]
 		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], twin_states)
 
 

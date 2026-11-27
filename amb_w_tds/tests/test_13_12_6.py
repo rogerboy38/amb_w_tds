@@ -75,9 +75,11 @@ class TestApprovedIsTheEnd(unittest.TestCase):
 
 	def test_allow_edit_per_state_as_left(self):
 		# quoted in REPLY-TASKS-280c: anyone with the state's role may still change a result after Approve
-		self.assertEqual({s["state"]: s["allow_edit"] for s in self.w["states"]},
-			{"Draft": "All", "Validated": "Quality User", "Pending Supervisor": "Quality User",
-			 "Approved": "Quality Manager", "Auto Approved": "Quality User", "Saved": "All"})
+		# 13.12.22 (TASKS-388, decision 330): Pending Supervisor has a second row, edit right for Quality Manager
+		self.assertEqual([(s["state"], s["allow_edit"]) for s in self.w["states"]],
+			[("Draft", "All"), ("Validated", "Quality User"), ("Pending Supervisor", "Quality User"),
+			 ("Pending Supervisor", "Quality Manager"), ("Approved", "Quality Manager"),
+			 ("Auto Approved", "Quality User"), ("Saved", "All")])
 
 	def test_workflow_head_fields_unchanged(self):
 		w = self.w
@@ -95,7 +97,8 @@ class TestNothingElseMoved(unittest.TestCase):
 		self.assertIn(("Approved", "Submit for Sales Approval", "Certificate Shared"), rows)
 		self.assertIn(("Certificate Shared", "Cancel", "Cancelled"), rows)
 		# 13.12.21 (TASKS-387): + the two "Return for correction" rows (Pending Supervisor -> Draft)
-		self.assertEqual((len(w["states"]), len(w["transitions"])), (8, 11))
+		# 13.12.22 (TASKS-388): + the second Pending Supervisor state row (edit right for Quality Manager)
+		self.assertEqual((len(w["states"]), len(w["transitions"])), (9, 11))
 
 	def test_the_tds_and_bom_formula_workflows_keep_their_row_counts(self):
 		ws = _workflows()

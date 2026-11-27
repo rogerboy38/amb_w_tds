@@ -159,6 +159,8 @@ def site(
 	fake = types.SimpleNamespace(
 		session=frappe._dict(user=user),
 		throw=_throw,
+		# TASKS-388 (decision 331): a save that makes someone the filler of a signed COA AMB says it cleared the signature
+		msgprint=mock.Mock(),
 		get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: has_field(dt, f)),
 		get_all=get_all,
 		db=types.SimpleNamespace(
