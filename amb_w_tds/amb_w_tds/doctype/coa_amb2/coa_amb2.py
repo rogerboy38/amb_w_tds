@@ -245,6 +245,9 @@ class COAAMB2(ApprovedLock, Document):
         self.refuse_submit()
         self.refuse_edit_of_approved()
         refuse_taking_rows_of_approved(self)
+        # TASKS-387: no draft saved into a submitted state; no lot, product or specification changed in Pending
+        # Supervisor.
+        certificate_rules.before_validate(self)
 
     def validate(self):
         """Comprehensive validation logic - SKIPS heavy checks for draft"""

@@ -46,6 +46,14 @@ class TestApprovedIsTheEnd(unittest.TestCase):
 		self.assertEqual((t["state"], t["next_state"], t["allowed"], int(t["allow_self_approval"])),
 			("Pending Supervisor", "Approved", "Quality Manager", 0))
 
+	def test_return_for_correction_is_the_only_new_transition(self):
+		# 13.12.21 (TASKS-387, decision 321): Pending Supervisor -> Draft for Quality User and Quality Manager
+		new = sorted((t["state"], t["next_state"], t["allowed"], int(t["allow_self_approval"]))
+			for t in self.transitions if t["action"] == "Return for correction")
+		self.assertEqual(new, [("Pending Supervisor", "Draft", "Quality Manager", 1),
+			("Pending Supervisor", "Draft", "Quality User", 1)])
+		self.assertEqual(len(self.transitions), 9)
+
 	def test_the_reject_paths_stay(self):
 		rej = sorted((t["state"], t["next_state"], t["allowed"]) for t in self.transitions if t["action"] == "Reject")
 		self.assertEqual(rej, [("Approved", "Draft", "Quality Manager"), ("Pending Supervisor", "Draft", "Quality Manager")])
@@ -86,7 +94,8 @@ class TestNothingElseMoved(unittest.TestCase):
 		rows = [(t["state"], t["action"], t["next_state"]) for t in w["transitions"]]
 		self.assertIn(("Approved", "Submit for Sales Approval", "Certificate Shared"), rows)
 		self.assertIn(("Certificate Shared", "Cancel", "Cancelled"), rows)
-		self.assertEqual((len(w["states"]), len(w["transitions"])), (8, 9))
+		# 13.12.21 (TASKS-387): + the two "Return for correction" rows (Pending Supervisor -> Draft)
+		self.assertEqual((len(w["states"]), len(w["transitions"])), (8, 11))
 
 	def test_the_tds_and_bom_formula_workflows_keep_their_row_counts(self):
 		ws = _workflows()

@@ -105,6 +105,11 @@ AMB2_TRANSITIONS = [  # prod's rows (state, action, next state, allowed role, co
 	("Pending Supervisor", "Reject", "Draft", "Quality Manager", None, 1),
 	("Approved", "Reject", "Draft", "Quality Manager", None, 1),
 ]
+# 13.12.21 (TASKS-387, decision 321): "Return for correction", Pending Supervisor -> Draft, appended to both workflows
+RETURN_FOR_CORRECTION = [
+	("Pending Supervisor", "Return for correction", "Draft", "Quality User", None, 1),
+	("Pending Supervisor", "Return for correction", "Draft", "Quality Manager", None, 1),
+]
 STATES = [("Draft", "0", "All"), ("Validated", "0", "Quality User"), ("Pending Supervisor", "0", "Quality User"),
 	("Approved", "0", "Quality Manager"), ("Auto Approved", "0", "Quality User"),
 	("Saved", "0", "All")]
@@ -129,7 +134,7 @@ class TestWorkflowFixture(unittest.TestCase):
 
 	def test_the_seven_remaining_transitions_are_prods_rows_unchanged_and_in_order(self):
 		rows = _rows(_workflows()["submit_and_start_workflow"])
-		self.assertEqual(rows, AMB2_TRANSITIONS)
+		self.assertEqual(rows, AMB2_TRANSITIONS + RETURN_FOR_CORRECTION)
 		# 13.12.6 (TASKS-280c): the 13.12.4.1 Cancel row (Certificate Shared -> Cancelled) went with its state
 
 	def test_states_and_the_workflow_flags_are_unchanged(self):
@@ -146,8 +151,9 @@ class TestWorkflowFixture(unittest.TestCase):
 		# 13.12.6 (TASKS-280c): the twin KEEPS its Sales step — only COA AMB2's workflow ends at Approved.
 		rows = _rows(w)
 		self.assertEqual(rows[:8], AMB2_TRANSITIONS[:3] + [("Approved", "Submit for Sales Approval", "Certificate Shared", "Quality User", None, 1)] + AMB2_TRANSITIONS[3:])
-		self.assertEqual(len(rows), 9)
+		self.assertEqual(len(rows), 11)
 		self.assertEqual(rows[8][:4], ("Certificate Shared", "Cancel", "Cancelled", "Quality Manager"))
+		self.assertEqual(rows[9:], RETURN_FOR_CORRECTION)
 		twin_states = STATES[:4] + [("Certificate Shared", "1", "Quality User")] + STATES[4:] + [("Cancelled", "2", "Quality Manager")]
 		self.assertEqual([(s["state"], str(s["doc_status"]), s["allow_edit"]) for s in w["states"]], twin_states)
 

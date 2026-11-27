@@ -2,7 +2,13 @@
 
 One place for what both controllers do the same way on the server:
 
-- `filled_by`: who last changed a test result (decision 313). Set here, never taken from the caller.
+- `filled_by`: who last changed what the certificate certifies (decision 313; TASKS-387 decision 321): a test
+  result, the customers list, or (in Draft / Validated) the lot, product or specification. Set here, never taken
+  from the caller.
+- `signed_by` (COA AMB): who last drew or changed the signature; the approver must be that person (decision 321).
+- Pending Supervisor: the lot, product and specification are refused there; "Return for correction" takes the
+  certificate back to Draft (decision 321).
+- The share (COA AMB, Approved -> Certificate Shared) changes nothing but the state (decision 322).
 - "may this be approved": run when the workflow state becomes Approved (decisions 312 and 313). Each refusal
   has its own message. There is no bypass for any role or user, Administrator included.
 - `approved_by` / `approval_date`: filled here at approval, kept as stored on every other save.
@@ -10,9 +16,11 @@ One place for what both controllers do the same way on the server:
 The Approved lock itself (TASKS-335 / 361 / 365) lives in `coa_amb2.py` and reads `STATE_FIELD` from here.
 """
 
+import datetime
+
 import frappe
 from frappe import _
-from frappe.utils import cint, cstr, flt, nowdate
+from frappe.utils import cint, cstr, flt, get_datetime, getdate, nowdate
 
 from amb_w_tds.quality_vocabulary import RESULT_TO_LOT_STATUS
 
@@ -34,6 +42,21 @@ EVALUATION_FIELDS = EVALUATION_TEXT_FIELDS + EVALUATION_NUMBER_FIELDS + EVALUATI
 SIGNED_CERTIFICATES = ("COA AMB",)
 SIGNATURE_FIELD = "autorizacion"
 CUSTOMERS_TABLE = "custom_coa_customers"
+# TASKS-387 (decision 321): who last drew or changed the signature. Written by the server, never taken from the caller.
+SIGNER_FIELD = "signed_by"
+
+# TASKS-387 (decision 321): what the certificate is FOR. A change of any of them in Draft or Validated is filling
+# (the changer becomes `filled_by`); in Pending Supervisor it is refused (the way back is "Return for correction");
+# in Approved the lock refuses every change.
+IDENTITY_FIELDS = ("batch_reference", "product_item", "linked_tds")
+PENDING_SUPERVISOR = "Pending Supervisor"
+RETURN_FOR_CORRECTION = "Return for correction"
+SPECIFICATION_DOCTYPE = "TDS Product Specification"
+# The framework's own columns of a row: not what a row says. A customers row that differs only in these is the same
+# row (its place in the list included: the order of the customers is not what the certificate certifies).
+ROW_META_FIELDS = frozenset(
+	("doctype", "name", "idx", "owner", "creation", "modified", "modified_by", "docstatus")
+).union(("parent", "parentfield", "parenttype"))
 
 # The lot's native Batches: `Batch` rows whose `custom_batch_amb` is the lot (amb_w_spc's projection).
 LOT_DOCTYPE = "Batch AMB"
@@ -51,6 +74,11 @@ SHARED_STATE = {"COA AMB": "Certificate Shared"}
 # Order's item (`item_to_manufacture`, what the lot picker shows).
 LOT_WORK_ORDER_FIELD = "work_order_ref"
 LOT_ITEM_FIELD = "item_to_manufacture"
+# TASKS-387 (decision 323): the records below a lot record name it in `parent_batch_amb`. They are read level by level,
+# at most this many levels below the certificate's record (a lot is level 1; the deepest level is 4 or, for a
+# formulated record, 5), with a guard against a loop in the data.
+LOT_PARENT_FIELD = "parent_batch_amb"
+LOT_LEVELS_BELOW = 4
 # The customers of a COA AMB come from the specification's table, else from the Item's (decision 312).
 SPECIFICATION_CUSTOMERS = ("TDS Product Specification", "custom_tds_customers")
 ITEM_CUSTOMERS = ("Item", "custom_amb_customer_items")
@@ -125,14 +153,182 @@ def results_changed(doc):
 	return len(kept) != len(stored)
 
 
-def set_filled_by(doc):
-	"""`filled_by` is the user who last changed a test result (decision 313). It is written here and nowhere else:
-	a value sent by the caller is replaced by the stored one, so the field cannot be typed."""
+def _comparable(value, fieldtype=None):
+	"""One value in a form that compares equal whether it was read from the database or sent by a client: a check
+	or an integer as a number, a number rounded, a date or a moment as its text, an empty value as "". Without a
+	field type (a framework column, or a document without its DocType's description) the value's own type decides."""
+	if fieldtype in ("Check", "Int"):
+		return cint(value)
+	if fieldtype in ("Float", "Currency", "Percent"):
+		return round(flt(value), 9)
+	if fieldtype == "Date":
+		return cstr(getdate(value)) if value else ""
+	if fieldtype == "Datetime":
+		return cstr(get_datetime(value)) if value else ""
+	if value is None:
+		return ""
+	if isinstance(value, bool):
+		return int(value)
+	if isinstance(value, int | float):
+		return round(float(value), 9)
+	if isinstance(value, datetime.date | datetime.timedelta):
+		return cstr(value)
+	return cstr(value)
+
+
+# The framework's columns whose type is not in the DocType's field list.
+STANDARD_FIELD_TYPES = {"docstatus": "Int", "idx": "Int", "creation": "Datetime", "modified": "Datetime"}
+
+
+def _description(doctype):
+	"""(columns, field types, table fields) of a DocType as the framework describes it, or None when the site's
+	description has none of that (a document built without the database, in a test)."""
+	meta = frappe.get_meta(doctype)
+	columns = getattr(meta, "get_valid_columns", None)
+	if not callable(columns):
+		return None
+	types = dict(STANDARD_FIELD_TYPES)
+	for df in meta.get("fields") or []:
+		types[df.fieldname] = df.fieldtype
+	tables = [(df.fieldname, df.options) for df in meta.get_table_fields()]
+	return list(columns()), types, tables
+
+
+def _plain_fields(d):
+	"""The field names a document or a row carries, read from the object itself (no DocType description)."""
+	values = d if isinstance(d, dict) else getattr(d, "__dict__", {})
+	return [
+		k
+		for k, v in values.items()
+		if not k.startswith("_") and k != "flags" and not callable(v) and not isinstance(v, list)
+	]
+
+
+def _rows_differ(stored_rows, rows, row_doctype, ignore=ROW_META_FIELDS):
+	"""True when a table differs from the stored one: a row added (or a name sent twice), a stored row removed, or
+	any field of a row that is not in `ignore` changed. Rows are matched by name; their order is not compared."""
+	description = _description(row_doctype) if row_doctype else None
+	types = description[1] if description else {}
+	stored_by_name = {r.get("name"): r for r in stored_rows or []}
+	kept = set()
+	for r in rows or []:
+		name = r.get("name")
+		if name not in stored_by_name or name in kept:
+			return True
+		kept.add(name)
+		old = stored_by_name[name]
+		fields = description[0] if description else set(_plain_fields(old)) | set(_plain_fields(r))
+		for f in fields:
+			if f not in ignore and _comparable(old.get(f), types.get(f)) != _comparable(
+				r.get(f), types.get(f)
+			):
+				return True
+	return len(kept) != len(stored_by_name)
+
+
+def customers_changed(doc):
+	"""TASKS-387 (decision 321): the customers list of a stored COA AMB differs from the stored one: a row added or
+	removed, or any field of a row changed. A certificate without that table never changes it."""
 	before = _before(doc)
-	if results_changed(doc):
+	if not before or (doc.get(CUSTOMERS_TABLE) is None and before.get(CUSTOMERS_TABLE) is None):
+		return False
+	row_doctype = None
+	description = _description(doc.doctype)
+	if description:
+		row_doctype = dict(description[2]).get(CUSTOMERS_TABLE)
+	return _rows_differ(before.get(CUSTOMERS_TABLE), doc.get(CUSTOMERS_TABLE), row_doctype)
+
+
+def _product_follows_specification(doc, before):
+	"""The product field of both certificates is fetched by the framework from the specification
+	(`fetch_from: linked_tds.product_item`) on every save of a draft, before any rule runs. When the specification is
+	the stored one and the product now is that specification's product, the change was made by the server, not by
+	the user, and is not a change of identity."""
+	specification = doc.get("linked_tds")
+	if not specification or cstr(specification) != cstr(before.get("linked_tds")):
+		return False
+	fetched = frappe.db.get_value(SPECIFICATION_DOCTYPE, specification, "product_item")
+	return bool(fetched) and cstr(fetched) == cstr(doc.get("product_item"))
+
+
+def identity_changes(doc):
+	"""TASKS-387 (decision 321): the identity fields (lot, product, specification) that this save of a stored
+	certificate changes, in that order. A new certificate changes none (it is judged as it is made: see
+	`set_filled_by`). The product written by the framework's fetch from an unchanged specification is not a change
+	(`_product_follows_specification`); the server writes no other identity field in a save of a stored certificate."""
+	before = _before(doc)
+	if not before:
+		return []
+	changed = []
+	for field in IDENTITY_FIELDS:
+		if cstr(doc.get(field)) == cstr(before.get(field)):
+			continue
+		if field == "product_item" and _product_follows_specification(doc, before):
+			continue
+		changed.append(field)
+	return changed
+
+
+def set_filled_by(doc):
+	"""`filled_by` is the user who last changed what the certificate certifies (decision 313; TASKS-387 decision
+	321): a test result (`results_changed`), the customers list (`customers_changed`), or the lot, product or
+	specification (`identity_changes`; the last two are refused in Pending Supervisor before this runs, and every
+	change is refused in Approved). It is written here and nowhere else: a value sent by the caller is replaced by the
+	stored one, so the field cannot be typed. The signature is not filling (`set_signed_by`).
+
+	A new certificate is filled by its maker when it carries test rows, as before: its identity and the customers
+	the server fills in from the specification (`fill_customers`) do not name the maker by themselves. A certificate
+	without test rows cannot be approved, and whoever adds them becomes the filler, so this changes no approval."""
+	before = _before(doc)
+	if results_changed(doc) or (before and (customers_changed(doc) or identity_changes(doc))):
 		doc.filled_by = frappe.session.user
 	else:
 		doc.filled_by = before.get("filled_by") if before else None
+
+
+def set_signed_by(doc):
+	"""TASKS-387 (decision 321), COA AMB: `signed_by` is the user who last drew or changed the signature
+	(`autorizacion`) in a save of the stored certificate; emptied with the signature. Written here and nowhere else:
+	a value sent by the caller is replaced by the stored one. A new certificate carries no signer, signature or not:
+	the form's Amend and Duplicate copy the signature of the certificate they come from, so whoever saves a new
+	certificate has not necessarily drawn what it carries. Changing the signature does not make anyone the filler."""
+	if doc.doctype not in SIGNED_CERTIFICATES:
+		return
+	before = _before(doc)
+	if not before:
+		doc.signed_by = None
+	elif cstr(doc.get(SIGNATURE_FIELD)) != cstr(before.get(SIGNATURE_FIELD)):
+		doc.signed_by = frappe.session.user if doc.get(SIGNATURE_FIELD) else None
+	else:
+		doc.signed_by = before.get(SIGNER_FIELD)
+
+
+def refuse_identity_change_in_review(doc):
+	"""TASKS-387 (decision 321): in Pending Supervisor the lot, product and specification of a certificate are not
+	changed, by any user (no role is exempt), on any path (the form, `frappe.client.save` / `submit` /
+	`set_value`). What decides is the STORED state: a plain save that sends another state with a new lot in the same
+	call (Pending Supervisor -> Approved, or -> Draft) is refused as well. The way to correct them is the workflow's
+	"Return for correction" (Pending Supervisor -> Draft); in Draft they can be changed, and the changer becomes the
+	filler. Called in `before_validate`, which runs for every save and submit."""
+	before = _before(doc)
+	if not before or cint(before.get("docstatus")) != 0:
+		return
+	if before.get(STATE_FIELD[doc.doctype]) != PENDING_SUPERVISOR:
+		return
+	changed = identity_changes(doc)
+	if changed:
+		frappe.throw(
+			_(
+				'{0} {1} is {2}: its {3} cannot be changed in this state. Use "{4}" to take it back to Draft, correct it there and send it for review again.'
+			).format(
+				_(doc.doctype),
+				doc.name,
+				_(PENDING_SUPERVISOR),
+				", ".join(changed),
+				_(RETURN_FOR_CORRECTION),
+			),
+			title=_("Certificate under review"),
+		)
 
 
 def note_filler_of_row(doc, method=None):
@@ -158,6 +354,47 @@ def note_filler_of_row(doc, method=None):
 	if not changed:
 		return
 	for parenttype, parent in sorted(o for o in owners if o[0] in STATE_FIELD and o[1]):
+		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+
+
+def note_customer_row(doc, method=None):
+	"""TASKS-387 (decision 321), doc_events hook on the customers row DocType (`Customer Item`; `before_validate`,
+	`on_trash`): a row of a certificate's customers list saved, inserted or deleted BY ITSELF does not pass through
+	the certificate's save. When it changes the list (a new row, a deleted row, any field of the row, or the row
+	moved to another parent), the certificate it belongs to (the one sent and the one stored) is refused when it is
+	Approved (the lock), else gets the session user as `filled_by`, as `note_filler_of_row` does for a result row.
+	Rows of any other parent (an Item, a specification) are not judged."""
+	stored = None
+	if doc.get("name") and not doc.is_new():
+		stored = frappe.db.get_value(doc.doctype, doc.get("name"), "*", as_dict=True)
+	owners = set()
+	if method != "on_trash":
+		owners.add((doc.get("parenttype"), doc.get("parent")))
+	if stored:
+		owners.add((stored.get("parenttype"), stored.get("parent")))
+	owners = sorted(o for o in owners if o[0] in STATE_FIELD and o[1])
+	if not owners:
+		return
+	if method == "on_trash":
+		changed = bool(stored)
+	else:
+		changed = (
+			not stored
+			or any(cstr(stored.get(f)) != cstr(doc.get(f)) for f in ("parent", "parenttype", "parentfield"))
+			or _rows_differ([stored], [doc], doc.doctype)
+		)
+	if not changed:
+		return
+	for parenttype, parent in owners:
+		state = frappe.db.get_value(parenttype, parent, [STATE_FIELD[parenttype], "docstatus"], as_dict=True)
+		if state and cint(state.get("docstatus")) == 0 and state.get(STATE_FIELD[parenttype]) == APPROVED:
+			frappe.throw(
+				_(
+					"{0} {1} is Approved: its customers list cannot be changed. A Quality Manager must Reject it to Draft first."
+				).format(_(parenttype), parent),
+				title=_("Approved certificate"),
+			)
+	for parenttype, parent in owners:
 		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
 
 
@@ -209,13 +446,183 @@ def refuse_changed_results_at_share(doc):
 		)
 
 
+def is_share(doc):
+	"""This save submits a certificate whose stored state is Approved (COA AMB: the workflow's share, Approved ->
+	Certificate Shared; every other submit from Approved is refused by the lock)."""
+	return cint(doc.docstatus) == 1 and _was_approved(_before(doc))
+
+
+# TASKS-387 (decision 322): what the share may change. Not compared at the share:
+# - the state field and `docstatus` (the share's own move), `modified` / `modified_by` (written by the framework in
+#   every save, before any rule runs);
+# - the framework's metadata columns `_user_tags`, `_comments`, `_assign`, `_liked_by`, `_seen`: tags, the comment
+#   cache, assignments, likes and views are written by the framework outside the certificate's save (`db.set_value`,
+#   and `_seen` by `reset_seen` at the start of this very save); they are not part of what is certified, and a form
+#   read before a comment was added would otherwise not be shared;
+# - what this save derives from the stored rows: the result fields, recomputed from the same rows in `validate`
+#   (`evaluate_overall_result`), and the `status` of each test row (written by the evaluation and by
+#   `evaluate_formula_parameters`, never read by them);
+# - what this save writes from the stored certificate whatever the caller sends: `filled_by` (`set_filled_by`: the
+#   results, customers and identity are unchanged, so the stored one), `approved_by` / `approval_date`
+#   (`set_approval`: the stored ones), `signed_by` (`set_signed_by`: the signature is unchanged, so the stored one).
+# Everything else is compared, the framework's `name`, `owner`, `creation`, `idx`, and each row's `idx`, `parent`,
+# `parentfield`, `parenttype`, `owner` and `creation` included. The QR token and the shared PDF are written in
+# `on_submit`, AFTER this comparison (`coa_qr.on_coa_submit`: the token by `db.set_value`, the PDF as an attached
+# File): the token sent in the share must still be the stored one, and the PDF is no field of the certificate.
+# Also after it, in `before_save`: `set_coa_number` (only when the number is empty) and `set_approval_info` (only
+# when the approval date is empty).
+SHARE_UNCOMPARED_FIELDS = frozenset(
+	("docstatus", "modified", "modified_by", "_user_tags", "_comments", "_assign", "_liked_by", "_seen")
+)
+SHARE_DERIVED_FIELDS = frozenset(
+	("overall_result", "compliance_status", "failed_parameters", "pass_percentage", "tested_percentage")
+).union(("filled_by", "approved_by", "approval_date", SIGNER_FIELD))
+SHARE_UNCOMPARED_ROW_FIELDS = frozenset(("docstatus", "modified", "modified_by"))
+SHARE_DERIVED_ROW_FIELDS = {RESULT_ROW_DOCTYPE: frozenset(("status",))}
+
+
+def _first_difference_at_share(doc, before):
+	"""The first difference between this save and the stored certificate, as text, or None. Parent fields first (in
+	the DocType's order), then each table: its number of rows, the name of each row in its place, then each field."""
+	description = _description(doc.doctype)
+	ignore = SHARE_UNCOMPARED_FIELDS | SHARE_DERIVED_FIELDS | {STATE_FIELD[doc.doctype]}
+	if description:
+		columns, types, tables = description
+	else:
+		tables = [
+			(f, None)
+			for f in dict.fromkeys(
+				[k for k, v in (before.items() if isinstance(before, dict) else []) if isinstance(v, list)]
+				+ [k for k, v in getattr(doc, "__dict__", {}).items() if isinstance(v, list)]
+			)
+		]
+		table_names = {t for t, _o in tables}
+		columns = [
+			f for f in dict.fromkeys(_plain_fields(before) + _plain_fields(doc)) if f not in table_names
+		]
+		types = dict(STANDARD_FIELD_TYPES)
+	for f in columns:
+		if f in ignore:
+			continue
+		if _comparable(before.get(f), types.get(f)) != _comparable(doc.get(f), types.get(f)):
+			return _("field {0}").format(f)
+	for table, row_doctype in tables:
+		old_rows, new_rows = list(before.get(table) or []), list(doc.get(table) or [])
+		if len(old_rows) != len(new_rows):
+			return _("table {0}: {1} rows instead of the {2} stored").format(
+				table, len(new_rows), len(old_rows)
+			)
+		row_description = _description(row_doctype) if row_doctype else None
+		row_types = row_description[1] if row_description else dict(STANDARD_FIELD_TYPES)
+		row_ignore = SHARE_UNCOMPARED_ROW_FIELDS | SHARE_DERIVED_ROW_FIELDS.get(row_doctype, frozenset())
+		if not row_doctype and table == RESULT_TABLE:
+			row_ignore = row_ignore | SHARE_DERIVED_ROW_FIELDS[RESULT_ROW_DOCTYPE]
+		for place, (old, new) in enumerate(zip(old_rows, new_rows, strict=True), 1):
+			if cstr(old.get("name")) != cstr(new.get("name")):
+				return _("table {0}, row {1}: row {2} instead of the stored row {3}").format(
+					table, place, new.get("name") or _("(new)"), old.get("name")
+				)
+			fields = (
+				row_description[0]
+				if row_description
+				else list(dict.fromkeys(_plain_fields(old) + _plain_fields(new)))
+			)
+			for f in fields:
+				if f in row_ignore:
+					continue
+				if _comparable(old.get(f), row_types.get(f)) != _comparable(new.get(f), row_types.get(f)):
+					return _("table {0}, row {1} ({2}): field {3}").format(table, place, old.get("name"), f)
+	return None
+
+
+def refuse_changes_at_share(doc):
+	"""TASKS-387 (decision 322): the share of a COA AMB (stored Approved at docstatus 0 -> docstatus 1) changes
+	nothing of the certificate but its state: every parent field and every row of every child table (all its
+	fields, the rows matched by their name in their place, their number too) is compared with the stored Approved
+	certificate, and the first difference is refused by name. What is not compared is listed above
+	(`SHARE_UNCOMPARED_FIELDS`, `SHARE_DERIVED_FIELDS`, the rows' own). The form's share (`apply_workflow`) reloads the
+	certificate from the database and passes; a direct `frappe.client.submit` / `save` carries what the caller sent.
+	Called in `before_validate`, which runs also when `validate` is skipped; the result rows keep their own message
+	first (`refuse_changed_results_at_share`)."""
+	if not is_share(doc):
+		return
+	refuse_changed_results_at_share(doc)
+	difference = _first_difference_at_share(doc, _before(doc))
+	if difference:
+		frappe.throw(
+			_(
+				"{0} {1} is Approved: it is shared exactly as it was approved, and this save changes {2}. Nothing was shared. To change it, a Quality Manager must Reject it to Draft first."
+			).format(_(doc.doctype), doc.name, difference),
+			title=_("Approved certificate"),
+		)
+
+
+def _state_docstatus(doctype, state):
+	"""The docstatus the certificate's active workflow gives a state (0, 1 or 2), else None (no workflow, or a
+	state the workflow does not have)."""
+	workflow = frappe.db.get_value("Workflow", {"document_type": doctype, "is_active": 1}, "name")
+	if not workflow:
+		return None
+	for row in frappe.get_cached_doc("Workflow", workflow).get("states") or []:
+		if row.get("state") == state:
+			return cint(row.get("doc_status"))
+	return None
+
+
+def refuse_draft_in_submitted_state(doc):
+	"""TASKS-387 (decision 322): a save at docstatus 0 does not take a certificate INTO a state that its workflow
+	gives docstatus 1 (COA AMB: Certificate Shared). Without this, a plain save from the stored state Approved with
+	that state and docstatus 0 passed the lock and the workflow check, counted as leaving Approved (so it withdrew
+	the lot) and left a draft in a submitted state. The state's docstatus is read from the workflow. A save that
+	keeps the stored state is not judged here. Both certificates; every role."""
+	if cint(doc.docstatus) != 0:
+		return
+	state = state_of(doc)
+	before = _before(doc)
+	if not state or (before and before.get(STATE_FIELD[doc.doctype]) == state):
+		return
+	if _state_docstatus(doc.doctype, state) == 1:
+		frappe.throw(
+			_(
+				"{0} {1} cannot be saved as {2} without being submitted: in its workflow {2} is a submitted state. Use the workflow's action."
+			).format(_(doc.doctype), doc.name or "", _(state)),
+			title=_("Workflow state"),
+		)
+
+
+def lot_records(lot):
+	"""TASKS-387 (decision 323): the lot record and every record below it, read level by level through
+	`parent_batch_amb` (at most `LOT_LEVELS_BELOW` levels below; a record met twice is not read again, so a loop in
+	the data ends). On a site whose lot records have no parent field, the record alone."""
+	if not lot:
+		return []
+	records, level = [lot], [lot]
+	if not frappe.get_meta(LOT_DOCTYPE).has_field(LOT_PARENT_FIELD):
+		return records
+	seen = {lot}
+	for _depth in range(LOT_LEVELS_BELOW):
+		below = [
+			name
+			for name in frappe.get_all(LOT_DOCTYPE, filters={LOT_PARENT_FIELD: ["in", level]}, pluck="name")
+			if name not in seen
+		]
+		if not below:
+			break
+		seen.update(below)
+		records.extend(below)
+		level = below
+	return records
+
+
 def lot_batches(lot):
-	"""The names of the native Batches of a lot record. On a site where `Batch` has no `custom_batch_amb` (the
-	projection of amb_w_spc is not installed) no Batch belongs to a lot, so the list is empty and the two checks
-	that read it find nothing: that is said here, not hidden; any error of the read itself is raised."""
+	"""The names of the native Batches of a lot record AND of every record below it (TASKS-387, decision 323:
+	amb_w_spc's projection links a Batch to a level-2 record, so a lot (level 1) has Batches only through its
+	sub-lots; `lot_records`). On a site where `Batch` has no `custom_batch_amb` (the projection of amb_w_spc is not
+	installed) no Batch belongs to a lot, so the list is empty and the two checks that read it find nothing: that is
+	said here, not hidden; any error of the read itself is raised."""
 	if not lot or not frappe.get_meta("Batch").has_field(BATCH_LOT_FIELD):
 		return []
-	return frappe.get_all("Batch", filters={BATCH_LOT_FIELD: lot}, pluck="name")
+	return frappe.get_all("Batch", filters={BATCH_LOT_FIELD: ["in", lot_records(lot)]}, pluck="name")
 
 
 def rejected_inspections(batches):
@@ -284,10 +691,22 @@ def refuse_unless_approvable(doc):
 			),
 		)
 	if doc.get("filled_by") == frappe.session.user:
-		_refuse(doc, _("you entered or changed its results last; another person must approve it."))
+		_refuse(
+			doc,
+			_(
+				"you entered or changed its results last (or its customers list, lot, product or specification); another person must approve it."
+			),
+		)
 	if doc.doctype in SIGNED_CERTIFICATES:
 		if not doc.get(SIGNATURE_FIELD):
 			_refuse(doc, _("it is not signed. Sign it, save, then approve."))
+		if doc.get(SIGNER_FIELD) != frappe.session.user:
+			_refuse(
+				doc,
+				_(
+					"its signature was not drawn by you. Sign it yourself as approver: draw your signature, save, then approve. A signature drawn before the signer was recorded, or copied into a new certificate, has no recorded signer and must be drawn again by the approver."
+				),
+			)
 		if not [row for row in (doc.get(CUSTOMERS_TABLE) or []) if row.get("customer")]:
 			_refuse(doc, _("its customers list is empty."))
 	batches = lot_batches(doc.get("batch_reference"))
@@ -338,7 +757,11 @@ def follow_lot(doc):
 
 	The lot's item and the certificate's product may differ on purpose (they sit at different levels of the Item
 	tree, which is why the lot picker carries no item filter), so a difference is SHOWN, not refused: once, in the
-	save that sets or changes the lot or the product."""
+	save that sets or changes the lot or the product.
+
+	Not in the share: there the stored Work Order stays (TASKS-387, decision 322)."""
+	if is_share(doc):
+		return  # TASKS-387 (decision 322): the share keeps the stored Work Order (`refuse_changes_at_share`)
 	lot = doc.get("batch_reference")
 	if not lot:
 		return
@@ -544,5 +967,14 @@ def apply(doc):
 	refuse_lot_level(doc)
 	follow_lot(doc)
 	set_filled_by(doc)
+	set_signed_by(doc)
 	set_approval(doc)
 	note_lot_move(doc)
+
+
+def before_validate(doc):
+	"""TASKS-387: called by `before_validate` of both certificates, after the Approved lock. `before_validate` runs
+	for every save and submit, also when the caller skips `validate`."""
+	refuse_draft_in_submitted_state(doc)
+	refuse_identity_change_in_review(doc)
+	refuse_changes_at_share(doc)

@@ -43,6 +43,9 @@ class COAAMB(ApprovedLock, Document):
         when the caller set `flags.ignore_validate`, which skips `validate`."""
         certificate_rules.refuse_submit_unless_approved(self)
         self.refuse_edit_of_approved()
+        # TASKS-387: no draft saved into a submitted state; no lot, product or specification changed in Pending
+        # Supervisor; the share changes nothing but the state.
+        certificate_rules.before_validate(self)
 
     def validate(self):
         """Draft saves run the light checks and derive the result; the row checks that refuse run at submit."""

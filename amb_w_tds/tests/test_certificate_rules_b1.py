@@ -51,8 +51,17 @@ def row(name, result, spec="1 - 10", title=0):
 	)
 
 
+def customers():
+	return [frappe._dict(name="cust-1", customer="CUST-1")]
+
+
+# TASKS-387: what a certificate is for, its customers and its signature, as `cert` sends them by default. The stored
+# document carries the same unless a test says otherwise, so that only what a test changes is a change.
+SENT_AS_STORED = ("linked_tds", "product_item", "batch_reference", "autorizacion", "custom_coa_customers")
+
+
 def stored(doctype, state, rows=(), docstatus=0, **kw):
-	"""The document as it is in the database before the save."""
+	"""The document as it is in the database before the save. Its signature was drawn by "approver"."""
 	d = frappe._dict(
 		doctype=doctype,
 		name="COA-1",
@@ -61,6 +70,12 @@ def stored(doctype, state, rows=(), docstatus=0, **kw):
 		filled_by="filler",
 		approved_by=None,
 		approval_date=None,
+		linked_tds="TDS-1",
+		product_item="ITEM-1",
+		batch_reference=None,
+		autorizacion="signature",
+		signed_by="approver",
+		custom_coa_customers=customers(),
 	)
 	d[rules.STATE_FIELD[doctype]] = state
 	d.update(kw)
@@ -85,7 +100,7 @@ def cert(doctype="COA AMB", state="Draft", rows=None, before=None, new=False, do
 		pass_percentage=None,
 		tested_percentage=None,
 		autorizacion="signature",
-		custom_coa_customers=[frappe._dict(customer="CUST-1")],
+		custom_coa_customers=customers(),
 		filled_by=None,
 		approved_by=None,
 		approval_date=None,
@@ -97,7 +112,14 @@ def cert(doctype="COA AMB", state="Draft", rows=None, before=None, new=False, do
 		d._doc_before_save = None
 	else:
 		d._doc_before_save = (
-			before if before is not None else stored(doctype, "Draft", [row(r.name, r.result) for r in rows])
+			before
+			if before is not None
+			else stored(
+				doctype,
+				"Draft",
+				[row(r.name, r.result) for r in rows],
+				**{f: d.__dict__.get(f) for f in SENT_AS_STORED},
+			)
 		)
 	for name in ("validate_linked_tds", "validate_batch_reference", "check_mandatory_tds_link"):
 		setattr(d, name, lambda: None)  # the three checks that read the database
@@ -105,20 +127,39 @@ def cert(doctype="COA AMB", state="Draft", rows=None, before=None, new=False, do
 
 
 @contextmanager
-def site(user="approver", batch_field=True, batches=(), rejected=(), nc_doctype=True, nc_field=True, ncs=()):
-	"""What the rules read outside the document: the session user, and the lot's Batches, inspections and NCs."""
+def site(
+	user="approver",
+	batch_field=True,
+	batches=(),
+	rejected=(),
+	nc_doctype=True,
+	nc_field=True,
+	ncs=(),
+	below=None,
+	parent_field=True,
+):
+	"""What the rules read outside the document: the session user, and the lot's Batches, inspections and NCs.
+	`below` maps a lot record to the records whose parent it is (TASKS-387)."""
 	asked = []
+	below = below or {}
 
 	def get_all(doctype, filters=None, pluck=None, **kw):
 		asked.append((doctype, filters))
+		if doctype == "Batch AMB":
+			return [name for parent in filters["parent_batch_amb"][1] for name in below.get(parent, ())]
 		return list({"Batch": batches, "Quality Inspection": rejected, "Non Conformance": ncs}[doctype])
+
+	def has_field(dt, f):
+		if dt == "Batch":
+			return batch_field
+		if dt == "Batch AMB":
+			return parent_field
+		return nc_field
 
 	fake = types.SimpleNamespace(
 		session=frappe._dict(user=user),
 		throw=_throw,
-		get_meta=lambda dt: types.SimpleNamespace(
-			has_field=lambda f: batch_field if dt == "Batch" else nc_field
-		),
+		get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: has_field(dt, f)),
 		get_all=get_all,
 		db=types.SimpleNamespace(
 			exists=lambda dt, name=None: nc_doctype,
@@ -251,8 +292,9 @@ class TestTheSameLockOnCoaAmb(unittest.TestCase):
 				"refuse_edit_of_approved": lambda self: calls.append("lock"),
 			},
 		)()
-		amb.COAAMB.before_validate(d)
-		self.assertEqual(calls, ["lock"])
+		with mock.patch.object(rules, "before_validate", lambda doc: calls.append("rules")):
+			amb.COAAMB.before_validate(d)
+		self.assertEqual(calls, ["lock", "rules"])
 		src = inspect.getsource(amb.COAAMB.validate)
 		self.assertLess(src.index("self.refuse_edit_of_approved()"), src.index("self.validate_linked_tds()"))
 
@@ -661,6 +703,7 @@ class TestMayThisBeApproved(unittest.TestCase):
 			"Pending Supervisor",
 			[row(r.name, r.result) for r in rows],
 			filled_by=kw.pop("stored_filler", "filler"),
+			**{f: kw[f] for f in SENT_AS_STORED if f in kw},
 		)
 		return cert(doctype, state="Approved", rows=rows, before=before, **kw)
 
@@ -775,7 +818,9 @@ class TestMayThisBeApproved(unittest.TestCase):
 		self.assertEqual(
 			fake.asked,
 			[
-				("Batch", {"custom_batch_amb": "LOTE-1"}),
+				# TASKS-387: the records below the lot, then the Batches of the lot and of every record below it
+				("Batch AMB", {"parent_batch_amb": ["in", ["LOTE-1"]]}),
+				("Batch", {"custom_batch_amb": ["in", ["LOTE-1"]]}),
 				# only a SUBMITTED inspection whose status is Rejected: a draft, filled or not, is not a failure
 				(
 					"Quality Inspection",
@@ -800,7 +845,7 @@ class TestMayThisBeApproved(unittest.TestCase):
 			d = self.approving(batch_reference="LOTE-1")
 			with site(batches=["B-1"], **kw) as fake:
 				d.validate()
-			self.assertEqual([a[0] for a in fake.asked], ["Batch", "Quality Inspection"], kw)
+			self.assertEqual([a[0] for a in fake.asked], ["Batch AMB", "Batch", "Quality Inspection"], kw)
 
 	def test_a_certificate_with_no_lot_reads_no_batch(self):
 		d = self.approving()

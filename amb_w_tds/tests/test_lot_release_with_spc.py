@@ -143,6 +143,11 @@ class Site:
 				docstatus=0,
 				batch_reference=lot,
 				product_item="ITEM-1",
+				# TASKS-387: what `move` sends; the approver drew the signature (`signed_by`)
+				linked_tds="TDS-1",
+				autorizacion="signature",
+				signed_by=APPROVER,
+				custom_coa_customers=[frappe._dict(name="cust-1", customer="CUSTOMER-1")],
 				coa_quality_test_parameter=[row(f"r{i}", r) for i, r in enumerate(RESULTS[result])],
 				filled_by=FILLER,
 				approved_by=None,
@@ -214,14 +219,12 @@ class Site:
 		d.__dict__.update({k: v for k, v in before.items() if k != "coa_quality_test_parameter"})
 		d.__dict__.update(
 			coa_quality_test_parameter=[frappe._dict(r) for r in before.coa_quality_test_parameter],
-			linked_tds="TDS-1",
+			custom_coa_customers=[frappe._dict(r) for r in before.custom_coa_customers],
 			work_order=None,
 			compliance_status=None,
 			failed_parameters=None,
 			pass_percentage=None,
 			tested_percentage=None,
-			autorizacion="signature",
-			custom_coa_customers=[frappe._dict(customer="CUSTOMER-1")],
 		)
 		d.__dict__[rules.STATE_FIELD[doctype]] = to_state
 		d._doc_before_save = before
@@ -333,6 +336,29 @@ class TestCertificateToLotThroughBothApps(unittest.TestCase):
 		with self.assertRaises(frappe.ValidationError):
 			site.approve("COA AMB2", "CERT-1", "LOT", "Pass", user=FILLER)
 		self.assertEqual(site.table.state("LOT"), PENDING)
+
+	def test_a_return_for_correction_writes_no_lot_record(self):
+		"""TASKS-387 (decision 321): Pending Supervisor -> Draft releases nothing and takes nothing back."""
+		for doctype in BOTH:
+			with self.subTest(doctype=doctype):
+				site = Site(lot_tree())
+				site.move(doctype, "CERT-1", "LOT", "Draft", user=FILLER)
+				for name in ("LOT", "SUB", "CONT"):
+					self.assertEqual(site.table.state(name), PENDING, name)
+				self.assertEqual(site.table.history, [])
+
+	def test_an_approver_who_did_not_sign_releases_nothing_and_the_one_who_signed_does(self):
+		"""TASKS-387 (decision 321): COA AMB's signature is the approver's own."""
+		site = Site(lot_tree())
+		site._stored("COA AMB", "CERT-1", "LOT", "Pass").update(signed_by=FILLER)
+		with self.assertRaises(frappe.ValidationError) as refused:
+			site.approve("COA AMB", "CERT-1", "LOT", "Pass")
+		self.assertIn("Sign it yourself as approver", str(refused.exception))
+		self.assertEqual(site.table.history, [])
+		self.assertEqual(site.table.state("LOT"), PENDING)
+		site.certificates[("COA AMB", "CERT-1")].update(signed_by=APPROVER)
+		site.approve("COA AMB", "CERT-1", "LOT", "Pass")
+		self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", "COA AMB", "CERT-1"))
 
 	def test_the_table_of_this_test_answers_everything_the_seam_offers(self):
 		"""If amb_w_spc's seam grows a method, the table above must grow it too, or the tests above would run

@@ -76,9 +76,10 @@ class TestApprovedLock(unittest.TestCase):
 	def test_the_lock_also_runs_before_validate(self):
 		calls = []
 		d = type("D", (), {"refuse_submit": lambda self: None, "refuse_edit_of_approved": lambda self: calls.append("lock")})()
-		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")):
+		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")), \
+				mock.patch.object(mod.certificate_rules, "before_validate", lambda doc: calls.append("rules")):
 			mod.COAAMB2.before_validate(d)
-		self.assertEqual(calls, ["lock", "rows"])
+		self.assertEqual(calls, ["lock", "rows", "rules"])
 
 
 class _Row:
@@ -336,9 +337,10 @@ class TestNoSubmitInAnyState(unittest.TestCase):
 	def test_it_runs_first_in_before_validate_and_in_validate(self):
 		calls = []
 		d = type("D", (), {"refuse_submit": lambda self: calls.append("submit"), "refuse_edit_of_approved": lambda self: calls.append("lock")})()
-		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")):
+		with mock.patch.object(mod, "refuse_taking_rows_of_approved", lambda doc: calls.append("rows")), \
+				mock.patch.object(mod.certificate_rules, "before_validate", lambda doc: calls.append("rules")):
 			mod.COAAMB2.before_validate(d)
-		self.assertEqual(calls, ["submit", "lock", "rows"])
+		self.assertEqual(calls, ["submit", "lock", "rows", "rules"])
 		import inspect
 
 		src = inspect.getsource(mod.COAAMB2.validate)

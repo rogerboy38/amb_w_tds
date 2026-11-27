@@ -77,6 +77,13 @@ doc_events = {
             "amb_w_tds.certificate_rules.note_filler_of_row",
         ],
     },
+    # TASKS-387 (decision 321): a customers row of a COA AMB saved, inserted or deleted by itself is refused when its
+    # certificate is Approved, else names the session user as the certificate's `filled_by` (a change of the
+    # customers list is filling). Rows of any other parent are not judged.
+    "Customer Item": {
+        "before_validate": "amb_w_tds.certificate_rules.note_customer_row",
+        "on_trash": "amb_w_tds.certificate_rules.note_customer_row",
+    },
     "SPC Batch Parameter": {
         "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
         "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
@@ -434,6 +441,8 @@ fixtures = [
         "Cancel",
         # 13.11.0: BOM Formula Aprobación
         "Enviar a revisión", "Autorizar", "Devolver", "Liberar a producción", "Rechazar", "Devolver a Calidad",
+        # 13.12.21 (TASKS-387, decision 321): Pending Supervisor -> Draft on both certificates' workflows
+        "Return for correction",
     ]]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},

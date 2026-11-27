@@ -67,6 +67,7 @@
   "formula_based_criteria",
   "approval_section",
   "autorizacion",
+  "signed_by",
   "column_break_approval",
   "custom_version",
   "amended_from"
@@ -352,6 +353,15 @@
    "reqd": 0
   },
   {
+   "description": "Who last drew or changed the signature. Written by the server; the approver must be this user.",
+   "fieldname": "signed_by",
+   "fieldtype": "Link",
+   "label": "Signed By",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_approval",
    "fieldtype": "Column Break"
   },
@@ -429,7 +439,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2026-11-26 14:00:00.000000",
+ "modified": "2026-11-27 12:00:00.000000",
  "module": "Amb W Tds",
  "name": "COA AMB",
  "naming_rule": "By \"Naming Series\" field",
