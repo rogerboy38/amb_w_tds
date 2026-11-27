@@ -362,21 +362,27 @@ def follow_lot(doc):
 
 
 def refuse_wrong_type(doc):
-	"""TASKS-384 B2, decision 317: the product decides the type of its certificate. Judged when the certificate is
-	made and when its product changes, and only for a product that is classed (see
-	`amb_w_tds.api.certificate.certificate_type_for_item`); a stored certificate whose product stays is not judged
-	again, so its workflow is not stopped by a later change of the classification."""
+	"""TASKS-384 B2, decisions 317 and 320: the product decides the type of its certificate, through the Item's own
+	"Allow Sales" check (see `amb_w_tds.api.certificate.certificate_type_for_item`). Judged when the certificate is
+	made and when its product changes; a stored certificate whose product stays is not judged again, so its workflow
+	is not stopped by a later change of the check on the Item. A product that is not an Item is not judged here."""
 	before = _before(doc)
 	product = doc.get("product_item")
 	if not product or (before and before.get("product_item") == product):
 		return
-	from amb_w_tds.api.certificate import certificate_type_for_item
+	from amb_w_tds.api.certificate import ALLOW_SALES_LABEL, CUSTOMER_CERTIFICATE, certificate_type_for_item
 
 	expected = certificate_type_for_item(product)
 	if expected and expected != doc.doctype:
 		frappe.throw(
-			_("Product {0} takes a {1}, not a {2}: make its certificate as {1}.").format(
-				product, _(expected), _(doc.doctype)
+			_(
+				'Product {0} takes a {1}, not a {2}: the "{3}" check on Item {0} is {4}. Make its certificate as {1}, or, if the check is wrong, correct it on the Item first.'
+			).format(
+				product,
+				_(expected),
+				_(doc.doctype),
+				_(ALLOW_SALES_LABEL),
+				_("on") if expected == CUSTOMER_CERTIFICATE else _("off"),
 			),
 			title=_("Wrong certificate type"),
 		)

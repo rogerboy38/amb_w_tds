@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.12.20 — 2026-11
+
+**Code only (`api/certificate.py`, `certificate_rules.py`).** No DocType JSON, fixture, patch or hook: **no `bench migrate` for this version by itself**; backend restart (web + workers) + `bench clear-cache`. Deploy with 13.12.16–13.12.19 and amb_w_spc's pair, as before.
+
+### The certificate type follows the Item's "Allow Sales" check (TASKS-385, decision 320)
+- **The rule.** `certificate_type_for_item(item)` reads the Item's own `is_sales_item` (label "Allow Sales"): on → COA AMB (customer certificate), off → COA AMB2 (internal certificate). It reads that Item's row only, so a variant's own value decides, not its template's. No item, or an Item that does not exist → no type, as before.
+- **Removed.** `CERTIFICATE_TYPE_BY_ITEM_GROUP` (it shipped empty) and the walk up the Item Groups. The function keeps its name and place; its three callers are unchanged.
+- **Messages.** The "Certificate" action refuses only a product that is not an Item, and says so: the type follows the "Allow Sales" check on the Item. The wrong-type refusal names the check and its value on that Item, so the user knows where to look.
+- **When the type is judged is unchanged:** on a new certificate and in the save that changes its product. A stored certificate whose product stays is not judged again; changing the check on an Item later does not stop the workflow of certificates already made.
+- Tests: `tests/test_certificate_links_b2.py` (the tests that pinned the empty table are replaced; a test reads ERPNext's own Item DocType for the label).
 ## 13.12.19 — 2026-11
 
 **Code and two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: `approved_by` and `approval_date` marked "no copy").** **`bench migrate` is needed** (the two DocTypes are synced; no new column), then a backend restart (web + workers) and `bench --site <site> clear-cache`. No workflow fixture, no fixture, no patch, no data change. Deploy with amb_w_spc, as 13.12.18.

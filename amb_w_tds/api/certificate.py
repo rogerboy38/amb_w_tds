@@ -1,28 +1,24 @@
-"""Which certificate a product gets, and the creation of a certificate from a lot (TASKS-384 B2; decision 317).
+"""Which certificate a product gets, and the creation of a certificate from a lot (TASKS-384 B2; TASKS-385,
+decision 320).
 
 Two certificates by purpose: COA AMB is shared with a customer (finished goods); COA AMB2 is internal
-(semi-finished goods and premix). The product decides the type, sales order or not.
-
-THE CLASSIFICATION TABLE IS BELOW AND IS EMPTY. From the code and the fixtures of the three apps no rule could be
-read that separates a finished product from a semi-finished one: the Item Groups named there ("Products Liquid",
-"Products Powder", "FG Mix Powder Products", "RAW M Powders") class a product by its form, and a powder is both
-sold and used as an input. Until the table is filled, every item is unclassed: `certificate_type_for_item` returns
-None, no certificate is refused for its type, and `make_certificate_for_lot` says that it cannot decide.
+(semi-finished goods and premix). Decision 320: the type follows the Item's own "Allow Sales" check
+(`is_sales_item`), read on the item itself — a variant's own value, not its template's. On: COA AMB. Off: COA AMB2.
+No item, or an item that does not exist: None.
 """
 
 import frappe
 from frappe import _
+from frappe.utils import cint
 
 from amb_w_tds import certificate_rules
 
 CUSTOMER_CERTIFICATE = "COA AMB"
 INTERNAL_CERTIFICATE = "COA AMB2"
 
-# Item Group name -> certificate type. An item is classed by the NEAREST Item Group of its ancestry (its own group
-# first, then each parent) that is named here; an item with no such group is unclassed. To change how items are
-# classed, change this table: for example {"<group of finished goods>": CUSTOMER_CERTIFICATE,
-# "<group of semi-finished goods>": INTERNAL_CERTIFICATE}.
-CERTIFICATE_TYPE_BY_ITEM_GROUP = {}
+# Decision 320: the Item field whose label is "Allow Sales" (ERPNext 16.17.0 `stock/doctype/item/item.json`).
+ALLOW_SALES_FIELD = "is_sales_item"
+ALLOW_SALES_LABEL = "Allow Sales"
 
 LOT_DOCTYPE = "Batch AMB"
 # The lot's item is the Work Order's item, as the lot picker shows it.
@@ -30,17 +26,15 @@ LOT_ITEM_FIELD = "item_to_manufacture"
 
 
 def certificate_type_for_item(item_code):
-	""" "COA AMB", "COA AMB2", or None when the item is not classed (decision 317)."""
-	if not item_code or not CERTIFICATE_TYPE_BY_ITEM_GROUP:
+	""" "COA AMB" when the Item's own "Allow Sales" check is on, "COA AMB2" when it is off, None when there is no
+	item or no such Item (decision 320). One read, of that Item's row only: a variant's own value decides, its
+	template is not read."""
+	if not item_code:
 		return None
-	group = frappe.db.get_value("Item", item_code, "item_group")
-	seen = set()
-	while group and group not in seen:
-		if group in CERTIFICATE_TYPE_BY_ITEM_GROUP:
-			return CERTIFICATE_TYPE_BY_ITEM_GROUP[group]
-		seen.add(group)
-		group = frappe.db.get_value("Item Group", group, "parent_item_group")
-	return None
+	allow_sales = frappe.db.get_value("Item", item_code, ALLOW_SALES_FIELD)
+	if allow_sales is None:  # no such Item: get_value returns None; a stored check is 0 or 1
+		return None
+	return CUSTOMER_CERTIFICATE if cint(allow_sales) else INTERNAL_CERTIFICATE
 
 
 @frappe.whitelist()
@@ -73,8 +67,8 @@ def make_certificate_for_lot(lot):
 	if not doctype:
 		frappe.throw(
 			_(
-				"Item {0} is not classed as a finished or a semi-finished product, so the type of its certificate cannot be decided here. Make the certificate from the list of its type."
-			).format(product),
+				'Item {0} does not exist, so the type of its certificate cannot be decided: it follows the "{1}" check on the Item. Correct the product on the specification or the item on the lot.'
+			).format(product, ALLOW_SALES_LABEL),
 			title=_("Certificate"),
 		)
 	certificate = frappe.new_doc(doctype)
