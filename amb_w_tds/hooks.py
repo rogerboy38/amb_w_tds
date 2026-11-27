@@ -77,6 +77,13 @@ doc_events = {
             "amb_w_tds.certificate_rules.note_filler_of_row",
         ],
     },
+    # TASKS-387 (decision 321): a customers row of a COA AMB saved, inserted or deleted by itself is refused when its
+    # certificate is Approved, else names the session user as the certificate's `filled_by` (a change of the
+    # customers list is filling). Rows of any other parent are not judged.
+    "Customer Item": {
+        "before_validate": "amb_w_tds.certificate_rules.note_customer_row",
+        "on_trash": "amb_w_tds.certificate_rules.note_customer_row",
+    },
     "SPC Batch Parameter": {
         "before_validate": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
         "on_trash": "amb_w_tds.amb_w_tds.doctype.coa_amb2.coa_amb2.refuse_row_of_approved",
@@ -97,6 +104,13 @@ doc_events = {
     # Runs right after it; corrects the name ONLY when it already exists (counting amendments).
     "BOM": {
         "autoname": "amb_w_tds.formulation.bom_naming.correct_colliding_autoname",
+    },
+
+    # TASKS-397 (decision 350): a new variant takes its template's "Allow Sales" once, on insert only (never at a
+    # later save, never at a save of the template). Works whether or not `is_sales_item` is on Item Variant
+    # Settings' copy list (runs after ERPNext's copy); Item Variant Settings is not changed.
+    "Item": {
+        "before_insert": "amb_w_tds.item_variant_sales.copy_allow_sales_from_template",
     },
 
     # ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
@@ -434,6 +448,8 @@ fixtures = [
         "Cancel",
         # 13.11.0: BOM Formula Aprobación
         "Enviar a revisión", "Autorizar", "Devolver", "Liberar a producción", "Rechazar", "Devolver a Calidad",
+        # 13.12.21 (TASKS-387, decision 321): Pending Supervisor -> Draft on both certificates' workflows
+        "Return for correction",
     ]]]},
     {"doctype": "Notification",           "filters": [["module", "=", "AMBWTDS"], ["is_standard", "=", 0]]},
     {"doctype": "Role",                   "filters": [["name", "like", "AMB%"]]},

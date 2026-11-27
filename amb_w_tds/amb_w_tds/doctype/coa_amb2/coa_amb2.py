@@ -245,6 +245,9 @@ class COAAMB2(ApprovedLock, Document):
         self.refuse_submit()
         self.refuse_edit_of_approved()
         refuse_taking_rows_of_approved(self)
+        # TASKS-387: no draft saved into a submitted state; no lot, product or specification changed in Pending
+        # Supervisor.
+        certificate_rules.before_validate(self)
 
     def validate(self):
         """Comprehensive validation logic - SKIPS heavy checks for draft"""
@@ -319,12 +322,16 @@ class COAAMB2(ApprovedLock, Document):
 
     def on_submit(self):
         """On submit actions. No new COA AMB2 reaches this (decision 129); the batch step that stood here was a
-        guarded no-op and is removed (TASKS-384 B3)."""
+        guarded no-op and is removed (TASKS-384 B3).
+
+        TASKS-391 (decision 341), as for COA AMB: `create_quality_audit` and `update_product_quality_status` are no
+        longer called here. This changes nothing that runs: `refuse_submit` (in `before_validate` and `validate`,
+        which the framework runs before `on_submit` in every submit) refuses every move from docstatus 0 to 1, and
+        `on_submit` runs only on that move. The methods stay below; they return with decision 299's task (the Lot
+        Release Record and the Item's last-certificate fields)."""
         self.validate_submission_prerequisites()
         self.generate_coa_pdf()
         self.notify_quality_team()
-        self.create_quality_audit()
-        self.update_product_quality_status()
 
     def on_cancel(self):
         """On cancel actions (only a certificate submitted before 13.12.15 can be cancelled). The lot is not
@@ -841,6 +848,8 @@ class COAAMB2(ApprovedLock, Document):
             except Exception as e:
                 frappe.log_error(f"Error sending COA notification: {str(e)}", "COA AMB2 - Notification")
 
+    # TASKS-391 (decision 341): not called (see `on_submit`); kept, it returns with decision 299's task
+    # (the Lot Release Record).
     def create_quality_audit(self):
         """Create audit record for submitted COA"""
         # Frappe 16 has no "Quality Audit" DocType and this app adds none: skip the step when it is absent
@@ -875,6 +884,8 @@ class COAAMB2(ApprovedLock, Document):
         meta = frappe.get_meta('Item')
         return [f for f in self.ITEM_COA_FIELDS if meta.has_field(f)]
 
+    # TASKS-391 (decision 341): not called (see `on_submit`); kept, it returns with decision 299's task
+    # (the Item's last-certificate fields).
     def update_product_quality_status(self):
         """Update product master with latest quality status"""
         if not self.product_item:

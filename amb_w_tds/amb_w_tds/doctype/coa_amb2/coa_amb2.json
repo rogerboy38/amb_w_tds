@@ -6,7 +6,7 @@
  "_user_tags": null,
  "actions": [],
  "allow_auto_repeat": 0,
- "allow_copy": 0,
+ "allow_copy": 1,
  "allow_events_in_timeline": 0,
  "allow_guest_to_view": 0,
  "allow_import": 0,
@@ -44,6 +44,7 @@
   "approval_date",
   "approved_by",
   "filled_by",
+  "fillers_since_draft",
   "tds_settings",
   "tds_naming_series",
   "tds_version",
@@ -184,6 +185,14 @@
    "label": "Filled By",
    "no_copy": 1,
    "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "Every user who changed the results, the customers list, the lot, the product or the specification of this certificate, in its whole life (the list is never emptied; an amendment starts from its original's stored list and filler; a duplicate starts empty), one user per line. Written by the server; none of them may approve it.",
+   "fieldname": "fillers_since_draft",
+   "fieldtype": "Small Text",
+   "label": "Filled By (all)",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -429,7 +438,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2026-11-26 14:00:00.000000",
+ "modified": "2026-11-29 18:00:00.000000",
  "module": "Amb W Tds",
  "name": "COA AMB2",
  "naming_rule": "By \"Naming Series\" field",

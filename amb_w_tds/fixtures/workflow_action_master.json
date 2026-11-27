@@ -78,5 +78,10 @@
   "doctype": "Workflow Action Master",
   "name": "Devolver a Calidad",
   "workflow_action_name": "Devolver a Calidad"
+ },
+ {
+  "doctype": "Workflow Action Master",
+  "name": "Return for correction",
+  "workflow_action_name": "Return for correction"
  }
 ]
