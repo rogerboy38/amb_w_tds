@@ -406,10 +406,6 @@ class TestANewVariantTakesItsTemplatesAllowSalesOnce(unittest.TestCase):
 					self.assertNotIn("'Variant Field'", text, f)
 
 
-if __name__ == "__main__":
-	unittest.main()
-
-
 class TestNoDuplicateOnTheCertificateForms(unittest.TestCase):
 	"""TASKS-398, decisions 352 and 354."""
 
@@ -438,3 +434,7 @@ class TestNoDuplicateOnTheCertificateForms(unittest.TestCase):
 				self.assertIn("an amendment starts from its original's stored list and filler", text)
 				self.assertIn("a duplicate starts empty", text)
 				self.assertNotIn("an amendment starts its own", text)
+
+
+if __name__ == "__main__":
+	unittest.main()
