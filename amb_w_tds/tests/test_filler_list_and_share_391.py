@@ -96,6 +96,20 @@ class TestTheListIsNeverEmptied(unittest.TestCase):
 				self.assertIsNone(run(d, user=C))
 				self.assertEqual((d.approved_by, d.fillers_since_draft), (C, f"{A}\n{B}"))
 
+	def test_an_old_certificate_with_only_filled_by_keeps_its_filler_on_the_list(self):
+		"""TASKS-391 review, finding 1: a certificate stored before the list existed (13.12.23) carries `filled_by` A
+		and no list. B changes a value and sets it back; A signs and approves: refused, because the stored filler is
+		kept on the list. C may approve."""
+		for doctype in BOTH:
+			with self.subTest(doctype=doctype):
+				s = in_review(doctype, filled_by=A, fillers=None)
+				s = change_and_set_back(doctype, s, B)
+				self.assertEqual((s.filled_by, s[rules.FILLERS_FIELD]), (B, f"{A}\n{B}"))
+				s = signed_by(doctype, s, A)
+				self.assertIn(IN_THE_LIST, run(as_sent(doctype, s, state="Approved"), user=A) or "")
+				s = signed_by(doctype, s, C)
+				self.assertIsNone(run(as_sent(doctype, s, state="Approved"), user=C))
+
 	def test_a_reject_from_approved_keeps_the_list_and_its_fillers_stay_barred(self):
 		for doctype in BOTH:
 			with self.subTest(doctype=doctype):

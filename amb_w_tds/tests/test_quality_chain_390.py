@@ -261,15 +261,15 @@ class TestEveryFillerSinceDraft(unittest.TestCase):
 		self.assertNotIn("set it back", refusal)
 		self.assertNotIn("change it, save", refusal)
 
-	def row_hook(self, hook, row_doctype, sent, stored_row, stored_fillers):
+	def row_hook(self, hook, row_doctype, sent, stored_row, stored_fillers, stored_filler=None):
 		r = types.SimpleNamespace(doctype=row_doctype, get=lambda k: sent.get(k), is_new=lambda: False)
 		with site(user=B) as fake:
 
-			def get_value(doctype, name, fields, as_dict=False):
+			def get_value(doctype, name, fields, as_dict=False, for_update=False):
 				if doctype == row_doctype:
 					return frappe._dict(stored_row)
-				if fields == rules.FILLERS_FIELD:
-					return stored_fillers
+				if fields == ["filled_by", rules.FILLERS_FIELD]:
+					return frappe._dict({"filled_by": stored_filler, rules.FILLERS_FIELD: stored_fillers})
 				if doctype in rules.STATE_FIELD:
 					return frappe._dict({rules.STATE_FIELD[doctype]: "Pending Supervisor", "docstatus": 0})
 				return None
@@ -311,6 +311,22 @@ class TestEveryFillerSinceDraft(unittest.TestCase):
 						self.row_hook(hook, row_doctype, sent, in_db, stored_fillers),
 						[("COA AMB", "COA-1", {"filled_by": B, rules.FILLERS_FIELD: expected})],
 					)
+
+	def test_a_row_saved_by_itself_keeps_the_stored_filler_of_an_old_certificate(self):
+		"""TASKS-391 review, finding 1: a certificate stored before the list existed carries only `filled_by`; a row
+		saved by itself by B must keep A on the list, or A could approve after B's change and set-back."""
+		row = {"parent": "COA-1", "parenttype": "COA AMB", "result": "5"}
+		self.assertEqual(
+			self.row_hook(
+				rules.note_filler_of_row,
+				"COA Quality Test Parameter",
+				dict(row, name="r1", result="6"),
+				row,
+				None,
+				A,
+			),
+			[("COA AMB", "COA-1", {"filled_by": B, rules.FILLERS_FIELD: f"{A}\n{B}"})],
+		)
 
 	def test_the_field_is_on_both_certificates_read_only_and_not_copied(self):
 		for folder in ("coa_amb", "coa_amb2"):

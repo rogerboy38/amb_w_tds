@@ -346,6 +346,11 @@ def set_filled_by(doc):
 	before = _before(doc)
 	changes = filling_changes(doc)
 	fillers = cstr(before.get(FILLERS_FIELD)) if before else ""
+	if before and before.get("filled_by"):
+		# TASKS-391 review, finding 1: the stored `filled_by` is a user who changed the certificate, so it is in the
+		# list too (decision 340: every filler of the certificate's whole life). A certificate stored before the list
+		# existed (13.12.23) carries only `filled_by`; without this, its filler would drop out at the next filling.
+		fillers = with_filler(fillers, before.get("filled_by"))
 	if changes:
 		doc.filled_by = frappe.session.user
 		fillers = with_filler(fillers, frappe.session.user)
@@ -443,8 +448,15 @@ def _note_filler_on_stored(parenttype, parent):
 	`filled_by` and is added to its stored `fillers_since_draft` (TASKS-390, decision 337), in one write, in the
 	same transaction as the row."""
 	user = frappe.session.user
-	stored = frappe.db.get_value(parenttype, parent, FILLERS_FIELD)
-	frappe.db.set_value(parenttype, parent, {"filled_by": user, FILLERS_FIELD: with_filler(stored, user)})
+	# TASKS-391 review: read under a row lock (finding 6) and keep the stored `filled_by` in the list (finding 1).
+	stored = (
+		frappe.db.get_value(parenttype, parent, ["filled_by", FILLERS_FIELD], as_dict=True, for_update=True)
+		or {}
+	)
+	fillers = cstr(stored.get(FILLERS_FIELD))
+	if stored.get("filled_by"):
+		fillers = with_filler(fillers, stored.get("filled_by"))
+	frappe.db.set_value(parenttype, parent, {"filled_by": user, FILLERS_FIELD: with_filler(fillers, user)})
 
 
 def note_filler_of_row(doc, method=None):

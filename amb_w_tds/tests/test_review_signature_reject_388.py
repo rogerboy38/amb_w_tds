@@ -372,13 +372,13 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 		r = types.SimpleNamespace(doctype=row_doctype, get=lambda k: sent.get(k), is_new=lambda: False)
 		with site387(user=THIRD) as fake:
 
-			def get_value(doctype, name, fields, as_dict=False):
+			def get_value(doctype, name, fields, as_dict=False, for_update=False):
 				if doctype == row_doctype:
 					return frappe._dict(stored_row)
 				if doctype in rules.STATE_FIELD and fields == [rules.SIGNATURE_FIELD, rules.SIGNER_FIELD]:
 					return frappe._dict(parent_signature)
-				if doctype in rules.STATE_FIELD and fields == rules.FILLERS_FIELD:
-					return None  # TASKS-390: no one is on the stored list before this row
+				if doctype in rules.STATE_FIELD and fields == ["filled_by", rules.FILLERS_FIELD]:
+					return frappe._dict()  # TASKS-390: no filler and no one on the stored list before this row
 				if doctype in rules.STATE_FIELD:
 					return frappe._dict({rules.STATE_FIELD[doctype]: "Draft", "docstatus": 0})
 				return None

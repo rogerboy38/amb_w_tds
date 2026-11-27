@@ -384,11 +384,11 @@ class TestCustomersListIsFilling(unittest.TestCase):
 		r = types.SimpleNamespace(doctype="Customer Item", get=lambda k: sent.get(k), is_new=lambda: new)
 		with site387(user=THIRD) as fake:
 
-			def get_value(doctype, name, fields, as_dict=False):
+			def get_value(doctype, name, fields, as_dict=False, for_update=False):
 				if doctype == "Customer Item":
 					return frappe._dict(stored_row) if stored_row else None
-				if doctype == "COA AMB" and fields == rules.FILLERS_FIELD:
-					return None  # TASKS-390: no one is on the stored list before this row
+				if doctype == "COA AMB" and fields == ["filled_by", rules.FILLERS_FIELD]:
+					return frappe._dict()  # TASKS-390: no filler and no one on the stored list before this row
 				if doctype == "COA AMB":
 					return frappe._dict(workflow_state_1=parent_state, docstatus=0)
 				return None
