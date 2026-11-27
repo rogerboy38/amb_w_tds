@@ -132,9 +132,10 @@ class COAAMB(ApprovedLock, Document):
         # (`certificate_shared`, looked up late; nothing caught around it). The old `notify_quality_team` (every
         # Quality Manager / Inspector / Analyst, sent at once, an Error Log on failure) is deleted.
         certificate_rules.share_summary(self)
-        # The two steps below are as they were and fail as before (a later task).
-        self.create_quality_audit()
-        self.update_product_quality_status()
+        # TASKS-391 (decision 341): `create_quality_audit` and `update_product_quality_status` are no longer called at
+        # the share. Each wrote an Error Log at every share (this site has no "Quality Audit" DocType, and Item has no
+        # `last_coa_date` column). The methods stay below; they return with decision 299's task (the Lot Release
+        # Record and the Item's last-certificate fields).
 
     def on_cancel(self):
         """On cancel actions"""
@@ -594,6 +595,8 @@ class COAAMB(ApprovedLock, Document):
             frappe.log_error(title="COA AMB - PDF Generation", message=f"Error generating COA PDF: {str(e)}")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
 
+    # TASKS-391 (decision 341): not called (the share no longer runs it); kept, it returns with decision 299's task
+    # (the Lot Release Record).
     def create_quality_audit(self):
         """Create audit record for submitted COA"""
         try:
@@ -616,6 +619,8 @@ class COAAMB(ApprovedLock, Document):
         except Exception as e:
             frappe.log_error(title="COA AMB - Audit Creation", message=f"Error creating quality audit: {str(e)}")
 
+    # TASKS-391 (decision 341): not called (the share no longer runs it); kept, it returns with decision 299's task
+    # (the Item's last-certificate fields).
     def update_product_quality_status(self):
         """Update product master with latest quality status"""
         if not self.product_item:

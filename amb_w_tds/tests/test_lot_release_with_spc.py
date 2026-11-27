@@ -550,7 +550,8 @@ class TestTheShareThroughBothApps(unittest.TestCase):
 		site, approved_state, history, steps, _spc = self.share()
 		self.assertEqual(site.table.state("LOT"), approved_state)
 		self.assertEqual(site.table.history, history)
-		self.assertEqual(len(steps), 4)
+		# TASKS-391 (decision 341): create_quality_audit and update_product_quality_status are not called
+		self.assertEqual(steps, ["validate_submission_prerequisites", "generate_coa_pdf"])
 
 	def test_muted_mail_is_not_queued_and_is_noted(self):
 		_site, _state, _history, _steps, spc = self.share(muted=True)
@@ -605,7 +606,8 @@ class TestTheShareThroughBothApps(unittest.TestCase):
 		self.assertNotIn("now", call.kwargs)
 		spc.log_error.assert_not_called()
 		self.assertNotIn(lq.NOT_SENT, str(spc.mock_calls))  # nothing noted as not sent
-		self.assertEqual(len(steps), 4)
+		# TASKS-391 (decision 341): create_quality_audit and update_product_quality_status are not called
+		self.assertEqual(steps, ["validate_submission_prerequisites", "generate_coa_pdf"])
 		self.assertEqual(site.table.state("LOT"), state)
 		# this app's frappe: no role read, no mail (its reads went through the recorder above)
 		self.assertIn("Batch", asked)  # the recorder saw this app's reads (the approval's)

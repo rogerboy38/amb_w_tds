@@ -4,8 +4,9 @@
   `certificate_shared(certificate_doctype, certificate, lot)`, looked up late, nothing caught around it.
 - 335: the approval checks fail closed: a certificate that names a lot is refused when `Batch` has no
   `custom_batch_amb` field on the site, or when no stock Batch is linked to the lot record or to a record below it.
-- 337: every user who changed the results, the customers list or the identity since the certificate last entered
-  Draft is kept in `fillers_since_draft`; none of them may approve. Entering Draft again starts a new list.
+- 337: every user who changed the results, the customers list or the identity is kept in `fillers_since_draft`;
+  none of them may approve. TASKS-391 (decision 340): for the certificate's whole life; entering Draft again keeps
+  the list (more in `test_filler_list_and_share_391`).
 - 338: every other certificate that stands for the record is passed to amb_w_spc: `others` at the approval, the
   `standing` list at the withdrawal.
 
@@ -33,7 +34,7 @@ A, B, C = "first.a", "second.b", "third.c"
 NO_BATCH = "no stock Batch is linked to lot record"
 NO_FIELD = "on this site Batch has no field custom_batch_amb"
 IN_THE_LIST = (
-	"you changed its results, customers list, lot, product or specification since it last entered Draft"
+	"you changed its results, customers list, lot, product or specification; a person who changed none"
 )
 LAST_FILLER = "you entered or changed its results last"
 
@@ -177,21 +178,22 @@ class TestEveryFillerSinceDraft(unittest.TestCase):
 			self.assertIsNone(run(d, user=C), doctype)
 			self.assertEqual((d.approved_by, d.filled_by, d.fillers_since_draft), (C, B, f"{A}\n{B}"))
 
-	def test_return_for_correction_starts_a_new_list_without_the_one_who_returns(self):
+	def test_return_for_correction_keeps_the_list_without_adding_the_one_who_returns(self):
+		"""TASKS-391 (decision 340): the list is no longer emptied on entering Draft."""
 		for doctype in BOTH:
 			stored_now = in_review(doctype, filled_by=B, fillers=f"{A}\n{B}")
 			back = as_sent(doctype, stored_now, state="Draft")  # the workflow's "Return for correction"
 			self.assertIsNone(run(back, user=C))
-			self.assertIsNone(back.fillers_since_draft)
+			self.assertEqual(back.fillers_since_draft, f"{A}\n{B}")
 			self.assertEqual(back.filled_by, B)  # the last filler stays as stored
 			stored_now = after(back, stored_now)
-			# the next change in Draft starts the new list
+			# the next change in Draft adds to the same list
 			fix = as_sent(doctype, stored_now)
 			fix.coa_quality_test_parameter[0].result = "5.5"
 			self.assertIsNone(run(fix, user=C))
-			self.assertEqual((fix.filled_by, fix.fillers_since_draft), (C, C))
+			self.assertEqual((fix.filled_by, fix.fillers_since_draft), (C, f"{A}\n{B}\n{C}"))
 
-	def test_the_reject_from_approved_starts_a_new_list_too(self):
+	def test_the_reject_from_approved_keeps_the_list_too(self):
 		for doctype in BOTH:
 			approved = in_review(
 				doctype, filled_by=B, fillers=f"{A}\n{B}", approved_by=C, approval_date="2026-11-26"
@@ -200,7 +202,7 @@ class TestEveryFillerSinceDraft(unittest.TestCase):
 			approved.overall_result = "Pass"
 			reject = as_sent(doctype, approved, state="Draft")
 			self.assertIsNone(run(reject, user=C), doctype)
-			self.assertEqual((reject.fillers_since_draft, reject.filled_by), (None, B))
+			self.assertEqual((reject.fillers_since_draft, reject.filled_by), (f"{A}\n{B}", B))
 
 	def test_a_save_that_stays_in_draft_or_moves_on_keeps_the_list(self):
 		for doctype in BOTH:
@@ -325,7 +327,7 @@ class TestEveryFillerSinceDraft(unittest.TestCase):
 			self.assertEqual(order.index(rules.FILLERS_FIELD), order.index("filled_by") + 1, folder)
 
 	def test_the_share_and_the_reject_do_not_compare_it(self):
-		"""It is written from the stored certificate in the share, and emptied in the Reject (`set_filled_by`)."""
+		"""It is written from the stored certificate in the share and in the Reject (`set_filled_by`)."""
 		self.assertIn(rules.FILLERS_FIELD, rules.SHARE_DERIVED_FIELDS)
 
 
@@ -400,7 +402,7 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 			setattr(d, name, lambda _n=name: calls.append(_n))
 		return d
 
-	def test_the_steps_after_the_share_in_their_order_without_the_old_team_mail(self):
+	def test_the_steps_of_the_share_in_their_order_without_the_old_team_mail(self):
 		calls = []
 		shared = mock.Mock(side_effect=lambda *a: calls.append(("certificate_shared", *a)))
 		looked_up = []
@@ -417,9 +419,7 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 				"validate_submission_prerequisites",
 				"generate_coa_pdf",
 				("certificate_shared", "COA AMB", "COA-1", "LOT-1"),
-				"create_quality_audit",
-				"update_product_quality_status",
-			],
+			],  # TASKS-391 (decision 341): create_quality_audit and update_product_quality_status are not called
 		)
 		self.assertEqual(looked_up, ["certificate_shared"])  # looked up late, at the call
 
@@ -436,7 +436,7 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 			mock.patch.object(rules, "_find_spc", mock.Mock(side_effect=AssertionError("looked up"))),
 		):
 			self.doc(lot=None, calls=calls).on_submit()
-		self.assertEqual(len(calls), 4)
+		self.assertEqual(len(calls), 2)
 
 	def test_nothing_is_caught_around_the_call(self):
 		calls = []
@@ -478,7 +478,7 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 				fake = self.fake(installed, get_attr)
 				with mock.patch.object(rules, "frappe", fake), mock.patch.object(rules, "_", lambda s: s):
 					d.on_submit()
-				self.assertEqual(len(calls), 4)  # every step of the share ran
+				self.assertEqual(len(calls), 2)  # every step of the share ran
 				fake.msgprint.assert_called_once()
 				text = fake.msgprint.call_args.args[0]
 				self.assertIn(rules.SHARE_SUMMARY_ABSENT, text)

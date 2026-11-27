@@ -388,7 +388,7 @@ class TestCustomersListIsFilling(unittest.TestCase):
 				if doctype == "Customer Item":
 					return frappe._dict(stored_row) if stored_row else None
 				if doctype == "COA AMB" and fields == rules.FILLERS_FIELD:
-					return None  # TASKS-390: no one filled it since Draft before this row
+					return None  # TASKS-390: no one is on the stored list before this row
 				if doctype == "COA AMB":
 					return frappe._dict(workflow_state_1=parent_state, docstatus=0)
 				return None

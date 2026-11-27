@@ -1,5 +1,20 @@
 # Changelog
 
+## 13.12.24 — 2026-11
+
+**Code and two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: the label and description of `fillers_since_draft`; no new column).** **`bench migrate` is needed** (both DocTypes are synced so the form shows the new label), then a backend restart (web + workers) and `bench --site <site> clear-cache`. No patch, no fixture change, no new hook. Same amb_w_spc as 13.12.23 (the one of TASKS-390); this version asks nothing new of it.
+
+### The filler list is never emptied (TASKS-391, decision 340; amends 337)
+- `fillers_since_draft` now keeps every user who changed the results, the customers list or the lot, product or specification for the certificate's **whole life**. Entering Draft again (Return for correction, the Reject from Approved, a Reopen) **no longer empties it** (`enters_draft` is removed from `certificate_rules`). Before, the original filler could clear his own name with his own "Return for correction" (or a Reject for a filler who was not the last), let another person change a value and set it back, and approve.
+- An amendment (or a Duplicate) is a new certificate and starts its own list: the field is `no_copy`, and a new certificate never reads a copied value (as in 13.12.23).
+- The fieldname is kept (a rename would only rename a column); its label is now **"Filled By (all)"** and its description says every user who changed the results, customers list, lot, product or specification of the certificate, never emptied.
+- The refusal now reads "you changed its results, customers list, lot, product or specification; a person who changed none of them must approve it" (no "since it last entered Draft").
+
+### The two after-share steps are skipped until the Lot Release Record task (TASKS-391, decision 341)
+- COA AMB's `on_submit` (the share) no longer calls `create_quality_audit` (no "Quality Audit" DocType on the site) nor `update_product_quality_status` (Item has no `last_coa_date` column): each wrote an Error Log at every share. Both methods stay, with a comment: they return with decision 299's task (the Lot Release Record and the Item's last-certificate fields). The share is now: prerequisites, PDF, the summary through amb_w_spc.
+- COA AMB2's `on_submit` drops the same two calls (it keeps `notify_quality_team`). This changes nothing that runs: no COA AMB2 is submitted (decision 129), `refuse_submit` in `before_validate` and `validate` refuses every move from docstatus 0 to 1, and `on_submit` runs only on that move. Its methods stay too.
+- Tests: `tests/test_filler_list_and_share_391.py` (new: the finding-1 path refused; a Reject from Approved, a Return for correction and every way into Draft keep the list; an amendment starts empty; the label, description and refusal text; the share calls neither and writes no Error Log with the real methods in place; the order pinned; the methods still exist; COA AMB2's `on_submit` and why it is never reached); `tests/test_quality_chain_390.py` (the two reset tests now expect the list kept; the share's order without the two steps), `tests/test_lot_release_with_spc.py` (the share's steps through both apps).
+
 ## 13.12.23 — 2026-11
 
 **Code and two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: new field `fillers_since_draft`).** **`bench migrate` is needed** (both DocTypes are synced and get a new column), then a backend restart (web + workers) and `bench --site <site> clear-cache`. No patch, no fixture change, no new hook. **Deploy with the amb_w_spc of TASKS-390** (its `certificate_approved` takes `others`, its `certificate_withdrawn` takes a `standing` list, and it has `certificate_shared`): with an older amb_w_spc every approval, Reject and Cancel of a certificate that names a lot is refused with a readable message (the function is not available, or the lot app is older than this version); the share stands and says its summary was not sent.

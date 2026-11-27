@@ -48,12 +48,13 @@ SIGNATURE_FIELD = "autorizacion"
 CUSTOMERS_TABLE = "custom_coa_customers"
 # TASKS-387 (decision 321): who last drew or changed the signature. Written by the server, never taken from the caller.
 SIGNER_FIELD = "signed_by"
-# TASKS-390 (decision 337): everyone who changed what the certificate certifies (its results, its customers list, its
-# lot, product or specification) since it last entered Draft, one user id per line (a Small Text field on both
-# certificates; read-only, no copy). Written by the server, never taken from the caller; none of them may approve.
-# `filled_by` stays the LAST of them. Entering Draft again (Return for correction, the Reject) starts a new list.
+# TASKS-390 (decision 337), TASKS-391 (decision 340): everyone who changed what the certificate certifies (its
+# results, its customers list, its lot, product or specification) in the certificate's whole life, one user id per
+# line (a Small Text field on both certificates; read-only, no copy). Written by the server, never taken from the
+# caller; none of them may approve. `filled_by` stays the LAST of them. The list is never emptied: entering Draft
+# again (Return for correction, the Reject, a Reopen) keeps it. An amendment is a new certificate and starts its own.
+# The fieldname is kept from 13.12.23 (a rename would be a column rename for no behaviour); its label says "(all)".
 FILLERS_FIELD = "fillers_since_draft"
-DRAFT = "Draft"
 
 # TASKS-387 (decision 321): what the certificate is FOR. A change of any of them in Draft or Validated is filling
 # (the changer becomes `filled_by`); in Pending Supervisor it is refused (the way back is "Return for correction");
@@ -323,17 +324,6 @@ def with_filler(value, user):
 	return "\n".join(users if user in users else [*users, user])
 
 
-def enters_draft(doc, before):
-	"""TASKS-390 (decision 337): this save takes a stored certificate INTO Draft from another state (the workflow's
-	"Return for correction" and Reject, or any other way there). A new certificate is not entering Draft again."""
-	return bool(
-		before
-		and cint(doc.docstatus) == 0
-		and state_of(doc) == DRAFT
-		and before.get(STATE_FIELD[doc.doctype]) != DRAFT
-	)
-
-
 def set_filled_by(doc):
 	"""`filled_by` is the user who last changed what the certificate certifies (decision 313; TASKS-387 decision
 	321): a test result (`results_changed`), the customers list (`customers_changed`), or the lot, product or
@@ -345,15 +335,17 @@ def set_filled_by(doc):
 	the server fills in from the specification (`fill_customers`) do not name the maker by themselves. A certificate
 	without test rows cannot be approved, and whoever adds them becomes the filler, so this changes no approval.
 
-	TASKS-390 (decision 337): `fillers_since_draft` holds every user named so in this way since the certificate last
-	entered Draft: the stored list, emptied in the save that enters Draft again (`enters_draft`: the one who returns
-	or rejects changes nothing, so is not added for that), with the session user added when this save changes what
-	the certificate certifies. A value sent by the caller is replaced, as for `filled_by`.
+	TASKS-390 (decision 337), TASKS-391 (decision 340): `fillers_since_draft` holds every user named so in this way
+	in the certificate's whole life: the stored list, never emptied (a save that enters Draft again, by Return for
+	correction, the Reject or a Reopen, keeps it; the one who returns or rejects changes nothing, so is not added for
+	that), with the session user added when this save changes what the certificate certifies. A new certificate
+	(also an Amend or a Duplicate, which may carry a copied value) starts from nothing. A value sent by the caller is
+	replaced, as for `filled_by`.
 
 	Returns what made the session user the filler (`filling_changes`), empty when nobody was named by this save."""
 	before = _before(doc)
 	changes = filling_changes(doc)
-	fillers = "" if not before or enters_draft(doc, before) else cstr(before.get(FILLERS_FIELD))
+	fillers = cstr(before.get(FILLERS_FIELD)) if before else ""
 	if changes:
 		doc.filled_by = frappe.session.user
 		fillers = with_filler(fillers, frappe.session.user)
@@ -953,12 +945,12 @@ def refuse_unless_approvable(doc):
 				"you entered or changed its results last (or its customers list, lot, product or specification); another person must approve it."
 			),
 		)
-	# TASKS-390 (decision 337): not only the last filler; everyone who filled since it last entered Draft.
+	# TASKS-390 (decision 337), TASKS-391 (decision 340): not only the last filler; everyone who ever filled it.
 	if frappe.session.user in fillers_of(doc.get(FILLERS_FIELD)):
 		_refuse(
 			doc,
 			_(
-				"you changed its results, customers list, lot, product or specification since it last entered Draft; a person who changed none of them must approve it."
+				"you changed its results, customers list, lot, product or specification; a person who changed none of them must approve it."
 			),
 		)
 	if doc.doctype in SIGNED_CERTIFICATES:

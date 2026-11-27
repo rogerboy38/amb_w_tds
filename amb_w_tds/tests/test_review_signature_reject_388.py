@@ -378,7 +378,7 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 				if doctype in rules.STATE_FIELD and fields == [rules.SIGNATURE_FIELD, rules.SIGNER_FIELD]:
 					return frappe._dict(parent_signature)
 				if doctype in rules.STATE_FIELD and fields == rules.FILLERS_FIELD:
-					return None  # TASKS-390: no one filled it since Draft before this row
+					return None  # TASKS-390: no one is on the stored list before this row
 				if doctype in rules.STATE_FIELD:
 					return frappe._dict({rules.STATE_FIELD[doctype]: "Draft", "docstatus": 0})
 				return None

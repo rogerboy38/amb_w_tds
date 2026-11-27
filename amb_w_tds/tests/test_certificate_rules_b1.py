@@ -53,7 +53,7 @@ def row(name, result, spec="1 - 10", title=0):
 
 def named(doctype, name, user="u"):
 	"""What a row saved by itself writes on its certificate: the filler, and the filler added to the list of everyone
-	who filled since Draft (TASKS-390, decision 337; empty before here)."""
+	who ever filled it (TASKS-390, decision 337; TASKS-391, decision 340; empty before here)."""
 	return (doctype, name, {"filled_by": user, rules.FILLERS_FIELD: user})
 
 
