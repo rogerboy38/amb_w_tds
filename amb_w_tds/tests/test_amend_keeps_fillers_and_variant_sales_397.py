@@ -408,3 +408,33 @@ class TestANewVariantTakesItsTemplatesAllowSalesOnce(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestNoDuplicateOnTheCertificateForms(unittest.TestCase):
+	"""TASKS-398, decisions 352 and 354."""
+
+	def meta(self, folder):
+		with open(os.path.join(PKG, "amb_w_tds", "doctype", folder, folder + ".json"), encoding="utf-8") as f:
+			return json.load(f)
+
+	def test_both_certificates_hide_the_forms_duplicate_and_keep_amend(self):
+		for folder in ("coa_amb", "coa_amb2"):
+			with self.subTest(folder=folder):
+				meta = self.meta(folder)
+				self.assertEqual(
+					meta.get("allow_copy"), 1
+				)  # Frappe's toolbar shows Duplicate only when it is 0
+				self.assertEqual(
+					meta.get("is_submittable"), 1
+				)  # Amend is the cancelled document's own action
+				amended_from = {d["fieldname"]: d for d in meta["fields"]}["amended_from"]
+				self.assertEqual((amended_from["fieldtype"], amended_from.get("no_copy")), ("Link", 1))
+
+	def test_the_filler_description_says_what_an_amendment_and_a_duplicate_start_with(self):
+		for folder in ("coa_amb", "coa_amb2"):
+			with self.subTest(folder=folder):
+				field = {d["fieldname"]: d for d in self.meta(folder)["fields"]}["fillers_since_draft"]
+				text = field.get("description") or ""
+				self.assertIn("an amendment starts from its original's stored list and filler", text)
+				self.assertIn("a duplicate starts empty", text)
+				self.assertNotIn("an amendment starts its own", text)

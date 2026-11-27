@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.12.26 — 2026-11
+
+**Two DocType JSONs (`coa_amb.json`, `coa_amb2.json`).** **`bench migrate` is needed** (the two DocTypes are synced; no new column), then a backend restart and `bench --site <site> clear-cache`.
+
+### Decisions 352 and 354 (TASKS-398)
+- **No Duplicate on the certificate forms (decision 352).** Both DocTypes set "Hide Copy" (`allow_copy` 1), so the form's Duplicate menu item (Shift+D) is gone. A correction goes through Amend (decision 349), which is a separate action and is unaffected. The whitelisted `duplicate_coa` of each controller is not called by any form script; a caller of it over the API is accepted as known.
+- **Text fixed (decision 354).** The description of "Filled By (all)" says an amendment starts from its original's stored list and filler and a duplicate starts empty. The 13.12.25 line on `amended_from` now says what the code does.
+- Tests: `tests/test_amend_keeps_fillers_and_variant_sales_397.py` (the two settings and the description pinned).
 ## 13.12.25 — 2026-11
 
 **Code and one new hook (Item `before_insert`).** **No `bench migrate`** (no DocType, field, patch or fixture changed): a backend restart (web + workers, so the new hook is loaded) and `bench --site <site> clear-cache`. Same amb_w_spc as 13.12.23; this version asks nothing new of it. Item Variant Settings is not changed.
@@ -7,7 +15,7 @@
 ### An Amend keeps the filler list (TASKS-397, decision 349; amends 340)
 - A certificate made by **Amend** (`amended_from` set; COA AMB and COA AMB2) now starts "Filled By (all)" (`fillers_since_draft`) with its original's stored list, with the original's stored `filled_by` added; then its maker is added when the insert fills it (it carries test rows), as for any new certificate. So whoever entered the original's values stays barred from approving the amendment (337 / 340), and the list keeps growing as before. Before, an amendment started empty, and the original filler could approve the amended certificate once another person had amended it.
 - The original is read from the database (`frappe.db.get_value` of the same DocType, the two fields as stored), never from the form, so a copied or typed value is replaced. When the original cannot be read the save is refused ("… is an amendment of …, which cannot be read, so it is not known who filled it"), rather than start an empty list.
-- `amended_from` is the framework's field (read-only, no copy, set by Amend); the framework refuses in the same insert an amendment whose original is not cancelled. A caller who sends another certificate as `amended_from` can only add names to the list, and a name on the list may not approve: that makes approval stricter, never weaker. A stored amendment does not read its original again.
+- `amended_from` is the framework's field (read-only, no copy, set by Amend); the framework refuses in the same insert an amendment whose original is not cancelled. The framework does not check that the cancelled certificate named is the one being amended (read-only holds in the form only): an insert over the API naming an unrelated cancelled certificate starts from that one's fillers, so it is no weaker than a Duplicate (which starts empty), and the new certificate is named as an amendment of the certificate it names. A stored amendment does not read its original again.
 - A **Duplicate** (no `amended_from`) is a new certificate and keeps the empty start.
 - The field's description in both DocTypes still says "an amendment starts its own": not changed here (no DocType JSON change in this task; changing it needs a migrate).
 
