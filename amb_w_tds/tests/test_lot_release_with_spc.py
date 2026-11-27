@@ -19,7 +19,17 @@ approval and a `standing` LIST at the withdrawal (decision 338), and the share o
 
 Skipped when amb_w_spc cannot be imported, or when its `lot_quality` is older than TASKS-390 (no `others` keyword, no
 `certificate_shared`): this app's calls of 13.12.23 do not fit it. Run with both apps on the path:
-PYTHONPATH=<amb_w_tds clone>:<amb_w_spc clone> python -m unittest amb_w_tds.tests.test_lot_release_with_spc"""
+PYTHONPATH=<amb_w_tds clone>:<amb_w_spc clone> python -m unittest amb_w_tds.tests.test_lot_release_with_spc
+
+Mail (TASKS-390 review, finding 4). amb_w_spc's frappe is a mock here, and `Site.running` sets its
+`are_emails_muted()` to True: EVERY approval, Reject and share below runs the MUTED path of amb_w_spc's summary
+(`_send_summary` returns before `sendmail`), on purpose, not by a truthy mock. None of those tests claims that mail
+was sent. They are: every test of TestCertificateToLotThroughBothApps, TestTheRejectChangesOnlyTheStateThroughBothApps
+and TestTheWorstResultWinsThroughBothApps, and in TestTheShareThroughBothApps
+`test_the_share_writes_no_lot_status_and_no_row_of_its_own` and `test_muted_mail_is_not_queued_and_is_noted`
+(muted is what that one tests). The ONE test that runs unmuted is `test_no_team_mail_at_the_share`: it answers
+amb_w_spc's reads (the certificate, the lot record's Work Order, its owner, the three users) and asserts exactly one
+`sendmail`, its recipients, and that this app's frappe neither reads "Has Role" nor sends."""
 
 import copy
 import importlib
@@ -224,11 +234,14 @@ class Site:
 			get_attr=get_attr,
 			get_installed_apps=lambda: ["frappe", "amb_w_tds", "amb_w_spc"],
 			db=types.SimpleNamespace(exists=lambda *a, **k: False, get_value=self.lot_value),
+			sendmail=mock.Mock(name="tds sendmail"),
 		)
 		spc = mock.MagicMock(name="frappe")
 		spc.throw.side_effect = _throw
 		spc.ValidationError = frappe.ValidationError
 		spc.session.user = user
+		spc.are_emails_muted.return_value = True  # the muted path, said, not a truthy mock (see the top)
+		self.tds, self.spc = tds, spc
 		with ExitStack() as stack:
 			stack.enter_context(mock.patch.object(rules, "frappe", tds))
 			stack.enter_context(mock.patch.object(rules, "nowdate", lambda: TODAY))
@@ -511,7 +524,8 @@ class TestTheWorstResultWinsThroughBothApps(unittest.TestCase):
 class TestTheShareThroughBothApps(unittest.TestCase):
 	"""TASKS-390 (decision 334): COA AMB's `on_submit` reaches amb_w_spc's real `certificate_shared`."""
 
-	def share(self, muted=True):
+	def share(self, muted=True, answer=None):
+		"""The approval (muted), then the share; `answer(spc)` sets up amb_w_spc's frappe for the share."""
 		site = Site(lot_tree())
 		site.approve("COA AMB", "CERT-1", "LOT", "Pass")
 		approved_state, history = site.table.state("LOT"), list(site.table.history)
@@ -526,10 +540,11 @@ class TestTheShareThroughBothApps(unittest.TestCase):
 		):
 			setattr(d, name, lambda _n=name: steps.append(_n))
 		with site.running(APPROVER):
-			lq.frappe.are_emails_muted.return_value = muted
+			site.spc.are_emails_muted.return_value = muted
+			if answer:
+				answer(site.spc)
 			d.on_submit()
-			spc = lq.frappe
-		return site, approved_state, history, steps, spc
+		return site, approved_state, history, steps, site.spc
 
 	def test_the_share_writes_no_lot_status_and_no_row_of_its_own(self):
 		site, approved_state, history, steps, _spc = self.share()
@@ -544,11 +559,61 @@ class TestTheShareThroughBothApps(unittest.TestCase):
 		self.assertIn("summary not sent: mail is muted", str(spc.mock_calls))
 
 	def test_no_team_mail_at_the_share(self):
-		_site, _state, _history, _steps, spc = self.share(muted=False)
-		self.assertLessEqual(spc.sendmail.call_count, 1)
-		for call in spc.sendmail.call_args_list:
-			self.assertNotIn("now", call.kwargs)
-		self.assertNotIn("Has Role", str(spc.mock_calls))
+		"""Mail NOT muted: amb_w_spc's `certificate_shared` sends exactly one summary, to the filler, the user who
+		shared and the Work Order's owner (tokens, not addresses), queued without `now`; this app's own frappe reads
+		no "Has Role" and sends nothing, and neither does the frappe module this test imports."""
+		owner = "wo.owner"
+		users = {FILLER: FILLER + ".token", APPROVER: APPROVER + ".token", owner: owner + ".token"}
+
+		def get_value(doctype, name, fields=None, *a, **k):
+			if doctype == "COA AMB":
+				return {"filled_by": FILLER, "docstatus": 1, "overall_result": "Pass"}
+			if doctype == lq.DOCTYPE and fields == "work_order_ref":
+				return "WO-1" if name == "LOT" else None
+			if doctype == "Work Order" and fields == "owner":
+				return owner if name == "WO-1" else None
+			if doctype == "User":
+				return {"enabled": 1, "email": users[name]} if name in users else None
+			raise AssertionError(f"read not expected: {doctype} {name} {fields}")
+
+		def answer(spc):
+			spc.db.get_value.side_effect = get_value
+			spc.utils.validate_email_address.side_effect = (
+				lambda email: email
+			)  # the tokens are taken as valid
+			spc.local.message_log = []
+			spc.sendmail.return_value = mock.Mock(name="queued")
+
+		asked = []
+		site_get_all = Site.get_all
+
+		def recording_get_all(site, doctype, *a, **k):
+			asked.append(doctype)
+			return site_get_all(site, doctype, *a, **k)
+
+		with (
+			mock.patch.object(Site, "get_all", recording_get_all),
+			mock.patch.object(frappe, "sendmail", mock.Mock(name="frappe.sendmail")) as module_sendmail,
+		):
+			site, state, _history, steps, spc = self.share(muted=False, answer=answer)
+		self.assertEqual(spc.sendmail.call_count, 1)
+		call = spc.sendmail.call_args
+		self.assertEqual(call.kwargs["recipients"], [users[FILLER], users[APPROVER], users[owner]])
+		self.assertEqual(
+			(call.kwargs["reference_doctype"], call.kwargs["reference_name"]), ("COA AMB", "CERT-1")
+		)
+		self.assertNotIn("now", call.kwargs)
+		spc.log_error.assert_not_called()
+		self.assertNotIn(lq.NOT_SENT, str(spc.mock_calls))  # nothing noted as not sent
+		self.assertEqual(len(steps), 4)
+		self.assertEqual(site.table.state("LOT"), state)
+		# this app's frappe: no role read, no mail (its reads went through the recorder above)
+		self.assertIn("Batch", asked)  # the recorder saw this app's reads (the approval's)
+		self.assertNotIn("Has Role", asked)
+		site.tds.sendmail.assert_not_called()
+		module_sendmail.assert_not_called()
+		# amb_w_spc did not read roles either (the recipients are named people only)
+		self.assertNotIn("Has Role", str(spc.db.get_value.call_args_list) + str(spc.get_all.call_args_list))
 
 
 if __name__ == "__main__":

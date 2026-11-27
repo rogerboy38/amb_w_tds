@@ -375,12 +375,14 @@ class TestAllStandingCertificatesArePassed(unittest.TestCase):
 	def test_the_cancel_passes_them_as_the_standing_list(self):
 		d = types.SimpleNamespace(doctype="COA AMB", name="COA-1", get=lambda k: "LOT-1")
 		withdrawn = mock.Mock()
+		spc = {"certificate_withdrawn": withdrawn, "certificate_approved": mock.Mock()}
 		with (
-			mock.patch.object(rules, "_spc", lambda f: {"certificate_withdrawn": withdrawn}[f]),
+			mock.patch.object(rules, "_spc", lambda f: spc[f]),
 			mock.patch.object(rules, "standing_certificates", lambda *a: list(self.STANDING)),
 		):
 			rules.withdraw_on_cancel(d)
 		withdrawn.assert_called_once_with("COA AMB", "COA-1", "LOT-1", standing=self.STANDING)
+		spc["certificate_approved"].assert_not_called()  # only its signature is read
 
 
 class TestTheShareMailsLikeARelease(unittest.TestCase):
@@ -405,9 +407,9 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 
 		def spc(function):
 			looked_up.append(function)
-			return shared
+			return shared, None, None
 
-		with mock.patch.object(rules, "_spc", spc):
+		with mock.patch.object(rules, "_find_spc", spc):
 			self.doc(calls=calls).on_submit()
 		self.assertEqual(
 			calls,
@@ -429,45 +431,181 @@ class TestTheShareMailsLikeARelease(unittest.TestCase):
 
 	def test_a_certificate_without_a_lot_looks_nothing_up(self):
 		calls = []
-		with mock.patch.object(rules, "_spc", mock.Mock(side_effect=AssertionError("looked up"))):
+		with (
+			mock.patch.object(rules, "_spc", mock.Mock(side_effect=AssertionError("looked up"))),
+			mock.patch.object(rules, "_find_spc", mock.Mock(side_effect=AssertionError("looked up"))),
+		):
 			self.doc(lot=None, calls=calls).on_submit()
 		self.assertEqual(len(calls), 4)
 
 	def test_nothing_is_caught_around_the_call(self):
 		calls = []
 		with (
-			mock.patch.object(rules, "_spc", lambda f: mock.Mock(side_effect=RuntimeError("database"))),
-			self.assertRaises(RuntimeError),
+			mock.patch.object(
+				rules, "_find_spc", lambda f: (mock.Mock(side_effect=RuntimeError("database")), None, None)
+			),
+			self.assertRaises(RuntimeError) as raised,
 		):
 			self.doc(calls=calls).on_submit()
+		self.assertEqual(str(raised.exception), "database")  # the error of the call, not another one
 		for fn in (rules.share_summary, amb.COAAMB.on_submit):
 			self.assertIsNone(re.search(r"^\s*(try:|except\b|finally:)", inspect.getsource(fn), re.M), fn)
 
-	def test_the_lookup_is_the_one_of_the_two_lot_writes(self):
-		"""The same late binding and absence handling: without amb_w_spc, or a version of it without the function,
-		the share is refused with the message that says so."""
+	def fake(self, installed, get_attr):
+		return types.SimpleNamespace(
+			get_installed_apps=lambda: list(installed),
+			get_attr=mock.Mock(side_effect=get_attr),
+			throw=lambda msg, *a, **k: (_ for _ in ()).throw(frappe.ValidationError(msg)),
+			msgprint=mock.Mock(),
+		)
+
+	def test_without_the_function_the_share_stands_with_a_notice_and_a_comment(self):
+		"""TASKS-390 review, finding 2: the summary never fails the share. Without amb_w_spc, or with a version of it
+		that does not provide `certificate_shared` (no such function, or no `lot_quality` module), the share stands:
+		an orange notice to the user and an Info Comment on the certificate, both saying so."""
+		missing = ModuleNotFoundError(
+			f"No module named '{rules.SPC_LOT_QUALITY}'", name=rules.SPC_LOT_QUALITY
+		)
+		for installed, get_attr in (
+			(["frappe", "amb_w_tds"], AssertionError("not looked up without the app")),
+			(["frappe", "amb_w_tds", "amb_w_spc"], AttributeError("certificate_shared")),
+			(["frappe", "amb_w_tds", "amb_w_spc"], missing),
+		):
+			with self.subTest(installed=installed, get_attr=get_attr):
+				calls = []
+				d = self.doc(calls=calls)
+				d.add_comment = mock.Mock()
+				fake = self.fake(installed, get_attr)
+				with mock.patch.object(rules, "frappe", fake), mock.patch.object(rules, "_", lambda s: s):
+					d.on_submit()
+				self.assertEqual(len(calls), 4)  # every step of the share ran
+				fake.msgprint.assert_called_once()
+				text = fake.msgprint.call_args.args[0]
+				self.assertIn(rules.SHARE_SUMMARY_ABSENT, text)
+				self.assertIn(
+					"the share stands; its summary was not sent: the lot app does not provide it on this site",
+					text,
+				)
+				self.assertEqual(fake.msgprint.call_args.kwargs.get("indicator"), "orange")
+				d.add_comment.assert_called_once_with("Info", text)
+
+	def test_an_import_error_of_the_other_apps_own_module_still_fails_the_share(self):
+		"""Only absence is noted: an ImportError raised while amb_w_spc's module is imported (a module it imports is
+		missing) is its code, and fails the share with the lookup's message, as before."""
+		broken = ModuleNotFoundError("No module named 'some_dependency'", name="some_dependency")
 		d = self.doc(calls=[])
+		d.add_comment = mock.Mock()
+		fake = self.fake(["frappe", "amb_w_tds", "amb_w_spc"], broken)
+		with (
+			mock.patch.object(rules, "frappe", fake),
+			mock.patch.object(rules, "_", lambda s: s),
+			self.assertRaises(frappe.ValidationError) as refused,
+		):
+			d.on_submit()
+		self.assertIn("is not available in the installed", str(refused.exception))
+		fake.msgprint.assert_not_called()
+		d.add_comment.assert_not_called()
+
+	def test_the_two_lot_writes_still_fail_loudly_without_the_app_or_the_function(self):
+		"""The approval, the Reject and the Cancel keep the refusal of `_spc` (the share alone is spared)."""
 		for installed, get_attr, text in (
 			(["frappe", "amb_w_tds"], None, "which is not installed on this site"),
-			(
-				["frappe", "amb_w_tds", "amb_w_spc"],
-				AttributeError("certificate_shared"),
-				"is not available in the installed",
-			),
+			(["frappe", "amb_w_tds", "amb_w_spc"], AttributeError("x"), "is not available in the installed"),
 		):
-			fake = types.SimpleNamespace(
-				get_installed_apps=lambda installed=installed: installed,
-				get_attr=mock.Mock(side_effect=get_attr),
-				throw=lambda msg, *a, **k: (_ for _ in ()).throw(frappe.ValidationError(msg)),
+			for function in ("certificate_approved", "certificate_withdrawn"):
+				with (
+					self.subTest(installed=installed, function=function),
+					mock.patch.object(rules, "frappe", self.fake(installed, get_attr)),
+					mock.patch.object(rules, "_", lambda s: s),
+					self.assertRaises(frappe.ValidationError) as refused,
+				):
+					rules._spc(function)
+				self.assertIn(text, str(refused.exception))
+				self.assertIn(f"{rules.SPC_LOT_QUALITY}.{function}", str(refused.exception))
+
+
+class TestAnOlderSpcIsRefusedReadably(unittest.TestCase):
+	"""TASKS-390 review, finding 2: an amb_w_spc older than TASKS-390 (`certificate_approved` without `others`; its
+	`certificate_withdrawn` reads `standing` as ONE dict) is refused with a readable message, not a TypeError or an
+	AttributeError of a list. List support is detected by `others` on `certificate_approved` (the same change)."""
+
+	@staticmethod
+	def old_approved(certificate_doctype, certificate, lot, result):
+		raise AssertionError("called")
+
+	@staticmethod
+	def old_withdrawn(certificate_doctype, certificate, lot, standing=None):
+		raise AssertionError("called")
+
+	@staticmethod
+	def new_approved(certificate_doctype, certificate, lot, result, others=None):
+		pass
+
+	def write(self, kind, spc, standing):
+		d = types.SimpleNamespace(
+			doctype="COA AMB", name="COA-1", _lot_move=(kind, "LOT-1"), get=lambda k: "Pass"
+		)
+		with (
+			mock.patch.object(rules, "_spc", lambda f: spc[f]),
+			mock.patch.object(rules, "standing_certificates", lambda *a: list(standing)),
+			mock.patch.object(
+				rules.frappe, "throw", lambda msg, *a, **k: (_ for _ in ()).throw(frappe.ValidationError(msg))
+			),
+			mock.patch.object(rules, "_", lambda s: s),
+		):
+			rules.write_lot(d)
+
+	def test_an_approval_against_an_old_certificate_approved_is_refused_readably(self):
+		for standing in (TestAllStandingCertificatesArePassed.STANDING, []):
+			with self.subTest(standing=standing), self.assertRaises(frappe.ValidationError) as refused:
+				self.write("approved", {"certificate_approved": self.old_approved}, standing)
+			self.assertIn(rules.SPC_TOO_OLD, str(refused.exception))
+			self.assertIn(
+				"the lot app on this site is older than this version: install amb_w_spc's matching version first",
+				str(refused.exception),
 			)
-			with (
-				mock.patch.object(rules, "frappe", fake),
-				mock.patch.object(rules, "_", lambda s: s),
-				self.assertRaises(frappe.ValidationError) as refused,
-			):
-				d.on_submit()
-			self.assertIn(text, str(refused.exception))
-			self.assertIn(f"{rules.SPC_LOT_QUALITY}.certificate_shared", str(refused.exception))
+
+	def test_a_withdrawal_with_standing_certificates_against_an_old_spc_is_refused_readably(self):
+		spc = {"certificate_approved": self.old_approved, "certificate_withdrawn": self.old_withdrawn}
+		with self.assertRaises(frappe.ValidationError) as refused:
+			self.write("withdrawn", spc, TestAllStandingCertificatesArePassed.STANDING)
+		self.assertIn(rules.SPC_TOO_OLD, str(refused.exception))
+
+	def test_the_cancel_against_an_old_spc_is_refused_readably(self):
+		spc = {"certificate_approved": self.old_approved, "certificate_withdrawn": self.old_withdrawn}
+		d = types.SimpleNamespace(doctype="COA AMB", name="COA-1", get=lambda k: "LOT-1")
+		with (
+			mock.patch.object(rules, "_spc", lambda f: spc[f]),
+			mock.patch.object(
+				rules, "standing_certificates", lambda *a: list(TestAllStandingCertificatesArePassed.STANDING)
+			),
+			mock.patch.object(
+				rules.frappe, "throw", lambda msg, *a, **k: (_ for _ in ()).throw(frappe.ValidationError(msg))
+			),
+			mock.patch.object(rules, "_", lambda s: s),
+			self.assertRaises(frappe.ValidationError) as refused,
+		):
+			rules.withdraw_on_cancel(d)
+		self.assertIn(rules.SPC_TOO_OLD, str(refused.exception))
+
+	def test_a_withdrawal_with_no_standing_certificate_or_a_new_spc_is_called(self):
+		withdrawn = mock.Mock()
+		for approved, standing in (
+			(self.old_approved, []),  # an empty list reads as "none" on either version
+			(self.new_approved, TestAllStandingCertificatesArePassed.STANDING),
+		):
+			withdrawn.reset_mock()
+			self.write(
+				"withdrawn", {"certificate_approved": approved, "certificate_withdrawn": withdrawn}, standing
+			)
+			withdrawn.assert_called_once_with("COA AMB", "COA-1", "LOT-1", standing=list(standing))
+
+	def test_the_keyword_check(self):
+		self.assertTrue(rules._takes(self.new_approved, "others"))
+		self.assertTrue(rules._takes(lambda *a, **k: None, "others"))
+		self.assertFalse(rules._takes(self.old_approved, "others"))
+		self.assertTrue(rules._takes(self.old_withdrawn, "standing"))
+		self.assertFalse(rules._takes(len, "others"))  # a builtin without that keyword
 
 
 if __name__ == "__main__":

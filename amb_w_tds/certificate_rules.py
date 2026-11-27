@@ -19,6 +19,7 @@ The Approved lock itself (TASKS-335 / 361 / 365) lives in `coa_amb2.py` and read
 """
 
 import datetime
+import inspect
 from types import SimpleNamespace
 
 import frappe
@@ -1137,25 +1138,73 @@ def note_lot_move(doc):
 		doc._lot_move = ("withdrawn", _before(doc).get("batch_reference"))
 
 
+def _find_spc(function):
+	"""The lookup of `_spc`, without refusing: -> (the function, None, None) when the installed amb_w_spc provides
+	it, else (None, the message that says why, `absent`). `absent` is True when the app is not installed, when its
+	module `lot_quality` (or a package above it) does not exist (ModuleNotFoundError naming it), or when the module
+	has no such function (AttributeError of the lookup); False for any other ImportError, which is raised while
+	amb_w_spc's own module is imported (its code, not its absence)."""
+	path = f"{SPC_LOT_QUALITY}.{function}"
+	if SPC_APP not in frappe.get_installed_apps():
+		return (
+			None,
+			_(
+				"The lot's quality status is written by the app {0}, which is not installed on this site ({1}). Nothing was saved."
+			).format(SPC_APP, path),
+			True,
+		)
+	try:
+		return frappe.get_attr(path), None, None
+	except (ImportError, AttributeError) as e:
+		parts = SPC_LOT_QUALITY.split(".")
+		absent = isinstance(e, AttributeError) or (
+			isinstance(e, ModuleNotFoundError)
+			and getattr(e, "name", None) in {".".join(parts[: i + 1]) for i in range(len(parts))}
+		)
+		return (
+			None,
+			_(
+				"The lot's quality status cannot be written: {0} is not available in the installed {1} ({2}). Nothing was saved."
+			).format(path, SPC_APP, e),
+			absent,
+		)
+
+
 def _spc(function):
 	"""A function of amb_w_spc's lot_quality module, found at the moment of the call. Without that app, or with a
 	version of it that lacks the function, the lot cannot be written: the approval (or the Reject, or the Cancel)
 	fails here with a message that says so. Only the LOOKUP is guarded; the call itself is never wrapped."""
-	path = f"{SPC_LOT_QUALITY}.{function}"
-	if SPC_APP not in frappe.get_installed_apps():
-		frappe.throw(
-			_(
-				"The lot's quality status is written by the app {0}, which is not installed on this site ({1}). Nothing was saved."
-			).format(SPC_APP, path),
-			title=_("Lot not written"),
-		)
+	found, why, _absent = _find_spc(function)
+	if found is None:
+		frappe.throw(why, title=_("Lot not written"))
+	return found
+
+
+SPC_TOO_OLD = (
+	"the lot app on this site is older than this version: install amb_w_spc's matching version first"
+)
+
+
+def _takes(function, keyword):
+	"""True when `function` accepts the keyword argument `keyword`: a parameter of that name (not positional-only),
+	or a `**kwargs`. A signature that cannot be read (`inspect.signature` raises) does not show it: False."""
 	try:
-		return frappe.get_attr(path)
-	except (ImportError, AttributeError) as e:
+		parameters = inspect.signature(function).parameters.values()
+	except (TypeError, ValueError):
+		return False
+	return any(
+		p.kind == p.VAR_KEYWORD or (p.name == keyword and p.kind != p.POSITIONAL_ONLY) for p in parameters
+	)
+
+
+def _refuse_old_spc(function, keyword):
+	"""TASKS-390 review, finding 2: an amb_w_spc older than TASKS-390 has `certificate_approved` without `others`; the
+	call would fail with a raw TypeError. Refused here, before the call, with a message that says what to do."""
+	if not _takes(function, keyword):
 		frappe.throw(
-			_(
-				"The lot's quality status cannot be written: {0} is not available in the installed {1} ({2}). Nothing was saved."
-			).format(path, SPC_APP, e),
+			_("{0} ({1}.{2} takes no `{3}`). Nothing was saved.").format(
+				_(SPC_TOO_OLD), SPC_LOT_QUALITY, getattr(function, "__name__", function), keyword
+			),
 			title=_("Lot not written"),
 		)
 
@@ -1220,9 +1269,24 @@ def write_lot(doc):
 	# the record the worst of them (Failed over Hold over Passed).
 	others = standing_certificates(lot, doc.doctype, doc.name)
 	if kind == "approved":
-		_spc("certificate_approved")(doc.doctype, doc.name, lot, doc.get("overall_result"), others=others)
+		approved = _spc("certificate_approved")
+		_refuse_old_spc(approved, "others")
+		approved(doc.doctype, doc.name, lot, doc.get("overall_result"), others=others)
 	else:
-		_spc("certificate_withdrawn")(doc.doctype, doc.name, lot, standing=others)
+		_withdraw(doc.doctype, doc.name, lot, others)
+
+
+def _withdraw(doctype, name, lot, standing):
+	"""The withdrawal's call of amb_w_spc, with `standing` a LIST. A signature cannot show that a list is understood
+	(an amb_w_spc older than TASKS-390 has the same `standing=None` and reads it as one dict), so list support is
+	detected by the change that brought it: the same amb_w_spc version gave `certificate_approved` its `others`
+	keyword. A non-empty list is passed only to an amb_w_spc whose `certificate_approved` takes `others`; else the
+	withdrawal is refused with the readable message. An empty list reads as "none" on either version: not checked."""
+	withdrawn = _spc("certificate_withdrawn")
+	_refuse_old_spc(withdrawn, "standing")
+	if standing:
+		_refuse_old_spc(_spc("certificate_approved"), "others")
+	withdrawn(doctype, name, lot, standing=standing)
 
 
 def withdraw_on_cancel(doc):
@@ -1231,21 +1295,41 @@ def withdraw_on_cancel(doc):
 	lot = doc.get("batch_reference")
 	if not lot:
 		return
-	_spc("certificate_withdrawn")(
-		doc.doctype, doc.name, lot, standing=standing_certificates(lot, doc.doctype, doc.name)
-	)
+	_withdraw(doc.doctype, doc.name, lot, standing_certificates(lot, doc.doctype, doc.name))
+
+
+SHARE_SUMMARY_ABSENT = (
+	"the share stands; its summary was not sent: the lot app does not provide it on this site"
+)
 
 
 def share_summary(doc):
 	"""TASKS-390 (decision 334), `on_submit` of COA AMB (the share, Approved -> Certificate Shared): one summary of
 	the share, sent by amb_w_spc under the rules of a release (`certificate_shared`: the filler, the user who shared and
 	the lot's Work Order owner; queued; muted or no account noted on the lot's history; never fails the share; it
-	writes no lot status). It replaces the old `notify_quality_team`. Looked up late (`_spc`), like the two lot
-	writes; a certificate that names no lot has nothing to tell. No try/except around the call."""
+	writes no lot status). It replaces the old `notify_quality_team`. Looked up late, like the two lot writes; a
+	certificate that names no lot has nothing to tell.
+
+	TASKS-390 review, finding 2 (the summary never fails the share): when amb_w_spc is not installed, or the
+	installed one does not provide `certificate_shared` (`_find_spc`: `absent`), the share stands: the user gets an
+	orange notice and the certificate an Info Comment, both with `SHARE_SUMMARY_ABSENT`. Any other failure of the
+	lookup (an ImportError raised by amb_w_spc's own module) fails the share as before. No try/except around the
+	call: an error raised inside `certificate_shared` is amb_w_spc's code and still fails the share (it raises none
+	for a reason of mail)."""
 	lot = doc.get("batch_reference")
 	if not lot:
 		return
-	_spc("certificate_shared")(doc.doctype, doc.name, lot)
+	shared, why, absent = _find_spc("certificate_shared")
+	if shared is None:
+		if not absent:
+			frappe.throw(why, title=_("Lot not written"))
+		text = _("{0} {1}: {2} ({3}.certificate_shared).").format(
+			doc.doctype, doc.name, _(SHARE_SUMMARY_ABSENT), SPC_LOT_QUALITY
+		)
+		frappe.msgprint(text, indicator="orange", alert=True)
+		doc.add_comment("Info", text)
+		return
+	shared(doc.doctype, doc.name, lot)
 
 
 def apply(doc):
