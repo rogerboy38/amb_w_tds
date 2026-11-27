@@ -12,7 +12,6 @@
 A certificate save is run as the framework runs it before the write (`before_validate`, then `validate`), on
 documents built without a database, as in `test_filler_list_and_share_391`."""
 
-import inspect
 import json
 import os
 import unittest
@@ -199,10 +198,10 @@ class TestAnAmendKeepsTheFillerList(unittest.TestCase):
 					FIELDS, [c.args[2] for c in fake.db.get_value.call_args_list if len(c.args) > 2]
 				)
 
-	def test_a_forged_amended_from_only_adds_names(self):
-		"""A caller who sends an unrelated certificate as `amended_from` imports its fillers: each of them, and the
-		maker, may not approve; nobody is taken off. The approval is stricter, never weaker. (The framework also
-		refuses, in the same insert, an amendment whose original is not cancelled.)"""
+	def test_an_unrelated_amended_from_starts_from_that_certificates_fillers(self):
+		"""TASKS-397 review, finding 2: the framework checks only that `amended_from` names a cancelled certificate,
+		not that it is the one being amended. An insert naming an unrelated cancelled certificate starts from ITS
+		fillers: no weaker than a Duplicate (which starts from no one), and each name it brings may not approve."""
 		for doctype in BOTH:
 			with self.subTest(doctype=doctype):
 				d = amendment(doctype)
@@ -212,9 +211,12 @@ class TestAnAmendKeepsTheFillerList(unittest.TestCase):
 				self.assertIn(IN_THE_LIST, to_review_and_ask(doctype, s, B, by=C) or "")
 				self.assertIn(LAST_FILLER, to_review_and_ask(doctype, s, D, by=C) or "")
 				self.assertIsNone(to_review_and_ask(doctype, s, C, by=D))
-		src = inspect.getsource(rules.fillers_of_original)
-		self.assertIn("stricter, never weaker", src)
-		self.assertIn("validate_amended_from", src)
+		# the list comes from the certificate named, read from the database, and nothing else
+		for doctype in BOTH:
+			with self.subTest(doctype=doctype, named="an empty one"):
+				d = amendment(doctype)
+				insert(d, D, {"COA-0": {"filled_by": None, rules.FILLERS_FIELD: None}})
+				self.assertEqual(rules.fillers_of(d.fillers_since_draft), [D])  # as a Duplicate made by D
 
 	def test_amended_from_is_the_frameworks_read_only_no_copy_field_on_both(self):
 		for folder, doctype in (("coa_amb", "COA AMB"), ("coa_amb2", "COA AMB2")):

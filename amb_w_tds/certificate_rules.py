@@ -330,9 +330,12 @@ def fillers_of_original(doc):
 	with the original's stored `filled_by` added, read from the database (never from the form, which may carry a
 	copied or typed value). `amended_from` is the framework's field (read-only and no copy in both DocTypes, set by
 	Amend); the framework itself refuses, in the same insert, an amendment whose original is not cancelled
-	(`Document.validate_amended_from`). A caller who sends some other certificate as `amended_from` can only add
-	names to this list, and a name on it may not approve: the approval becomes stricter, never weaker. When the
-	original cannot be read the save is refused, rather than start the amendment with an empty list."""
+	(`Document.validate_amended_from`), but it does not check that the cancelled certificate named is the one being
+	amended: read-only and no copy hold in the form only, and an insert over the API may name any cancelled
+	certificate. TASKS-397 review, finding 2: such an insert starts from THAT certificate's fillers, so it is no
+	weaker than a Duplicate (which starts from no one, as ruled) and no stronger; the new certificate is named as an
+	amendment of the certificate it names, so the swap shows. When the original cannot be read the save is refused,
+	rather than start the amendment with an empty list."""
 	original = frappe.db.get_value(
 		doc.doctype, doc.get("amended_from"), ["filled_by", FILLERS_FIELD], as_dict=True
 	)
