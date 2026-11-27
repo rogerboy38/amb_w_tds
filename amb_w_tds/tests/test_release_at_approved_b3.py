@@ -106,8 +106,9 @@ def cert(
 
 
 @contextmanager
-def site(standing=(), installed=("frappe", "amb_w_tds", "amb_w_spc"), spc=None):
-	"""The session, the other certificates of the lot, and amb_w_spc's two functions as `frappe.get_attr` finds them."""
+def site(standing=(), installed=("frappe", "amb_w_tds", "amb_w_spc"), spc=None, batches=("B-1",)):
+	"""The session, the other certificates of the lot, and amb_w_spc's two functions as `frappe.get_attr` finds them.
+	The lot has one stock Batch (TASKS-390, decision 335: without one an approval is refused); none is rejected."""
 	spc = (
 		spc
 		if spc is not None
@@ -117,6 +118,8 @@ def site(standing=(), installed=("frappe", "amb_w_tds", "amb_w_spc"), spc=None):
 
 	def get_all(doctype, filters=None, fields=None, pluck=None, **kw):
 		asked.append((doctype, filters))
+		if doctype == "Batch":
+			return list(batches)
 		if doctype not in rules.STATE_FIELD:
 			return []
 		field = rules.STATE_FIELD[doctype]
@@ -139,7 +142,7 @@ def site(standing=(), installed=("frappe", "amb_w_tds", "amb_w_spc"), spc=None):
 		session=frappe._dict(user="approver"),
 		throw=_throw,
 		msgprint=mock.Mock(),
-		get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: False),
+		get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: dt == "Batch"),
 		get_all=get_all,
 		get_attr=get_attr,
 		get_installed_apps=lambda: list(installed),
@@ -170,7 +173,7 @@ class TestApprovedReleasesTheLot(unittest.TestCase):
 		for doctype in BOTH:
 			for results, result in ((("5", "6"), "Pass"), (("50", "6"), "Fail"), (("5", ""), "Partial")):
 				fake = save(cert(doctype, "Approved", "Pending Supervisor", results=results))
-				fake.approved.assert_called_once_with(doctype, "COA-1", "LOTE-1", result)
+				fake.approved.assert_called_once_with(doctype, "COA-1", "LOTE-1", result, others=[])
 				fake.withdrawn.assert_not_called()
 
 	def test_the_result_sent_is_the_one_derived_in_this_save_and_it_always_maps(self):
@@ -236,7 +239,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 	def test_reject_to_draft_calls_withdraw_on_each_type(self):
 		for doctype in BOTH:
 			fake = save(cert(doctype, "Draft", "Approved"))
-			fake.withdrawn.assert_called_once_with(doctype, "COA-1", "LOTE-1", standing=None)
+			fake.withdrawn.assert_called_once_with(doctype, "COA-1", "LOTE-1", standing=[])
 			fake.approved.assert_not_called()
 
 	def test_the_withdrawal_speaks_of_the_lot_the_certificate_was_approved_for(self):
@@ -269,16 +272,27 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 			),
 		]
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=others)
-		# the one approved last
+		# TASKS-390 (decision 338): all of them, the one approved last first
 		self.assertEqual(
 			fake.withdrawn.call_args.kwargs,
-			{"standing": {"doctype": "COA AMB", "name": "COA-9", "result": "Pass"}},
+			{
+				"standing": [
+					{"doctype": "COA AMB", "name": "COA-9", "result": "Pass"},
+					{"doctype": "COA AMB2", "name": "COA2-9", "result": "Fail"},
+				]
+			},
 		)
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=others[:1])
 		self.assertEqual(
 			fake.withdrawn.call_args.kwargs,
-			{"standing": {"doctype": "COA AMB2", "name": "COA2-9", "result": "Fail"}},
+			{"standing": [{"doctype": "COA AMB2", "name": "COA2-9", "result": "Fail"}]},
 		)
+		# the single one of before is still the one approved last
+		with site(standing=others):
+			self.assertEqual(
+				rules.standing_certificate("LOTE-1", "COA AMB", "COA-1"),
+				{"doctype": "COA AMB", "name": "COA-9", "result": "Pass"},
+			)
 
 	def test_what_does_not_stand(self):
 		base = dict(
@@ -308,11 +322,11 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 			),  # no mapping
 		]
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=not_standing)
-		self.assertEqual(fake.withdrawn.call_args.kwargs, {"standing": None})
+		self.assertEqual(fake.withdrawn.call_args.kwargs, {"standing": []})
 		# a certificate of the OTHER type with the same name is another certificate
 		twin = [dict(base, doctype="COA AMB2", name="COA-1", state="Approved", docstatus=0)]
 		fake = save(cert("COA AMB", "Draft", "Approved"), standing=twin)
-		self.assertEqual(fake.withdrawn.call_args.kwargs["standing"]["doctype"], "COA AMB2")
+		self.assertEqual(fake.withdrawn.call_args.kwargs["standing"][0]["doctype"], "COA AMB2")
 
 	def test_only_a_certificate_approved_by_a_second_person_stands(self):
 		"""Review 1: a certificate submitted past the approval was "Certificate Shared" and stood for the lot, so
@@ -338,13 +352,13 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 				with self.subTest(state=state, what=what):
 					other = [dict(base, state=state, docstatus=docstatus, **who)]
 					fake = save(cert("COA AMB2", "Draft", "Approved"), standing=other)
-					self.assertEqual(fake.withdrawn.call_args.kwargs, {"standing": None})
+					self.assertEqual(fake.withdrawn.call_args.kwargs, {"standing": []})
 			with self.subTest(state=state, what="two people"):
 				other = [dict(base, state=state, docstatus=docstatus, **TWO_PEOPLE)]
 				fake = save(cert("COA AMB2", "Draft", "Approved"), standing=other)
 				self.assertEqual(
 					fake.withdrawn.call_args.kwargs,
-					{"standing": {"doctype": "COA AMB", "name": "COA-9", "result": "Pass"}},
+					{"standing": [{"doctype": "COA AMB", "name": "COA-9", "result": "Pass"}]},
 				)
 		# an unapproved one does not hide an older one that stands
 		others = [
@@ -360,7 +374,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 			),
 		]
 		fake = save(cert("COA AMB2", "Draft", "Approved"), standing=others)
-		self.assertEqual(fake.withdrawn.call_args.kwargs["standing"]["name"], "COA-8")
+		self.assertEqual([c["name"] for c in fake.withdrawn.call_args.kwargs["standing"]], ["COA-8"])
 
 	def test_the_standing_read_asks_for_approver_and_filler(self):
 		with site() as fake:
@@ -400,7 +414,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 
 	def test_the_cancel_of_a_shared_coa_amb_calls_withdraw(self):
 		d, fake = self.cancel()
-		fake.withdrawn.assert_called_once_with("COA AMB", "COA-1", "LOTE-1", standing=None)
+		fake.withdrawn.assert_called_once_with("COA AMB", "COA-1", "LOTE-1", standing=[])
 		d.revert_product_quality_status.assert_called_once_with()
 		standing = [
 			dict(
@@ -418,7 +432,7 @@ class TestRejectAndCancelWithdraw(unittest.TestCase):
 		_d, fake = self.cancel(standing=standing)
 		self.assertEqual(
 			fake.withdrawn.call_args.kwargs,
-			{"standing": {"doctype": "COA AMB2", "name": "COA2-9", "result": "Partial"}},
+			{"standing": [{"doctype": "COA AMB2", "name": "COA2-9", "result": "Partial"}]},
 		)
 
 	def test_a_cancel_without_a_lot_calls_nothing(self):
@@ -494,28 +508,8 @@ class TestRawLotWritesAreGone(unittest.TestCase):
 		for cls in CLASSES.values():
 			self.assertFalse(hasattr(cls, "update_batch_status"))
 
-	def test_the_other_three_after_submit_steps_of_coa_amb_are_still_called_in_their_order(self):
-		calls = []
-		d = object.__new__(amb.COAAMB)
-		for name in (
-			"validate_submission_prerequisites",
-			"generate_coa_pdf",
-			"notify_quality_team",
-			"create_quality_audit",
-			"update_product_quality_status",
-		):
-			setattr(d, name, lambda _n=name: calls.append(_n))
-		d.on_submit()
-		self.assertEqual(
-			calls,
-			[
-				"validate_submission_prerequisites",
-				"generate_coa_pdf",
-				"notify_quality_team",
-				"create_quality_audit",
-				"update_product_quality_status",
-			],
-		)
+	# TASKS-390 (decision 334): the order of the after-submit steps, now without `notify_quality_team`, is pinned in
+	# test_quality_chain_390.
 
 
 class TestPickerOffersInherited(unittest.TestCase):

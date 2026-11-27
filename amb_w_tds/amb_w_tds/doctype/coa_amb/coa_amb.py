@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, flt, get_url, cstr
+from frappe.utils import nowdate, flt, cstr
 import json
 import re
 
@@ -127,8 +127,12 @@ class COAAMB(ApprovedLock, Document):
         self.generate_coa_pdf()
         # TASKS-384 B3: the batch step that stood here (`update_batch_status`) wrote the lot's `quality_status`
         # raw, with the certificate's own word ("Pass"), inside a try/except. It is removed: the lot is written at
-        # Approved, through amb_w_spc. The three steps below are as they were and fail as before (a later task).
-        self.notify_quality_team()
+        # Approved, through amb_w_spc.
+        # TASKS-390 (decision 334): the share's mail is one summary under the rules of a release, sent by amb_w_spc
+        # (`certificate_shared`, looked up late; nothing caught around it). The old `notify_quality_team` (every
+        # Quality Manager / Inspector / Analyst, sent at once, an Error Log on failure) is deleted.
+        certificate_rules.share_summary(self)
+        # The two steps below are as they were and fail as before (a later task).
         self.create_quality_audit()
         self.update_product_quality_status()
 
@@ -589,67 +593,6 @@ class COAAMB(ApprovedLock, Document):
         except Exception as e:
             frappe.log_error(title="COA AMB - PDF Generation", message=f"Error generating COA PDF: {str(e)}")
             frappe.msgprint(_("PDF generation encountered an error. The COA was still submitted."), alert=True)
-
-    def notify_quality_team(self):
-        """Send notifications to relevant teams"""
-        recipients = set()
-        
-        # Get quality team members
-        quality_roles = ['Quality Manager', 'Quality Inspector', 'Quality Analyst']
-        for role in quality_roles:
-            users = frappe.get_all('Has Role', 
-                filters={'role': role, 'parenttype': 'User'},
-                fields=['parent']
-            )
-            for user in users:
-                email = frappe.db.get_value('User', user.parent, 'email')
-                if email:
-                    recipients.add(email)
-        
-        # Add document owner and approver
-        if self.owner:
-            owner_email = frappe.db.get_value('User', self.owner, 'email')
-            if owner_email:
-                recipients.add(owner_email)
-        
-        if self.approved_by:
-            recipients.add(self.approved_by)
-        
-        # Add production manager if batch exists
-        if self.batch_reference:
-            batch = frappe.get_doc('Batch AMB', self.batch_reference)
-            if hasattr(batch, 'production_manager') and batch.production_manager:
-                recipients.add(batch.production_manager)
-        
-        if recipients:
-            try:
-                frappe.sendmail(
-                    recipients=list(recipients),
-                    subject=f'COA {self.name} - {self.overall_result}',
-                    message=f"""
-                        <h3>Certificate of Analysis Notification</h3>
-                        <p>A new COA has been issued with the following details:</p>
-                        <table border="0" cellspacing="0" cellpadding="5" style="border-collapse: collapse;">
-                            <tr><td><strong>COA Number:</strong></td><td>{self.coa_number or self.name}</td></tr>
-                            <tr><td><strong>Product:</strong></td><td>{self.item_name} ({self.item_code})</td></tr>
-                            <tr><td><strong>Batch:</strong></td><td>{self.batch_reference or 'N/A'}</td></tr>
-                            <tr><td><strong>Overall Result:</strong></td><td><strong>{self.overall_result}</strong></td></tr>
-                            <tr><td><strong>Compliance Status:</strong></td><td>{self.compliance_status}</td></tr>
-                            <tr><td><strong>Approval Date:</strong></td><td>{self.approval_date}</td></tr>
-                            <tr><td><strong>Approved By:</strong></td><td>{self.approved_by}</td></tr>
-                        </table>
-                        <br>
-                        <p><a href="{get_url()}/app/coa-amb/{self.name}">View Complete COA</a></p>
-                        <p><em>This is an automated notification from the Quality Management System.</em></p>
-                    """,
-                    now=True,
-                    delayed=False
-                )
-                
-                self.add_comment('Email', f'Notification sent to {len(recipients)} recipient(s)')
-                
-            except Exception as e:
-                frappe.log_error(title="COA AMB - Notification", message=f"Error sending COA notification: {str(e)}")
 
     def create_quality_audit(self):
         """Create audit record for submitted COA"""

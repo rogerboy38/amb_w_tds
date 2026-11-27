@@ -377,6 +377,8 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 					return frappe._dict(stored_row)
 				if doctype in rules.STATE_FIELD and fields == [rules.SIGNATURE_FIELD, rules.SIGNER_FIELD]:
 					return frappe._dict(parent_signature)
+				if doctype in rules.STATE_FIELD and fields == rules.FILLERS_FIELD:
+					return None  # TASKS-390: no one filled it since Draft before this row
 				if doctype in rules.STATE_FIELD:
 					return frappe._dict({rules.STATE_FIELD[doctype]: "Draft", "docstatus": 0})
 				return None
@@ -396,7 +398,9 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 		writes, told = self.row_hook(
 			rules.note_filler_of_row, "COA Quality Test Parameter", sent, in_db, signed
 		)
-		self.assertEqual(writes, [("COA AMB", "COA-1", "filled_by", THIRD), cleared])
+		self.assertEqual(
+			writes, [("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD}), cleared]
+		)
 		self.assertIn("this save changed its results", told[0])
 		# unchanged row: nothing; unsigned certificate: only the filler; COA AMB2: only the filler
 		self.assertEqual(
@@ -407,7 +411,7 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 		)
 		self.assertEqual(
 			self.row_hook(rules.note_filler_of_row, "COA Quality Test Parameter", sent, in_db, {})[0],
-			[("COA AMB", "COA-1", "filled_by", THIRD)],
+			[("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD})],
 		)
 		amb2_row = dict(in_db, parenttype="COA AMB2")
 		self.assertEqual(
@@ -418,7 +422,7 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 				amb2_row,
 				signed,
 			),
-			([("COA AMB2", "COA-1", "filled_by", THIRD)], []),
+			([("COA AMB2", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD})], []),
 		)
 		# a customers row
 		cust = {
@@ -431,7 +435,9 @@ class TestAChangeClearsTheSignature(unittest.TestCase):
 		writes, told = self.row_hook(
 			rules.note_customer_row, "Customer Item", dict(cust, customer="C2"), cust, signed
 		)
-		self.assertEqual(writes, [("COA AMB", "COA-1", "filled_by", THIRD), cleared])
+		self.assertEqual(
+			writes, [("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD}), cleared]
+		)
 		self.assertIn("this save changed its customers list", told[0])
 
 
@@ -472,7 +478,7 @@ class TestTheRejectFromApprovedChangesOnlyTheState(unittest.TestCase):
 				with (
 					site387(),
 					mock.patch.object(rules, "_spc", lambda f: {"certificate_withdrawn": withdrawn}[f]),
-					mock.patch.object(rules, "standing_certificate", lambda *a: None),
+					mock.patch.object(rules, "standing_certificates", lambda *a: []),
 				):
 					rules.write_lot(reject)
 				self.assertEqual(withdrawn.call_args.args, (doctype, "COA-1", "LOT-1"))

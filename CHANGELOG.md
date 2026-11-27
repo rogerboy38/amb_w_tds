@@ -1,5 +1,26 @@
 # Changelog
 
+## 13.12.23 — 2026-11
+
+**Code and two DocType JSONs (`coa_amb.json`, `coa_amb2.json`: new field `fillers_since_draft`).** **`bench migrate` is needed** (both DocTypes are synced and get a new column), then a backend restart (web + workers) and `bench --site <site> clear-cache`. No patch, no fixture change, no new hook. **Deploy with the amb_w_spc of TASKS-390** (its `certificate_approved` takes `others`, its `certificate_withdrawn` takes a `standing` list, and it has `certificate_shared`): with an older amb_w_spc every approval, Reject, Cancel and share of a certificate that names a lot fails with the message that says the function is not available.
+
+### The share mails like a release (TASKS-390, decision 334)
+- COA AMB's `on_submit` no longer runs `notify_quality_team` (every Quality Manager / Inspector / Analyst, the owner, the approver, `now=True`, an Error Log when it failed); **its body is deleted** from COA AMB (COA AMB2's own copy is untouched: no COA AMB2 is submitted). In its place `certificate_rules.share_summary` calls amb_w_spc's `certificate_shared(certificate_doctype, certificate, lot)` when the certificate names a lot, looked up late with the same absence handling as the two lot writes, nothing caught around it. The summary (recipients, queueing, muted mail, the note on the lot's history) is amb_w_spc's. `create_quality_audit` and `update_product_quality_status` are as they were.
+
+### The approval checks fail closed (decision 335)
+- A certificate that names a lot record is refused at approval, every role, with its own message, when the site's `Batch` has no `custom_batch_amb` field, or when **no stock Batch is linked to the lot record or to any record below it** ("no stock Batch is linked to lot record … or below it: the inspection and non-conformance checks cannot be run"). Before, both cases read an empty list and the Rejected-inspection and open-Non-Conformance checks passed.
+- **Effect to know:** a certificate on a lot that has no stock yet cannot be approved until a Batch names the lot or a record below it. A certificate that names no lot is not judged by this (it releases no lot).
+
+### Every filler since Draft is barred (decision 337)
+- New field **`fillers_since_draft`** (Small Text, read-only, no copy, after `filled_by`) on both certificates: every user who changed the results, the customers list or the lot, product or specification since the certificate last entered Draft, one per line, written by the server (a value sent is replaced). The approval is refused, with its own message, for any of them, besides the last filler (`filled_by`, as before). So changing one value and setting it back no longer lets the person who entered every value approve.
+- Entering Draft again (Return for correction, the Reject, Reopen) starts a new list; the one who returns or rejects changes nothing and is not added for that. `filled_by` is kept as stored there, so the last filler stays barred until another person fills.
+- A result row or a customers row saved by itself adds its user to the stored list, in the same write as `filled_by`.
+- Certificates from before this version have no list: their stored `filled_by` is what counts, as before.
+- The refusal for a certificate whose filler was never recorded no longer says "change it, save, set it back, save": a person other than the approver must re-enter or confirm a result, and that person cannot approve it.
+
+### Worst result wins: every standing certificate is passed (decision 338)
+- New `standing_certificates(lot, doctype, name)`: every OTHER certificate of the lot record that stands (the definition of `standing_certificate`, unchanged; the one approved last first). Passed to amb_w_spc as `others` at an approval and as the `standing` list at a Reject or a Cancel; amb_w_spc gives the record the worst (Failed over Hold over Passed). `standing_certificate` returns the first of them, as before.
+- Tests: `tests/test_quality_chain_390.py` (new); `tests/test_lot_release_with_spc.py` (stock Batches, the worst result through both apps, the share; skipped with its reason against an amb_w_spc older than TASKS-390); `tests/test_certificate_rules_b1.py`, `tests/test_release_at_approved_b3.py` (the pin of `notify_quality_team`'s call removed), `tests/test_identity_share_freeze_387.py`, `tests/test_review_signature_reject_388.py` (stand-in sites carry a Batch and the new list).
 ## 13.12.22 — 2026-11
 
 **Code and the workflow fixture (`workflow.json`: one new state row in each certificate's workflow).** **`bench migrate` is needed** (the two workflows are imported from the fixture), then a backend restart (web + workers) and `bench --site <site> clear-cache` (the form reads the workflow from its cache). No DocType JSON, no patch, no data change, no new hook. Deploy with amb_w_spc as before (its two functions are called with the same arguments).

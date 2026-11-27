@@ -12,7 +12,13 @@ data-access seam `LotTable`, replaced by `Table` below the way amb_w_spc's own t
 database, and `frappe.get_attr`, which needs a site to list the installed apps and is stood in for by the import it
 performs.
 
-Skipped when amb_w_spc cannot be imported. Run with both apps on the path:
+TASKS-390: the lot records' stock Batches are kept too (a Batch on the sub-lot and on the container, as amb_w_spc's
+projection links them): without one an approval is refused here (decision 335). The calls carry `others` at the
+approval and a `standing` LIST at the withdrawal (decision 338), and the share of a COA AMB calls amb_w_spc's
+`certificate_shared` (decision 334).
+
+Skipped when amb_w_spc cannot be imported, or when its `lot_quality` is older than TASKS-390 (no `others` keyword, no
+`certificate_shared`): this app's calls of 13.12.23 do not fit it. Run with both apps on the path:
 PYTHONPATH=<amb_w_tds clone>:<amb_w_spc clone> python -m unittest amb_w_tds.tests.test_lot_release_with_spc"""
 
 import copy
@@ -33,6 +39,21 @@ try:
 	from amb_w_spc.sfc_manufacturing import lot_quality as lq
 except ImportError:  # the other app is not on the path: every test below is skipped
 	lq = None
+
+# TASKS-390: the interface this app's 13.12.23 calls (contract points 1 and 2)
+SPC_OF_390 = bool(
+	lq is not None
+	and "others" in inspect.signature(lq.certificate_approved).parameters
+	and callable(getattr(lq, "certificate_shared", None))
+)
+SKIP_REASON = (
+	"amb_w_spc is not importable here"
+	if lq is None
+	else "amb_w_spc's lot_quality predates TASKS-390 (no `others` keyword in certificate_approved, or no "
+	"certificate_shared): run against the spc head that has them"
+)
+# the records that hold stock (a native Batch names them in `custom_batch_amb`)
+STOCKED = ("SUB", "CONT")
 
 CLASSES = {"COA AMB": amb.COAAMB, "COA AMB2": amb2.COAAMB2}
 BOTH = ("COA AMB", "COA AMB2")
@@ -131,8 +152,9 @@ STATUS = {"Pass": "Passed", "Fail": "Failed", "Partial": "Hold"}
 class Site:
 	"""The certificates this test keeps (what the database would hold), the lot table, and one save at a time."""
 
-	def __init__(self, table):
+	def __init__(self, table, stocked=STOCKED):
 		self.table = table
+		self.stocked = set(stocked)
 		self.certificates = {}  # (doctype, name) -> what is stored
 
 	def _stored(self, doctype, name, lot, result):
@@ -161,9 +183,14 @@ class Site:
 		return self.certificates[key]
 
 	def get_all(self, doctype, filters=None, fields=None, pluck=None, **kw):
-		"""The standing-certificate read of `certificate_rules`, answered from the certificates kept here."""
+		"""The standing-certificate read of `certificate_rules`, answered from the certificates kept here; the
+		records below a lot record and the stock Batches of the records (TASKS-390)."""
+		if doctype == rules.LOT_DOCTYPE:
+			return [r["name"] for r in self.table.children(filters[rules.LOT_PARENT_FIELD][1])]
+		if doctype == "Batch":
+			return [f"B-{n}" for n in filters[rules.BATCH_LOT_FIELD][1] if n in self.stocked]
 		if doctype not in rules.STATE_FIELD:
-			return []  # the lot's Batches, inspections, non conformances: none
+			return []  # the lot's inspections, non conformances: none
 		out = []
 		for (certificate_doctype, name), d in sorted(self.certificates.items()):
 			if certificate_doctype != doctype:
@@ -192,7 +219,7 @@ class Site:
 			session=frappe._dict(user=user),
 			throw=_throw,
 			msgprint=mock.Mock(),
-			get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: dt == rules.LOT_DOCTYPE),
+			get_meta=lambda dt: types.SimpleNamespace(has_field=lambda f: dt in (rules.LOT_DOCTYPE, "Batch")),
 			get_all=self.get_all,
 			get_attr=get_attr,
 			get_installed_apps=lambda: ["frappe", "amb_w_tds", "amb_w_spc"],
@@ -246,7 +273,7 @@ class Site:
 		return self.move(doctype, name, lot, "Draft", user=user)
 
 
-@unittest.skipIf(lq is None, "amb_w_spc is not importable here")
+@unittest.skipUnless(SPC_OF_390, SKIP_REASON)
 class TestCertificateToLotThroughBothApps(unittest.TestCase):
 	def test_an_approval_writes_the_lot_its_sub_lot_and_its_container(self):
 		for doctype in BOTH:
@@ -284,7 +311,8 @@ class TestCertificateToLotThroughBothApps(unittest.TestCase):
 		site = Site(lot_tree())
 		site.approve("COA AMB2", "CERT-FAIL", "LOT", "Fail")
 		site.approve("COA AMB", "CERT-PASS", "LOT", "Pass")
-		self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", "COA AMB", "CERT-PASS"))
+		# TASKS-390 (decision 338): the standing Fail is worse, so the record keeps it at the approval of the Pass
+		self.assertEqual(site.table.state("LOT"), ("Failed", "Own certificate", "COA AMB2", "CERT-FAIL"))
 		site.reject("COA AMB", "CERT-PASS", "LOT")
 		self.assertEqual(site.table.state("LOT"), ("Failed", "Own certificate", "COA AMB2", "CERT-FAIL"))
 		for below in ("SUB", "CONT"):
@@ -368,11 +396,25 @@ class TestCertificateToLotThroughBothApps(unittest.TestCase):
 		mine = {n for n, _f in inspect.getmembers(Table, inspect.isfunction) if not n.startswith("_")}
 		self.assertEqual(seam - mine, set())
 
-	def test_this_app_and_the_other_name_the_same_two_functions(self):
-		for function in ("certificate_approved", "certificate_withdrawn"):
+	def test_this_app_and_the_other_name_the_same_three_functions(self):
+		for function in ("certificate_approved", "certificate_withdrawn", "certificate_shared"):
 			self.assertTrue(callable(getattr(lq, function)))
 		self.assertEqual(rules.SPC_LOT_QUALITY, lq.__name__)
 		self.assertIn("standing", inspect.signature(lq.certificate_withdrawn).parameters)
+		self.assertIn("others", inspect.signature(lq.certificate_approved).parameters)
+		self.assertEqual(
+			list(inspect.signature(lq.certificate_shared).parameters),
+			["certificate_doctype", "certificate", "lot"],
+		)
+
+	def test_an_approval_of_a_lot_with_no_stock_batch_is_refused_and_writes_nothing(self):
+		"""TASKS-390 (decision 335): no Batch on the record or below it; the checks cannot run."""
+		site = Site(lot_tree(), stocked=())
+		with self.assertRaises(frappe.ValidationError) as refused:
+			site.approve("COA AMB2", "CERT-1", "LOT", "Pass")
+		self.assertIn("no stock Batch is linked to lot record LOT or below it", str(refused.exception))
+		self.assertEqual(site.table.history, [])
+		self.assertEqual(site.table.state("LOT"), PENDING)
 
 
 class FullSite(Site):
@@ -403,7 +445,7 @@ class FullSite(Site):
 		return d
 
 
-@unittest.skipIf(lq is None, "amb_w_spc is not importable here")
+@unittest.skipUnless(SPC_OF_390, SKIP_REASON)
 class TestTheRejectChangesOnlyTheStateThroughBothApps(unittest.TestCase):
 	def test_the_workflows_reject_withdraws_the_lot_as_before(self):
 		for doctype in BOTH:
@@ -426,6 +468,87 @@ class TestTheRejectChangesOnlyTheStateThroughBothApps(unittest.TestCase):
 		self.assertEqual(site.table.history, written)
 		self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", "COA AMB", "CERT-1"))
 		self.assertEqual(site.table.state("LOT-2"), PENDING)
+
+
+@unittest.skipUnless(SPC_OF_390, SKIP_REASON)
+class TestTheWorstResultWinsThroughBothApps(unittest.TestCase):
+	"""TASKS-390 (decision 338): this app passes every other standing certificate; amb_w_spc gives the record the
+	worst (Failed over Hold over Passed)."""
+
+	def test_fail_then_pass_stays_failed(self):
+		site = Site(lot_tree())
+		site.approve("COA AMB2", "CERT-FAIL", "LOT", "Fail")
+		site.approve("COA AMB", "CERT-PASS", "LOT", "Pass")
+		self.assertEqual(site.table.state("LOT"), ("Failed", "Own certificate", "COA AMB2", "CERT-FAIL"))
+		for below in ("SUB", "CONT"):
+			self.assertEqual(site.table.state(below), ("Failed", "Inherited", "COA AMB2", "CERT-FAIL"), below)
+
+	def test_pass_then_fail_is_failed(self):
+		site = Site(lot_tree())
+		site.approve("COA AMB", "CERT-PASS", "LOT", "Pass")
+		site.approve("COA AMB2", "CERT-FAIL", "LOT", "Fail")
+		self.assertEqual(site.table.state("LOT"), ("Failed", "Own certificate", "COA AMB2", "CERT-FAIL"))
+
+	def test_a_hold_over_a_pass_and_a_fail_over_a_hold(self):
+		site = Site(lot_tree())
+		site.approve("COA AMB", "CERT-PASS", "LOT", "Pass")
+		site.approve("COA AMB2", "CERT-HOLD", "LOT", "Partial")
+		self.assertEqual(site.table.state("LOT")[0], "Hold")
+		site.approve("COA AMB2", "CERT-FAIL", "LOT", "Fail")
+		self.assertEqual(site.table.state("LOT")[0], "Failed")
+
+	def test_rejecting_the_fail_gives_the_pass_that_still_stands(self):
+		site = Site(lot_tree())
+		site.approve("COA AMB", "CERT-PASS", "LOT", "Pass")
+		site.approve("COA AMB2", "CERT-FAIL", "LOT", "Fail")
+		site.reject("COA AMB2", "CERT-FAIL", "LOT")
+		self.assertEqual(site.table.state("LOT"), ("Passed", "Own certificate", "COA AMB", "CERT-PASS"))
+		for below in ("SUB", "CONT"):
+			self.assertEqual(site.table.state(below), ("Passed", "Inherited", "COA AMB", "CERT-PASS"), below)
+
+
+@unittest.skipUnless(SPC_OF_390, SKIP_REASON)
+class TestTheShareThroughBothApps(unittest.TestCase):
+	"""TASKS-390 (decision 334): COA AMB's `on_submit` reaches amb_w_spc's real `certificate_shared`."""
+
+	def share(self, muted=True):
+		site = Site(lot_tree())
+		site.approve("COA AMB", "CERT-1", "LOT", "Pass")
+		approved_state, history = site.table.state("LOT"), list(site.table.history)
+		d = object.__new__(amb.COAAMB)
+		d.__dict__.update(doctype="COA AMB", name="CERT-1", batch_reference="LOT", docstatus=1)
+		steps = []
+		for name in (
+			"validate_submission_prerequisites",
+			"generate_coa_pdf",
+			"create_quality_audit",
+			"update_product_quality_status",
+		):
+			setattr(d, name, lambda _n=name: steps.append(_n))
+		with site.running(APPROVER):
+			lq.frappe.are_emails_muted.return_value = muted
+			d.on_submit()
+			spc = lq.frappe
+		return site, approved_state, history, steps, spc
+
+	def test_the_share_writes_no_lot_status_and_no_row_of_its_own(self):
+		site, approved_state, history, steps, _spc = self.share()
+		self.assertEqual(site.table.state("LOT"), approved_state)
+		self.assertEqual(site.table.history, history)
+		self.assertEqual(len(steps), 4)
+
+	def test_muted_mail_is_not_queued_and_is_noted(self):
+		_site, _state, _history, _steps, spc = self.share(muted=True)
+		spc.sendmail.assert_not_called()
+		spc.log_error.assert_not_called()
+		self.assertIn("summary not sent: mail is muted", str(spc.mock_calls))
+
+	def test_no_team_mail_at_the_share(self):
+		_site, _state, _history, _steps, spc = self.share(muted=False)
+		self.assertLessEqual(spc.sendmail.call_count, 1)
+		for call in spc.sendmail.call_args_list:
+			self.assertNotIn("now", call.kwargs)
+		self.assertNotIn("Has Role", str(spc.mock_calls))
 
 
 if __name__ == "__main__":

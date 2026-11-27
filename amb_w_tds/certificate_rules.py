@@ -47,6 +47,12 @@ SIGNATURE_FIELD = "autorizacion"
 CUSTOMERS_TABLE = "custom_coa_customers"
 # TASKS-387 (decision 321): who last drew or changed the signature. Written by the server, never taken from the caller.
 SIGNER_FIELD = "signed_by"
+# TASKS-390 (decision 337): everyone who changed what the certificate certifies (its results, its customers list, its
+# lot, product or specification) since it last entered Draft, one user id per line (a Small Text field on both
+# certificates; read-only, no copy). Written by the server, never taken from the caller; none of them may approve.
+# `filled_by` stays the LAST of them. Entering Draft again (Return for correction, the Reject) starts a new list.
+FILLERS_FIELD = "fillers_since_draft"
+DRAFT = "Draft"
 
 # TASKS-387 (decision 321): what the certificate is FOR. A change of any of them in Draft or Validated is filling
 # (the changer becomes `filled_by`); in Pending Supervisor it is refused (the way back is "Return for correction");
@@ -305,6 +311,28 @@ def filling_changes(doc):
 	return changes
 
 
+def fillers_of(value):
+	"""The users of a stored `fillers_since_draft` value, in their order, each once (empty lines dropped)."""
+	return list(dict.fromkeys(u.strip() for u in cstr(value).splitlines() if u.strip()))
+
+
+def with_filler(value, user):
+	"""`fillers_since_draft` with `user` added at the end (once)."""
+	users = fillers_of(value)
+	return "\n".join(users if user in users else [*users, user])
+
+
+def enters_draft(doc, before):
+	"""TASKS-390 (decision 337): this save takes a stored certificate INTO Draft from another state (the workflow's
+	"Return for correction" and Reject, or any other way there). A new certificate is not entering Draft again."""
+	return bool(
+		before
+		and cint(doc.docstatus) == 0
+		and state_of(doc) == DRAFT
+		and before.get(STATE_FIELD[doc.doctype]) != DRAFT
+	)
+
+
 def set_filled_by(doc):
 	"""`filled_by` is the user who last changed what the certificate certifies (decision 313; TASKS-387 decision
 	321): a test result (`results_changed`), the customers list (`customers_changed`), or the lot, product or
@@ -316,13 +344,21 @@ def set_filled_by(doc):
 	the server fills in from the specification (`fill_customers`) do not name the maker by themselves. A certificate
 	without test rows cannot be approved, and whoever adds them becomes the filler, so this changes no approval.
 
+	TASKS-390 (decision 337): `fillers_since_draft` holds every user named so in this way since the certificate last
+	entered Draft: the stored list, emptied in the save that enters Draft again (`enters_draft`: the one who returns
+	or rejects changes nothing, so is not added for that), with the session user added when this save changes what
+	the certificate certifies. A value sent by the caller is replaced, as for `filled_by`.
+
 	Returns what made the session user the filler (`filling_changes`), empty when nobody was named by this save."""
 	before = _before(doc)
 	changes = filling_changes(doc)
+	fillers = "" if not before or enters_draft(doc, before) else cstr(before.get(FILLERS_FIELD))
 	if changes:
 		doc.filled_by = frappe.session.user
+		fillers = with_filler(fillers, frappe.session.user)
 	else:
 		doc.filled_by = before.get("filled_by") if before else None
+	setattr(doc, FILLERS_FIELD, "\n".join(fillers_of(fillers)) or None)
 	return changes
 
 
@@ -409,6 +445,15 @@ def refuse_identity_change_in_review(doc):
 		)
 
 
+def _note_filler_on_stored(parenttype, parent):
+	"""For a row saved by itself (the two row hooks below): the session user becomes the stored certificate's
+	`filled_by` and is added to its stored `fillers_since_draft` (TASKS-390, decision 337), in one write, in the
+	same transaction as the row."""
+	user = frappe.session.user
+	stored = frappe.db.get_value(parenttype, parent, FILLERS_FIELD)
+	frappe.db.set_value(parenttype, parent, {"filled_by": user, FILLERS_FIELD: with_filler(stored, user)})
+
+
 def note_filler_of_row(doc, method=None):
 	"""doc_events hook on the result row DocType (`before_validate`, `on_trash`): a result row saved, inserted or
 	deleted BY ITSELF does not pass through the certificate's `validate`, so `set_filled_by` never sees it. When
@@ -433,7 +478,7 @@ def note_filler_of_row(doc, method=None):
 	if not changed:
 		return
 	for parenttype, parent in sorted(o for o in owners if o[0] in STATE_FIELD and o[1]):
-		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+		_note_filler_on_stored(parenttype, parent)
 		_clear_stored_signature(parenttype, parent, _("its results"))  # TASKS-388 (decision 331)
 
 
@@ -476,7 +521,7 @@ def note_customer_row(doc, method=None):
 				title=_("Approved certificate"),
 			)
 	for parenttype, parent in owners:
-		frappe.db.set_value(parenttype, parent, "filled_by", frappe.session.user)
+		_note_filler_on_stored(parenttype, parent)
 		_clear_stored_signature(parenttype, parent, _("its customers list"))  # TASKS-388 (decision 331)
 
 
@@ -558,7 +603,7 @@ SHARE_UNCOMPARED_FIELDS = frozenset(
 )
 SHARE_DERIVED_FIELDS = frozenset(
 	("overall_result", "compliance_status", "failed_parameters", "pass_percentage", "tested_percentage")
-).union(("filled_by", "approved_by", "approval_date", SIGNER_FIELD))
+).union(("filled_by", FILLERS_FIELD, "approved_by", "approval_date", SIGNER_FIELD))
 SHARE_UNCOMPARED_ROW_FIELDS = frozenset(("docstatus", "modified", "modified_by"))
 SHARE_DERIVED_ROW_FIELDS = {RESULT_ROW_DOCTYPE: frozenset(("status",))}
 
@@ -807,6 +852,34 @@ def lot_batches(lot):
 	return frappe.get_all("Batch", filters={BATCH_LOT_FIELD: ["in", lot_records(lot)]}, pluck="name")
 
 
+def approvable_lot_batches(doc):
+	"""TASKS-390 (decision 335): the Batches the two approval checks read (`lot_batches`), failing CLOSED. A
+	certificate that names a lot record is refused, with its own message, when the site's `Batch` has no
+	`custom_batch_amb` field (no Batch can name a lot there), or when no Batch is linked to the record or to any record
+	below it: in both cases the Rejected-inspection and open-Non-Conformance checks could not be run, and an empty
+	answer would pass them. Every role. A certificate that names no lot releases no lot and reads no Batch (as
+	before)."""
+	lot = doc.get("batch_reference")
+	if not lot:
+		return []
+	if not frappe.get_meta("Batch").has_field(BATCH_LOT_FIELD):
+		_refuse(
+			doc,
+			_(
+				"on this site Batch has no field {0}, so no stock Batch can be linked to lot record {1}: the inspection and non-conformance checks cannot be run."
+			).format(BATCH_LOT_FIELD, lot),
+		)
+	batches = lot_batches(lot)
+	if not batches:
+		_refuse(
+			doc,
+			_(
+				"no stock Batch is linked to lot record {0} or below it: the inspection and non-conformance checks cannot be run."
+			).format(lot),
+		)
+	return batches
+
+
 def rejected_inspections(batches):
 	"""Submitted Quality Inspections with status Rejected on these Batches. A draft inspection, filled or not, is
 	not a failure (Quality, 2026-11-26: results are captured in the certificate itself)."""
@@ -869,7 +942,7 @@ def refuse_unless_approvable(doc):
 		_refuse(
 			doc,
 			_(
-				"it is not recorded who entered its results (it was filled before this was recorded), so the approver cannot be told apart from that person. Saving it again unchanged does not record it. Whoever fills the certificate must change a result and save; to keep the same value: change it, save, set it back, save again. Then another person approves."
+				"it is not recorded who entered its results (it was filled before this was recorded), so the approver cannot be told apart from that person. A person other than the approver must re-enter or confirm a result: the save in which a result changes records who made it (a save that changes nothing records no one), and that person cannot approve it. Then another person approves."
 			),
 		)
 	if doc.get("filled_by") == frappe.session.user:
@@ -877,6 +950,14 @@ def refuse_unless_approvable(doc):
 			doc,
 			_(
 				"you entered or changed its results last (or its customers list, lot, product or specification); another person must approve it."
+			),
+		)
+	# TASKS-390 (decision 337): not only the last filler; everyone who filled since it last entered Draft.
+	if frappe.session.user in fillers_of(doc.get(FILLERS_FIELD)):
+		_refuse(
+			doc,
+			_(
+				"you changed its results, customers list, lot, product or specification since it last entered Draft; a person who changed none of them must approve it."
 			),
 		)
 	if doc.doctype in SIGNED_CERTIFICATES:
@@ -891,7 +972,7 @@ def refuse_unless_approvable(doc):
 			)
 		if not [row for row in (doc.get(CUSTOMERS_TABLE) or []) if row.get("customer")]:
 			_refuse(doc, _("its customers list is empty."))
-	batches = lot_batches(doc.get("batch_reference"))
+	batches = approvable_lot_batches(doc)
 	rejected = rejected_inspections(batches)
 	if rejected:
 		_refuse(
@@ -1084,13 +1165,11 @@ def _approved_by_another(row):
 	return bool(approver and filler and approver != filler)
 
 
-def standing_certificate(lot, doctype, name):
-	"""ANOTHER certificate of the same lot record, of either type, that still stands: Approved and not submitted,
-	or (COA AMB) Certificate Shared and not cancelled, with a result that maps to a lot status, AND approved by
-	the two-person rule: it records who approved it and who filled it, and the two differ. A certificate in one of
-	those states without that record (one written past the approval, or approved before `filled_by` existed) does
-	not stand: it cannot decide the status of a lot when another certificate is taken back. Returned as
-	{"doctype", "name", "result"}, or None. When several stand, the one approved last (then saved last) is taken."""
+def standing_certificates(lot, doctype, name):
+	"""TASKS-390 (decision 338): EVERY other certificate of the same lot record that still stands (the definition of
+	`standing_certificate` below, unchanged), the one approved last first (then saved last). Returned as a list of
+	{"doctype", "name", "result"}, empty when none stands. Passed to amb_w_spc as `others` at an approval and as
+	`standing` at a withdrawal, where the record takes the worst of them."""
 	found = []
 	for certificate_doctype, field in STATE_FIELD.items():
 		standing_states = [(APPROVED, 0)]
@@ -1109,10 +1188,23 @@ def standing_certificate(lot, doctype, name):
 					found.append(
 						(cstr(row.get("approval_date")), cstr(row.get("modified")), certificate_doctype, row)
 					)
-	if not found:
-		return None
-	_approved, _modified, certificate_doctype, row = max(found, key=lambda f: f[:3])
-	return {"doctype": certificate_doctype, "name": row.get("name"), "result": row.get("overall_result")}
+	found.sort(key=lambda f: f[:3], reverse=True)
+	return [
+		{"doctype": certificate_doctype, "name": row.get("name"), "result": row.get("overall_result")}
+		for _approved, _modified, certificate_doctype, row in found
+	]
+
+
+def standing_certificate(lot, doctype, name):
+	"""ANOTHER certificate of the same lot record, of either type, that still stands: Approved and not submitted,
+	or (COA AMB) Certificate Shared and not cancelled, with a result that maps to a lot status, AND approved by
+	the two-person rule: it records who approved it and who filled it, and the two differ. A certificate in one of
+	those states without that record (one written past the approval, or approved before `filled_by` existed) does
+	not stand: it cannot decide the status of a lot when another certificate is taken back. Returned as
+	{"doctype", "name", "result"}, or None. When several stand, the one approved last (then saved last) is taken
+	(the first of `standing_certificates`). Since TASKS-390 the two calls to amb_w_spc pass them all."""
+	found = standing_certificates(lot, doctype, name)
+	return found[0] if found else None
 
 
 def write_lot(doc):
@@ -1124,12 +1216,13 @@ def write_lot(doc):
 	if not move or not move[1]:
 		return
 	kind, lot = move
+	# TASKS-390 (decision 338): every other certificate that stands for the record is passed, so that amb_w_spc gives
+	# the record the worst of them (Failed over Hold over Passed).
+	others = standing_certificates(lot, doc.doctype, doc.name)
 	if kind == "approved":
-		_spc("certificate_approved")(doc.doctype, doc.name, lot, doc.get("overall_result"))
+		_spc("certificate_approved")(doc.doctype, doc.name, lot, doc.get("overall_result"), others=others)
 	else:
-		_spc("certificate_withdrawn")(
-			doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
-		)
+		_spc("certificate_withdrawn")(doc.doctype, doc.name, lot, standing=others)
 
 
 def withdraw_on_cancel(doc):
@@ -1139,8 +1232,20 @@ def withdraw_on_cancel(doc):
 	if not lot:
 		return
 	_spc("certificate_withdrawn")(
-		doc.doctype, doc.name, lot, standing=standing_certificate(lot, doc.doctype, doc.name)
+		doc.doctype, doc.name, lot, standing=standing_certificates(lot, doc.doctype, doc.name)
 	)
+
+
+def share_summary(doc):
+	"""TASKS-390 (decision 334), `on_submit` of COA AMB (the share, Approved -> Certificate Shared): one summary of
+	the share, sent by amb_w_spc under the rules of a release (`certificate_shared`: the filler, the user who shared and
+	the lot's Work Order owner; queued; muted or no account noted on the lot's history; never fails the share; it
+	writes no lot status). It replaces the old `notify_quality_team`. Looked up late (`_spc`), like the two lot
+	writes; a certificate that names no lot has nothing to tell. No try/except around the call."""
+	lot = doc.get("batch_reference")
+	if not lot:
+		return
+	_spc("certificate_shared")(doc.doctype, doc.name, lot)
 
 
 def apply(doc):

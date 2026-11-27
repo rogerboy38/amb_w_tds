@@ -47,9 +47,12 @@ def _workflows():
 def site387(user=APPROVER, tds_product=None, below=None, batches_of=None, rejected=(), lots=None):
 	"""The B1 stand-in site, plus: the active workflow of each certificate (from the fixture), the product of a
 	specification, the records below a lot (`below`), the Batches of each lot record (`batches_of`) and the lot
-	records themselves (`lots`: name -> Work Order)."""
+	records themselves (`lots`: name -> Work Order). Without `batches_of`, the lot has one stock Batch (TASKS-390,
+	decision 335: an approval of a certificate whose lot has none is refused)."""
 	workflows = _workflows()
-	with site(user=user, below=below, rejected=rejected) as fake:
+	with site(
+		user=user, below=below, rejected=rejected, batches=("B-1",) if batches_of is None else ()
+	) as fake:
 
 		def get_value(doctype, name=None, fields=None, *a, **k):
 			if doctype == "Workflow":
@@ -384,6 +387,8 @@ class TestCustomersListIsFilling(unittest.TestCase):
 			def get_value(doctype, name, fields, as_dict=False):
 				if doctype == "Customer Item":
 					return frappe._dict(stored_row) if stored_row else None
+				if doctype == "COA AMB" and fields == rules.FILLERS_FIELD:
+					return None  # TASKS-390: no one filled it since Draft before this row
 				if doctype == "COA AMB":
 					return frappe._dict(workflow_state_1=parent_state, docstatus=0)
 				return None
@@ -404,13 +409,18 @@ class TestCustomersListIsFilling(unittest.TestCase):
 			"customer": "CUST-1",
 		}
 		changed = dict(in_db, customer="CUST-2")
-		self.assertEqual(self.row_hook(changed, in_db), [("COA AMB", "COA-1", "filled_by", THIRD)])
+		self.assertEqual(
+			self.row_hook(changed, in_db),
+			[("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD})],
+		)
 		self.assertEqual(self.row_hook(dict(in_db), in_db), [])  # unchanged: nothing
 		self.assertEqual(
-			self.row_hook(in_db, in_db, method="on_trash"), [("COA AMB", "COA-1", "filled_by", THIRD)]
+			self.row_hook(in_db, in_db, method="on_trash"),
+			[("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD})],
 		)
 		self.assertEqual(
-			self.row_hook(dict(in_db, name=None), None, new=True), [("COA AMB", "COA-1", "filled_by", THIRD)]
+			self.row_hook(dict(in_db, name=None), None, new=True),
+			[("COA AMB", "COA-1", {"filled_by": THIRD, rules.FILLERS_FIELD: THIRD})],
 		)
 		self.assertIn(
 			"its customers list cannot be changed", self.row_hook(changed, in_db, parent_state="Approved")

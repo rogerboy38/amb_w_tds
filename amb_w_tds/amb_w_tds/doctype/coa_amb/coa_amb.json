@@ -44,6 +44,7 @@
   "approval_date",
   "approved_by",
   "filled_by",
+  "fillers_since_draft",
   "tds_settings",
   "tds_naming_series",
   "tds_version",
@@ -185,6 +186,14 @@
    "label": "Filled By",
    "no_copy": 1,
    "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "Everyone who changed a test result, the customers list, the lot, the product or the specification since the certificate last entered Draft, one user per line. Written by the server; none of them may approve.",
+   "fieldname": "fillers_since_draft",
+   "fieldtype": "Small Text",
+   "label": "Filled By (since Draft)",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -439,7 +448,7 @@
  "max_attachments": 0,
  "menu_index": null,
  "migration_hash": null,
- "modified": "2026-11-27 12:00:00.000000",
+ "modified": "2026-11-28 12:00:00.000000",
  "module": "Amb W Tds",
  "name": "COA AMB",
  "naming_rule": "By \"Naming Series\" field",

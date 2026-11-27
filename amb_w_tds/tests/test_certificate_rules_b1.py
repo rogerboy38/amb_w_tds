@@ -51,6 +51,12 @@ def row(name, result, spec="1 - 10", title=0):
 	)
 
 
+def named(doctype, name, user="u"):
+	"""What a row saved by itself writes on its certificate: the filler, and the filler added to the list of everyone
+	who filled since Draft (TASKS-390, decision 337; empty before here)."""
+	return (doctype, name, {"filled_by": user, rules.FILLERS_FIELD: user})
+
+
 def customers():
 	return [frappe._dict(name="cust-1", customer="CUST-1")]
 
@@ -625,35 +631,39 @@ class TestFilledBy(unittest.TestCase):
 			},
 		)()
 		with site(user="u") as fake:
-			fake.db.get_value = mock.Mock(return_value=frappe._dict(stored_row) if stored_row else None)
+			row_read = frappe._dict(stored_row) if stored_row else None
+			# the row's stored fields; the certificate's stored list of fillers (TASKS-390) is empty here
+			fake.db.get_value = mock.Mock(
+				side_effect=lambda dt, name, fields, *a, **k: None
+				if fields == rules.FILLERS_FIELD
+				else row_read
+			)
 			rules.note_filler_of_row(r, method)
 		return [c.args for c in fake.db.set_value.call_args_list]
 
 	def test_a_result_row_saved_by_itself_names_the_session_user_on_its_certificate(self):
 		in_db = {"parent": "COA-1", "parenttype": "COA AMB2", "result": "5"}
 		sent = {"name": "row-1", "parent": "COA-1", "parenttype": "COA AMB2", "result": "6"}
-		self.assertEqual(self.hook(sent, in_db), [("COA AMB2", "COA-1", "filled_by", "u")])
+		self.assertEqual(self.hook(sent, in_db), [named("COA AMB2", "COA-1")])
 		# unchanged result: nothing is written
 		self.assertEqual(self.hook(dict(sent, result="5"), in_db), [])
 		# a new row and a deleted row are changes with or without a result (Review 2)
-		self.assertEqual(
-			self.hook(dict(sent, result=""), None, new=True), [("COA AMB2", "COA-1", "filled_by", "u")]
-		)
+		self.assertEqual(self.hook(dict(sent, result=""), None, new=True), [named("COA AMB2", "COA-1")])
 		self.assertEqual(
 			self.hook(sent, dict(in_db, result=""), method="on_trash"),
-			[("COA AMB2", "COA-1", "filled_by", "u")],
+			[named("COA AMB2", "COA-1")],
 		)
 		# a new row with a result, and a deleted row that had one
 		self.assertEqual(
 			self.hook(dict(sent, parenttype="COA AMB"), None, new=True),
-			[("COA AMB", "COA-1", "filled_by", "u")],
+			[named("COA AMB", "COA-1")],
 		)
-		self.assertEqual(self.hook(sent, in_db, method="on_trash"), [("COA AMB2", "COA-1", "filled_by", "u")])
+		self.assertEqual(self.hook(sent, in_db, method="on_trash"), [named("COA AMB2", "COA-1")])
 		# a row moved in the same save: both certificates learn of it
 		moved = self.hook(dict(sent, parent="COA-2", parenttype="COA AMB"), in_db)
 		self.assertEqual(
 			moved,
-			[("COA AMB", "COA-2", "filled_by", "u"), ("COA AMB2", "COA-1", "filled_by", "u")],
+			[named("COA AMB", "COA-2"), named("COA AMB2", "COA-1")],
 		)
 		# a row of any other parent is not touched
 		other = {"parent": "LOTE-1", "parenttype": "Batch AMB", "result": "5"}
@@ -666,9 +676,7 @@ class TestFilledBy(unittest.TestCase):
 		self.assertEqual(self.hook(dict(sent, remarks="a remark", status="Fail"), in_db), [])
 		for field, value in self.CHANGES.items():
 			with self.subTest(field=field):
-				self.assertEqual(
-					self.hook(dict(sent, **{field: value}), in_db), [("COA AMB", "COA-1", "filled_by", "u")]
-				)
+				self.assertEqual(self.hook(dict(sent, **{field: value}), in_db), [named("COA AMB", "COA-1")])
 
 	def test_the_row_hook_reads_every_evaluated_field_of_the_stored_row(self):
 		r = type(
@@ -683,7 +691,7 @@ class TestFilledBy(unittest.TestCase):
 		with site(user="u") as fake:
 			rules.note_filler_of_row(r, "before_validate")
 		self.assertEqual(
-			fake.db.get_value.call_args.args[2], ["parent", "parenttype", *rules.EVALUATION_FIELDS]
+			fake.db.get_value.call_args_list[0].args[2], ["parent", "parenttype", *rules.EVALUATION_FIELDS]
 		)
 
 	def test_the_hook_is_registered_after_the_lock_on_the_result_rows(self):
@@ -744,20 +752,22 @@ class TestMayThisBeApproved(unittest.TestCase):
 		"""Review 4, wording only: a certificate filled before `filled_by` existed. No backfill, no bypass."""
 		refusal = save(self.approving(stored_filler=None), user="approver")
 		for text in (
-			"Saving it again unchanged does not record it.",
-			"Whoever fills the certificate must change a result and save",
-			"change it, save, set it back, save again",
-			"Then another person approves.",
+			"a save that changes nothing records no one",
+			"A person other than the approver must re-enter or confirm a result",
+			"the save in which a result changes records who made it",
+			"and that person cannot approve it. Then another person approves.",
 		):
 			self.assertIn(text, refusal or "")
+		# TASKS-390 (decision 337): the message no longer teaches the change-and-set-back
+		self.assertNotIn("set it back", refusal or "")
 		# and that is how the code behaves: an unchanged save records nobody, a changed result records the user
 		before = stored("COA AMB", "Pending Supervisor", [row("r1", "5")], filled_by=None)
 		unchanged = cert(state="Pending Supervisor", before=before)
 		self.assertIsNone(save(unchanged, user="filler"))
-		self.assertIsNone(unchanged.filled_by)
+		self.assertEqual((unchanged.filled_by, unchanged.fillers_since_draft), (None, None))
 		changed = cert(state="Pending Supervisor", rows=[row("r1", "5.1")], before=before)
 		self.assertIsNone(save(changed, user="filler"))
-		self.assertEqual(changed.filled_by, "filler")
+		self.assertEqual((changed.filled_by, changed.fillers_since_draft), ("filler", "filler"))
 		# the filler who set it back cannot approve; another person can
 		before = stored("COA AMB", "Pending Supervisor", [row("r1", "5")], filled_by="filler")
 		self.assertIn(
@@ -840,9 +850,11 @@ class TestMayThisBeApproved(unittest.TestCase):
 
 	def test_a_site_without_the_link_field_or_the_doctype_reads_nothing_there(self):
 		d = self.approving(batch_reference="LOTE-1")
-		with site(batch_field=False) as fake:
+		with site(batch_field=False) as fake, self.assertRaises(frappe.ValidationError) as refused:
 			d.validate()
-		self.assertEqual(fake.asked, [])  # no Batch belongs to a lot on such a site
+		self.assertEqual(fake.asked, [])  # no Batch belongs to a lot on such a site: nothing is read ...
+		# ... and the approval is refused (TASKS-390, decision 335: the checks fail closed)
+		self.assertIn("on this site Batch has no field custom_batch_amb", str(refused.exception))
 		for kw in (dict(nc_doctype=False), dict(nc_field=False)):
 			d = self.approving(batch_reference="LOTE-1")
 			with site(batches=["B-1"], **kw) as fake:
