@@ -3,7 +3,8 @@
 - 340: `fillers_since_draft` keeps every user who changed the results, the customers list, the lot, the product or
   the specification for the certificate's WHOLE life: entering Draft again (Return for correction, the Reject from
   Approved) no longer empties it, so the original filler cannot clear his own name by returning the certificate. An
-  amendment is a new certificate and starts its own list (`no_copy`, and a new document never reads a copied value).
+  amendment is a new certificate and starts its own list (`no_copy`, and a new document never reads a copied value);
+  TASKS-397 (decision 349) changed that for an amendment, which starts from its original's stored list.
   The fieldname is kept; its label and description say "all", and the refusal no longer says "since Draft".
 - 341: the share (COA AMB `on_submit`) no longer calls `create_quality_audit` nor `update_product_quality_status`
   (each wrote an Error Log at every share). Both methods stay, for decision 299's task. COA AMB2's `on_submit` drops
@@ -143,18 +144,17 @@ class TestTheListIsNeverEmptied(unittest.TestCase):
 					d, _s = save(doctype, s, C, state="Draft")
 					self.assertEqual(d.fillers_since_draft, f"{A}\n{B}")
 
-	def test_an_amendment_starts_an_empty_list(self):
-		"""An Amend copies the fields it may (the form's copy honours `no_copy`; the server's `copy_doc` does not by
-		default): whatever it carries, a new certificate starts its list from nothing, with its maker only if the
-		maker fills it."""
+	def test_a_duplicate_starts_an_empty_list(self):
+		"""A Duplicate copies the fields it may (the form's copy honours `no_copy`; the server's `copy_doc` does not by
+		default): whatever it carries, a new certificate that is no amendment starts its list from nothing, with its
+		maker only if the maker fills it. An amendment starts from its original's list (TASKS-397, decision 349:
+		`test_amend_keeps_fillers_and_variant_sales_397`)."""
 		for doctype in BOTH:
 			with self.subTest(doctype=doctype):
-				amended = cert(
-					doctype, new=True, amended_from="COA-1", filled_by=A, **{rules.FILLERS_FIELD: f"{A}\n{B}"}
-				)
-				self.assertIsNone(run(amended, user=C))
-				self.assertEqual((amended.filled_by, amended.fillers_since_draft), (C, C))
-				empty = cert(doctype, new=True, rows=[], amended_from="COA-1", **{rules.FILLERS_FIELD: A})
+				duplicate = cert(doctype, new=True, filled_by=A, **{rules.FILLERS_FIELD: f"{A}\n{B}"})
+				self.assertIsNone(run(duplicate, user=C))
+				self.assertEqual((duplicate.filled_by, duplicate.fillers_since_draft), (C, C))
+				empty = cert(doctype, new=True, rows=[], **{rules.FILLERS_FIELD: A})
 				self.assertIsNone(run(empty, user=C))
 				self.assertIsNone(empty.fillers_since_draft)
 

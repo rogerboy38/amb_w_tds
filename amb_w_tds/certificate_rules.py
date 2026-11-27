@@ -52,7 +52,8 @@ SIGNER_FIELD = "signed_by"
 # results, its customers list, its lot, product or specification) in the certificate's whole life, one user id per
 # line (a Small Text field on both certificates; read-only, no copy). Written by the server, never taken from the
 # caller; none of them may approve. `filled_by` stays the LAST of them. The list is never emptied: entering Draft
-# again (Return for correction, the Reject, a Reopen) keeps it. An amendment is a new certificate and starts its own.
+# again (Return for correction, the Reject, a Reopen) keeps it. A Duplicate is a new certificate and starts its own;
+# an amendment starts from its original's stored list and stored `filled_by` (TASKS-397, decision 349).
 # The fieldname is kept from 13.12.23 (a rename would be a column rename for no behaviour); its label says "(all)".
 FILLERS_FIELD = "fillers_since_draft"
 
@@ -324,6 +325,30 @@ def with_filler(value, user):
 	return "\n".join(users if user in users else [*users, user])
 
 
+def fillers_of_original(doc):
+	"""TASKS-397 (decision 349): the list a new amendment starts from: its original's stored `fillers_since_draft`
+	with the original's stored `filled_by` added, read from the database (never from the form, which may carry a
+	copied or typed value). `amended_from` is the framework's field (read-only and no copy in both DocTypes, set by
+	Amend); the framework itself refuses, in the same insert, an amendment whose original is not cancelled
+	(`Document.validate_amended_from`). A caller who sends some other certificate as `amended_from` can only add
+	names to this list, and a name on it may not approve: the approval becomes stricter, never weaker. When the
+	original cannot be read the save is refused, rather than start the amendment with an empty list."""
+	original = frappe.db.get_value(
+		doc.doctype, doc.get("amended_from"), ["filled_by", FILLERS_FIELD], as_dict=True
+	)
+	if not original:
+		frappe.throw(
+			_(
+				"{0} {1} is an amendment of {2}, which cannot be read, so it is not known who filled it. Amend the certificate again from its cancelled original."
+			).format(_(doc.doctype), doc.name or "", doc.get("amended_from")),
+			title=_("Original not found"),
+		)
+	fillers = cstr(original.get(FILLERS_FIELD))
+	if original.get("filled_by"):
+		fillers = with_filler(fillers, original.get("filled_by"))
+	return fillers
+
+
 def set_filled_by(doc):
 	"""`filled_by` is the user who last changed what the certificate certifies (decision 313; TASKS-387 decision
 	321): a test result (`results_changed`), the customers list (`customers_changed`), or the lot, product or
@@ -339,13 +364,16 @@ def set_filled_by(doc):
 	in the certificate's whole life: the stored list, never emptied (a save that enters Draft again, by Return for
 	correction, the Reject or a Reopen, keeps it; the one who returns or rejects changes nothing, so is not added for
 	that), with the session user added when this save changes what the certificate certifies. A new certificate
-	(also an Amend or a Duplicate, which may carry a copied value) starts from nothing. A value sent by the caller is
-	replaced, as for `filled_by`.
+	starts from nothing (a Duplicate, which may carry a copied value), except an amendment (TASKS-397, decision 349):
+	it starts from its original's stored list and stored `filled_by` (`fillers_of_original`), so whoever filled the
+	original stays barred from approving the amendment. A value sent by the caller is replaced, as for `filled_by`.
 
 	Returns what made the session user the filler (`filling_changes`), empty when nobody was named by this save."""
 	before = _before(doc)
 	changes = filling_changes(doc)
 	fillers = cstr(before.get(FILLERS_FIELD)) if before else ""
+	if not before and doc.get("amended_from"):
+		fillers = fillers_of_original(doc)
 	if before and before.get("filled_by"):
 		# TASKS-391 review, finding 1: the stored `filled_by` is a user who changed the certificate, so it is in the
 		# list too (decision 340: every filler of the certificate's whole life). A certificate stored before the list

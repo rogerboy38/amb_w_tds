@@ -106,6 +106,13 @@ doc_events = {
         "autoname": "amb_w_tds.formulation.bom_naming.correct_colliding_autoname",
     },
 
+    # TASKS-397 (decision 350): a new variant takes its template's "Allow Sales" once, on insert only (never at a
+    # later save, never at a save of the template). Works whether or not `is_sales_item` is on Item Variant
+    # Settings' copy list (runs after ERPNext's copy); Item Variant Settings is not changed.
+    "Item": {
+        "before_insert": "amb_w_tds.item_variant_sales.copy_allow_sales_from_template",
+    },
+
     # ---- Selling-edge Pack Plan (§1c, design 2026-07-06 + 1b-FINAL) --------
     # per-row Σ group_net_kg == SO row qty (block on submit), packaging-catalog
     # link restriction, taras fetched from Item master (F-8), Quotation→SO copy

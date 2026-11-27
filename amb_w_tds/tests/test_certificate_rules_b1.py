@@ -132,6 +132,12 @@ def cert(doctype="COA AMB", state="Draft", rows=None, before=None, new=False, do
 	return d
 
 
+def _original_coa_0(doctype, name=None, fields=None, *a, **k):
+	if name == "COA-0" and doctype in rules.STATE_FIELD and fields == ["filled_by", rules.FILLERS_FIELD]:
+		return frappe._dict(filled_by=None, **{rules.FILLERS_FIELD: None})
+	return None
+
+
 @contextmanager
 def site(
 	user="approver",
@@ -171,7 +177,9 @@ def site(
 		get_all=get_all,
 		db=types.SimpleNamespace(
 			exists=lambda dt, name=None: nc_doctype,
-			get_value=mock.Mock(return_value=None),
+			# TASKS-397 (decision 349): the original "COA-0" the amendments here name is readable and filled by no
+			# one, so an amendment starts with an empty list as before; nothing else is stored.
+			get_value=mock.Mock(side_effect=_original_coa_0),
 			set_value=mock.Mock(),
 		),
 		asked=asked,

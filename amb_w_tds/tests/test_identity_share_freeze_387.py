@@ -53,6 +53,7 @@ def site387(user=APPROVER, tds_product=None, below=None, batches_of=None, reject
 	with site(
 		user=user, below=below, rejected=rejected, batches=("B-1",) if batches_of is None else ()
 	) as fake:
+		plain_get_value = fake.db.get_value
 
 		def get_value(doctype, name=None, fields=None, *a, **k):
 			if doctype == "Workflow":
@@ -61,7 +62,8 @@ def site387(user=APPROVER, tds_product=None, below=None, batches_of=None, reject
 				return tds_product
 			if doctype == rules.LOT_DOCTYPE and lots and name in lots:
 				return frappe._dict(work_order_ref=lots[name], item_to_manufacture=None)
-			return None
+			# TASKS-397: the B1 site's original of an amendment, else None
+			return plain_get_value(doctype, name, fields, *a, **k)
 
 		fake.db.get_value = mock.Mock(side_effect=get_value)
 		fake.get_cached_doc = lambda doctype, name: frappe._dict(
