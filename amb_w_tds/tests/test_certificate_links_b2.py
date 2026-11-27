@@ -2,8 +2,8 @@
 customers filled on the server, and the two repairs on the form (the lot-change handler, the Client Script that
 emptied the series).
 
-The classification table ships EMPTY (no rule separating finished from semi-finished products could be read from the
-code); these tests fill it for their own run to prove the mechanism around it."""
+TASKS-385, decision 320: the type follows the Item's own "Allow Sales" check (`is_sales_item`): on -> COA AMB, off ->
+COA AMB2, read on the item itself (a variant's own value, never its template's)."""
 
 import json
 import os
@@ -21,19 +21,17 @@ from amb_w_tds.api import certificate as api
 
 PKG = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLASSES = {"COA AMB": amb.COAAMB, "COA AMB2": amb2.COAAMB2}
-TABLE = {"Finished": "COA AMB", "Semi": "COA AMB2"}
-# item -> its Item Group; Item Group -> its parent
-ITEMS = {"MIX-1": "Finished Mixes", "POWDER-1": "Semi Powders", "PACK-1": "Packaging", "ODD-1": "Loop A"}
-GROUPS = {
-	"Finished Mixes": "Finished",
-	"Finished": "All Item Groups",
-	"Semi Powders": "Semi",
-	"Semi": "All Item Groups",
-	"Packaging": "All Item Groups",
-	"All Item Groups": None,
-	"Loop A": "Loop B",
-	"Loop B": "Loop A",
+# item -> its own "Allow Sales" check (Item.is_sales_item). VAR-ON is a variant whose template TPL-OFF has the check
+# off; VAR-OFF the reverse: the variant's own value decides.
+ITEMS = {
+	"MIX-1": 1,
+	"POWDER-1": 0,
+	"TPL-OFF": 0,
+	"VAR-ON": 1,
+	"TPL-ON": 1,
+	"VAR-OFF": 0,
 }
+TEMPLATE_OF = {"VAR-ON": "TPL-OFF", "VAR-OFF": "TPL-ON"}
 
 
 def _throw(msg, *a, **k):
@@ -41,7 +39,7 @@ def _throw(msg, *a, **k):
 
 
 class Db:
-	"""Items, Item Groups, lots and specifications, as the code reads them."""
+	"""Items, lots and specifications, as the code reads them."""
 
 	def __init__(self, lots=None, specs=None):
 		self.lots, self.specs, self.asked = lots or {}, specs or {}, []
@@ -49,9 +47,8 @@ class Db:
 	def get_value(self, doctype, name, fields, as_dict=False):
 		self.asked.append((doctype, name))
 		if doctype == "Item":
+			assert fields == "is_sales_item", fields  # the one field decision 320 names
 			return ITEMS.get(name)
-		if doctype == "Item Group":
-			return GROUPS.get(name)
 		if doctype == "Batch AMB":
 			if isinstance(fields, str):  # one field of the lot (its level)
 				return (self.lots.get(name) or {}).get(fields)
@@ -65,7 +62,7 @@ class Db:
 
 
 @contextmanager
-def site(db=None, table=TABLE, docs=None, level_field=True):
+def site(db=None, docs=None, level_field=True):
 	db = db or Db()
 	fake = types.SimpleNamespace(
 		session=frappe._dict(user="maker"),
@@ -83,7 +80,6 @@ def site(db=None, table=TABLE, docs=None, level_field=True):
 			stack.enter_context(mock.patch.object(module, "frappe", fake))
 			stack.enter_context(mock.patch.object(module, "_", lambda s: s))
 		stack.enter_context(mock.patch.object(frappe, "throw", _throw))
-		stack.enter_context(mock.patch.object(api, "CERTIFICATE_TYPE_BY_ITEM_GROUP", dict(table)))
 		yield fake
 
 
@@ -137,44 +133,75 @@ def save(doc, **kw):
 
 
 class TestTypeByProduct(unittest.TestCase):
-	def classed(self, item, table=TABLE):
-		with site(table=table) as fake:
+	"""Decision 320: the Item's own "Allow Sales" check decides."""
+
+	def classed(self, item):
+		with site() as fake:
 			return api.certificate_type_for_item(item), fake.db.asked
 
-	def test_the_table_ships_empty_so_every_item_is_unclassed_and_nothing_is_read(self):
-		self.assertEqual(api.CERTIFICATE_TYPE_BY_ITEM_GROUP, {})
-		self.assertEqual(self.classed("MIX-1", table={}), (None, []))
+	def test_allow_sales_on_gives_the_customer_certificate_and_off_the_internal_one(self):
+		self.assertEqual(self.classed("MIX-1"), ("COA AMB", [("Item", "MIX-1")]))
+		self.assertEqual(self.classed("POWDER-1"), ("COA AMB2", [("Item", "POWDER-1")]))
 
-	def test_an_item_is_classed_by_the_nearest_group_of_its_ancestry_named_in_the_table(self):
-		self.assertEqual(self.classed("MIX-1")[0], "COA AMB")
-		self.assertEqual(self.classed("POWDER-1")[0], "COA AMB2")
-		# the item's own group wins over an ancestor
+	def test_a_variant_follows_its_own_check_and_its_template_is_not_read(self):
+		for variant, expected in (("VAR-ON", "COA AMB"), ("VAR-OFF", "COA AMB2")):
+			kind, asked = self.classed(variant)
+			self.assertEqual(kind, expected, variant)
+			self.assertEqual(asked, [("Item", variant)])  # one read, of the variant's row
+			self.assertNotEqual(
+				self.classed(TEMPLATE_OF[variant])[0],
+				expected,
+				"the fixture must have a template that differs",
+			)
+
+	def test_an_unknown_item_and_no_item_give_no_type_and_no_item_is_not_even_read(self):
+		self.assertEqual(self.classed("NOT-AN-ITEM"), (None, [("Item", "NOT-AN-ITEM")]))
+		for item in (None, ""):
+			self.assertEqual(self.classed(item), (None, []))
+
+	def test_the_item_group_table_and_its_walk_are_gone(self):
+		self.assertFalse(hasattr(api, "CERTIFICATE_TYPE_BY_ITEM_GROUP"))
+		with open(api.__file__) as f:
+			self.assertNotIn("Item Group", f.read())
+		self.assertEqual((api.ALLOW_SALES_FIELD, api.ALLOW_SALES_LABEL), ("is_sales_item", "Allow Sales"))
+
+	def test_allow_sales_is_the_label_of_is_sales_item_in_erpnext(self):
+		try:
+			import erpnext
+		except ImportError:
+			self.skipTest("erpnext is not importable here")
+		path = os.path.join(os.path.dirname(erpnext.__file__), "stock", "doctype", "item", "item.json")
+		with open(path) as f:
+			labels = {d.get("fieldname"): d.get("label") for d in json.load(f)["fields"]}
+		self.assertEqual(labels.get(api.ALLOW_SALES_FIELD), api.ALLOW_SALES_LABEL)
 		self.assertEqual(
-			self.classed("MIX-1", table={"Finished": "COA AMB", "Finished Mixes": "COA AMB2"})[0], "COA AMB2"
+			[k for k, v in labels.items() if v == api.ALLOW_SALES_LABEL], [api.ALLOW_SALES_FIELD]
 		)
 
-	def test_an_item_outside_the_table_an_unknown_item_and_no_item_are_unclassed(self):
-		for item in ("PACK-1", "NOT-AN-ITEM", None, ""):
-			self.assertIsNone(self.classed(item)[0], item)
-		self.assertIsNone(self.classed("ODD-1")[0])  # a loop in the tree ends
+	def test_the_wrong_type_is_refused_when_the_certificate_is_made_and_names_the_check(self):
+		cases = (
+			("COA AMB", "POWDER-1", "takes a COA AMB2, not a COA AMB", "is off"),
+			("COA AMB2", "MIX-1", "takes a COA AMB, not a COA AMB2", "is on"),
+			("COA AMB2", "VAR-ON", "takes a COA AMB, not a COA AMB2", "is on"),
+			("COA AMB", "VAR-OFF", "takes a COA AMB2, not a COA AMB", "is off"),
+		)
+		for doctype, product, words, state in cases:
+			with self.subTest(doctype=doctype, product=product):
+				refusal = save(cert(doctype, product))[0] or ""
+				self.assertIn(words, refusal)
+				self.assertIn('the "Allow Sales" check on Item ' + product + " " + state, refusal)
 
-	def test_the_wrong_type_for_a_classed_product_is_refused_when_the_certificate_is_made(self):
-		refusal, _ = save(cert("COA AMB", "POWDER-1"))
-		self.assertIn("takes a COA AMB2, not a COA AMB", refusal or "")
-		refusal, _ = save(cert("COA AMB2", "MIX-1"))
-		self.assertIn("takes a COA AMB, not a COA AMB2", refusal or "")
-
-	def test_the_right_type_and_an_unclassed_product_pass(self):
+	def test_the_right_type_an_unknown_item_and_no_product_pass(self):
 		for doctype, product in (
 			("COA AMB", "MIX-1"),
 			("COA AMB2", "POWDER-1"),
-			("COA AMB", "PACK-1"),
-			("COA AMB2", "PACK-1"),
+			("COA AMB", "VAR-ON"),
+			("COA AMB2", "VAR-OFF"),
+			("COA AMB", "NOT-AN-ITEM"),
+			("COA AMB2", "NOT-AN-ITEM"),
 			("COA AMB", None),
 		):
 			self.assertIsNone(save(cert(doctype, product))[0], (doctype, product))
-		# with the table as shipped nothing is refused
-		self.assertIsNone(save(cert("COA AMB", "POWDER-1"), table={})[0])
 
 	def test_a_stored_certificate_is_judged_again_only_when_its_product_changes(self):
 		unchanged = cert("COA AMB", "POWDER-1", new=False)
@@ -351,14 +378,14 @@ class Lot:
 
 
 class TestMakeCertificateForLot(unittest.TestCase):
-	def make(self, lot, specs=None, table=TABLE):
+	def make(self, lot, specs=None):
 		made = types.SimpleNamespace(insert=mock.Mock(), name="NEW-1", doctype=None)
 
 		def new_doc(doctype):
 			made.doctype = doctype
 			return made
 
-		with site(db=Db(specs=specs or {}), table=table, docs={("Batch AMB", "LOTE-1"): lot}) as fake:
+		with site(db=Db(specs=specs or {}), docs={("Batch AMB", "LOTE-1"): lot}) as fake:
 			fake.new_doc = new_doc
 			try:
 				return api.make_certificate_for_lot("LOTE-1"), made
@@ -387,11 +414,18 @@ class TestMakeCertificateForLot(unittest.TestCase):
 			self.assertIn("names no specification and no item", out)
 			made.insert.assert_not_called()
 
-	def test_an_unclassed_product_is_refused_with_its_own_message_and_nothing_is_inserted(self):
-		for table, item in ((TABLE, "PACK-1"), ({}, "MIX-1")):
-			out, made = self.make(Lot(item_to_manufacture=item), table=table)
-			self.assertIn("is not classed", out)
-			made.insert.assert_not_called()
+	def test_a_variant_lot_gets_the_type_of_its_own_check(self):
+		for item, doctype in (("VAR-ON", "COA AMB"), ("VAR-OFF", "COA AMB2")):
+			out, made = self.make(Lot(item_to_manufacture=item))
+			self.assertEqual((out["doctype"], made.product_item), (doctype, item))
+
+	def test_a_specification_naming_an_item_that_does_not_exist_is_refused_and_nothing_is_inserted(self):
+		lot = Lot(tds_link="TDS-1")
+		out, made = self.make(lot, specs={"TDS-1": {"product_item": "NOT-AN-ITEM"}})
+		self.assertIn("Item NOT-AN-ITEM does not exist", out)
+		self.assertIn('it follows the "Allow Sales" check on the Item', out)
+		self.assertNotIn("not classed", out)
+		made.insert.assert_not_called()
 
 	def test_a_container_gets_no_certificate_and_nothing_is_inserted(self):
 		"""Review 6."""

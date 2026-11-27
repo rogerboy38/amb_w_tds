@@ -22,6 +22,7 @@ import frappe
 from amb_w_tds import certificate_rules as rules
 from amb_w_tds.amb_w_tds.doctype.coa_amb import coa_amb as amb
 from amb_w_tds.amb_w_tds.doctype.coa_amb2 import coa_amb2 as amb2
+from amb_w_tds.api import certificate as api
 
 PKG = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CLASSES = {"COA AMB": amb.COAAMB, "COA AMB2": amb2.COAAMB2}
@@ -128,6 +129,9 @@ def site(user="approver", batch_field=True, batches=(), rejected=(), nc_doctype=
 	)
 	with ExitStack() as stack:
 		stack.enter_context(mock.patch.object(rules, "frappe", fake))
+		# TASKS-385: the type check now reads the product's Item; on this stand-in site no product is an Item, so no
+		# type is judged here (the type has its own tests in test_certificate_links_b2).
+		stack.enter_context(mock.patch.object(api, "frappe", fake))
 		stack.enter_context(mock.patch.object(rules, "nowdate", lambda: TODAY))
 		stack.enter_context(mock.patch.object(frappe, "throw", _throw))
 		for module in (rules, amb, amb2):
